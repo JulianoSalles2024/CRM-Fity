@@ -45,7 +45,7 @@ export interface ColumnData {
 export interface Activity {
   id: Id;
   leadId: Id;
-  type: 'note' | 'status_change';
+  type: 'note' | 'status_change' | 'email_sent';
   text: string;
   authorName: string;
   timestamp: string; // ISO string

@@ -1,11 +1,12 @@
 
+
 import React from 'react';
 import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { AnimatePresence } from 'framer-motion';
 
 import * as api from './api';
-import { isSupabaseConfigured } from './services/supabaseClient';
+import { isSupabaseConfigured, supabase } from './services/supabaseClient';
 import type { Id, ColumnData, Lead, CreateLeadData, UpdateLeadData, User, Activity, Task, CreateTaskData, UpdateTaskData, Tag, CardDisplaySettings, ListDisplaySettings, EmailDraft, CreateEmailDraftData } from './types';
 import { initialColumns, initialLeads, initialActivities, initialUsers, initialTasks, initialTags, initialEmailDrafts } from './data';
 
@@ -114,17 +115,26 @@ const App: React.FC = () => {
       setIsAuthLoading(false);
       return;
     }
-    const checkSession = async () => {
-      try {
-        const user = await api.getCurrentUser();
-        setCurrentUser(user);
-      } catch (e) {
-        // No active session
-      } finally {
+
+    setIsAuthLoading(true);
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        if (session?.user) {
+            try {
+                const userProfile = await api.getCurrentUser();
+                setCurrentUser(userProfile);
+            } catch {
+                setCurrentUser(null);
+            }
+        } else {
+            setCurrentUser(null);
+        }
         setIsAuthLoading(false);
-      }
+    });
+
+    return () => {
+        authListener?.subscription.unsubscribe();
     };
-    checkSession();
   }, []);
 
   React.useEffect(() => {
@@ -452,6 +462,20 @@ const App: React.FC = () => {
     }
   }, [currentUser, handleCreateActivity, showNotification]);
 
+  const handleSendEmailActivity = React.useCallback(async (leadId: Id, subject: string) => {
+    if (!currentUser) return;
+    try {
+        await handleCreateActivity({
+            leadId,
+            text: `Email enviado: "${subject}"`,
+            type: 'email_sent',
+            authorName: currentUser.name,
+        });
+    } catch {
+        // Error already handled in handleCreateActivity
+    }
+}, [currentUser, handleCreateActivity]);
+
   const handleOpenCreateTaskModal = (leadId: Id | null = null, date: string | null = null) => {
     setEditingTask(null);
     setPreselectedLeadIdForTask(leadId);
@@ -591,6 +615,18 @@ const App: React.FC = () => {
       }
   };
 
+  const handleSignInWithGoogle = async () => {
+    setAuthError(null);
+    try {
+        await api.signInWithGoogle();
+        // Supabase handles the redirect, app will reload and check session.
+    } catch (err: any) {
+        const message = err.message || 'Falha ao fazer login com o Google.';
+        setAuthError(message);
+        showNotification(message, 'error');
+    }
+  };
+
   const handleLogout = async () => {
     if (!isSupabaseConfigured) {
         showNotification("O logout está desabilitado no modo de demonstração.", 'info');
@@ -658,7 +694,6 @@ const App: React.FC = () => {
                 onLeadClick={handleCardClick}
                 viewType={activeView as 'Leads' | 'Clientes'}
                 listDisplaySettings={listDisplaySettings}
-                // FIX: Cannot find name 'onUpdateListSettings'. Did you mean 'handleUpdateListSettings'?
                 onUpdateListSettings={handleUpdateListSettings}
             />
         );
@@ -722,7 +757,13 @@ const App: React.FC = () => {
   }
 
   if (!currentUser) {
-    return <AuthPage onLogin={handleLogin} onRegister={handleRegister} error={authError} successMessage={authSuccess} />;
+    return <AuthPage 
+        onLogin={handleLogin} 
+        onRegister={handleRegister} 
+        onSignInWithGoogle={handleSignInWithGoogle}
+        error={authError} 
+        successMessage={authSuccess} 
+    />;
   }
 
   return (
@@ -764,6 +805,7 @@ const App: React.FC = () => {
             onEdit={() => handleOpenEditLeadModal(selectedLead)}
             onDelete={() => handleDeleteLead(selectedLead)}
             onAddNote={(noteText) => handleAddNote(selectedLead.id, noteText)}
+            onSendEmailActivity={(subject) => handleSendEmailActivity(selectedLead.id, subject)}
             onAddTask={() => handleOpenCreateTaskModal(selectedLead.id)}
             onSaveDraft={handleSaveEmailDraft}
             onDeleteDraft={handleDeleteEmailDraft}

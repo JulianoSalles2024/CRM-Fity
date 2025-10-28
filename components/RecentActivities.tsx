@@ -1,6 +1,7 @@
 
+
 import React from 'react';
-import { Activity as ActivityIcon, MessageSquare, ArrowRight, ChevronsRight } from 'lucide-react';
+import { Activity as ActivityIcon, MessageSquare, ArrowRight, ChevronsRight, Mail } from 'lucide-react';
 import { Activity, Lead } from '../types';
 
 const formatTimestamp = (timestamp: string) => {
@@ -32,6 +33,24 @@ const RecentActivities: React.FC<RecentActivitiesProps> = ({ activities, leads, 
     const getLeadName = (leadId: number | string) => {
         return leads.find(l => l.id === leadId)?.name || 'Lead desconhecido';
     }
+    
+    const getActivityIcon = (type: Activity['type']) => {
+        switch (type) {
+            case 'note': return <MessageSquare className="w-4 h-4 text-violet-400" />;
+            case 'email_sent': return <Mail className="w-4 h-4 text-violet-400" />;
+            case 'status_change': return <ArrowRight className="w-4 h-4 text-violet-400" />;
+            default: return <ActivityIcon className="w-4 h-4 text-violet-400" />;
+        }
+    };
+
+    const getActivityText = (type: Activity['type']) => {
+        switch (type) {
+            case 'note': return 'adicionou uma nota em';
+            case 'email_sent': return 'enviou um email para';
+            case 'status_change': return 'atualizou';
+            default: return 'realizou uma ação em';
+        }
+    };
 
     return (
          <div className="bg-zinc-800 p-5 rounded-lg border border-zinc-700 h-full flex flex-col">
@@ -50,12 +69,12 @@ const RecentActivities: React.FC<RecentActivitiesProps> = ({ activities, leads, 
                     {sortedActivities.map(activity => (
                          <li key={activity.id} className="flex gap-3 items-start">
                             <div className="flex-shrink-0 bg-zinc-900/50 h-8 w-8 rounded-full flex items-center justify-center mt-1">
-                                {activity.type === 'note' ? <MessageSquare className="w-4 h-4 text-violet-400" /> : <ArrowRight className="w-4 h-4 text-violet-400" />}
+                                {getActivityIcon(activity.type)}
                             </div>
                             <div className="flex-1">
                                 <p className="text-sm text-zinc-300 leading-snug">
                                     <span className="font-semibold text-white">{activity.authorName}</span>
-                                    {` ${activity.type === 'note' ? 'adicionou uma nota em' : 'atualizou'} `}
+                                    {` ${getActivityText(activity.type)} `}
                                     <a href="#" className="font-semibold text-white hover:underline">{getLeadName(activity.leadId)}</a>.
                                     <span className="text-xs text-zinc-500 ml-2">{formatTimestamp(activity.timestamp)}</span>
                                 </p>

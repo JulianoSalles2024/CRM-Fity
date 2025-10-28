@@ -39,6 +39,17 @@ export const loginUser = async (email: string, password: string): Promise<User> 
     return userProfile;
 };
 
+export const signInWithGoogle = async (): Promise<void> => {
+    if (!supabase) throw new Error("Supabase client is not initialized.");
+    const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+            redirectTo: window.location.origin, // Redirect back to the app's root URL after auth
+        },
+    });
+    if (error) throw new Error('Falha ao iniciar o login com o Google: ' + error.message);
+};
+
 export const registerUser = async (name: string, email: string, password: string): Promise<void> => {
     if (!supabase) throw new Error("Supabase client is not initialized.");
     const { data: authData, error: signUpError } = await supabase.auth.signUp({

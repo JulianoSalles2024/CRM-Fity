@@ -1,7 +1,8 @@
 
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, User, Building, DollarSign, Tag as TagIcon, Clock, Trash2, MessageSquare, ArrowRight, TrendingUp, Sparkles, FileText } from 'lucide-react';
+import { X, User, Building, DollarSign, Tag as TagIcon, Clock, Trash2, MessageSquare, ArrowRight, TrendingUp, Sparkles, FileText, Mail } from 'lucide-react';
 import type { Lead, Tag, Activity, EmailDraft, Id, CreateEmailDraftData, Tone } from '../types';
 import AIComposer from './AIComposer';
 
@@ -13,6 +14,7 @@ interface LeadDetailSlideoverProps {
   onEdit: () => void;
   onDelete: () => void;
   onAddNote: (noteText: string) => void;
+  onSendEmailActivity: (subject: string) => void;
   onAddTask: () => void;
   onSaveDraft: (draftData: CreateEmailDraftData) => void;
   onDeleteDraft: (draftId: Id) => void;
@@ -43,7 +45,7 @@ const formatTimestamp = (timestamp: string) => {
     return date.toLocaleString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
-const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activities, emailDrafts, onClose, onEdit, onDelete, onAddNote, onAddTask, onSaveDraft, onDeleteDraft, showNotification }) => {
+const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activities, emailDrafts, onClose, onEdit, onDelete, onAddNote, onSendEmailActivity, onAddTask, onSaveDraft, onDeleteDraft, showNotification }) => {
   const [activeTab, setActiveTab] = useState('Visão Geral');
   const tabs = ['Visão Geral', 'AI Composer', 'Atividades', 'Rascunhos'];
   const [newNote, setNewNote] = useState('');
@@ -74,6 +76,17 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
         leadId: lead.id,
         ...draftData
     });
+  };
+
+  const handleSendEmail = (email: { subject: string; body: string; }) => {
+    if (!lead.email) {
+        showNotification('Este lead não possui um endereço de e-mail cadastrado.', 'error');
+        return;
+    }
+    const mailtoLink = `mailto:${lead.email}?subject=${encodeURIComponent(email.subject)}&body=${encodeURIComponent(email.body)}`;
+    window.location.href = mailtoLink;
+    onSendEmailActivity(email.subject);
+    showNotification('Seu cliente de e-mail foi aberto para envio.', 'success');
   };
 
 
@@ -166,6 +179,7 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
                 lead={lead}
                 showNotification={showNotification}
                 onSaveDraft={handleSaveDraft}
+                onSendEmail={handleSendEmail}
                 initialState={composerInitialState}
                 onStateReset={() => setComposerInitialState(null)}
             />
@@ -193,7 +207,7 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
               {sortedActivities.length > 0 ? sortedActivities.map(activity => (
                  <li key={activity.id} className="flex gap-3 items-start">
                     <div className="flex-shrink-0 bg-zinc-800 h-8 w-8 rounded-full flex items-center justify-center mt-1">
-                        {activity.type === 'note' ? <MessageSquare className="w-4 h-4 text-violet-400" /> : <ArrowRight className="w-4 h-4 text-violet-400" />}
+                        {activity.type === 'note' ? <MessageSquare className="w-4 h-4 text-violet-400" /> : activity.type === 'email_sent' ? <Mail className="w-4 h-4 text-violet-400" /> : <ArrowRight className="w-4 h-4 text-violet-400" />}
                     </div>
                     <div>
                         <p className="text-xs text-zinc-500">

@@ -1,4 +1,3 @@
-
 import React, { useState, FormEvent } from 'react';
 import { Loader2, Zap } from 'lucide-react';
 
@@ -7,6 +6,7 @@ type AuthMode = 'login' | 'register';
 interface AuthPageProps {
   onLogin: (email: string, password: string) => Promise<void>;
   onRegister: (name: string, email: string, password: string) => Promise<void>;
+  onSignInWithGoogle: () => Promise<void>;
   error: string | null;
   successMessage?: string | null;
 }
@@ -21,12 +21,13 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, error, successMessage }) => {
+const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, onSignInWithGoogle, error, successMessage }) => {
   const [mode, setMode] = useState<AuthMode>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [internalError, setInternalError] = useState<string | null>(null);
 
   React.useEffect(() => {
@@ -49,6 +50,15 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, error, success
       await onRegister(name, email, password);
     }
     setIsSubmitting(false);
+  };
+  
+  const handleGoogleLogin = async () => {
+    setIsGoogleSubmitting(true);
+    setInternalError(null);
+    await onSignInWithGoogle();
+    // A página será redirecionada pelo Supabase, então não precisamos resetar o estado de loading no sucesso.
+    // Em caso de falha, o erro será capturado no App.tsx. Resetamos aqui por segurança.
+    setIsGoogleSubmitting(false);
   };
 
   const handleModeChange = (newMode: AuthMode) => {
@@ -146,7 +156,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, error, success
             {internalError && <p className="text-sm text-red-400">{internalError}</p>}
 
             <div>
-              <button type="submit" disabled={isSubmitting}
+              <button type="submit" disabled={isSubmitting || isGoogleSubmitting}
                 className="mt-2 w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -175,11 +185,12 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, error, success
           <div>
             <button
               type="button"
-              // onClick={handleGoogleLogin} // Logic to be implemented later
-              className="w-full flex justify-center items-center gap-3 py-2.5 px-4 border border-zinc-700 rounded-md shadow-sm text-sm font-medium text-white bg-zinc-800 hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 transition-colors"
+              onClick={handleGoogleLogin}
+              disabled={isSubmitting || isGoogleSubmitting}
+              className="w-full flex justify-center items-center gap-3 py-2.5 px-4 border border-zinc-700 rounded-md shadow-sm text-sm font-medium text-white bg-zinc-800 hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <GoogleIcon />
-              Continuar com Google
+              {isGoogleSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <GoogleIcon />}
+              {isGoogleSubmitting ? 'Redirecionando...' : 'Continuar com Google'}
             </button>
           </div>
 

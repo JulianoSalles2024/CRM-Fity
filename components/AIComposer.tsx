@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Loader2, Copy, Save, X } from 'lucide-react';
+import { Sparkles, Loader2, Copy, Save, X, Send } from 'lucide-react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lead, Tone, EmailDraft } from '../types';
@@ -8,6 +8,7 @@ interface AIComposerProps {
     lead: Lead;
     showNotification: (message: string, type: 'success' | 'error' | 'info') => void;
     onSaveDraft: (draftData: { objective: string; tones: Tone[]; subject: string; body: string; }) => void;
+    onSendEmail: (email: { subject: string; body: string; }) => void;
     initialState: Partial<EmailDraft> | null;
     onStateReset: () => void;
 }
@@ -25,7 +26,7 @@ const ToggleSwitch: React.FC<{ checked: boolean; onChange: (checked: boolean) =>
 );
 
 
-const AIComposer: React.FC<AIComposerProps> = ({ lead, showNotification, onSaveDraft, initialState, onStateReset }) => {
+const AIComposer: React.FC<AIComposerProps> = ({ lead, showNotification, onSaveDraft, onSendEmail, initialState, onStateReset }) => {
     const [objective, setObjective] = useState('');
     const [tones, setTones] = useState<Tone[]>(['Amigável']);
     const [includeLeadInfo, setIncludeLeadInfo] = useState(true);
@@ -140,6 +141,11 @@ const AIComposer: React.FC<AIComposerProps> = ({ lead, showNotification, onSaveD
         });
     };
 
+    const handleSend = () => {
+        if (!generatedEmail) return;
+        onSendEmail(generatedEmail);
+    };
+
     return (
         <div className="space-y-6 p-1">
             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -221,13 +227,13 @@ const AIComposer: React.FC<AIComposerProps> = ({ lead, showNotification, onSaveD
                     <div className="flex justify-between items-center">
                         <h4 className="font-semibold text-white">Resultado Gerado</h4>
                         <div className="flex items-center gap-4">
-                            <button onClick={handleSave} className="flex items-center gap-2 text-sm text-violet-400 hover:text-violet-300">
+                            <button onClick={handleSave} className="flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
                                 <Save className="w-4 h-4" />
-                                <span>Salvar Rascunho</span>
+                                <span>Salvar</span>
                             </button>
-                            <button onClick={handleCopy} className="flex items-center gap-2 text-sm text-violet-400 hover:text-violet-300">
+                            <button onClick={handleCopy} className="flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
                                 <Copy className="w-4 h-4" />
-                                <span>Copiar Texto</span>
+                                <span>Copiar</span>
                             </button>
                         </div>
                     </div>
@@ -236,6 +242,13 @@ const AIComposer: React.FC<AIComposerProps> = ({ lead, showNotification, onSaveD
                         <div className="border-t border-zinc-700 my-2"></div>
                         <p className="text-white whitespace-pre-wrap">{generatedEmail.body}</p>
                     </div>
+                    <button 
+                        onClick={handleSend}
+                        className="w-full flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-emerald-700 transition-colors"
+                    >
+                        <Send className="w-4 h-4" />
+                        <span>Enviar E-mail</span>
+                    </button>
                 </motion.div>
             )}
             </AnimatePresence>
