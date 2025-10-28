@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -122,7 +123,7 @@ const Card: React.FC<CardProps> = ({ lead, column, users, cardDisplaySettings, i
           <div className="flex items-center gap-2">
             {cardDisplaySettings.showDueDate && lead.dueDate && (
               <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-[#14ff00]" />
+                <Calendar className="w-3 h-3 text-violet-400" />
                 <span>{formatDate(lead.dueDate)}</span>
               </div>
             )}

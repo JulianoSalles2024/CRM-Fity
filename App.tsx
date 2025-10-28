@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -5,20 +6,19 @@ import { AnimatePresence } from 'framer-motion';
 
 import * as api from './api';
 import { isSupabaseConfigured } from './services/supabaseClient';
-import type { Id, ColumnData, Lead, CreateLeadData, UpdateLeadData, User, Activity, Task, CreateTaskData, UpdateTaskData, Tag, CardDisplaySettings } from './types';
-import { initialColumns, initialLeads, initialActivities, initialUsers, initialTasks, initialTags } from './data';
+import type { Id, ColumnData, Lead, CreateLeadData, UpdateLeadData, User, Activity, Task, CreateTaskData, UpdateTaskData, Tag, CardDisplaySettings, ListDisplaySettings, EmailDraft, CreateEmailDraftData } from './types';
+import { initialColumns, initialLeads, initialActivities, initialUsers, initialTasks, initialTags, initialEmailDrafts } from './data';
 
 
 import Sidebar from './components/Sidebar';
+import Header from './components/Header';
 import KanbanBoard from './components/KanbanBoard';
 import Card from './components/Card';
 import LeadDetailSlideover from './components/LeadDetailSlideover';
 import CreateEditLeadModal from './components/CreateEditLeadModal';
 import CreateEditTaskModal from './components/CreateEditTaskModal';
 import Dashboard from './components/Dashboard';
-import Login from './components/Login';
-import Register from './components/Register';
-import { Loader2, Columns, Users, Contact, Plus, Activity as ActivityIcon, Settings, Calendar, BarChart } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import LeadListView from './components/LeadListView';
 import ActivitiesView from './components/ActivitiesView';
 import ConfigurationNotice from './components/ConfigurationNotice';
@@ -28,9 +28,10 @@ import ConfirmDeleteModal from './components/ConfirmDeleteModal';
 import Notification from './components/Notification';
 import PipelineHeader from './components/PipelineHeader';
 import ReportsPage from './components/ReportsPage';
+import FAB from './components/FAB';
+import AuthPage from './components/AuthPage';
 
 
-type AuthView = 'login' | 'register';
 type NotificationType = 'success' | 'error' | 'info';
 interface NotificationData {
   message: string;
@@ -50,10 +51,19 @@ const initialCardDisplaySettings: CardDisplaySettings = {
   showStage: false,
 };
 
+const initialListDisplaySettings: ListDisplaySettings = {
+  showStatus: true,
+  showValue: true,
+  showTags: true,
+  showLastActivity: true,
+  showEmail: false,
+  showPhone: false,
+  showCreatedAt: false,
+};
+
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
-  const [authView, setAuthView] = React.useState<AuthView>('login');
   const [authError, setAuthError] = React.useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = React.useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = React.useState(true);
@@ -63,6 +73,7 @@ const App: React.FC = () => {
   const [leads, setLeads] = React.useState<Lead[]>([]);
   const [activities, setActivities] = React.useState<Activity[]>([]);
   const [tasks, setTasks] = React.useState<Task[]>([]);
+  const [emailDrafts, setEmailDrafts] = React.useState<EmailDraft[]>([]);
   const [users, setUsers] = React.useState<User[]>([]);
   const [tags, setTags] = React.useState<Tag[]>([]);
   const [isDataLoading, setIsDataLoading] = React.useState(true);
@@ -84,6 +95,7 @@ const App: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
 
   const [cardDisplaySettings, setCardDisplaySettings] = React.useState<CardDisplaySettings>(initialCardDisplaySettings);
+  const [listDisplaySettings, setListDisplaySettings] = React.useState<ListDisplaySettings>(initialListDisplaySettings);
 
 
   const showNotification = React.useCallback((message: string, type: NotificationType = 'info') => {
@@ -121,6 +133,7 @@ const App: React.FC = () => {
       setLeads([]);
       setActivities([]);
       setTasks([]);
+      setEmailDrafts([]);
       setUsers([]);
       setTags([]);
       setIsDataLoading(false);
@@ -134,20 +147,25 @@ const App: React.FC = () => {
       const storedColumns = localStorage.getItem('fity_crm_columns');
       const storedActivities = localStorage.getItem('fity_crm_activities');
       const storedTasks = localStorage.getItem('fity_crm_tasks');
+      const storedEmailDrafts = localStorage.getItem('fity_crm_email_drafts');
       const storedUsers = localStorage.getItem('fity_crm_users');
       const storedTags = localStorage.getItem('fity_crm_tags');
       const storedCardSettings = localStorage.getItem('fity_crm_card_settings');
+      const storedListSettings = localStorage.getItem('fity_crm_list_settings');
       
       setLeads(storedLeads ? JSON.parse(storedLeads) : initialLeads);
       setColumns(storedColumns ? JSON.parse(storedColumns) : initialColumns);
       setActivities(storedActivities ? JSON.parse(storedActivities) : initialActivities);
       setTasks(storedTasks ? JSON.parse(storedTasks) : initialTasks);
+      setEmailDrafts(storedEmailDrafts ? JSON.parse(storedEmailDrafts) : initialEmailDrafts);
       setUsers(storedUsers ? JSON.parse(storedUsers) : initialUsers);
       setTags(storedTags ? JSON.parse(storedTags) : initialTags);
       
-      const savedSettings = storedCardSettings ? JSON.parse(storedCardSettings) : initialCardDisplaySettings;
-      // Merge saved settings with defaults to ensure new settings are included
-      setCardDisplaySettings({ ...initialCardDisplaySettings, ...savedSettings });
+      const savedCardSettings = storedCardSettings ? JSON.parse(storedCardSettings) : initialCardDisplaySettings;
+      setCardDisplaySettings({ ...initialCardDisplaySettings, ...savedCardSettings });
+      
+      const savedListSettings = storedListSettings ? JSON.parse(storedListSettings) : initialListDisplaySettings;
+      setListDisplaySettings({ ...initialListDisplaySettings, ...savedListSettings });
 
       setIsDataLoading(false);
       return;
@@ -184,11 +202,13 @@ const App: React.FC = () => {
       localStorage.setItem('fity_crm_columns', JSON.stringify(columns));
       localStorage.setItem('fity_crm_activities', JSON.stringify(activities));
       localStorage.setItem('fity_crm_tasks', JSON.stringify(tasks));
+      localStorage.setItem('fity_crm_email_drafts', JSON.stringify(emailDrafts));
       localStorage.setItem('fity_crm_users', JSON.stringify(users));
       localStorage.setItem('fity_crm_tags', JSON.stringify(tags));
       localStorage.setItem('fity_crm_card_settings', JSON.stringify(cardDisplaySettings));
+      localStorage.setItem('fity_crm_list_settings', JSON.stringify(listDisplaySettings));
     }
-  }, [leads, columns, activities, tasks, users, tags, cardDisplaySettings, currentUser, isSupabaseConfigured, isDataLoading]);
+  }, [leads, columns, activities, tasks, emailDrafts, users, tags, cardDisplaySettings, listDisplaySettings, currentUser, isSupabaseConfigured, isDataLoading]);
 
   const filteredLeads = React.useMemo(() => {
     if (!searchQuery) return leads;
@@ -526,6 +546,29 @@ const App: React.FC = () => {
       }
   };
   
+  const handleSaveEmailDraft = (draftData: CreateEmailDraftData) => {
+    if (!isSupabaseConfigured) {
+        const newDraft: EmailDraft = {
+            ...draftData,
+            id: `mock-draft-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+        };
+        setEmailDrafts(prev => [newDraft, ...prev]);
+        showNotification('Rascunho salvo com sucesso!', 'success');
+    } else {
+        showNotification('Funcionalidade de salvar rascunhos (backend) ainda não implementada.', 'info');
+    }
+  };
+
+  const handleDeleteEmailDraft = (draftId: Id) => {
+    if (!isSupabaseConfigured) {
+        setEmailDrafts(prev => prev.filter(d => d.id !== draftId));
+        showNotification('Rascunho deletado.', 'success');
+    } else {
+        showNotification('Funcionalidade de deletar rascunhos (backend) ainda não implementada.', 'info');
+    }
+  };
+
   const handleLogin = async (email: string, password: string) => {
       setAuthError(null);
       setAuthSuccess(null);
@@ -543,7 +586,6 @@ const App: React.FC = () => {
       try {
           await api.registerUser(name, email, password);
           setAuthSuccess('Registro bem-sucedido! Por favor, verifique seu e-mail e faça o login.');
-          setAuthView('login');
       } catch (err: any) {
           setAuthError(err.message || 'Falha no registro.');
       }
@@ -584,7 +626,10 @@ const App: React.FC = () => {
 
   const handleUpdateCardSettings = (newSettings: CardDisplaySettings) => {
     setCardDisplaySettings(newSettings);
-    // Optional: Could add a notification, but it might be too noisy for instant toggles.
+  };
+  
+  const handleUpdateListSettings = (newSettings: ListDisplaySettings) => {
+    setListDisplaySettings(newSettings);
   };
   
   const renderView = () => {
@@ -595,7 +640,6 @@ const App: React.FC = () => {
         return (
             <div>
                 <PipelineHeader
-                    onOpenCreateLeadModal={handleOpenCreateLeadModal}
                     cardDisplaySettings={cardDisplaySettings}
                     onUpdateCardSettings={handleUpdateCardSettings}
                 />
@@ -607,53 +651,26 @@ const App: React.FC = () => {
         );
       case 'Leads':
       case 'Clientes':
-        const isClientsView = activeView === 'Clientes';
         return (
-            <div>
-                 <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                         {isClientsView ? <Contact className="w-8 h-8 text-[#14ff00]" /> : <Users className="w-8 h-8 text-[#14ff00]" />}
-                        <div>
-                            <h1 className="text-2xl font-bold text-white">{isClientsView ? 'Clientes' : 'Leads'}</h1>
-                            <p className="text-zinc-400">{isClientsView ? 'Gerencie seus clientes e relacionamentos' : 'Gerencie todos os seus leads e clientes'}</p>
-                        </div>
-                    </div>
-                    <button onClick={handleOpenCreateLeadModal} className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
-                        <Plus className="w-4 h-4" />
-                        <span>{isClientsView ? 'Novo Cliente' : 'Novo Lead'}</span>
-                    </button>
-                </div>
-                <LeadListView
-                    leads={filteredLeads}
-                    columns={columns}
-                    onLeadClick={handleCardClick}
-                />
-            </div>
+            <LeadListView
+                leads={filteredLeads}
+                columns={columns}
+                onLeadClick={handleCardClick}
+                viewType={activeView as 'Leads' | 'Clientes'}
+                listDisplaySettings={listDisplaySettings}
+                // FIX: Cannot find name 'onUpdateListSettings'. Did you mean 'handleUpdateListSettings'?
+                onUpdateListSettings={handleUpdateListSettings}
+            />
         );
         case 'Atividades':
             return (
-                <div>
-                     <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-4">
-                             <ActivityIcon className="w-8 h-8 text-[#14ff00]" />
-                            <div>
-                                <h1 className="text-2xl font-bold text-white">Atividades</h1>
-                                <p className="text-zinc-400">Gerencie suas tarefas e próximos passos</p>
-                            </div>
-                        </div>
-                        <button onClick={() => handleOpenCreateTaskModal()} className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
-                            <Plus className="w-4 h-4" />
-                            <span>Nova Tarefa</span>
-                        </button>
-                    </div>
-                    <ActivitiesView 
-                        tasks={tasks}
-                        leads={leads}
-                        onEditTask={handleOpenEditTaskModal}
-                        onDeleteTask={handleDeleteTask}
-                        onUpdateTaskStatus={handleUpdateTaskStatus}
-                    />
-                </div>
+                <ActivitiesView 
+                    tasks={tasks}
+                    leads={leads}
+                    onEditTask={handleOpenEditTaskModal}
+                    onDeleteTask={handleDeleteTask}
+                    onUpdateTaskStatus={handleUpdateTaskStatus}
+                />
             );
          case 'Calendário':
             return (
@@ -676,21 +693,12 @@ const App: React.FC = () => {
             );
         case 'Configurações':
             return (
-                <div>
-                     <div className="flex items-center gap-4 mb-6">
-                        <Settings className="w-8 h-8 text-[#14ff00]" />
-                        <div>
-                            <h1 className="text-2xl font-bold text-white">Configurações</h1>
-                            <p className="text-zinc-400">Gerencie suas preferências e configurações da conta</p>
-                        </div>
-                    </div>
-                    <SettingsPage 
-                        currentUser={currentUser!}
-                        columns={columns}
-                        onUpdateProfile={handleUpdateProfile}
-                        onUpdatePipeline={handleUpdatePipeline}
-                    />
-                </div>
+                <SettingsPage 
+                    currentUser={currentUser!}
+                    columns={columns}
+                    onUpdateProfile={handleUpdateProfile}
+                    onUpdatePipeline={handleUpdatePipeline}
+                />
             );
       default:
         return (
@@ -704,7 +712,7 @@ const App: React.FC = () => {
   if (isAuthLoading) {
     return (
         <div className="flex items-center justify-center h-screen w-full bg-zinc-900">
-            <Loader2 className="w-10 h-10 animate-spin text-[#14ff00]" />
+            <Loader2 className="w-10 h-10 animate-spin text-violet-500" />
         </div>
     );
   }
@@ -714,10 +722,7 @@ const App: React.FC = () => {
   }
 
   if (!currentUser) {
-    if (authView === 'login') {
-      return <Login onLogin={handleLogin} error={authError} onNavigateToRegister={() => { setAuthView('register'); setAuthError(null); }} successMessage={authSuccess} />;
-    }
-    return <Register onRegister={handleRegister} onNavigateToLogin={() => { setAuthView('login'); setAuthError(null); setAuthSuccess(null); }} error={authError} />;
+    return <AuthPage onLogin={handleLogin} onRegister={handleRegister} error={authError} successMessage={authSuccess} />;
   }
 
   return (
@@ -725,30 +730,44 @@ const App: React.FC = () => {
       <Sidebar 
         activeView={activeView} 
         onNavigate={setActiveView} 
-        currentUser={currentUser} 
-        onLogout={handleLogout}
         isCollapsed={isSidebarCollapsed}
         onToggle={() => setIsSidebarCollapsed(p => !p)}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
+        <Header 
+            currentUser={currentUser}
+            onLogout={handleLogout}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onOpenCreateLeadModal={handleOpenCreateLeadModal}
+            onOpenCreateTaskModal={() => handleOpenCreateTaskModal()}
+        />
         <main className="flex-1 overflow-x-auto overflow-y-auto p-6 md:p-8">
         {isDataLoading ? (
              <div className="flex items-center justify-center h-full w-full">
-                <Loader2 className="w-10 h-10 animate-spin text-[#14ff00]" />
+                <Loader2 className="w-10 h-10 animate-spin text-violet-500" />
             </div>
         ) : renderView()}
         </main>
       </div>
+      <FAB
+        onOpenCreateLeadModal={handleOpenCreateLeadModal}
+        onOpenCreateTaskModal={() => handleOpenCreateTaskModal()}
+      />
       <AnimatePresence>
         {selectedLead && (
           <LeadDetailSlideover
             lead={selectedLead}
             activities={activities.filter(a => a.leadId === selectedLead.id)}
+            emailDrafts={emailDrafts.filter(d => d.leadId === selectedLead.id)}
             onClose={() => setSelectedLead(null)}
             onEdit={() => handleOpenEditLeadModal(selectedLead)}
             onDelete={() => handleDeleteLead(selectedLead)}
             onAddNote={(noteText) => handleAddNote(selectedLead.id, noteText)}
             onAddTask={() => handleOpenCreateTaskModal(selectedLead.id)}
+            onSaveDraft={handleSaveEmailDraft}
+            onDeleteDraft={handleDeleteEmailDraft}
+            showNotification={showNotification}
           />
         )}
       </AnimatePresence>

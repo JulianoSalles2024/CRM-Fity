@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Column from './Column';
 import type { ColumnData, Lead, Id, User, CardDisplaySettings } from '../types';
@@ -72,14 +73,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ columns, leadsByColumn, onCar
               className="p-1 rounded-full text-zinc-400 hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed"
               disabled={scrollState.thumbPosition <= 0}
             >
-              <ChevronLeft className="w-5 h-5 text-[#14ff00]/70 hover:text-[#14ff00]" />
+              <ChevronLeft className="w-5 h-5 text-violet-500/70 hover:text-violet-500" />
             </button>
             <button 
               onClick={() => scrollBy(320)} 
               className="p-1 rounded-full text-zinc-400 hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed"
               disabled={scrollState.thumbPosition >= (100 - scrollState.thumbWidth) - 0.1}
               >
-              <ChevronRight className="w-5 h-5 text-[#14ff00]/70 hover:text-[#14ff00]" />
+              <ChevronRight className="w-5 h-5 text-violet-500/70 hover:text-violet-500" />
             </button>
         </div>
       </div>
@@ -112,7 +113,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ columns, leadsByColumn, onCar
           className="p-1 rounded-full text-zinc-400 hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed"
           disabled={scrollState.thumbPosition <= 0}
         >
-          <ChevronLeft className="w-5 h-5 text-[#14ff00]/70 hover:text-[#14ff00]" />
+          <ChevronLeft className="w-5 h-5 text-violet-500/70 hover:text-violet-500" />
         </button>
         <div className="w-full bg-zinc-700/50 rounded-full h-2 relative">
           <div
@@ -125,7 +126,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ columns, leadsByColumn, onCar
           className="p-1 rounded-full text-zinc-400 hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed"
           disabled={scrollState.thumbPosition >= (100 - scrollState.thumbWidth) - 0.1}
           >
-          <ChevronRight className="w-5 h-5 text-[#14ff00]/70 hover:text-[#14ff00]" />
+          <ChevronRight className="w-5 h-5 text-violet-500/70 hover:text-violet-500" />
         </button>
       </div>
     </div>

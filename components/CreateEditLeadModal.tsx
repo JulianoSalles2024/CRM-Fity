@@ -1,3 +1,4 @@
+
 import React, { useState, FormEvent, useEffect, ChangeEvent } from 'react';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -175,7 +176,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                 <p className="text-sm text-zinc-400 mt-1">Preencha os dados para {isEditMode ? 'editar o lead' : 'criar um novo lead'}</p>
             </div>
             <button onClick={onClose} className="p-1 rounded-full text-zinc-400 hover:bg-zinc-700 transition-colors">
-              <X className="w-5 h-5 text-[#14ff00]/70 hover:text-[#14ff00]" />
+              <X className="w-5 h-5 text-violet-500/70 hover:text-violet-500" />
             </button>
           </div>
         </div>

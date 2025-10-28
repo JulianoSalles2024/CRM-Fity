@@ -39,7 +39,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
     return (
         <div className="flex flex-col gap-6">
             <div className="flex items-center gap-4">
-                <LayoutDashboard className="w-8 h-8 text-[#14ff00]" />
+                <LayoutDashboard className="w-8 h-8 text-violet-500" />
                 <div>
                     <h1 className="text-2xl font-bold text-white">Dashboard</h1>
                     <p className="text-zinc-400">Visão geral das suas métricas e atividades</p>
@@ -52,25 +52,25 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     title="Total de Leads" 
                     value={kpiData.totalLeads.toString()} 
                     icon={Users}
-                    iconColor="text-[#14ff00]"
+                    iconColor="text-violet-500"
                 />
                 <KpiCard 
                     title="Taxa de Conversão" 
                     value={`${kpiData.conversionRate}%`} 
                     icon={Goal}
-                    iconColor="text-[#14ff00]"
+                    iconColor="text-violet-500"
                 />
                 <KpiCard 
                     title="Valor no Pipeline" 
                     value={currencyFormatter.format(kpiData.pipelineValue)} 
                     icon={DollarSign}
-                    iconColor="text-[#14ff00]"
+                    iconColor="text-violet-500"
                 />
                  <KpiCard 
                     title="Meta Mensal" 
                     value={`${kpiData.monthlyGoal}%`} 
                     icon={TrendingUp}
-                    iconColor="text-[#14ff00]"
+                    iconColor="text-violet-500"
                 />
             </div>
 

@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { Lead, ColumnData, Task } from '../types';
 import { BarChart, ChevronDown, RefreshCw, Download, Users, Goal, DollarSign, CheckCircle, Eye, Target } from 'lucide-react';
@@ -81,7 +82,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks }) => {
         <div className="flex flex-col gap-6">
              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <BarChart className="w-8 h-8 text-[#14ff00]" />
+                    <BarChart className="w-8 h-8 text-violet-500" />
                     <div>
                         <h1 className="text-2xl font-bold text-white">Relatórios</h1>
                         <p className="text-zinc-400">Análise detalhada de desempenho e métricas</p>

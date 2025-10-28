@@ -37,10 +37,10 @@ const RecentActivities: React.FC<RecentActivitiesProps> = ({ activities, leads, 
          <div className="bg-zinc-800 p-5 rounded-lg border border-zinc-700 h-full flex flex-col">
             <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
-                    <ActivityIcon className="w-5 h-5 text-[#14ff00]" />
+                    <ActivityIcon className="w-5 h-5 text-violet-400" />
                     <h2 className="font-semibold text-white">Atividades Recentes</h2>
                 </div>
-                 <button onClick={() => onNavigate('Atividades')} className="flex items-center gap-1 text-sm text-[#14ff00] hover:text-[#14ff00]/80">
+                 <button onClick={() => onNavigate('Atividades')} className="flex items-center gap-1 text-sm text-violet-400 hover:text-violet-300">
                     <span>Ver tudo</span>
                     <ChevronsRight className="w-4 h-4" />
                 </button>
@@ -50,7 +50,7 @@ const RecentActivities: React.FC<RecentActivitiesProps> = ({ activities, leads, 
                     {sortedActivities.map(activity => (
                          <li key={activity.id} className="flex gap-3 items-start">
                             <div className="flex-shrink-0 bg-zinc-900/50 h-8 w-8 rounded-full flex items-center justify-center mt-1">
-                                {activity.type === 'note' ? <MessageSquare className="w-4 h-4 text-[#14ff00]" /> : <ArrowRight className="w-4 h-4 text-[#14ff00]" />}
+                                {activity.type === 'note' ? <MessageSquare className="w-4 h-4 text-violet-400" /> : <ArrowRight className="w-4 h-4 text-violet-400" />}
                             </div>
                             <div className="flex-1">
                                 <p className="text-sm text-zinc-300 leading-snug">

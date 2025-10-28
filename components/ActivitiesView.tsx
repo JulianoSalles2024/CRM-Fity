@@ -1,6 +1,9 @@
+
 import React, { useMemo } from 'react';
 import { Task, Lead, Id } from '../types';
 import TaskItem from './TaskItem';
+import { Activity as ActivityIcon } from 'lucide-react';
+
 
 interface ActivitiesViewProps {
     tasks: Task[];
@@ -17,43 +20,52 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({ tasks, leads, onEditTas
     const completedTasks = tasks.filter(task => task.status === 'completed');
 
     return (
-        <div className="space-y-8">
-            <div>
-                <h2 className="text-lg font-semibold text-white mb-4">Pendentes</h2>
-                <div className="space-y-3">
-                    {pendingTasks.length > 0 ? (
-                        pendingTasks.map(task => (
-                            <TaskItem 
-                                key={task.id} 
-                                task={task} 
-                                leadName={leadsMap.get(task.leadId) || 'Lead não encontrado'} 
-                                onEditTask={onEditTask} 
-                                onDeleteTask={onDeleteTask} 
-                                onUpdateTaskStatus={onUpdateTaskStatus} 
-                            />
-                        ))
-                    ) : (
-                        <p className="text-zinc-500 text-sm">Nenhuma tarefa pendente. Hora de relaxar!</p>
-                    )}
+        <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-4">
+                 <ActivityIcon className="w-8 h-8 text-violet-500" />
+                <div>
+                    <h1 className="text-2xl font-bold text-white">Atividades</h1>
+                    <p className="text-zinc-400">Gerencie suas tarefas e próximos passos</p>
                 </div>
             </div>
-             <div>
-                <h2 className="text-lg font-semibold text-white mb-4">Concluídas</h2>
-                 <div className="space-y-3">
-                    {completedTasks.length > 0 ? (
-                        completedTasks.map(task => (
-                            <TaskItem 
-                                key={task.id} 
-                                task={task} 
-                                leadName={leadsMap.get(task.leadId) || 'Lead não encontrado'} 
-                                onEditTask={onEditTask} 
-                                onDeleteTask={onDeleteTask} 
-                                onUpdateTaskStatus={onUpdateTaskStatus} 
-                            />
-                        ))
-                    ) : (
-                        <p className="text-zinc-500 text-sm">Nenhuma tarefa foi concluída ainda.</p>
-                    )}
+            <div className="space-y-8">
+                <div>
+                    <h2 className="text-lg font-semibold text-white mb-4">Pendentes</h2>
+                    <div className="space-y-3">
+                        {pendingTasks.length > 0 ? (
+                            pendingTasks.map(task => (
+                                <TaskItem 
+                                    key={task.id} 
+                                    task={task} 
+                                    leadName={leadsMap.get(task.leadId) || 'Lead não encontrado'} 
+                                    onEditTask={onEditTask} 
+                                    onDeleteTask={onDeleteTask} 
+                                    onUpdateTaskStatus={onUpdateTaskStatus} 
+                                />
+                            ))
+                        ) : (
+                            <p className="text-zinc-500 text-sm">Nenhuma tarefa pendente. Hora de relaxar!</p>
+                        )}
+                    </div>
+                </div>
+                 <div>
+                    <h2 className="text-lg font-semibold text-white mb-4">Concluídas</h2>
+                     <div className="space-y-3">
+                        {completedTasks.length > 0 ? (
+                            completedTasks.map(task => (
+                                <TaskItem 
+                                    key={task.id} 
+                                    task={task} 
+                                    leadName={leadsMap.get(task.leadId) || 'Lead não encontrado'} 
+                                    onEditTask={onEditTask} 
+                                    onDeleteTask={onDeleteTask} 
+                                    onUpdateTaskStatus={onUpdateTaskStatus} 
+                                />
+                            ))
+                        ) : (
+                            <p className="text-zinc-500 text-sm">Nenhuma tarefa foi concluída ainda.</p>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

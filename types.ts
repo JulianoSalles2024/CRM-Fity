@@ -62,6 +62,18 @@ export interface Task {
     userId: string;
 }
 
+export type Tone = 'Amigável' | 'Formal' | 'Urgente' | 'Persuasivo' | 'Profissional' | 'Entusiástico' | 'Educacional';
+
+export interface EmailDraft {
+  id: Id;
+  leadId: Id;
+  objective: string;
+  tones: Tone[];
+  subject: string;
+  body: string;
+  createdAt: string;
+}
+
 export interface CardDisplaySettings {
   showCompany: boolean;
   showValue: boolean;
@@ -75,8 +87,19 @@ export interface CardDisplaySettings {
   showStage: boolean;
 }
 
+export interface ListDisplaySettings {
+  showStatus: boolean;
+  showValue: boolean;
+  showTags: boolean;
+  showLastActivity: boolean;
+  showEmail: boolean;
+  showPhone: boolean;
+  showCreatedAt: boolean;
+}
+
 
 export type CreateLeadData = Partial<Omit<Lead, 'id'>>;
 export type UpdateLeadData = Partial<Omit<Lead, 'id'>>;
 export type CreateTaskData = Omit<Task, 'id' | 'userId'>;
 export type UpdateTaskData = Partial<CreateTaskData>;
+export type CreateEmailDraftData = Omit<EmailDraft, 'id' | 'createdAt'>;

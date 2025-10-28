@@ -1,4 +1,4 @@
-import { ColumnData, Lead, Activity, User, Task, Tag } from './types';
+import { ColumnData, Lead, Activity, User, Task, Tag, EmailDraft } from './types';
 
 export const initialUsers: User[] = [
   { id: 'user1', name: 'John Doe', email: 'john.doe@example.com' },
@@ -65,3 +65,4 @@ export const initialActivities: Activity[] = [
 ];
 
 export const initialTasks: Task[] = [];
+export const initialEmailDrafts: EmailDraft[] = [];

@@ -394,9 +394,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpd
     ];
 
     return (
-        <div>
-            <div className="mb-6">
-                <div className="border-b border-zinc-700">
+        <div className="flex flex-col gap-6">
+             <div className="flex items-center gap-4">
+                <Settings className="w-8 h-8 text-[#14ff00]" />
+                <div>
+                    <h1 className="text-2xl font-bold text-white">Configurações</h1>
+                    <p className="text-zinc-400">Gerencie suas preferências e configurações da conta</p>
+                </div>
+            </div>
+            <div>
+                <div className="border-b border-zinc-700 mb-6">
                     <nav className="flex -mb-px space-x-6" aria-label="Tabs">
                         {tabs.map(tab => (
                             <button

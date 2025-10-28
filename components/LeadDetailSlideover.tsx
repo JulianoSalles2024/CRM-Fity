@@ -1,17 +1,22 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, User, Building, DollarSign, Tag as TagIcon, Clock, Trash2, MessageSquare, ArrowRight, TrendingUp } from 'lucide-react';
-import type { Lead, Tag, Activity } from '../types';
+import { X, User, Building, DollarSign, Tag as TagIcon, Clock, Trash2, MessageSquare, ArrowRight, TrendingUp, Sparkles, FileText } from 'lucide-react';
+import type { Lead, Tag, Activity, EmailDraft, Id, CreateEmailDraftData, Tone } from '../types';
+import AIComposer from './AIComposer';
 
 interface LeadDetailSlideoverProps {
   lead: Lead;
   activities: Activity[];
+  emailDrafts: EmailDraft[];
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onAddNote: (noteText: string) => void;
   onAddTask: () => void;
+  onSaveDraft: (draftData: CreateEmailDraftData) => void;
+  onDeleteDraft: (draftId: Id) => void;
+  showNotification: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
 const TagPill: React.FC<{ tag: Tag }> = ({ tag }) => (
@@ -25,7 +30,7 @@ const TagPill: React.FC<{ tag: Tag }> = ({ tag }) => (
 
 const DetailItem: React.FC<{ icon: React.ElementType; label: string; children: React.ReactNode }> = ({ icon: Icon, label, children }) => (
     <div className="flex items-start gap-3">
-        <Icon className="w-5 h-5 text-[#14ff00] mt-1 flex-shrink-0" />
+        <Icon className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
         <div className="flex flex-col">
             <span className="text-sm text-zinc-400">{label}</span>
             <span className="text-md font-medium text-gray-200">{children}</span>
@@ -38,10 +43,11 @@ const formatTimestamp = (timestamp: string) => {
     return date.toLocaleString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
-const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activities, onClose, onEdit, onDelete, onAddNote, onAddTask }) => {
+const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activities, emailDrafts, onClose, onEdit, onDelete, onAddNote, onAddTask, onSaveDraft, onDeleteDraft, showNotification }) => {
   const [activeTab, setActiveTab] = useState('Visão Geral');
-  const tabs = ['Visão Geral', 'Atividades', 'Arquivos', 'Histórico'];
+  const tabs = ['Visão Geral', 'AI Composer', 'Atividades', 'Rascunhos'];
   const [newNote, setNewNote] = useState('');
+  const [composerInitialState, setComposerInitialState] = useState<Partial<EmailDraft> | null>(null);
   
   const currencyFormatter = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -55,6 +61,33 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
   };
 
   const sortedActivities = [...activities].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  
+  const sortedDrafts = [...emailDrafts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const handleLoadDraft = (draft: EmailDraft) => {
+    setComposerInitialState(draft);
+    setActiveTab('AI Composer');
+  };
+
+  const handleSaveDraft = (draftData: { objective: string; tones: Tone[]; subject: string; body: string; }) => {
+    onSaveDraft({
+        leadId: lead.id,
+        ...draftData
+    });
+  };
+
+
+  const getTabIcon = (tabName: string) => {
+    switch (tabName) {
+      case 'AI Composer':
+        return <Sparkles className="w-4 h-4 mr-2 text-violet-400" />;
+      case 'Rascunhos':
+        return <FileText className="w-4 h-4 mr-2 text-zinc-400" />;
+      default:
+        return null;
+    }
+  };
+
 
   return (
     <motion.div
@@ -77,7 +110,7 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
             </div>
           </motion.div>
           <button onClick={onClose} className="p-2 rounded-full text-zinc-400 hover:bg-zinc-800 transition-colors">
-            <X className="w-6 h-6 text-[#14ff00]/70 hover:text-[#14ff00]" />
+            <X className="w-6 h-6 text-violet-500/70 hover:text-violet-500" />
           </button>
         </div>
       </div>
@@ -89,7 +122,8 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
                   <button 
                       key={tab}
                       onClick={() => setActiveTab(tab)}
-                      className={`py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-violet-500 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}>
+                      className={`flex items-center py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-violet-500 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}>
+                      {getTabIcon(tab)}
                       {tab}
                   </button>
               ))}
@@ -106,7 +140,7 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
             
             {typeof lead.probability === 'number' && (
                 <div className="flex items-start gap-3">
-                    <TrendingUp className="w-5 h-5 text-[#14ff00] mt-1 flex-shrink-0" />
+                    <TrendingUp className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
                     <div className="flex flex-col w-full">
                         <div className="flex justify-between items-center">
                             <span className="text-sm text-zinc-400">Probabilidade</span>
@@ -126,6 +160,15 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
             </DetailItem>
             <DetailItem icon={Clock} label="Última Atividade">{lead.lastActivity}</DetailItem>
           </div>
+        )}
+        {activeTab === 'AI Composer' && (
+            <AIComposer
+                lead={lead}
+                showNotification={showNotification}
+                onSaveDraft={handleSaveDraft}
+                initialState={composerInitialState}
+                onStateReset={() => setComposerInitialState(null)}
+            />
         )}
         {activeTab === 'Atividades' && (
           <div className="space-y-6">
@@ -150,7 +193,7 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
               {sortedActivities.length > 0 ? sortedActivities.map(activity => (
                  <li key={activity.id} className="flex gap-3 items-start">
                     <div className="flex-shrink-0 bg-zinc-800 h-8 w-8 rounded-full flex items-center justify-center mt-1">
-                        {activity.type === 'note' ? <MessageSquare className="w-4 h-4 text-[#14ff00]" /> : <ArrowRight className="w-4 h-4 text-[#14ff00]" />}
+                        {activity.type === 'note' ? <MessageSquare className="w-4 h-4 text-violet-400" /> : <ArrowRight className="w-4 h-4 text-violet-400" />}
                     </div>
                     <div>
                         <p className="text-xs text-zinc-500">
@@ -165,10 +208,31 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
             </ul>
           </div>
         )}
-        {(activeTab === 'Arquivos' || activeTab === 'Histórico') && (
-          <div className="flex items-center justify-center h-full text-zinc-500">
-            <p>O conteúdo de {activeTab} estará aqui.</p>
-          </div>
+         {activeTab === 'Rascunhos' && (
+            <div className="space-y-4">
+                {sortedDrafts.length > 0 ? (
+                    sortedDrafts.map(draft => (
+                        <div key={draft.id} className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 transition-colors hover:border-zinc-600">
+                            <p className="font-semibold text-white truncate">{draft.subject}</p>
+                            <p className="text-sm text-zinc-400 mt-1 line-clamp-2">{draft.body}</p>
+                            <p className="text-xs text-zinc-500 mt-3">
+                                Salvo em {formatTimestamp(draft.createdAt)}
+                            </p>
+                            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-zinc-700/50">
+                                <button onClick={() => handleLoadDraft(draft)} className="text-sm font-medium text-violet-400 hover:text-violet-300">
+                                    Carregar
+                                </button>
+                                <span className="text-zinc-600">|</span>
+                                <button onClick={() => onDeleteDraft(draft.id)} className="text-sm font-medium text-red-500 hover:text-red-400">
+                                    Deletar
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-center text-zinc-500 py-8">Nenhum rascunho salvo para este lead.</p>
+                )}
+            </div>
         )}
       </div>
 
@@ -180,7 +244,7 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
                   className="p-2 rounded-full text-zinc-400 hover:bg-zinc-800 transition-colors"
                   aria-label="Deletar Lead"
               >
-                  <Trash2 className="w-5 h-5 text-[#14ff00]/70 hover:text-[#14ff00]" />
+                  <Trash2 className="w-5 h-5 text-violet-500/70 hover:text-violet-500" />
               </button>
               <div className="flex items-center gap-3">
                   <button 

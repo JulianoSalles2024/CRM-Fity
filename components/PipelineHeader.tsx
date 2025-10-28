@@ -1,32 +1,26 @@
+
 import React, { useState } from 'react';
-import { Plus, Columns, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { Columns, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import CardCustomizationPopup from './CardCustomizationPopup';
 import type { CardDisplaySettings } from '../types';
 
 interface PipelineHeaderProps {
-    onOpenCreateLeadModal: () => void;
     cardDisplaySettings: CardDisplaySettings;
     onUpdateCardSettings: (newSettings: CardDisplaySettings) => void;
 }
 
-const PipelineHeader: React.FC<PipelineHeaderProps> = ({ onOpenCreateLeadModal, cardDisplaySettings, onUpdateCardSettings }) => {
+const PipelineHeader: React.FC<PipelineHeaderProps> = ({ cardDisplaySettings, onUpdateCardSettings }) => {
     const [isCustomizeOpen, setCustomizeOpen] = useState(false);
 
     return (
         <div className="flex flex-col gap-4 mb-6">
-             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                     <Columns className="w-8 h-8 text-[#14ff00]" />
-                    <div>
-                        <h1 className="text-2xl font-bold text-white">Pipeline</h1>
-                        <p className="text-zinc-400">Gerencie seus leads através do funil de vendas</p>
-                    </div>
+             <div className="flex items-center gap-4">
+                 <Columns className="w-8 h-8 text-violet-500" />
+                <div>
+                    <h1 className="text-2xl font-bold text-white">Pipeline</h1>
+                    <p className="text-zinc-400">Gerencie seus leads através do funil de vendas</p>
                 </div>
-                <button onClick={onOpenCreateLeadModal} className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
-                    <Plus className="w-4 h-4" />
-                    <span>Novo Lead</span>
-                </button>
             </div>
             <div className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg border border-zinc-700">
                 {/* Left side - Placeholder for "Stacked by" */}
