@@ -1,5 +1,7 @@
 
 
+
+
 import React from 'react';
 import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -197,6 +199,7 @@ const App: React.FC = () => {
         setUsers(fetchedUsers);
         setTasks(fetchedTasks);
       } catch (err) {
+        console.error('Falha ao buscar os dados:', err);
         showNotification('Falha ao buscar os dados. Por favor, tente novamente mais tarde.', 'error');
       } finally {
         setIsDataLoading(false);
@@ -697,7 +700,7 @@ const App: React.FC = () => {
                 onUpdateListSettings={handleUpdateListSettings}
             />
         );
-        case 'Atividades':
+        case 'Tarefas':
             return (
                 <ActivitiesView 
                     tasks={tasks}

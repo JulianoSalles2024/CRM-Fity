@@ -1,6 +1,7 @@
 
+
 import React from 'react';
-import { LayoutDashboard, Columns, Users, Activity, Calendar, BarChart, Contact, PanelLeft, Settings, Zap } from 'lucide-react';
+import { LayoutDashboard, Columns, Users, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap } from 'lucide-react';
 
 interface SidebarProps {
     activeView: string;
@@ -14,7 +15,7 @@ const navItems = [
     { icon: Columns, label: 'Pipeline' },
     { icon: Users, label: 'Leads' },
     { icon: Contact, label: 'Clientes' },
-    { icon: Activity, label: 'Atividades' },
+    { icon: ClipboardList, label: 'Tarefas' },
     { icon: Calendar, label: 'Calendário' },
     { icon: BarChart, label: 'Relatórios' },
     { icon: Settings, label: 'Configurações' },

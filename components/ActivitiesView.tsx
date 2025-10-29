@@ -1,8 +1,9 @@
 
+
 import React, { useMemo } from 'react';
 import { Task, Lead, Id } from '../types';
 import TaskItem from './TaskItem';
-import { Activity as ActivityIcon } from 'lucide-react';
+import { ClipboardList } from 'lucide-react';
 
 
 interface ActivitiesViewProps {
@@ -22,9 +23,9 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({ tasks, leads, onEditTas
     return (
         <div className="flex flex-col gap-6">
             <div className="flex items-center gap-4">
-                 <ActivityIcon className="w-8 h-8 text-violet-500" />
+                 <ClipboardList className="w-8 h-8 text-violet-500" />
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Atividades</h1>
+                    <h1 className="text-2xl font-bold text-white">Tarefas</h1>
                     <p className="text-zinc-400">Gerencie suas tarefas e próximos passos</p>
                 </div>
             </div>

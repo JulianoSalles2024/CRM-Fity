@@ -1,5 +1,6 @@
 
 
+
 import React from 'react';
 import { Activity as ActivityIcon, MessageSquare, ArrowRight, ChevronsRight, Mail } from 'lucide-react';
 import { Activity, Lead } from '../types';
@@ -59,7 +60,7 @@ const RecentActivities: React.FC<RecentActivitiesProps> = ({ activities, leads, 
                     <ActivityIcon className="w-5 h-5 text-violet-400" />
                     <h2 className="font-semibold text-white">Atividades Recentes</h2>
                 </div>
-                 <button onClick={() => onNavigate('Atividades')} className="flex items-center gap-1 text-sm text-violet-400 hover:text-violet-300">
+                 <button onClick={() => onNavigate('Tarefas')} className="flex items-center gap-1 text-sm text-violet-400 hover:text-violet-300">
                     <span>Ver tudo</span>
                     <ChevronsRight className="w-4 h-4" />
                 </button>

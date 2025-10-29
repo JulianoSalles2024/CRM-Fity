@@ -1,15 +1,25 @@
-import React, { useState, FormEvent } from 'react';
+import React, { useState, FormEvent, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { ColumnData, Id } from '../types';
 
 interface CreateStageModalProps {
   onClose: () => void;
-  onSubmit: (data: { title: string, color: string }) => void;
+  onSubmit: (data: { id?: Id, title: string, color: string }) => void;
+  stageToEdit?: ColumnData | null;
 }
 
-const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit }) => {
+const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, stageToEdit }) => {
     const [title, setTitle] = useState('');
     const [color, setColor] = useState('#3b82f6');
+    const isEditMode = !!stageToEdit;
+
+    useEffect(() => {
+        if (stageToEdit) {
+            setTitle(stageToEdit.title);
+            setColor(stageToEdit.color);
+        }
+    }, [stageToEdit]);
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
@@ -17,7 +27,7 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit }
             alert('Por favor, insira um nome para o estágio.');
             return;
         }
-        onSubmit({ title, color });
+        onSubmit({ id: stageToEdit?.id, title, color });
     };
 
     return (
@@ -32,7 +42,7 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit }
             >
                 <div className="p-6 border-b border-zinc-700">
                     <div className="flex items-start justify-between">
-                        <h2 className="text-xl font-bold text-white">Criar Novo Estágio</h2>
+                        <h2 className="text-xl font-bold text-white">{isEditMode ? 'Editar Estágio' : 'Criar Novo Estágio'}</h2>
                         <button onClick={onClose} className="p-1 rounded-full text-zinc-400 hover:bg-zinc-700 hover:text-white transition-colors">
                             <X className="w-5 h-5" />
                         </button>
@@ -87,7 +97,7 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit }
                             Cancelar
                         </button>
                         <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700 transition-colors">
-                            Criar Estágio
+                            {isEditMode ? 'Salvar Alterações' : 'Criar Estágio'}
                         </button>
                     </div>
                 </form>

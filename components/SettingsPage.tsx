@@ -94,7 +94,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ currentUser, onUpdate
 
 // --- Componentes para Drag-and-Drop de Estágios ---
 
-const StageItem: React.FC<{ column: ColumnData; index: number; onDelete?: (id: Id) => void; listeners?: any }> = ({ column, index, onDelete, listeners }) => {
+const StageItem: React.FC<{ column: ColumnData; index: number; onEdit?: (column: ColumnData) => void; onDelete?: (id: Id) => void; listeners?: any }> = ({ column, index, onEdit, onDelete, listeners }) => {
     return (
         <div className="flex items-center gap-3 p-2 bg-zinc-900/50 rounded-lg border border-zinc-700 touch-none">
             <button {...listeners} className="cursor-grab p-1 touch-none">
@@ -105,6 +105,11 @@ const StageItem: React.FC<{ column: ColumnData; index: number; onDelete?: (id: I
                 <span className="font-medium text-white">{column.title}</span>
                 <span className="text-sm text-zinc-500">Posição: {index + 1}</span>
             </div>
+            {onEdit && (
+                <button onClick={() => onEdit(column)} className="p-2 text-zinc-400 hover:text-white rounded-md">
+                    <Edit className="w-4 h-4" />
+                </button>
+            )}
             {onDelete && (
                 <button onClick={() => onDelete(column.id)} className="p-2 text-zinc-400 hover:text-red-500 rounded-md">
                     <Trash2 className="w-4 h-4" />
@@ -114,7 +119,7 @@ const StageItem: React.FC<{ column: ColumnData; index: number; onDelete?: (id: I
     )
 }
 
-const SortableStageItem: React.FC<{ column: ColumnData; index: number; onDelete: (id: Id) => void }> = ({ column, index, onDelete }) => {
+const SortableStageItem: React.FC<{ column: ColumnData; index: number; onEdit: (column: ColumnData) => void; onDelete: (id: Id) => void }> = ({ column, index, onEdit, onDelete }) => {
     const {
         attributes,
         listeners,
@@ -135,7 +140,7 @@ const SortableStageItem: React.FC<{ column: ColumnData; index: number; onDelete:
 
     return (
         <div ref={setNodeRef} style={style} {...attributes}>
-            <StageItem column={column} index={index} onDelete={onDelete} listeners={listeners} />
+            <StageItem column={column} index={index} onEdit={onEdit} onDelete={onDelete} listeners={listeners} />
         </div>
     );
 };
@@ -158,6 +163,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
     const [activePipelineId, setActivePipelineId] = useState<Id>(pipelines[0].id);
     
     const [isCreateStageModalOpen, setCreateStageModalOpen] = useState(false);
+    const [editingStage, setEditingStage] = useState<ColumnData | null>(null);
     const [stageToDelete, setStageToDelete] = useState<Id | null>(null);
     const [activeColumn, setActiveColumn] = useState<ColumnData | null>(null);
 
@@ -202,16 +208,37 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
             );
         }
     };
-
-    const handleCreateStage = ({ title, color }: { title: string; color: string }) => {
-        const newColumn: ColumnData = { id: `new-stage-${Date.now()}`, title, color };
+    
+    const handleOpenEditModal = (column: ColumnData) => {
+        setEditingStage(column);
+        setCreateStageModalOpen(true);
+    };
+    
+    const handleCreateOrUpdateStage = (stageData: {id?: Id, title: string, color: string}) => {
+      if (stageData.id) { // It's an update
+         setPipelines(currentPipelines =>
+            currentPipelines.map(p => {
+                if (p.id === activePipelineId) {
+                    return {
+                        ...p,
+                        columns: p.columns.map(c => c.id === stageData.id ? { ...c, title: stageData.title, color: stageData.color } : c)
+                    };
+                }
+                return p;
+            })
+        );
+      } else { // It's a create
+        const newColumn: ColumnData = { id: `new-stage-${Date.now()}`, title: stageData.title, color: stageData.color };
         setPipelines(currentPipelines =>
             currentPipelines.map(p =>
                 p.id === activePipelineId ? { ...p, columns: [...p.columns, newColumn] } : p
             )
         );
-        setCreateStageModalOpen(false);
+      }
+      setCreateStageModalOpen(false);
+      setEditingStage(null);
     };
+
 
     const handleDeleteColumn = (id: Id) => {
         if (activePipeline && activePipeline.columns.length <= 1) {
@@ -303,7 +330,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
                             <h2 className="text-lg font-semibold text-white">Estágios do Pipeline: <span className="text-violet-400">{activePipeline.name}</span></h2>
                             <p className="text-sm text-zinc-400 mt-1">Configure os estágios do seu funil de vendas. Arraste para reordenar.</p>
                         </div>
-                        <button onClick={() => setCreateStageModalOpen(true)} className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
+                        <button onClick={() => { setEditingStage(null); setCreateStageModalOpen(true); }} className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
                             <PlusCircle className="w-4 h-4" /><span>Novo Estágio</span>
                         </button>
                     </div>
@@ -311,7 +338,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
                         <div className="p-6 space-y-3">
                             <SortableContext items={columnIds} strategy={verticalListSortingStrategy}>
                                 {activePipeline.columns.map((col, index) => (
-                                    <SortableStageItem key={col.id} column={col} index={index} onDelete={handleDeleteColumn} />
+                                    <SortableStageItem key={col.id} column={col} index={index} onEdit={handleOpenEditModal} onDelete={handleDeleteColumn} />
                                 ))}
                             </SortableContext>
                         </div>
@@ -327,7 +354,16 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
             )}
             
             <AnimatePresence>
-                {isCreateStageModalOpen && (<CreateStageModal onClose={() => setCreateStageModalOpen(false)} onSubmit={handleCreateStage} />)}
+                {isCreateStageModalOpen && (
+                    <CreateStageModal 
+                        onClose={() => {
+                            setCreateStageModalOpen(false);
+                            setEditingStage(null);
+                        }} 
+                        onSubmit={handleCreateOrUpdateStage}
+                        stageToEdit={editingStage}
+                    />
+                )}
             </AnimatePresence>
             <AnimatePresence>
                 {stageToDelete && (
