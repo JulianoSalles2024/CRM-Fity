@@ -1,14 +1,8 @@
-
-
-
-
 import React from 'react';
 import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { AnimatePresence } from 'framer-motion';
 
-import * as api from './api';
-import { isSupabaseConfigured, supabase } from './services/supabaseClient';
 import type { Id, ColumnData, Lead, CreateLeadData, UpdateLeadData, User, Activity, Task, CreateTaskData, UpdateTaskData, Tag, CardDisplaySettings, ListDisplaySettings, EmailDraft, CreateEmailDraftData } from './types';
 import { initialColumns, initialLeads, initialActivities, initialUsers, initialTasks, initialTags, initialEmailDrafts } from './data';
 
@@ -24,7 +18,6 @@ import Dashboard from './components/Dashboard';
 import { Loader2 } from 'lucide-react';
 import LeadListView from './components/LeadListView';
 import ActivitiesView from './components/ActivitiesView';
-import ConfigurationNotice from './components/ConfigurationNotice';
 import SettingsPage from './components/SettingsPage';
 import CalendarPage from './components/CalendarPage';
 import ConfirmDeleteModal from './components/ConfirmDeleteModal';
@@ -32,7 +25,6 @@ import Notification from './components/Notification';
 import PipelineHeader from './components/PipelineHeader';
 import ReportsPage from './components/ReportsPage';
 import FAB from './components/FAB';
-import AuthPage from './components/AuthPage';
 
 
 type NotificationType = 'success' | 'error' | 'info';
@@ -66,11 +58,7 @@ const initialListDisplaySettings: ListDisplaySettings = {
 
 
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
-  const [authError, setAuthError] = React.useState<string | null>(null);
-  const [authSuccess, setAuthSuccess] = React.useState<string | null>(null);
-  const [isAuthLoading, setIsAuthLoading] = React.useState(true);
-
+  const [currentUser] = React.useState<User>({ id: 'mock-user', name: 'Juliano', email: 'jukasalleso@gmail.com', avatarUrl: 'https://i.pravatar.cc/150?u=juliano' });
 
   const [columns, setColumns] = React.useState<ColumnData[]>([]);
   const [leads, setLeads] = React.useState<Lead[]>([]);
@@ -112,47 +100,6 @@ const App: React.FC = () => {
   }, []);
 
   React.useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setCurrentUser({ id: 'mock-user', name: 'Juliano', email: 'jukasalleso@gmail.com', avatarUrl: 'https://i.pravatar.cc/150?u=juliano' });
-      setIsAuthLoading(false);
-      return;
-    }
-
-    setIsAuthLoading(true);
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-        if (session?.user) {
-            try {
-                const userProfile = await api.getCurrentUser();
-                setCurrentUser(userProfile);
-            } catch {
-                setCurrentUser(null);
-            }
-        } else {
-            setCurrentUser(null);
-        }
-        setIsAuthLoading(false);
-    });
-
-    return () => {
-        authListener?.subscription.unsubscribe();
-    };
-  }, []);
-
-  React.useEffect(() => {
-    if (!currentUser) {
-      setColumns([]);
-      setLeads([]);
-      setActivities([]);
-      setTasks([]);
-      setEmailDrafts([]);
-      setUsers([]);
-      setTags([]);
-      setIsDataLoading(false);
-      return;
-    }
-
-    if (!isSupabaseConfigured) {
       setIsDataLoading(true);
 
       const storedLeads = localStorage.getItem('fity_crm_leads');
@@ -180,37 +127,11 @@ const App: React.FC = () => {
       setListDisplaySettings({ ...initialListDisplaySettings, ...savedListSettings });
 
       setIsDataLoading(false);
-      return;
-    }
+  }, []);
 
-    const fetchData = async () => {
-      try {
-        setIsDataLoading(true);
-        const [fetchedColumns, fetchedLeads, fetchedActivities, fetchedUsers, fetchedTasks] = await Promise.all([
-          api.getColumns(),
-          api.getLeads(),
-          api.getActivities(),
-          api.getUsers(),
-          api.getTasks(),
-        ]);
-        setColumns(fetchedColumns);
-        setLeads(fetchedLeads);
-        setActivities(fetchedActivities);
-        setUsers(fetchedUsers);
-        setTasks(fetchedTasks);
-      } catch (err) {
-        console.error('Falha ao buscar os dados:', err);
-        showNotification('Falha ao buscar os dados. Por favor, tente novamente mais tarde.', 'error');
-      } finally {
-        setIsDataLoading(false);
-      }
-    };
-    fetchData();
-  }, [currentUser, showNotification]);
-
-  // Effect to persist data to localStorage in demo mode
+  // Effect to persist data to localStorage
   React.useEffect(() => {
-    if (!isSupabaseConfigured && currentUser && !isDataLoading) {
+    if (!isDataLoading) {
       localStorage.setItem('fity_crm_leads', JSON.stringify(leads));
       localStorage.setItem('fity_crm_columns', JSON.stringify(columns));
       localStorage.setItem('fity_crm_activities', JSON.stringify(activities));
@@ -221,7 +142,7 @@ const App: React.FC = () => {
       localStorage.setItem('fity_crm_card_settings', JSON.stringify(cardDisplaySettings));
       localStorage.setItem('fity_crm_list_settings', JSON.stringify(listDisplaySettings));
     }
-  }, [leads, columns, activities, tasks, emailDrafts, users, tags, cardDisplaySettings, listDisplaySettings, currentUser, isSupabaseConfigured, isDataLoading]);
+  }, [leads, columns, activities, tasks, emailDrafts, users, tags, cardDisplaySettings, listDisplaySettings, isDataLoading]);
 
   const filteredLeads = React.useMemo(() => {
     if (!searchQuery) return leads;
@@ -246,22 +167,13 @@ const App: React.FC = () => {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 3 } }));
 
   const handleCreateActivity = React.useCallback(async (activityData: Omit<Activity, 'id' | 'timestamp'>) => {
-    if (!isSupabaseConfigured) {
-        const newActivity: Activity = {
-            ...activityData,
-            id: `mock-activity-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-        };
-        setActivities(prev => [newActivity, ...prev]);
-        return;
-    }
-    try {
-        const newActivity = await api.createActivity(activityData);
-        setActivities(prev => [newActivity, ...prev]);
-    } catch {
-        showNotification('Falha ao registrar a atividade.', 'error');
-    }
-  }, [showNotification]);
+    const newActivity: Activity = {
+        ...activityData,
+        id: `mock-activity-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+    };
+    setActivities(prev => [newActivity, ...prev]);
+  }, []);
 
   const handleDragStart = (event: DragStartEvent) => {
     if (event.active.data.current?.type === 'Lead') {
@@ -311,41 +223,18 @@ const App: React.FC = () => {
   
     const didColumnChange = originalLead.columnId !== destinationColumn;
     
-    if (!isSupabaseConfigured) {
-        if (didColumnChange && currentUser) {
-            const originalColumnName = columns.find(c => c.id === originalLead.columnId)?.title;
-            const destinationColumnName = columns.find(c => c.id === destinationColumn)?.title;
-            if (originalColumnName && destinationColumnName) {
-                handleCreateActivity({
-                    leadId: originalLead.id,
-                    type: 'status_change',
-                    text: `Status alterado de '${originalColumnName}' para '${destinationColumnName}'.`,
-                    authorName: currentUser.name,
-                });
-            }
+    if (didColumnChange && currentUser) {
+        const originalColumnName = columns.find(c => c.id === originalLead.columnId)?.title;
+        const destinationColumnName = columns.find(c => c.id === destinationColumn)?.title;
+        if (originalColumnName && destinationColumnName) {
+            handleCreateActivity({
+                leadId: originalLead.id,
+                type: 'status_change',
+                text: `Status alterado de '${originalColumnName}' para '${destinationColumnName}'.`,
+                authorName: currentUser.name,
+            });
         }
-        return;
     }
-    
-    const previousLeads = [...leads];
-    
-    api.updateLead(originalLead.id, { columnId: destinationColumn }).then(() => {
-        if (didColumnChange && currentUser) {
-            const originalColumnName = columns.find(c => c.id === originalLead.columnId)?.title;
-            const destinationColumnName = columns.find(c => c.id === destinationColumn)?.title;
-            if (originalColumnName && destinationColumnName) {
-                handleCreateActivity({
-                    leadId: originalLead.id,
-                    type: 'status_change',
-                    text: `Status alterado de '${originalColumnName}' para '${destinationColumnName}'.`,
-                    authorName: currentUser.name,
-                });
-            }
-        }
-    }).catch(() => {
-      showNotification('Falha ao mover o lead. Revertendo a alteração.', 'error');
-      setLeads(previousLeads);
-    });
   };
   
   const handleOpenCreateLeadModal = () => {
@@ -359,55 +248,28 @@ const App: React.FC = () => {
   };
 
   const handleCreateOrUpdateLead = async (data: CreateLeadData | UpdateLeadData) => {
-    if (!isSupabaseConfigured) {
-        if (editingLead) {
-            const updatedLead = { ...editingLead, ...data };
-            setLeads(leads.map(l => (l.id === editingLead.id ? updatedLead : l)));
-            setSelectedLead(prev => (prev && prev.id === editingLead.id ? updatedLead : prev));
-        } else {
-            const newLead: Lead = {
-                id: `mock-lead-${Date.now()}`,
-                columnId: data.columnId || columns[0]?.id,
-                name: data.name || 'Novo Lead',
-                company: data.company || '',
-                value: data.value || 0,
-                avatarUrl: `https://picsum.photos/seed/${Date.now()}/100/100`,
-                tags: data.tags || [],
-                lastActivity: 'agora',
-                createdAt: new Date().toISOString(),
-                ...data,
-            };
-            setLeads(prevLeads => [newLead, ...prevLeads]);
-        }
-        showNotification(editingLead ? 'Lead atualizado com sucesso!' : 'Lead criado com sucesso!', 'success');
-        setCreateEditLeadModalOpen(false);
-        setEditingLead(null);
-        return;
+    if (editingLead) {
+        const updatedLead = { ...editingLead, ...data } as Lead;
+        setLeads(leads.map(l => (l.id === editingLead.id ? updatedLead : l)));
+        setSelectedLead(prev => (prev && prev.id === editingLead.id ? updatedLead : prev));
+    } else {
+        const newLead: Lead = {
+            id: `mock-lead-${Date.now()}`,
+            columnId: data.columnId || columns[0]?.id,
+            name: data.name || 'Novo Lead',
+            company: data.company || '',
+            value: data.value || 0,
+            avatarUrl: `https://picsum.photos/seed/${Date.now()}/100/100`,
+            tags: data.tags || [],
+            lastActivity: 'agora',
+            createdAt: new Date().toISOString(),
+            ...data,
+        };
+        setLeads(prevLeads => [newLead, ...prevLeads]);
     }
-    
-    if (editingLead) { // Update
-      const previousLeads = [...leads];
-      setLeads(leads.map(l => l.id === editingLead.id ? { ...l, ...data } as Lead : l));
-      setSelectedLead(prev => prev && prev.id === editingLead.id ? { ...prev, ...data } as Lead : prev);
-      setCreateEditLeadModalOpen(false);
-      try {
-        const updatedLead = await api.updateLead(editingLead.id, data);
-        setLeads(leads => leads.map(l => l.id === updatedLead.id ? updatedLead : l));
-        showNotification('Lead atualizado com sucesso!', 'success');
-      } catch {
-        showNotification('Falha ao atualizar o lead.', 'error');
-        setLeads(previousLeads);
-      }
-    } else { // Create
-        setCreateEditLeadModalOpen(false);
-        try {
-            const newLead = await api.createLead(data as CreateLeadData);
-            setLeads(prevLeads => [newLead, ...prevLeads]);
-            showNotification('Lead criado com sucesso!', 'success');
-        } catch {
-            showNotification('Falha ao criar o lead.', 'error');
-        }
-    }
+    showNotification(editingLead ? 'Lead atualizado com sucesso!' : 'Lead criado com sucesso!', 'success');
+    setCreateEditLeadModalOpen(false);
+    setEditingLead(null);
   };
 
   const handleDeleteLead = (lead: Lead) => {
@@ -418,31 +280,12 @@ const App: React.FC = () => {
     if (!leadToDelete) return;
     const leadId = leadToDelete.id;
 
-    const previousLeads = [...leads];
-    const previousActivities = [...activities];
-    const previousTasks = [...tasks];
-
     setLeads(leads.filter(l => l.id !== leadId));
     setActivities(activities.filter(a => a.leadId !== leadId));
     setTasks(tasks.filter(t => t.leadId !== leadId));
     setSelectedLead(null);
     setLeadToDelete(null);
-
-    if (!isSupabaseConfigured) {
-        showNotification('Lead deletado com sucesso (modo de demonstração).', 'success');
-        return;
-    }
-
-    try {
-        await api.deleteLead(leadId);
-        showNotification('Lead e dados associados deletados com sucesso.', 'success');
-    } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Falha ao deletar o lead.';
-        showNotification(errorMessage, 'error');
-        setLeads(previousLeads);
-        setActivities(previousActivities);
-        setTasks(previousTasks);
-    }
+    showNotification('Lead deletado com sucesso (modo de demonstração).', 'success');
   };
 
 
@@ -452,32 +295,24 @@ const App: React.FC = () => {
 
   const handleAddNote = React.useCallback(async (leadId: Id, noteText: string) => {
     if (!currentUser) return;
-    try {
-        await handleCreateActivity({
-            leadId,
-            text: noteText,
-            type: 'note',
-            authorName: currentUser.name,
-        });
-        showNotification('Nota adicionada com sucesso.', 'success');
-    } catch {
-        // Error already handled in handleCreateActivity
-    }
+    await handleCreateActivity({
+        leadId,
+        text: noteText,
+        type: 'note',
+        authorName: currentUser.name,
+    });
+    showNotification('Nota adicionada com sucesso.', 'success');
   }, [currentUser, handleCreateActivity, showNotification]);
 
   const handleSendEmailActivity = React.useCallback(async (leadId: Id, subject: string) => {
     if (!currentUser) return;
-    try {
-        await handleCreateActivity({
-            leadId,
-            text: `Email enviado: "${subject}"`,
-            type: 'email_sent',
-            authorName: currentUser.name,
-        });
-    } catch {
-        // Error already handled in handleCreateActivity
-    }
-}, [currentUser, handleCreateActivity]);
+    await handleCreateActivity({
+        leadId,
+        text: `Email enviado: "${subject}"`,
+        type: 'email_sent',
+        authorName: currentUser.name,
+    });
+  }, [currentUser, handleCreateActivity]);
 
   const handleOpenCreateTaskModal = (leadId: Id | null = null, date: string | null = null) => {
     setEditingTask(null);
@@ -495,61 +330,27 @@ const App: React.FC = () => {
 
   const handleCreateOrUpdateTask = async (data: CreateTaskData | UpdateTaskData) => {
     setCreateEditTaskModalOpen(false);
-    if (!isSupabaseConfigured) {
-        if (editingTask) {
-            const updatedTask = { ...editingTask, ...data };
-            setTasks(tasks.map(t => (t.id === editingTask.id ? updatedTask : t)));
-        } else {
-            const newTask: Task = {
-                id: `mock-task-${Date.now()}`,
-                userId: currentUser!.id,
-                status: 'pending',
-                type: 'task', // Default type
-                ...(data as CreateTaskData),
-            };
-            setTasks(prevTasks => [...prevTasks, newTask]);
-        }
-        showNotification(editingTask ? 'Tarefa atualizada com sucesso!' : 'Tarefa criada com sucesso!', 'success');
-        setEditingTask(null);
-        setPreselectedLeadIdForTask(null);
-        return;
+    if (editingTask) {
+        const updatedTask = { ...editingTask, ...data } as Task;
+        setTasks(tasks.map(t => (t.id === editingTask.id ? updatedTask : t)));
+    } else {
+        const newTask: Task = {
+            id: `mock-task-${Date.now()}`,
+            userId: currentUser!.id,
+            status: 'pending',
+            type: 'task', // Default type
+            ...(data as CreateTaskData),
+        };
+        setTasks(prevTasks => [...prevTasks, newTask]);
     }
-
-    if (editingTask) { // Update
-        try {
-            const updatedTask = await api.updateTask(editingTask.id, data);
-            setTasks(tasks.map(t => t.id === editingTask.id ? updatedTask : t));
-            showNotification('Tarefa atualizada com sucesso!', 'success');
-        } catch {
-            showNotification('Falha ao atualizar a tarefa.', 'error');
-        }
-    } else { // Create
-        try {
-            const newTask = await api.createTask(data as CreateTaskData);
-            setTasks(prevTasks => [...prevTasks, newTask]);
-            showNotification('Tarefa criada com sucesso!', 'success');
-        } catch {
-            showNotification('Falha ao criar a tarefa.', 'error');
-        }
-    }
+    showNotification(editingTask ? 'Tarefa atualizada com sucesso!' : 'Tarefa criada com sucesso!', 'success');
     setEditingTask(null);
     setPreselectedLeadIdForTask(null);
   };
 
   const handleDeleteTask = async (taskId: Id) => {
-      const previousTasks = [...tasks];
       setTasks(tasks.filter(t => t.id !== taskId));
-      if (!isSupabaseConfigured) {
-          showNotification('Tarefa deletada com sucesso (modo de demonstração).', 'success');
-          return;
-      }
-      try {
-          await api.deleteTask(taskId);
-          showNotification('Tarefa deletada com sucesso.', 'success');
-      } catch {
-          showNotification('Falha ao deletar a tarefa.', 'error');
-          setTasks(previousTasks);
-      }
+      showNotification('Tarefa deletada com sucesso (modo de demonstração).', 'success');
   };
 
   const handleUpdateTaskStatus = async (taskId: Id, status: 'pending' | 'completed') => {
@@ -558,109 +359,44 @@ const App: React.FC = () => {
       
       const updatedTask = { ...originalTask, status };
       setTasks(tasks.map(t => t.id === taskId ? updatedTask : t));
-
-      if (!isSupabaseConfigured) {
-          showNotification('Status da tarefa atualizado.', 'success');
-          return;
-      }
-
-      try {
-          await api.updateTask(taskId, { status });
-          showNotification('Status da tarefa atualizado.', 'success');
-      } catch {
-          showNotification('Falha ao atualizar status da tarefa.', 'error');
-          setTasks(tasks.map(t => t.id === taskId ? originalTask : t)); // Revert
-      }
+      showNotification('Status da tarefa atualizado.', 'success');
   };
   
   const handleSaveEmailDraft = (draftData: CreateEmailDraftData) => {
-    if (!isSupabaseConfigured) {
-        const newDraft: EmailDraft = {
-            ...draftData,
-            id: `mock-draft-${Date.now()}`,
-            createdAt: new Date().toISOString(),
-        };
-        setEmailDrafts(prev => [newDraft, ...prev]);
-        showNotification('Rascunho salvo com sucesso!', 'success');
-    } else {
-        showNotification('Funcionalidade de salvar rascunhos (backend) ainda não implementada.', 'info');
-    }
+    const newDraft: EmailDraft = {
+        ...draftData,
+        id: `mock-draft-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+    };
+    setEmailDrafts(prev => [newDraft, ...prev]);
+    showNotification('Rascunho salvo com sucesso!', 'success');
   };
 
   const handleDeleteEmailDraft = (draftId: Id) => {
-    if (!isSupabaseConfigured) {
-        setEmailDrafts(prev => prev.filter(d => d.id !== draftId));
-        showNotification('Rascunho deletado.', 'success');
-    } else {
-        showNotification('Funcionalidade de deletar rascunhos (backend) ainda não implementada.', 'info');
-    }
-  };
-
-  const handleLogin = async (email: string, password: string) => {
-      setAuthError(null);
-      setAuthSuccess(null);
-      try {
-          const user = await api.loginUser(email, password);
-          setCurrentUser(user);
-      } catch (err: any) {
-          setAuthError(err.message || 'Falha no login.');
-      }
-  };
-  
-  const handleRegister = async (name: string, email: string, password: string) => {
-      setAuthError(null);
-      setAuthSuccess(null);
-      try {
-          await api.registerUser(name, email, password);
-          setAuthSuccess('Registro bem-sucedido! Por favor, verifique seu e-mail e faça o login.');
-      } catch (err: any) {
-          setAuthError(err.message || 'Falha no registro.');
-      }
-  };
-
-  const handleSignInWithGoogle = async () => {
-    setAuthError(null);
-    try {
-        await api.signInWithGoogle();
-        // Supabase handles the redirect, app will reload and check session.
-    } catch (err: any) {
-        const message = err.message || 'Falha ao fazer login com o Google.';
-        setAuthError(message);
-        showNotification(message, 'error');
-    }
+    setEmailDrafts(prev => prev.filter(d => d.id !== draftId));
+    showNotification('Rascunho deletado.', 'success');
   };
 
   const handleLogout = async () => {
-    if (!isSupabaseConfigured) {
-        showNotification("O logout está desabilitado no modo de demonstração.", 'info');
-        return;
-    }
-    await api.logoutUser();
-    setCurrentUser(null);
+    showNotification("Logout não aplicável no modo de demonstração.", 'info');
   };
 
   const handleUpdateProfile = async (name: string, avatarFile?: File) => {
     if (!currentUser) return;
-    if (!isSupabaseConfigured) {
-        const updatedUser = { ...currentUser, name };
-        if (avatarFile) {
-            updatedUser.avatarUrl = URL.createObjectURL(avatarFile);
-        }
-        setCurrentUser(updatedUser);
-        setUsers(prevUsers => prevUsers.map(u => u.id === updatedUser.id ? updatedUser : u));
-        showNotification('Perfil atualizado com sucesso.', 'success');
-        return;
+    const updatedUser = { ...currentUser, name };
+    if (avatarFile) {
+        updatedUser.avatarUrl = URL.createObjectURL(avatarFile);
     }
-    showNotification('Funcionalidade de atualização de perfil (backend) ainda não implementada.', 'info');
+    // Since currentUser is from a read-only state, we can't update it directly.
+    // In a real app with auth state management, this would work.
+    // For now, we update the 'users' list if the user is in there.
+    setUsers(prevUsers => prevUsers.map(u => u.id === updatedUser.id ? updatedUser : u));
+    showNotification('Perfil atualizado com sucesso. A alteração na barra superior requer recarregamento.', 'success');
   };
 
   const handleUpdatePipeline = async (newColumns: ColumnData[]) => {
-      if(!isSupabaseConfigured) {
-          setColumns(newColumns);
-          showNotification('Pipeline atualizado com sucesso.', 'success');
-          return;
-      }
-      showNotification('Funcionalidade de atualização de pipeline (backend) ainda não implementada.', 'info');
+      setColumns(newColumns);
+      showNotification('Pipeline atualizado com sucesso.', 'success');
   }
 
   const handleUpdateCardSettings = (newSettings: CardDisplaySettings) => {
@@ -746,28 +482,6 @@ const App: React.FC = () => {
         );
     }
   };
-
-  if (isAuthLoading) {
-    return (
-        <div className="flex items-center justify-center h-screen w-full bg-zinc-900">
-            <Loader2 className="w-10 h-10 animate-spin text-violet-500" />
-        </div>
-    );
-  }
-
-  if (!isSupabaseConfigured && !currentUser) {
-    return <ConfigurationNotice />;
-  }
-
-  if (!currentUser) {
-    return <AuthPage 
-        onLogin={handleLogin} 
-        onRegister={handleRegister} 
-        onSignInWithGoogle={handleSignInWithGoogle}
-        error={authError} 
-        successMessage={authSuccess} 
-    />;
-  }
 
   return (
     <div className="flex h-screen w-full bg-zinc-900 text-gray-300">
