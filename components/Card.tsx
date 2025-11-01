@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -161,7 +162,7 @@ const Card: React.FC<CardProps> = ({ lead, column, users, cardDisplaySettings, i
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className={`p-3 rounded-lg bg-zinc-800 border border-zinc-700 cursor-grab active:cursor-grabbing transition-all ease-out duration-[140ms] ${isOverlay ? 'shadow-2xl scale-105' : 'hover:border-zinc-600 hover:-translate-y-1 hover:shadow-lg'} ${isSelected ? 'border-violet-500 ring-2 ring-violet-500/50' : ''}`}
+      className={`p-3 rounded-lg bg-zinc-800 border border-zinc-700 cursor-grab active:cursor-grabbing transition-all ease-out duration-[140ms] ${isOverlay ? 'shadow-2xl scale-105' : 'hover:border-violet-500 hover:-translate-y-1 hover:shadow-lg hover:ring-2 hover:ring-violet-500/50'} ${isSelected ? 'border-violet-500 ring-2 ring-violet-500/50' : ''}`}
       {...motionProps}
     >
       {cardContent}

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -98,6 +99,20 @@ const App: React.FC = () => {
           setNotification(null);
       }, 5000);
   }, []);
+
+  React.useEffect(() => {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(swReg => {
+          console.log('Service Worker is registered', swReg);
+        })
+        .catch(error => {
+          console.error('Service Worker Error', error);
+        });
+    } else {
+        console.warn('Push messaging is not supported');
+    }
+}, []);
 
   React.useEffect(() => {
       setIsDataLoading(true);

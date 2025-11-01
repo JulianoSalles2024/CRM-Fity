@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { User, ColumnData, Id } from '../types';
-import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit } from 'lucide-react';
+import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit, Bell } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { DndContext, closestCenter, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -8,6 +8,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 import CreateStageModal from './CreateStageModal';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
+import NotificationSettings from './NotificationSettings';
 
 // --- Subcomponente de Perfil ---
 interface ProfileSettingsProps {
@@ -420,13 +421,14 @@ interface SettingsPageProps {
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpdateProfile, onUpdatePipeline }) => {
-    const [activeTab, setActiveTab] = useState('Pipeline');
+    const [activeTab, setActiveTab] = useState('Notificações');
 
     const tabs = [
         { name: 'Perfil', icon: UserIcon },
         { name: 'Pipeline', icon: Settings },
         { name: 'Preferências', icon: SlidersHorizontal },
         { name: 'Integrações', icon: ToyBrick },
+        { name: 'Notificações', icon: Bell },
     ];
 
     return (
@@ -458,6 +460,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpd
                 {activeTab === 'Pipeline' && <PipelineSettings initialColumns={columns} onUpdatePipeline={onUpdatePipeline} />}
                 {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />}
                 {activeTab === 'Integrações' && <PlaceholderTab title="Integrações" />}
+                {activeTab === 'Notificações' && <NotificationSettings />}
             </div>
         </div>
     );
