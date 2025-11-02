@@ -1,94 +1,126 @@
+
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { motion, AnimatePresence } from 'framer-motion';
 import Card from './Card';
-import type { ColumnData, Lead, Id, User, CardDisplaySettings } from '../types';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import type { ColumnData, Lead, User, CardDisplaySettings, Id } from '../types';
+import { PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ColumnProps {
-  column: ColumnData;
-  leads: Lead[];
-  onCardClick: (lead: Lead) => void;
-  selectedLeadId?: Id | null;
-  users: User[];
-  cardDisplaySettings: CardDisplaySettings;
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
+    column: ColumnData;
+    leads: Lead[];
+    users: User[];
+    cardDisplaySettings: CardDisplaySettings;
+    onLeadClick: (lead: Lead) => void;
+    onAddLead: (columnId: Id) => void;
+    minimizedLeads: Id[];
+    onToggleLeadMinimize: (leadId: Id) => void;
+    minimizedColumns: Id[];
+    onToggleColumnMinimize: (columnId: Id) => void;
 }
 
-const Column: React.FC<ColumnProps> = ({ column, leads, onCardClick, selectedLeadId, users, cardDisplaySettings, isCollapsed, onToggleCollapse }) => {
-  const { setNodeRef } = useDroppable({
-    id: column.id,
-    data: {
-      type: 'Column',
-      column,
-    },
-  });
+const contentVariants = {
+    hidden: { opacity: 0, transition: { duration: 0.2 } },
+    visible: { opacity: 1, transition: { duration: 0.2, delay: 0.1 } },
+};
 
-  const leadsIds = React.useMemo(() => leads.map((l) => l.id), [leads]);
+const Column: React.FC<ColumnProps> = ({ column, leads, users, cardDisplaySettings, onLeadClick, onAddLead, minimizedLeads, onToggleLeadMinimize, minimizedColumns, onToggleColumnMinimize }) => {
+    const { setNodeRef, isOver } = useDroppable({ id: column.id, data: { type: 'Column', column } });
+    
+    const leadsInColumn = leads.filter(lead => lead.columnId === column.id);
+    const leadIds = React.useMemo(() => leadsInColumn.map(l => l.id), [leadsInColumn]);
 
-  if (isCollapsed) {
+    const totalValue = leadsInColumn.reduce((sum, lead) => sum + lead.value, 0);
+    const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+    
+    const isMinimized = minimizedColumns.includes(column.id);
+
     return (
-      <div
-        ref={setNodeRef}
-        className="w-14 flex-shrink-0 bg-zinc-800 rounded-lg p-2 border-l-[3px] flex flex-col items-center cursor-pointer transition-all duration-300"
-        style={{ borderColor: column.color, maxHeight: 'calc(100vh - 12rem)' }}
-        onClick={onToggleCollapse}
-      >
-        <div className="flex flex-col items-center gap-4 h-full">
-          <button onClick={(e) => { e.stopPropagation(); onToggleCollapse(); }} className="p-1 rounded-full hover:bg-zinc-700/50">
-            <ChevronRight className="w-5 h-5 text-zinc-400" />
-          </button>
-          <div className="flex-1 flex items-center">
-            <h3 className="[writing-mode:vertical-rl] rotate-180 font-semibold text-gray-200 text-sm whitespace-nowrap">{column.title}</h3>
-          </div>
-          <span className="text-sm font-medium text-gray-400 bg-zinc-900/50 rounded-full px-2 py-0.5 text-xs">{leads.length}</span>
-        </div>
-      </div>
+        <motion.div
+            ref={setNodeRef}
+            layout
+            animate={{ width: isMinimized ? 72 : 320 }}
+            transition={{ type: "spring", stiffness: 350, damping: 35 }}
+            className={`flex-shrink-0 h-full flex flex-col bg-zinc-900 rounded-xl border border-zinc-800/80 transition-colors ${isOver ? 'bg-zinc-800/50' : ''}`}
+        >
+            <AnimatePresence initial={false}>
+                {isMinimized ? (
+                    <motion.div
+                        key="minimized"
+                        variants={contentVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                        className="flex flex-col items-center justify-between h-full p-2 overflow-hidden border-b-4"
+                        style={{ borderBottomColor: column.color }}
+                    >
+                        <button onClick={() => onToggleColumnMinimize(column.id)} className="p-1 text-zinc-500 hover:text-white" title="Expandir coluna">
+                            <ChevronRight className="w-5 h-5" />
+                        </button>
+                        <div className="flex-1 flex flex-col items-center justify-center gap-4 py-4 cursor-default">
+                            <h2 className="font-bold text-white text-lg [writing-mode:vertical-rl] transform-gpu rotate-180 whitespace-nowrap">
+                                {column.title}
+                            </h2>
+                            <div className="text-center">
+                                <p className="font-bold text-white">{leadsInColumn.length}</p>
+                                <p className="text-xs text-zinc-400">leads</p>
+                            </div>
+                        </div>
+                        <button onClick={() => onAddLead(column.id)} className="p-1 text-zinc-500 hover:text-white" title="Adicionar lead">
+                            <PlusCircle className="w-5 h-5" />
+                        </button>
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="expanded"
+                        variants={contentVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                        className="flex flex-col max-h-full"
+                    >
+                        {/* Expanded Column Header */}
+                        <div className="p-4 flex justify-between items-center flex-shrink-0 border-b-4" style={{ borderBottomColor: column.color }}>
+                            <div>
+                                <h2 className="font-bold text-white text-lg">{column.title}</h2>
+                                <p className="text-sm text-zinc-400 mt-1">
+                                    {leadsInColumn.length} {leadsInColumn.length === 1 ? 'lead' : 'leads'} • {currencyFormatter.format(totalValue)}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <button onClick={() => onAddLead(column.id)} className="text-zinc-500 hover:text-white transition-colors" title="Adicionar lead a este estágio">
+                                    <PlusCircle className="w-5 h-5" />
+                                </button>
+                                <button onClick={() => onToggleColumnMinimize(column.id)} className="text-zinc-500 hover:text-white transition-colors" title="Minimizar coluna">
+                                    <ChevronLeft className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {/* Expanded Column Body */}
+                        <div className={`p-2 flex-1 overflow-y-auto`}>
+                            <SortableContext items={leadIds} strategy={verticalListSortingStrategy}>
+                                <div className="space-y-2">
+                                    {leadsInColumn.map(lead => (
+                                        <Card 
+                                            key={lead.id} 
+                                            lead={lead} 
+                                            displaySettings={cardDisplaySettings} 
+                                            users={users} 
+                                            onClick={() => onLeadClick(lead)} 
+                                            minimizedLeads={minimizedLeads}
+                                            onToggleLeadMinimize={onToggleLeadMinimize}
+                                        />
+                                    ))}
+                                </div>
+                            </SortableContext>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
-  }
-
-  return (
-    <div
-      className="w-72 md:w-80 flex-shrink-0 flex flex-col transition-all duration-300"
-    >
-      <div 
-        ref={setNodeRef}
-        className={`flex flex-col bg-zinc-800 rounded-lg p-3 border-l-[3px]`}
-        style={{ borderColor: column.color, maxHeight: 'calc(100vh - 12rem)' }} // This caps the column height
-      >
-        <div className="flex items-center justify-between mb-4 px-1">
-          <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: column.color }}></div>
-              <h3 className="font-semibold text-gray-200 text-sm">{column.title}</h3>
-              <span className="text-sm font-medium text-gray-400 bg-zinc-900/50 rounded-full px-2 py-0.5 text-xs">{leads.length}</span>
-          </div>
-          <button onClick={onToggleCollapse} className="p-1 rounded-full hover:bg-zinc-700/50">
-            <ChevronLeft className="w-5 h-5 text-zinc-400" />
-          </button>
-        </div>
-        <div className="overflow-y-auto pr-1 -mr-1 space-y-3 pb-2">
-          <SortableContext items={leadsIds} strategy={verticalListSortingStrategy}>
-            {leads.length > 0 ? leads.map((lead) => (
-              <Card
-                key={lead.id}
-                lead={lead}
-                column={column}
-                onClick={() => onCardClick(lead)}
-                isSelected={selectedLeadId === lead.id}
-                users={users}
-                cardDisplaySettings={cardDisplaySettings}
-              />
-            )) : (
-              <div className="flex items-center justify-center min-h-[120px] bg-transparent border-2 border-dashed border-zinc-700/80 rounded-lg">
-                  <p className="text-sm text-zinc-500">Nenhum lead</p>
-              </div>
-            )}
-          </SortableContext>
-        </div>
-      </div>
-    </div>
-  );
 };
 
 export default Column;

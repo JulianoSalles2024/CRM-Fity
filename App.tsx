@@ -1,607 +1,418 @@
 
-import React from 'react';
-import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
-import { arrayMove } from '@dnd-kit/sortable';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 
-import type { Id, ColumnData, Lead, CreateLeadData, UpdateLeadData, User, Activity, Task, CreateTaskData, UpdateTaskData, Tag, CardDisplaySettings, ListDisplaySettings, EmailDraft, CreateEmailDraftData } from './types';
-import { initialColumns, initialLeads, initialActivities, initialUsers, initialTasks, initialTags, initialEmailDrafts } from './data';
-
-
+// Components
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import KanbanBoard from './components/KanbanBoard';
-import Card from './components/Card';
+import Dashboard from './components/Dashboard';
 import LeadDetailSlideover from './components/LeadDetailSlideover';
 import CreateEditLeadModal from './components/CreateEditLeadModal';
 import CreateEditTaskModal from './components/CreateEditTaskModal';
-import Dashboard from './components/Dashboard';
-import { Loader2 } from 'lucide-react';
-import LeadListView from './components/LeadListView';
-import ActivitiesView from './components/ActivitiesView';
-import SettingsPage from './components/SettingsPage';
-import CalendarPage from './components/CalendarPage';
-import ConfirmDeleteModal from './components/ConfirmDeleteModal';
 import Notification from './components/Notification';
-import PipelineHeader from './components/PipelineHeader';
-import ReportsPage from './components/ReportsPage';
 import FAB from './components/FAB';
+import AuthPage from './components/AuthPage';
+import SettingsPage from './components/SettingsPage';
+import ActivitiesView from './components/ActivitiesView';
+import CalendarPage from './components/CalendarPage';
+import ReportsPage from './components/ReportsPage';
+import LeadListView from './components/LeadListView';
 
 
-type NotificationType = 'success' | 'error' | 'info';
-interface NotificationData {
-  message: string;
-  type: NotificationType;
+// Data & Types
+import { initialUsers, initialColumns, initialLeads, initialActivities, initialTasks, initialTags, initialEmailDrafts } from './data';
+import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData } from './types';
+
+
+// Custom hook for localStorage persistence
+function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.error(error);
+      return initialValue;
+    }
+  });
+
+  const setValue = (value: T | ((val: T) => T)) => {
+    try {
+      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      setStoredValue(valueToStore);
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return [storedValue, setValue];
 }
-
-const initialCardDisplaySettings: CardDisplaySettings = {
-  showCompany: true,
-  showValue: true,
-  showTags: true,
-  showProbability: true,
-  showDueDate: true,
-  showAssignedTo: true,
-  showEmail: false,
-  showPhone: false,
-  showCreatedAt: false,
-  showStage: false,
-};
-
-const initialListDisplaySettings: ListDisplaySettings = {
-  showStatus: true,
-  showValue: true,
-  showTags: true,
-  showLastActivity: true,
-  showEmail: false,
-  showPhone: false,
-  showCreatedAt: false,
-};
 
 
 const App: React.FC = () => {
-  const [currentUser] = React.useState<User>({ id: 'mock-user', name: 'Juliano', email: 'jukasalleso@gmail.com', avatarUrl: 'https://i.pravatar.cc/150?u=juliano' });
+    // --- STATE MANAGEMENT ---
+    const [users, setUsers] = useLocalStorage<User[]>('crm-users', initialUsers);
+    const [columns, setColumns] = useLocalStorage<ColumnData[]>('crm-columns', initialColumns);
+    const [leads, setLeads] = useLocalStorage<Lead[]>('crm-leads', initialLeads);
+    const [activities, setActivities] = useLocalStorage<Activity[]>('crm-activities', initialActivities);
+    const [tasks, setTasks] = useLocalStorage<Task[]>('crm-tasks', initialTasks);
+    const [tags, setTags] = useLocalStorage<Tag[]>('crm-tags', initialTags);
+    const [emailDrafts, setEmailDrafts] = useLocalStorage<EmailDraft[]>('crm-email-drafts', initialEmailDrafts);
 
-  const [columns, setColumns] = React.useState<ColumnData[]>([]);
-  const [leads, setLeads] = React.useState<Lead[]>([]);
-  const [activities, setActivities] = React.useState<Activity[]>([]);
-  const [tasks, setTasks] = React.useState<Task[]>([]);
-  const [emailDrafts, setEmailDrafts] = React.useState<EmailDraft[]>([]);
-  const [users, setUsers] = React.useState<User[]>([]);
-  const [tags, setTags] = React.useState<Tag[]>([]);
-  const [isDataLoading, setIsDataLoading] = React.useState(true);
-  
-  const [notification, setNotification] = React.useState<NotificationData | null>(null);
-  const notificationTimerRef = React.useRef<number | null>(null);
-
-  const [isCreateEditLeadModalOpen, setCreateEditLeadModalOpen] = React.useState(false);
-  const [editingLead, setEditingLead] = React.useState<Lead | null>(null);
-  const [leadToDelete, setLeadToDelete] = React.useState<Lead | null>(null);
-
-  const [isCreateEditTaskModalOpen, setCreateEditTaskModalOpen] = React.useState(false);
-  const [editingTask, setEditingTask] = React.useState<Task | null>(null);
-  const [preselectedLeadIdForTask, setPreselectedLeadIdForTask] = React.useState<Id | null>(null);
-  const [preselectedDateForTask, setPreselectedDateForTask] = React.useState<string | null>(null);
-  
-  const [activeView, setActiveView] = React.useState('Dashboard');
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
-
-  const [cardDisplaySettings, setCardDisplaySettings] = React.useState<CardDisplaySettings>(initialCardDisplaySettings);
-  const [listDisplaySettings, setListDisplaySettings] = React.useState<ListDisplaySettings>(initialListDisplaySettings);
-
-
-  const showNotification = React.useCallback((message: string, type: NotificationType = 'info') => {
-      if (notificationTimerRef.current) {
-          clearTimeout(notificationTimerRef.current);
-      }
-      setNotification({ message, type });
-      notificationTimerRef.current = window.setTimeout(() => {
-          setNotification(null);
-      }, 5000);
-  }, []);
-
-  React.useEffect(() => {
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-      navigator.serviceWorker.register('service-worker.js')
-        .then(swReg => {
-          console.log('Service Worker is registered', swReg);
-        })
-        .catch(error => {
-          console.error('Service Worker Error', error);
-        });
-    } else {
-        console.warn('Push messaging is not supported');
-    }
-}, []);
-
-  React.useEffect(() => {
-      setIsDataLoading(true);
-
-      const storedLeads = localStorage.getItem('fity_crm_leads');
-      const storedColumns = localStorage.getItem('fity_crm_columns');
-      const storedActivities = localStorage.getItem('fity_crm_activities');
-      const storedTasks = localStorage.getItem('fity_crm_tasks');
-      const storedEmailDrafts = localStorage.getItem('fity_crm_email_drafts');
-      const storedUsers = localStorage.getItem('fity_crm_users');
-      const storedTags = localStorage.getItem('fity_crm_tags');
-      const storedCardSettings = localStorage.getItem('fity_crm_card_settings');
-      const storedListSettings = localStorage.getItem('fity_crm_list_settings');
-      
-      setLeads(storedLeads ? JSON.parse(storedLeads) : initialLeads);
-      setColumns(storedColumns ? JSON.parse(storedColumns) : initialColumns);
-      setActivities(storedActivities ? JSON.parse(storedActivities) : initialActivities);
-      setTasks(storedTasks ? JSON.parse(storedTasks) : initialTasks);
-      setEmailDrafts(storedEmailDrafts ? JSON.parse(storedEmailDrafts) : initialEmailDrafts);
-      setUsers(storedUsers ? JSON.parse(storedUsers) : initialUsers);
-      setTags(storedTags ? JSON.parse(storedTags) : initialTags);
-      
-      const savedCardSettings = storedCardSettings ? JSON.parse(storedCardSettings) : initialCardDisplaySettings;
-      setCardDisplaySettings({ ...initialCardDisplaySettings, ...savedCardSettings });
-      
-      const savedListSettings = storedListSettings ? JSON.parse(storedListSettings) : initialListDisplaySettings;
-      setListDisplaySettings({ ...initialListDisplaySettings, ...savedListSettings });
-
-      setIsDataLoading(false);
-  }, []);
-
-  // Effect to persist data to localStorage
-  React.useEffect(() => {
-    if (!isDataLoading) {
-      localStorage.setItem('fity_crm_leads', JSON.stringify(leads));
-      localStorage.setItem('fity_crm_columns', JSON.stringify(columns));
-      localStorage.setItem('fity_crm_activities', JSON.stringify(activities));
-      localStorage.setItem('fity_crm_tasks', JSON.stringify(tasks));
-      localStorage.setItem('fity_crm_email_drafts', JSON.stringify(emailDrafts));
-      localStorage.setItem('fity_crm_users', JSON.stringify(users));
-      localStorage.setItem('fity_crm_tags', JSON.stringify(tags));
-      localStorage.setItem('fity_crm_card_settings', JSON.stringify(cardDisplaySettings));
-      localStorage.setItem('fity_crm_list_settings', JSON.stringify(listDisplaySettings));
-    }
-  }, [leads, columns, activities, tasks, emailDrafts, users, tags, cardDisplaySettings, listDisplaySettings, isDataLoading]);
-
-  const filteredLeads = React.useMemo(() => {
-    if (!searchQuery) return leads;
-    const lowercasedQuery = searchQuery.toLowerCase();
-    return leads.filter(lead => 
-      lead.name.toLowerCase().includes(lowercasedQuery) ||
-      lead.company.toLowerCase().includes(lowercasedQuery)
-    );
-  }, [leads, searchQuery]);
-
-  const leadsByColumn = React.useMemo(() => {
-    return filteredLeads.reduce((acc, lead) => {
-      if (!acc[lead.columnId]) acc[lead.columnId] = [];
-      acc[lead.columnId].push(lead);
-      return acc;
-    }, {} as Record<Id, Lead[]>);
-  }, [filteredLeads]);
-
-  const [activeLead, setActiveLead] = React.useState<Lead | null>(null);
-  const [selectedLead, setSelectedLead] = React.useState<Lead | null>(null);
-
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 3 } }));
-
-  const handleCreateActivity = React.useCallback(async (activityData: Omit<Activity, 'id' | 'timestamp'>) => {
-    const newActivity: Activity = {
-        ...activityData,
-        id: `mock-activity-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-    };
-    setActivities(prev => [newActivity, ...prev]);
-  }, []);
-
-  const handleDragStart = (event: DragStartEvent) => {
-    if (event.active.data.current?.type === 'Lead') {
-      setActiveLead(event.active.data.current.lead);
-    }
-  };
-
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    const isActiveALead = active.data.current?.type === 'Lead';
-    if (!isActiveALead) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-    const isOverAColumn = over.data.current?.type === 'Column';
-
-    setLeads(currentLeads => {
-        const activeIndex = currentLeads.findIndex(l => l.id === activeId);
-        let overIndex;
-
-        if (isOverAColumn) {
-            if (currentLeads[activeIndex].columnId !== overId) {
-                currentLeads[activeIndex].columnId = overId;
-            }
-            return arrayMove(currentLeads, activeIndex, activeIndex); 
-        } else {
-            overIndex = currentLeads.findIndex(l => l.id === overId);
-            if (currentLeads[activeIndex].columnId !== currentLeads[overIndex].columnId) {
-                currentLeads[activeIndex].columnId = currentLeads[overIndex].columnId;
-                return arrayMove(currentLeads, activeIndex, overIndex);
-            }
-            return arrayMove(currentLeads, activeIndex, overIndex);
-        }
-    });
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    setActiveLead(null);
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-  
-    const originalLead = leads.find(l => l.id === active.id);
-    const destinationColumn = over.data.current?.type === 'Column' ? over.id : over.data.current?.lead?.columnId;
-    if (!originalLead || !destinationColumn) return;
-  
-    const didColumnChange = originalLead.columnId !== destinationColumn;
+    const [currentUser, setCurrentUser] = useLocalStorage<User | null>('crm-currentUser', null);
+    const [authError, setAuthError] = useState<string | null>(null);
+    const [authSuccessMessage, setAuthSuccessMessage] = useState<string | null>(null);
     
-    if (didColumnChange && currentUser) {
-        const originalColumnName = columns.find(c => c.id === originalLead.columnId)?.title;
-        const destinationColumnName = columns.find(c => c.id === destinationColumn)?.title;
-        if (originalColumnName && destinationColumnName) {
-            handleCreateActivity({
-                leadId: originalLead.id,
-                type: 'status_change',
-                text: `Status alterado de '${originalColumnName}' para '${destinationColumnName}'.`,
-                authorName: currentUser.name,
+    const [activeView, setActiveView] = useState('Dashboard');
+    const [isSidebarCollapsed, setSidebarCollapsed] = useLocalStorage('crm-sidebarCollapsed', false);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Modal & Slideover States
+    const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+    const [isCreateLeadModalOpen, setCreateLeadModalOpen] = useState(false);
+    const [editingLead, setEditingLead] = useState<Lead | null>(null);
+    const [isCreateTaskModalOpen, setCreateTaskModalOpen] = useState(false);
+    const [editingTask, setEditingTask] = useState<Task | null>(null);
+    const [preselectedDataForTask, setPreselectedDataForTask] = useState<{leadId: Id, date?: string} | null>(null);
+
+
+    // Notification State
+    const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+    
+    // Display Settings
+    const [cardDisplaySettings, setCardDisplaySettings] = useLocalStorage<CardDisplaySettings>('crm-cardSettings', {
+        showCompany: true, showValue: true, showTags: true, showAssignedTo: true, showDueDate: false, showProbability: false, showEmail: false, showPhone: false, showCreatedAt: false, showStage: false,
+    });
+    const [listDisplaySettings, setListDisplaySettings] = useLocalStorage<ListDisplaySettings>('crm-listSettings', {
+        showStatus: true, showValue: true, showTags: true, showLastActivity: true, showEmail: true, showPhone: false, showCreatedAt: true,
+    });
+    const [minimizedLeads, setMinimizedLeads] = useLocalStorage<Id[]>('crm-minimizedLeads', []);
+    const [minimizedColumns, setMinimizedColumns] = useLocalStorage<Id[]>('crm-minimizedColumns', []);
+
+
+    // List View Filters
+    const [listSelectedTags, setListSelectedTags] = useState<Tag[]>([]);
+    const [listStatusFilter, setListStatusFilter] = useState<'all' | 'Ativo' | 'Inativo'>('all');
+
+
+    // --- COMPUTED DATA ---
+    const filteredLeads = useMemo(() => {
+        return leads
+            .filter(lead => {
+                const searchLower = searchQuery.toLowerCase();
+                return (
+                    lead.name.toLowerCase().includes(searchLower) ||
+                    lead.company.toLowerCase().includes(searchLower) ||
+                    (lead.email && lead.email.toLowerCase().includes(searchLower))
+                );
             });
+    }, [leads, searchQuery]);
+
+    const listViewFilteredLeads = useMemo(() => {
+        return leads.filter(lead => {
+            const statusMatch = listStatusFilter === 'all' || lead.status === listStatusFilter;
+            const tagMatch = listSelectedTags.length === 0 || listSelectedTags.every(st => lead.tags.some(lt => lt.id === st.id));
+            return statusMatch && tagMatch;
+        })
+    }, [leads, listStatusFilter, listSelectedTags]);
+
+
+    // --- NOTIFICATION HANDLER ---
+    const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
+        setNotification({ message, type });
+    }, []);
+
+    // --- AUTHENTICATION ---
+    const handleLogin = async (email: string, password: string) => {
+        const user = users.find(u => u.email === email); // Password check is omitted for this demo
+        if (user) {
+            setCurrentUser(user);
+            setAuthError(null);
+            showNotification(`Bem-vindo de volta, ${user.name}!`, 'success');
+        } else {
+            setAuthError("Email ou senha inválidos.");
         }
-    }
-  };
-  
-  const handleOpenCreateLeadModal = () => {
-    setEditingLead(null);
-    setCreateEditLeadModalOpen(true);
-  };
-  
-  const handleOpenEditLeadModal = (lead: Lead) => {
-    setEditingLead(lead);
-    setCreateEditLeadModalOpen(true);
-  };
-
-  const handleCreateOrUpdateLead = async (data: CreateLeadData | UpdateLeadData) => {
-    if (editingLead) {
-        const updatedLead = { ...editingLead, ...data } as Lead;
-        setLeads(leads.map(l => (l.id === editingLead.id ? updatedLead : l)));
-        setSelectedLead(prev => (prev && prev.id === editingLead.id ? updatedLead : prev));
-    } else {
-        const newLead: Lead = {
-            id: `mock-lead-${Date.now()}`,
-            columnId: data.columnId || columns[0]?.id,
-            name: data.name || 'Novo Lead',
-            company: data.company || '',
-            value: data.value || 0,
-            avatarUrl: `https://picsum.photos/seed/${Date.now()}/100/100`,
-            tags: data.tags || [],
-            lastActivity: 'agora',
-            createdAt: new Date().toISOString(),
-            ...data,
-        };
-        setLeads(prevLeads => [newLead, ...prevLeads]);
-    }
-    showNotification(editingLead ? 'Lead atualizado com sucesso!' : 'Lead criado com sucesso!', 'success');
-    setCreateEditLeadModalOpen(false);
-    setEditingLead(null);
-  };
-
-  const handleDeleteLead = (lead: Lead) => {
-    setLeadToDelete(lead);
-  };
-
-  const confirmDeleteLead = async () => {
-    if (!leadToDelete) return;
-    const leadId = leadToDelete.id;
-
-    setLeads(leads.filter(l => l.id !== leadId));
-    setActivities(activities.filter(a => a.leadId !== leadId));
-    setTasks(tasks.filter(t => t.leadId !== leadId));
-    setSelectedLead(null);
-    setLeadToDelete(null);
-    showNotification('Lead deletado com sucesso (modo de demonstração).', 'success');
-  };
-
-
-  const handleCardClick = React.useCallback((lead: Lead) => {
-    setSelectedLead(lead);
-  }, []);
-
-  const handleAddNote = React.useCallback(async (leadId: Id, noteText: string) => {
-    if (!currentUser) return;
-    await handleCreateActivity({
-        leadId,
-        text: noteText,
-        type: 'note',
-        authorName: currentUser.name,
-    });
-    showNotification('Nota adicionada com sucesso.', 'success');
-  }, [currentUser, handleCreateActivity, showNotification]);
-
-  const handleSendEmailActivity = React.useCallback(async (leadId: Id, subject: string) => {
-    if (!currentUser) return;
-    await handleCreateActivity({
-        leadId,
-        text: `Email enviado: "${subject}"`,
-        type: 'email_sent',
-        authorName: currentUser.name,
-    });
-  }, [currentUser, handleCreateActivity]);
-
-  const handleOpenCreateTaskModal = (leadId: Id | null = null, date: string | null = null) => {
-    setEditingTask(null);
-    setPreselectedLeadIdForTask(leadId);
-    setPreselectedDateForTask(date);
-    setCreateEditTaskModalOpen(true);
-  };
-
-  const handleOpenEditTaskModal = (task: Task) => {
-    setEditingTask(task);
-    setPreselectedLeadIdForTask(null);
-    setPreselectedDateForTask(null);
-    setCreateEditTaskModalOpen(true);
-  };
-
-  const handleCreateOrUpdateTask = async (data: CreateTaskData | UpdateTaskData) => {
-    setCreateEditTaskModalOpen(false);
-    if (editingTask) {
-        const updatedTask = { ...editingTask, ...data } as Task;
-        setTasks(tasks.map(t => (t.id === editingTask.id ? updatedTask : t)));
-    } else {
-        const newTask: Task = {
-            id: `mock-task-${Date.now()}`,
-            userId: currentUser!.id,
-            status: 'pending',
-            type: 'task', // Default type
-            ...(data as CreateTaskData),
-        };
-        setTasks(prevTasks => [...prevTasks, newTask]);
-    }
-    showNotification(editingTask ? 'Tarefa atualizada com sucesso!' : 'Tarefa criada com sucesso!', 'success');
-    setEditingTask(null);
-    setPreselectedLeadIdForTask(null);
-  };
-
-  const handleDeleteTask = async (taskId: Id) => {
-      setTasks(tasks.filter(t => t.id !== taskId));
-      showNotification('Tarefa deletada com sucesso (modo de demonstração).', 'success');
-  };
-
-  const handleUpdateTaskStatus = async (taskId: Id, status: 'pending' | 'completed') => {
-      const originalTask = tasks.find(t => t.id === taskId);
-      if (!originalTask) return;
-      
-      const updatedTask = { ...originalTask, status };
-      setTasks(tasks.map(t => t.id === taskId ? updatedTask : t));
-      showNotification('Status da tarefa atualizado.', 'success');
-  };
-  
-  const handleSaveEmailDraft = (draftData: CreateEmailDraftData) => {
-    const newDraft: EmailDraft = {
-        ...draftData,
-        id: `mock-draft-${Date.now()}`,
-        createdAt: new Date().toISOString(),
     };
-    setEmailDrafts(prev => [newDraft, ...prev]);
-    showNotification('Rascunho salvo com sucesso!', 'success');
-  };
+    const handleRegister = async (name: string, email: string, password: string) => {
+        if (users.some(u => u.email === email)) {
+            setAuthError("Este email já está em uso.");
+            return;
+        }
+        const newUser: User = { id: `user-${Date.now()}`, name, email };
+        setUsers(prev => [...prev, newUser]);
+        setAuthSuccessMessage("Conta criada com sucesso! Por favor, faça o login.");
+        setAuthError(null);
+    };
+    const handleLogout = () => {
+        setCurrentUser(null);
+        showNotification("Você saiu com sucesso.", 'info');
+    };
+    const handleUpdateProfile = (name: string, avatarFile?: File) => {
+        if (currentUser) {
+            const avatarUrl = avatarFile ? URL.createObjectURL(avatarFile) : currentUser.avatarUrl;
+            const updatedUser = { ...currentUser, name, avatarUrl };
+            setCurrentUser(updatedUser);
+            setUsers(users.map(u => u.id === currentUser.id ? updatedUser : u));
+            showNotification("Perfil atualizado com sucesso!", 'success');
+        }
+    };
 
-  const handleDeleteEmailDraft = (draftId: Id) => {
-    setEmailDrafts(prev => prev.filter(d => d.id !== draftId));
-    showNotification('Rascunho deletado.', 'success');
-  };
 
-  const handleLogout = async () => {
-    showNotification("Logout não aplicável no modo de demonstração.", 'info');
-  };
+    // --- DATA HANDLERS ---
+    const createActivityLog = useCallback((leadId: Id, type: Activity['type'], text: string) => {
+        const newActivity: Activity = {
+            id: `activity-${Date.now()}`,
+            leadId,
+            type,
+            text,
+            authorName: currentUser?.name || "Sistema",
+            timestamp: new Date().toISOString()
+        };
+        setActivities(prev => [newActivity, ...prev]);
+    }, [currentUser, setActivities]);
+    
+    // Leads
+    const handleCreateOrUpdateLead = (data: CreateLeadData | UpdateLeadData) => {
+        if (editingLead) { // Update
+            setLeads(leads.map(l => l.id === editingLead.id ? { ...l, ...data, id: editingLead.id } : l));
+            showNotification(`Lead "${data.name}" atualizado.`, 'success');
+            createActivityLog(editingLead.id, 'note', `Lead atualizado por ${currentUser?.name}.`);
+        } else { // Create
+            const newLead: Lead = {
+                id: `lead-${Date.now()}`,
+                columnId: data.columnId || columns[0].id,
+                name: data.name || 'Novo Lead',
+                company: data.company || '',
+                value: data.value || 0,
+                avatarUrl: `https://i.pravatar.cc/150?u=${Date.now()}`,
+                tags: data.tags || [],
+                lastActivity: new Date().toLocaleDateString(),
+                createdAt: new Date().toISOString(),
+                ...data,
+            };
+            setLeads(prev => [...prev, newLead]);
+            showNotification(`Lead "${newLead.name}" criado.`, 'success');
+        }
+        setCreateLeadModalOpen(false);
+        setEditingLead(null);
+    };
 
-  const handleUpdateProfile = async (name: string, avatarFile?: File) => {
-    if (!currentUser) return;
-    const updatedUser = { ...currentUser, name };
-    if (avatarFile) {
-        updatedUser.avatarUrl = URL.createObjectURL(avatarFile);
+    const handleDeleteLead = (leadId: Id) => {
+        const leadName = leads.find(l => l.id === leadId)?.name || 'Lead';
+        setLeads(leads.filter(l => l.id !== leadId));
+        setSelectedLead(null);
+        showNotification(`"${leadName}" foi deletado.`, 'success');
+    };
+
+    const handleUpdateLeadColumn = (leadId: Id, newColumnId: Id) => {
+        const lead = leads.find(l => l.id === leadId);
+        if (lead && lead.columnId !== newColumnId) {
+            const oldColumnName = columns.find(c => c.id === lead.columnId)?.title;
+            const newColumnName = columns.find(c => c.id === newColumnId)?.title;
+            setLeads(leads.map(l => l.id === leadId ? { ...l, columnId: newColumnId, lastActivity: new Date().toLocaleDateString() } : l));
+            createActivityLog(leadId, 'status_change', `Status alterado de '${oldColumnName}' para '${newColumnName}'.`);
+        }
+    };
+    
+    const handleToggleLeadMinimize = useCallback((leadId: Id) => {
+        setMinimizedLeads(prev => 
+            prev.includes(leadId) 
+                ? prev.filter(id => id !== leadId) 
+                : [...prev, leadId]
+        );
+    }, [setMinimizedLeads]);
+
+    const handleToggleColumnMinimize = useCallback((columnId: Id) => {
+        setMinimizedColumns(prev =>
+            prev.includes(columnId)
+                ? prev.filter(id => id !== columnId)
+                : [...prev, columnId]
+        );
+    }, [setMinimizedColumns]);
+
+
+    // Tasks
+    const handleCreateOrUpdateTask = (data: CreateTaskData | UpdateTaskData) => {
+         if (editingTask) { // Update
+            setTasks(tasks.map(t => t.id === editingTask.id ? { ...t, ...data, id: editingTask.id, userId: editingTask.userId } : t));
+            showNotification(`Tarefa "${data.title}" atualizada.`, 'success');
+        } else { // Create
+            const newTask: Task = {
+                id: `task-${Date.now()}`,
+                userId: currentUser!.id,
+                status: 'pending',
+                ...(data as CreateTaskData),
+            };
+            setTasks(prev => [newTask, ...prev]);
+            showNotification(`Tarefa "${newTask.title}" criada.`, 'success');
+        }
+        setCreateTaskModalOpen(false);
+        setEditingTask(null);
+        setPreselectedDataForTask(null);
+    };
+    
+    const handleDeleteTask = (taskId: Id) => {
+        setTasks(tasks.filter(t => t.id !== taskId));
+        showNotification("Tarefa deletada.", 'success');
+    };
+
+    const handleUpdateTaskStatus = (taskId: Id, status: 'pending' | 'completed') => {
+        setTasks(tasks.map(t => t.id === taskId ? { ...t, status } : t));
+        const taskTitle = tasks.find(t => t.id === taskId)?.title;
+        showNotification(`Tarefa "${taskTitle}" marcada como ${status === 'completed' ? 'concluída' : 'pendente'}.`, 'info');
+    };
+    
+    // Activities & Drafts
+    const handleAddNote = (noteText: string) => {
+        if (selectedLead) {
+            createActivityLog(selectedLead.id, 'note', noteText);
+            showNotification("Nota adicionada.", "success");
+        }
+    };
+
+    const handleSendEmailActivity = (subject: string) => {
+        if(selectedLead) {
+            createActivityLog(selectedLead.id, 'email_sent', `Email enviado: "${subject}"`);
+        }
+    };
+
+    const handleSaveDraft = (draftData: CreateEmailDraftData) => {
+        const newDraft: EmailDraft = {
+            id: `draft-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+            ...draftData
+        };
+        setEmailDrafts(prev => [newDraft, ...prev]);
+        showNotification("Rascunho salvo!", "success");
+    };
+
+    const handleDeleteDraft = (draftId: Id) => {
+        setEmailDrafts(emailDrafts.filter(d => d.id !== draftId));
+        showNotification("Rascunho deletado.", "success");
+    };
+    
+    const handleUpdatePipeline = (newColumns: ColumnData[]) => {
+        setColumns(newColumns);
+        showNotification("Estrutura do pipeline atualizada!", "success");
+    };
+
+
+    // --- UI HANDLERS ---
+    const handleOpenCreateLeadModal = (columnId?: Id) => {
+        setEditingLead(null);
+        if (columnId) {
+             const newLeadTemplate: Partial<Lead> = { columnId: columnId };
+             setEditingLead(newLeadTemplate as Lead); // Use template to pre-select stage
+        }
+        setCreateLeadModalOpen(true);
+    };
+    const handleOpenEditLeadModal = (lead: Lead) => {
+        setEditingLead(lead);
+        setSelectedLead(null); // Close slideover
+        setCreateLeadModalOpen(true);
+    };
+     const handleOpenCreateTaskModal = (leadId?: Id, date?: string) => {
+        setEditingTask(null);
+        setPreselectedDataForTask(leadId ? { leadId, date } : null);
+        setCreateTaskModalOpen(true);
+    };
+    const handleOpenEditTaskModal = (task: Task) => {
+        setEditingTask(task);
+        setCreateTaskModalOpen(true);
+    };
+    
+
+    // --- RENDER LOGIC ---
+
+    if (!currentUser) {
+        return <AuthPage onLogin={handleLogin} onRegister={handleRegister} onSignInWithGoogle={async () => {}} error={authError} successMessage={authSuccessMessage} />;
     }
-    // Since currentUser is from a read-only state, we can't update it directly.
-    // In a real app with auth state management, this would work.
-    // For now, we update the 'users' list if the user is in there.
-    setUsers(prevUsers => prevUsers.map(u => u.id === updatedUser.id ? updatedUser : u));
-    showNotification('Perfil atualizado com sucesso. A alteração na barra superior requer recarregamento.', 'success');
-  };
 
-  const handleUpdatePipeline = async (newColumns: ColumnData[]) => {
-      setColumns(newColumns);
-      showNotification('Pipeline atualizado com sucesso.', 'success');
-  }
-
-  const handleUpdateCardSettings = (newSettings: CardDisplaySettings) => {
-    setCardDisplaySettings(newSettings);
-  };
-  
-  const handleUpdateListSettings = (newSettings: ListDisplaySettings) => {
-    setListDisplaySettings(newSettings);
-  };
-  
-  const renderView = () => {
-    switch (activeView) {
-      case 'Dashboard':
-        return <Dashboard leads={filteredLeads} columns={columns} activities={activities} tasks={tasks} onNavigate={setActiveView} />;
-      case 'Pipeline':
-        return (
-            <div>
-                <PipelineHeader
-                    cardDisplaySettings={cardDisplaySettings}
-                    onUpdateCardSettings={handleUpdateCardSettings}
+    return (
+        <div className="flex h-screen w-full bg-zinc-900 text-gray-200 font-sans antialiased overflow-hidden">
+            <Sidebar activeView={activeView} onNavigate={setActiveView} isCollapsed={isSidebarCollapsed} onToggle={() => setSidebarCollapsed(p => !p)} />
+            
+            <div className="flex flex-col flex-1 overflow-hidden">
+                <Header 
+                    currentUser={currentUser}
+                    onLogout={handleLogout}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    onOpenCreateLeadModal={() => handleOpenCreateLeadModal()}
+                    onOpenCreateTaskModal={() => handleOpenCreateTaskModal()}
                 />
-                <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-                    <KanbanBoard columns={columns} leadsByColumn={leadsByColumn} onCardClick={handleCardClick} selectedLeadId={selectedLead?.id} users={users} cardDisplaySettings={cardDisplaySettings} />
-                    <DragOverlay>{activeLead && <Card lead={activeLead} users={users} cardDisplaySettings={cardDisplaySettings} isOverlay column={columns.find(c => c.id === activeLead.columnId)!} />}</DragOverlay>
-                </DndContext>
+                
+                <main className="flex-1 p-6 overflow-auto">
+                    {activeView === 'Dashboard' && <Dashboard leads={leads} columns={columns} activities={activities} tasks={tasks} onNavigate={setActiveView} />}
+                    {activeView === 'Pipeline' && <KanbanBoard columns={columns} leads={filteredLeads} users={users} cardDisplaySettings={cardDisplaySettings} onUpdateLeadColumn={handleUpdateLeadColumn} onLeadClick={setSelectedLead} onAddLead={handleOpenCreateLeadModal} onUpdateCardSettings={setCardDisplaySettings} minimizedLeads={minimizedLeads} onToggleLeadMinimize={handleToggleLeadMinimize} minimizedColumns={minimizedColumns} onToggleColumnMinimize={handleToggleColumnMinimize} />}
+                    {activeView === 'Leads' && <LeadListView viewType="Leads" leads={listViewFilteredLeads} columns={columns} onLeadClick={setSelectedLead} listDisplaySettings={listDisplaySettings} onUpdateListSettings={setListDisplaySettings} allTags={tags} selectedTags={listSelectedTags} onSelectedTagsChange={setListSelectedTags} statusFilter={listStatusFilter} onStatusFilterChange={setListStatusFilter} />}
+                    {activeView === 'Clientes' && <LeadListView viewType="Clientes" leads={listViewFilteredLeads} columns={columns} onLeadClick={setSelectedLead} listDisplaySettings={listDisplaySettings} onUpdateListSettings={setListDisplaySettings} allTags={tags} selectedTags={listSelectedTags} onSelectedTagsChange={setListSelectedTags} statusFilter={listStatusFilter} onStatusFilterChange={setListStatusFilter} />}
+                    {activeView === 'Tarefas' && <ActivitiesView tasks={tasks} leads={leads} onEditTask={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
+                    {activeView === 'Calendário' && <CalendarPage tasks={tasks} leads={leads} onNewActivity={(date) => handleOpenCreateTaskModal(undefined, date)} onEditActivity={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
+                    {activeView === 'Relatórios' && <ReportsPage leads={leads} columns={columns} tasks={tasks} />}
+                    {activeView === 'Configurações' && <SettingsPage currentUser={currentUser} onUpdateProfile={handleUpdateProfile} columns={columns} onUpdatePipeline={handleUpdatePipeline}/>}
+                </main>
             </div>
-        );
-      case 'Leads':
-      case 'Clientes':
-        return (
-            <LeadListView
-                leads={filteredLeads}
-                columns={columns}
-                onLeadClick={handleCardClick}
-                viewType={activeView as 'Leads' | 'Clientes'}
-                listDisplaySettings={listDisplaySettings}
-                onUpdateListSettings={handleUpdateListSettings}
-            />
-        );
-        case 'Tarefas':
-            return (
-                <ActivitiesView 
-                    tasks={tasks}
-                    leads={leads}
-                    onEditTask={handleOpenEditTaskModal}
-                    onDeleteTask={handleDeleteTask}
-                    onUpdateTaskStatus={handleUpdateTaskStatus}
-                />
-            );
-         case 'Calendário':
-            return (
-                <CalendarPage 
-                    tasks={tasks}
-                    leads={leads}
-                    onNewActivity={(date) => handleOpenCreateTaskModal(null, date)}
-                    onEditActivity={handleOpenEditTaskModal}
-                    onDeleteTask={handleDeleteTask}
-                    onUpdateTaskStatus={handleUpdateTaskStatus}
-                />
-            );
-        case 'Relatórios':
-            return (
-                <ReportsPage
-                    leads={leads}
-                    columns={columns}
-                    tasks={tasks}
-                />
-            );
-        case 'Configurações':
-            return (
-                <SettingsPage 
-                    currentUser={currentUser!}
-                    columns={columns}
-                    onUpdateProfile={handleUpdateProfile}
-                    onUpdatePipeline={handleUpdatePipeline}
-                />
-            );
-      default:
-        return (
-          <div className="flex items-center justify-center h-full bg-zinc-800 rounded-lg border border-zinc-700">
-            <p className="text-zinc-400">Visualização para '{activeView}' ainda não implementada.</p>
-          </div>
-        );
-    }
-  };
+            
+            <FAB onOpenCreateLeadModal={() => handleOpenCreateLeadModal()} onOpenCreateTaskModal={() => handleOpenCreateTaskModal()} />
 
-  return (
-    <div className="flex h-screen w-full bg-zinc-900 text-gray-300">
-      <Sidebar 
-        activeView={activeView} 
-        onNavigate={setActiveView} 
-        isCollapsed={isSidebarCollapsed}
-        onToggle={() => setIsSidebarCollapsed(p => !p)}
-      />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header 
-            currentUser={currentUser}
-            onLogout={handleLogout}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onOpenCreateLeadModal={handleOpenCreateLeadModal}
-            onOpenCreateTaskModal={() => handleOpenCreateTaskModal()}
-        />
-        <main className="flex-1 overflow-x-auto overflow-y-auto p-6 md:p-8">
-        {isDataLoading ? (
-             <div className="flex items-center justify-center h-full w-full">
-                <Loader2 className="w-10 h-10 animate-spin text-violet-500" />
-            </div>
-        ) : renderView()}
-        </main>
-      </div>
-      <FAB
-        onOpenCreateLeadModal={handleOpenCreateLeadModal}
-        onOpenCreateTaskModal={() => handleOpenCreateTaskModal()}
-      />
-      <AnimatePresence>
-        {selectedLead && (
-          <LeadDetailSlideover
-            lead={selectedLead}
-            activities={activities.filter(a => a.leadId === selectedLead.id)}
-            emailDrafts={emailDrafts.filter(d => d.leadId === selectedLead.id)}
-            onClose={() => setSelectedLead(null)}
-            onEdit={() => handleOpenEditLeadModal(selectedLead)}
-            onDelete={() => handleDeleteLead(selectedLead)}
-            onAddNote={(noteText) => handleAddNote(selectedLead.id, noteText)}
-            onSendEmailActivity={(subject) => handleSendEmailActivity(selectedLead.id, subject)}
-            onAddTask={() => handleOpenCreateTaskModal(selectedLead.id)}
-            onSaveDraft={handleSaveEmailDraft}
-            onDeleteDraft={handleDeleteEmailDraft}
-            showNotification={showNotification}
-          />
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {isCreateEditLeadModalOpen && (
-            <CreateEditLeadModal
-                lead={editingLead}
-                columns={columns}
-                allTags={tags}
-                onClose={() => setCreateEditLeadModalOpen(false)}
-                onSubmit={handleCreateOrUpdateLead}
-            />
-        )}
-      </AnimatePresence>
-       <AnimatePresence>
-        {isCreateEditTaskModalOpen && (
-            <CreateEditTaskModal
-                task={editingTask}
-                leads={leads}
-                preselectedLeadId={preselectedLeadIdForTask}
-                preselectedDate={preselectedDateForTask}
-                onClose={() => { 
-                    setCreateEditTaskModalOpen(false); 
-                    setEditingTask(null); 
-                    setPreselectedLeadIdForTask(null);
-                    setPreselectedDateForTask(null); 
-                }}
-                onSubmit={handleCreateOrUpdateTask}
-            />
-        )}
-      </AnimatePresence>
-       <AnimatePresence>
-        {leadToDelete && (
-            <ConfirmDeleteModal
-                onClose={() => setLeadToDelete(null)}
-                onConfirm={confirmDeleteLead}
-                title="Confirmar Exclusão de Lead"
-                message={
-                    <>
-                        <p>Tem certeza que deseja deletar o lead <strong className="text-white">{leadToDelete.name}</strong>?</p>
+            <AnimatePresence>
+                {selectedLead && (
+                    <LeadDetailSlideover 
+                        lead={selectedLead}
+                        activities={activities.filter(a => a.leadId === selectedLead.id)}
+                        emailDrafts={emailDrafts.filter(d => d.leadId === selectedLead.id)}
+                        onClose={() => setSelectedLead(null)}
+                        onEdit={() => handleOpenEditLeadModal(selectedLead)}
+                        onDelete={() => handleDeleteLead(selectedLead.id)}
+                        onAddNote={handleAddNote}
+                        onSendEmailActivity={handleSendEmailActivity}
+                        onAddTask={() => handleOpenCreateTaskModal(selectedLead.id)}
+                        onSaveDraft={handleSaveDraft}
+                        onDeleteDraft={handleDeleteDraft}
+                        showNotification={showNotification}
+                    />
+                )}
+            </AnimatePresence>
 
-                        <p className="mt-2 text-sm text-zinc-500">
-                            Esta ação não pode ser desfeita. Todas as tarefas e atividades associadas também serão removidas.
-                        </p>
-                    </>
-                }
-            />
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {notification && (
-            <Notification
-                message={notification.message}
-                type={notification.type}
-                onClose={() => setNotification(null)}
-            />
-        )}
-      </AnimatePresence>
-    </div>
-  );
+            <AnimatePresence>
+                 {(isCreateLeadModalOpen || editingLead) && (
+                    <CreateEditLeadModal 
+                        lead={editingLead} 
+                        columns={columns}
+                        allTags={tags}
+                        onClose={() => { setCreateLeadModalOpen(false); setEditingLead(null); }} 
+                        onSubmit={handleCreateOrUpdateLead}
+                    />
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                 {(isCreateTaskModalOpen || editingTask) && (
+                    <CreateEditTaskModal 
+                        task={editingTask} 
+                        leads={leads}
+                        preselectedLeadId={preselectedDataForTask?.leadId || null}
+                        preselectedDate={preselectedDataForTask?.date || null}
+                        onClose={() => { setCreateTaskModalOpen(false); setEditingTask(null); setPreselectedDataForTask(null); }} 
+                        onSubmit={handleCreateOrUpdateTask}
+                    />
+                )}
+            </AnimatePresence>
+            
+            <AnimatePresence>
+                {notification && (
+                    <Notification 
+                        message={notification.message} 
+                        type={notification.type} 
+                        onClose={() => setNotification(null)}
+                    />
+                )}
+            </AnimatePresence>
+        </div>
+    );
 };
 
 export default App;

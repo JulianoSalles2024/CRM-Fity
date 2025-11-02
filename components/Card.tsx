@@ -1,173 +1,147 @@
 
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { motion } from 'framer-motion';
-import { Calendar, Mail, Phone, CalendarPlus, Flag } from 'lucide-react';
-import type { Lead, Tag, User, CardDisplaySettings, ColumnData } from '../types';
+import { motion, AnimatePresence } from 'framer-motion';
+import { DollarSign, Tag, Clock, Building, TrendingUp, Calendar, Mail, Phone, ChevronDown, ChevronUp } from 'lucide-react';
+import type { Lead, CardDisplaySettings, User as UserType, Id } from '../types';
 
 interface CardProps {
-  lead: Lead;
-  column: ColumnData;
-  users: User[];
-  cardDisplaySettings: CardDisplaySettings;
-  isOverlay?: boolean;
-  onClick?: () => void;
-  isSelected?: boolean;
+    lead: Lead;
+    displaySettings: CardDisplaySettings;
+    users: UserType[];
+    onClick: () => void;
+    minimizedLeads: Id[];
+    onToggleLeadMinimize: (leadId: Id) => void;
 }
 
-const TagPill: React.FC<{ tag: Tag }> = ({ tag }) => (
-  <span 
-    className="px-2 py-0.5 text-xs font-medium rounded-full text-white/90"
-    style={{ backgroundColor: tag.color }}
-  >
-    {tag.name}
-  </span>
+const TagPill: React.FC<{ tag: { name: string, color: string } }> = ({ tag }) => (
+    <span
+        className="px-2 py-0.5 text-xs font-medium rounded-full text-white/90"
+        style={{ backgroundColor: tag.color }}
+    >
+        {tag.name}
+    </span>
 );
 
-const Card: React.FC<CardProps> = ({ lead, column, users, cardDisplaySettings, isOverlay = false, onClick, isSelected = false }) => {
-  const {
-    setNodeRef,
-    attributes,
-    listeners,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: lead.id,
-    data: {
-      type: 'Lead',
-      lead,
-    },
-  });
+const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onClick, minimizedLeads, onToggleLeadMinimize }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: lead.id, data: { type: 'Lead', lead } });
+    
+    const [isHovered, setIsHovered] = useState(false);
+    const isMinimized = minimizedLeads.includes(lead.id);
 
-  const style = {
-    transition,
-    transform: CSS.Transform.toString(transform),
-  };
-  
-  const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  });
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+    
+    const assignedUser = users.find(u => u.id === lead.assignedTo);
+    const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+    const formatDate = (dateString?: string) => dateString ? new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'N/A';
+    
+    const cardContentVariants = {
+        hidden: { opacity: 0, height: 0 },
+        visible: { opacity: 1, height: 'auto', transition: { duration: 0.2, ease: "easeInOut" } },
+    };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-  }
-
-  const assignedUser = users.find(u => u.id === lead.assignedTo);
-  const userInitials = assignedUser?.name.split(' ').map(n => n[0]).join('') || '?';
-
-  const cardContent = (
-    <div className="space-y-2">
-      <div className="flex justify-between items-start">
-        <h4 className="font-semibold text-gray-100 pr-2">{lead.name}</h4>
-        {cardDisplaySettings.showValue && (
-          <div className="text-sm font-bold text-white flex-shrink-0">
-              {currencyFormatter.format(lead.value)}
-          </div>
-        )}
-      </div>
-      
-      {cardDisplaySettings.showCompany && (
-        <p className="text-sm text-zinc-400">{lead.company}</p>
-      )}
-
-      {cardDisplaySettings.showTags && lead.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 pt-1">
-          {lead.tags.map(tag => <TagPill key={tag.id} tag={tag} />)}
-        </div>
-      )}
-      
-      {(cardDisplaySettings.showEmail || cardDisplaySettings.showPhone || cardDisplaySettings.showCreatedAt || cardDisplaySettings.showStage) && (
-        <div className="mt-2 pt-2 border-t border-zinc-700/60 space-y-1.5 text-xs text-zinc-400">
-            {cardDisplaySettings.showStage && (
-                <div className="flex items-center gap-2">
-                    <Flag className="w-3 h-3 text-zinc-500 flex-shrink-0" />
-                    <span className="font-medium" style={{color: column.color}}>{column.title}</span>
-                </div>
-            )}
-            {cardDisplaySettings.showEmail && lead.email && (
-                 <div className="flex items-center gap-2 truncate">
-                    <Mail className="w-3 h-3 text-zinc-500 flex-shrink-0" />
-                    <a href={`mailto:${lead.email}`} className="truncate hover:underline" onClick={e => e.stopPropagation()}>{lead.email}</a>
-                </div>
-            )}
-            {cardDisplaySettings.showPhone && lead.phone && (
-                 <div className="flex items-center gap-2">
-                    <Phone className="w-3 h-3 text-zinc-500 flex-shrink-0" />
-                    <span>{lead.phone}</span>
-                </div>
-            )}
-            {cardDisplaySettings.showCreatedAt && lead.createdAt && (
-                 <div className="flex items-center gap-2">
-                    <CalendarPlus className="w-3 h-3 text-zinc-500 flex-shrink-0" />
-                    <span>Capturado em {formatDate(lead.createdAt)}</span>
-                </div>
-            )}
-        </div>
-      )}
-
-
-      {cardDisplaySettings.showProbability && typeof lead.probability === 'number' && (
-        <div className="flex items-center gap-3 pt-1">
-          <div className="w-full bg-zinc-700/70 rounded-full h-1.5">
-            <div className="bg-teal-400 h-1.5 rounded-full" style={{ width: `${lead.probability}%` }}></div>
-          </div>
-          <span className="text-xs font-medium text-zinc-400">{lead.probability}%</span>
-        </div>
-      )}
-
-      {(cardDisplaySettings.showDueDate || cardDisplaySettings.showAssignedTo) && (
-        <div className="flex justify-between items-center text-xs text-zinc-400 pt-2 border-t border-zinc-700/60">
-          <div className="flex items-center gap-2">
-            {cardDisplaySettings.showDueDate && lead.dueDate && (
-              <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-violet-400" />
-                <span>{formatDate(lead.dueDate)}</span>
-              </div>
-            )}
-          </div>
-          {cardDisplaySettings.showAssignedTo && assignedUser && (
-            <div className="w-6 h-6 rounded-full bg-zinc-700 text-white/80 font-bold flex items-center justify-center text-[10px]" title={assignedUser.name}>
-              {userInitials}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-
-  if (isDragging) {
     return (
-      <div
-        ref={setNodeRef}
-        style={style}
-        className="p-3 rounded-lg bg-zinc-800 border border-zinc-700 opacity-50"
-      >
-        {cardContent}
-      </div>
+        <motion.div
+            layout // Animate layout changes (e.g., height)
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
+            onClick={onClick}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            className={`bg-zinc-800 rounded-lg border border-zinc-700/80 shadow-sm cursor-grab active:cursor-grabbing hover:bg-zinc-700/50 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/20 transition-all duration-150 touch-none ${isMinimized ? 'p-3' : 'p-4'}`}
+        >
+            <div className="flex justify-between items-start gap-2">
+                <h3 className="font-bold text-white text-md leading-tight flex-1 truncate">{lead.name}</h3>
+                 {(isHovered || isMinimized) && (
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleLeadMinimize(lead.id);
+                        }}
+                        className="p-1 rounded-full text-zinc-400 hover:bg-zinc-900/50 hover:text-white transition-colors flex-shrink-0"
+                        title={isMinimized ? "Expandir card" : "Minimizar card"}
+                    >
+                        {isMinimized ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                    </button>
+                 )}
+                 {displaySettings.showAssignedTo && assignedUser && (
+                    <div title={assignedUser.name} className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center font-bold text-xs text-white ring-1 ring-zinc-900 flex-shrink-0">
+                         {assignedUser.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                )}
+            </div>
+            
+            <AnimatePresence initial={false}>
+                {!isMinimized && (
+                    <motion.div
+                        key="content"
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                        variants={cardContentVariants}
+                        className="overflow-hidden"
+                    >
+                        <div className="pt-3 space-y-3">
+                            {displaySettings.showCompany && <p className="text-sm text-zinc-400 flex items-center gap-2"><Building className="w-3.5 h-3.5 flex-shrink-0" /> {lead.company}</p>}
+                            
+                            {displaySettings.showValue && (
+                                <p className="text-sm font-semibold text-green-400 flex items-center gap-2">
+                                    <DollarSign className="w-3.5 h-3.5 flex-shrink-0" />
+                                    {currencyFormatter.format(lead.value)}
+                                </p>
+                            )}
+                            
+                            {displaySettings.showEmail && <p className="text-sm text-zinc-400 flex items-center gap-2 truncate"><Mail className="w-3.5 h-3.5 flex-shrink-0" /> {lead.email || 'N/A'}</p>}
+                            {displaySettings.showPhone && <p className="text-sm text-zinc-400 flex items-center gap-2"><Phone className="w-3.5 h-3.5 flex-shrink-0" /> {lead.phone || 'N/A'}</p>}
+
+                            {displaySettings.showTags && lead.tags.length > 0 && (
+                                 <div className="flex flex-wrap gap-1.5 items-center">
+                                    <Tag className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
+                                    {lead.tags.map(tag => <TagPill key={tag.id} tag={tag} />)}
+                                </div>
+                            )}
+                            
+                            {displaySettings.showProbability && typeof lead.probability === 'number' && (
+                                 <div className="flex items-center gap-2 text-sm text-zinc-400">
+                                    <TrendingUp className="w-3.5 h-3.5 flex-shrink-0" />
+                                    <span>Probabilidade: {lead.probability}%</span>
+                                </div>
+                            )}
+
+                            <div className="border-t border-zinc-700/50 pt-2 text-xs text-zinc-500 space-y-1.5">
+                                {displaySettings.showDueDate && lead.dueDate && (
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="w-3 h-3 flex-shrink-0" />
+                                        <span>Vencimento: {formatDate(lead.dueDate)}</span>
+                                    </div>
+                                )}
+                                 {displaySettings.showCreatedAt && lead.createdAt && (
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="w-3 h-3 flex-shrink-0" />
+                                        <span>Capturado em: {formatDate(lead.createdAt)}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
-  }
-
-  const motionProps = isSelected
-    ? { layoutId: `lead-card-${lead.id}` }
-    : {};
-
-  return (
-    <motion.div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      onClick={onClick}
-      className={`p-3 rounded-lg bg-zinc-800 border border-zinc-700 cursor-grab active:cursor-grabbing transition-all ease-out duration-[140ms] ${isOverlay ? 'shadow-2xl scale-105' : 'hover:border-violet-500 hover:-translate-y-1 hover:shadow-lg hover:ring-2 hover:ring-violet-500/50'} ${isSelected ? 'border-violet-500 ring-2 ring-violet-500/50' : ''}`}
-      {...motionProps}
-    >
-      {cardContent}
-    </motion.div>
-  );
 };
 
 export default Card;
