@@ -1,7 +1,9 @@
 
-import React, { useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Lead, ColumnData, Task } from '../types';
-import { BarChart, ChevronDown, RefreshCw, Download, Users, Goal, DollarSign, CheckCircle, Eye, Target } from 'lucide-react';
+import { BarChart, ChevronDown, RefreshCw, Download, Users, Target, DollarSign, CheckCircle } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+
 
 interface ReportsPageProps {
     leads: Lead[];
@@ -30,34 +32,83 @@ const ReportKpiCard: React.FC<ReportKpiCardProps> = ({ title, value, icon: Icon,
 
 
 const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks }) => {
+    const [timeRange, setTimeRange] = useState<'all' | '7d' | '30d' | 'this_month'>('all');
+    const [isFilterMenuOpen, setFilterMenuOpen] = useState(false);
+    const filterMenuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (filterMenuRef.current && !filterMenuRef.current.contains(event.target as Node)) {
+                setFilterMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const timeRangeOptions: { key: typeof timeRange, label: string }[] = [
+        { key: 'all', label: 'Todo o período' },
+        { key: '7d', label: 'Últimos 7 dias' },
+        { key: '30d', label: 'Últimos 30 dias' },
+        { key: 'this_month', label: 'Este mês' },
+    ];
     
     const currencyFormatter = new Intl.NumberFormat('pt-BR', {
         style: 'currency',
         currency: 'BRL',
     });
 
+    const { filteredLeads, filteredTasks } = useMemo(() => {
+        if (timeRange === 'all') {
+            return { filteredLeads: leads, filteredTasks: tasks };
+        }
+
+        const now = new Date();
+        let startDate = new Date();
+
+        switch (timeRange) {
+            case '7d':
+                startDate.setDate(now.getDate() - 7);
+                break;
+            case '30d':
+                startDate.setDate(now.getDate() - 30);
+                break;
+            case 'this_month':
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                break;
+        }
+        
+        startDate.setHours(0, 0, 0, 0);
+
+        const newFilteredLeads = leads.filter(l => l.createdAt && new Date(l.createdAt) >= startDate);
+        const newFilteredTasks = tasks.filter(t => new Date(t.dueDate) >= startDate);
+
+        return { filteredLeads: newFilteredLeads, filteredTasks: newFilteredTasks };
+    }, [leads, tasks, timeRange]);
+
+
     const reportData = useMemo(() => {
-        const totalLeads = leads.length;
+        const totalLeads = filteredLeads.length;
         const closedWonColumnId = columns[columns.length - 1]?.id; // Assume last column is 'won'
-        const wonLeadsCount = leads.filter(l => l.columnId === closedWonColumnId).length;
+        const wonLeadsCount = filteredLeads.filter(l => l.columnId === closedWonColumnId).length;
         const conversionRate = totalLeads > 0 ? ((wonLeadsCount / totalLeads) * 100).toFixed(1) : '0.0';
 
-        const totalValue = leads.reduce((sum, lead) => sum + lead.value, 0);
+        const totalValue = filteredLeads.reduce((sum, lead) => sum + lead.value, 0);
         const averageValue = totalLeads > 0 ? totalValue / totalLeads : 0;
 
-        const totalTasks = tasks.length;
-        const completedTasks = tasks.filter(t => t.status === 'completed').length;
+        const totalTasks = filteredTasks.length;
+        const completedTasks = filteredTasks.filter(t => t.status === 'completed').length;
         const activityCompletionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : '0.0';
         
         const funnelData = columns.map(col => {
-            const leadsInCol = leads.filter(l => l.columnId === col.id);
+            const leadsInCol = filteredLeads.filter(l => l.columnId === col.id);
             return {
                 ...col,
                 count: leadsInCol.length,
             };
         });
 
-        const topLeads = [...leads]
+        const topLeads = [...filteredLeads]
             .sort((a, b) => b.value - a.value)
             .slice(0, 10);
             
@@ -69,7 +120,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks }) => {
             funnelData,
             topLeads,
         };
-    }, [leads, columns, tasks]);
+    }, [filteredLeads, filteredTasks, columns]);
 
      const columnMap = useMemo(() => {
         return columns.reduce((acc, col) => {
@@ -77,6 +128,44 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks }) => {
             return acc;
         }, {} as Record<string, {title: string, color: string}>);
     }, [columns]);
+
+    const handleDownload = () => {
+        // Section 1: KPI Summary
+        const kpiData = [
+            ['Métrica', 'Valor'],
+            ['Período do Relatório', timeRangeOptions.find(o => o.key === timeRange)?.label],
+            ['Total de Leads', reportData.totalLeads],
+            ['Taxa de Conversão (%)', reportData.conversionRate],
+            ['Valor Médio (BRL)', reportData.averageValue],
+            ['Conclusão de Atividades (%)', reportData.activityCompletionRate],
+        ];
+        let csvContent = kpiData.map(e => e.join(',')).join('\n');
+        csvContent += '\n\n';
+
+        // Section 2: Leads Details
+        const leadHeaders = ['Nome', 'Empresa', 'Valor (BRL)', 'Estágio', 'Probabilidade (%)', 'Data de Criação'];
+        const leadRows = filteredLeads.map(lead => ([
+            `"${lead.name.replace(/"/g, '""')}"`,
+            `"${lead.company.replace(/"/g, '""')}"`,
+            lead.value,
+            `"${columnMap[lead.columnId]?.title || 'N/A'}"`,
+            lead.probability || 0,
+            lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('pt-BR') : 'N/A'
+        ]));
+        csvContent += leadHeaders.join(',') + '\n';
+        csvContent += leadRows.map(e => e.join(',')).join('\n');
+
+        // Trigger download
+        const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' }); // \uFEFF for BOM
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `relatorio_fity_ai_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
 
     return (
         <div className="flex flex-col gap-6">
@@ -89,14 +178,34 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks }) => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button className="flex items-center gap-2 text-sm text-zinc-300 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 px-3 py-1.5 rounded-md">
-                        <span>Último Mês</span>
-                        <ChevronDown className="w-4 h-4 text-zinc-500" />
-                    </button>
-                    <button className="p-2 text-zinc-300 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 rounded-md">
+                     <div className="relative" ref={filterMenuRef}>
+                        <button onClick={() => setFilterMenuOpen(p => !p)} className="flex items-center gap-2 text-sm text-zinc-300 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 px-3 py-1.5 rounded-md">
+                            <span>{timeRangeOptions.find(o => o.key === timeRange)?.label}</span>
+                            <ChevronDown className="w-4 h-4 text-zinc-500" />
+                        </button>
+                        <AnimatePresence>
+                            {isFilterMenuOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute top-full right-0 mt-2 w-48 bg-zinc-800 rounded-lg border border-zinc-700 shadow-lg z-20 py-1"
+                                >
+                                    {timeRangeOptions.map(option => (
+                                        <button key={option.key} onClick={() => { setTimeRange(option.key); setFilterMenuOpen(false); }}
+                                            className="w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-700/50">
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                    <button className="p-2 text-zinc-300 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 rounded-md" title="Atualizar dados">
                         <RefreshCw className="w-4 h-4" />
                     </button>
-                     <button className="p-2 text-zinc-300 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 rounded-md">
+                     <button onClick={handleDownload} className="p-2 text-zinc-300 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 rounded-md" title="Baixar relatório">
                         <Download className="w-4 h-4" />
                     </button>
                 </div>
@@ -117,16 +226,16 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks }) => {
                     <div className="space-y-3">
                         {reportData.funnelData.map(stage => (
                             <div key={stage.id} className="flex items-center gap-3">
-                                <p className="text-sm text-zinc-400 w-28 truncate">{stage.title}</p>
+                                <p className="text-sm text-zinc-400 w-28 truncate" title={stage.title}>{stage.title}</p>
                                 <div className="flex-1 bg-zinc-700 rounded-full h-4">
                                     <div 
-                                        className="h-4 rounded-full text-white text-xs flex items-center pl-2"
+                                        className="h-4 rounded-full text-white text-xs flex items-center pl-2 transition-all duration-500 ease-out"
                                         style={{ 
                                             width: `${reportData.totalLeads > 0 ? (stage.count / reportData.totalLeads) * 100 : 0}%`,
                                             backgroundColor: stage.color,
-                                            minWidth: '20px'
+                                            minWidth: stage.count > 0 ? '24px' : '0'
                                         }}
-                                    >{stage.count}</div>
+                                    >{stage.count > 0 ? stage.count : ''}</div>
                                 </div>
                             </div>
                         ))}
@@ -155,7 +264,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks }) => {
 
             {/* Top Leads Table */}
             <div className="bg-zinc-800 rounded-lg border border-zinc-700 overflow-hidden">
-                <h3 className="font-semibold text-white p-5">Top 10 Leads por Valor</h3>
+                <h3 className="font-semibold text-white p-5">Top 10 Leads por Valor ({timeRangeOptions.find(o => o.key === timeRange)?.label})</h3>
                  <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-zinc-700">
                         <thead className="bg-zinc-900/50">
@@ -188,9 +297,16 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks }) => {
                                             <span>{lead.probability || 0}%</span>
                                         </div>
                                     </td>
-                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-zinc-400">{lead.dueDate ? new Date(lead.dueDate).toLocaleDateString('pt-BR') : '—'}</td>
+                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-zinc-400">{lead.dueDate ? new Date(lead.dueDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—'}</td>
                                 </tr>
                             ))}
+                             {reportData.topLeads.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} className="text-center py-10 text-zinc-500">
+                                        Nenhum lead encontrado para este período.
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                  </div>

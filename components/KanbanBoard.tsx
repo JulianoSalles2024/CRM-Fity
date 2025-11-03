@@ -82,7 +82,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     
     return (
         <div className="flex flex-col h-full">
-            <PipelineHeader cardDisplaySettings={cardDisplaySettings} onUpdateCardSettings={onUpdateCardSettings} />
+            <div className="relative z-10">
+                <PipelineHeader cardDisplaySettings={cardDisplaySettings} onUpdateCardSettings={onUpdateCardSettings} />
+            </div>
             <div className="flex-1 overflow-x-auto overflow-y-hidden">
                 <DndContext
                     sensors={sensors}

@@ -1,4 +1,3 @@
-
 import React, { useState, FormEvent } from 'react';
 import { Loader2, PanelLeft } from 'lucide-react';
 
@@ -25,8 +24,8 @@ const Register: React.FC<RegisterProps> = ({ onRegister, onNavigateToLogin, erro
     <div className="flex items-center justify-center min-h-screen bg-zinc-900 p-4">
       <div className="w-full max-w-sm">
         <div className="flex justify-center items-center gap-3 mb-8">
-            <PanelLeft className="w-8 h-8 text-[#14ff00]" />
-            <h1 className="text-3xl font-bold text-gray-100">CRM <span style={{ color: '#14ff00' }}>Fity AI</span></h1>
+            <PanelLeft className="w-8 h-8 text-violet-500" />
+            <h1 className="text-3xl font-bold text-gray-100">CRM <span className="text-violet-400">Fity AI</span></h1>
         </div>
 
         <div className="bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg p-8">

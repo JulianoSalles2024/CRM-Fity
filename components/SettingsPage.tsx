@@ -197,16 +197,19 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
         const { active, over } = event;
 
         if (over && active.id !== over.id) {
-            setPipelines(currentPipelines =>
-                currentPipelines.map(p => {
-                    if (p.id === activePipelineId) {
-                        const oldIndex = p.columns.findIndex(item => item.id === active.id);
-                        const newIndex = p.columns.findIndex(item => item.id === over.id);
-                        return { ...p, columns: arrayMove(p.columns, oldIndex, newIndex) };
-                    }
-                    return p;
-                })
-            );
+            let newColumns: ColumnData[] = activePipeline?.columns || [];
+            const updatedPipelines = pipelines.map(p => {
+                if (p.id === activePipelineId) {
+                    const oldIndex = p.columns.findIndex(item => item.id === active.id);
+                    const newIndex = p.columns.findIndex(item => item.id === over.id);
+                    newColumns = arrayMove(p.columns, oldIndex, newIndex);
+                    return { ...p, columns: newColumns };
+                }
+                return p;
+            });
+
+            setPipelines(updatedPipelines);
+            onUpdatePipeline(newColumns);
         }
     };
     
@@ -216,28 +219,30 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
     };
     
     const handleCreateOrUpdateStage = (stageData: {id?: Id, title: string, color: string}) => {
-      if (stageData.id) { // It's an update
-         setPipelines(currentPipelines =>
-            currentPipelines.map(p => {
-                if (p.id === activePipelineId) {
-                    return {
-                        ...p,
-                        columns: p.columns.map(c => c.id === stageData.id ? { ...c, title: stageData.title, color: stageData.color } : c)
-                    };
+      let finalColumns: ColumnData[] = [];
+
+        const newPipelines = pipelines.map(p => {
+            if (p.id === activePipelineId) {
+                let updatedColumns;
+                if (stageData.id) { // Update
+                    updatedColumns = p.columns.map(c => 
+                        c.id === stageData.id ? { ...c, title: stageData.title, color: stageData.color } : c
+                    );
+                } else { // Create
+                    const newColumn: ColumnData = { id: `new-stage-${Date.now()}`, title: stageData.title, color: stageData.color };
+                    updatedColumns = [...p.columns, newColumn];
                 }
-                return p;
-            })
-        );
-      } else { // It's a create
-        const newColumn: ColumnData = { id: `new-stage-${Date.now()}`, title: stageData.title, color: stageData.color };
-        setPipelines(currentPipelines =>
-            currentPipelines.map(p =>
-                p.id === activePipelineId ? { ...p, columns: [...p.columns, newColumn] } : p
-            )
-        );
-      }
-      setCreateStageModalOpen(false);
-      setEditingStage(null);
+                finalColumns = updatedColumns;
+                return { ...p, columns: updatedColumns };
+            }
+            return p;
+        });
+        
+        setPipelines(newPipelines);
+        onUpdatePipeline(finalColumns);
+
+        setCreateStageModalOpen(false);
+        setEditingStage(null);
     };
 
 
@@ -251,12 +256,19 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
 
     const confirmDeleteStage = () => {
         if (stageToDelete) {
-             setPipelines(currentPipelines =>
-                currentPipelines.map(p =>
-                    p.id === activePipelineId ? { ...p, columns: p.columns.filter(col => col.id !== stageToDelete) } : p
-                )
-             );
-             setStageToDelete(null);
+            let finalColumns: ColumnData[] = [];
+            const newPipelines = pipelines.map(p => {
+                if (p.id === activePipelineId) {
+                    const updatedColumns = p.columns.filter(col => col.id !== stageToDelete);
+                    finalColumns = updatedColumns;
+                    return { ...p, columns: updatedColumns };
+                }
+                return p;
+            });
+
+            setPipelines(newPipelines);
+            onUpdatePipeline(finalColumns);
+            setStageToDelete(null);
         }
     };
     
@@ -291,12 +303,6 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
             setPipelineToDelete(null);
         }
     };
-
-    const handleSaveChanges = () => {
-        if(activePipeline) {
-            onUpdatePipeline(activePipeline.columns);
-        }
-    }
 
     return (
         <>
@@ -345,12 +351,6 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
                         </div>
                         <DragOverlay>{activeColumn ? <StageItem column={activeColumn} index={activePipeline.columns.findIndex(c => c.id === activeColumn.id)} /> : null}</DragOverlay>
                     </DndContext>
-
-                     <div className="p-4 bg-zinc-900/30 border-t border-zinc-700 rounded-b-lg flex justify-end">
-                         <button onClick={handleSaveChanges} className="px-6 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700 transition-colors">
-                            Salvar Alterações
-                        </button>
-                    </div>
                 </div>
             )}
             
@@ -421,7 +421,7 @@ interface SettingsPageProps {
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpdateProfile, onUpdatePipeline }) => {
-    const [activeTab, setActiveTab] = useState('Notificações');
+    const [activeTab, setActiveTab] = useState('Pipeline');
 
     const tabs = [
         { name: 'Perfil', icon: UserIcon },
@@ -434,7 +434,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpd
     return (
         <div className="flex flex-col gap-6">
              <div className="flex items-center gap-4">
-                <Settings className="w-8 h-8 text-[#14ff00]" />
+                <Settings className="w-8 h-8 text-violet-500" />
                 <div>
                     <h1 className="text-2xl font-bold text-white">Configurações</h1>
                     <p className="text-zinc-400">Gerencie suas preferências e configurações da conta</p>

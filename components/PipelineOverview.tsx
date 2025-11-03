@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { ColumnData, Lead } from '../types';
 import { ChevronsRight } from 'lucide-react';
@@ -32,7 +31,7 @@ const PipelineOverview: React.FC<PipelineOverviewProps> = ({ columns, leads, onN
         <div className="bg-zinc-800 p-5 rounded-lg border border-zinc-700 h-full flex flex-col transition-all duration-200 ease-in-out hover:bg-zinc-700/50 hover:-translate-y-1 hover:shadow-lg">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="font-semibold text-white">Visão Geral do Pipeline</h2>
-                <button onClick={() => onNavigate('Pipeline')} className="flex items-center gap-1 text-sm text-[#14ff00] hover:text-[#14ff00]/80">
+                <button onClick={() => onNavigate('Pipeline')} className="flex items-center gap-1 text-sm text-violet-400 hover:text-violet-300">
                     <span>Ver tudo</span>
                     <ChevronsRight className="w-4 h-4" />
                 </button>
