@@ -1,10 +1,10 @@
 
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-// Fix: Imported MessageSquare icon from lucide-react.
-import { Bot, Send, User, Building, DollarSign, Sparkles, FileText, Loader2, MessageSquare } from 'lucide-react';
+import { Bot, Send, User, Building, DollarSign, Sparkles, FileText, Loader2, MessageSquare, Inbox, FileClock, CheckCircle2, XCircle, MessageCircle as OpenIcon, ChevronDown } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
-import { Lead, ChatConversation, ChatMessage, User as UserType, Id } from '../types';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Lead, ChatConversation, ChatMessage, User as UserType, Id, ChatConversationStatus } from '../types';
 
 interface ChatViewProps {
     conversations: ChatConversation[];
@@ -12,6 +12,7 @@ interface ChatViewProps {
     leads: Lead[];
     currentUser: UserType;
     onSendMessage: (conversationId: Id, text: string) => void;
+    onUpdateConversationStatus: (conversationId: Id, status: ChatConversationStatus) => void;
 }
 
 const formatTimestamp = (timestamp: string) => {
@@ -28,13 +29,36 @@ const formatTimestamp = (timestamp: string) => {
     return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
 };
 
-const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, currentUser, onSendMessage }) => {
+const statusConfig: Record<ChatConversationStatus, { label: string; icon: React.ElementType; color: string; bgColor: string; }> = {
+    open: { label: 'Em Aberto', icon: OpenIcon, color: 'text-blue-400', bgColor: 'bg-blue-900/50' },
+    waiting: { label: 'Aguardando', icon: FileClock, color: 'text-yellow-400', bgColor: 'bg-yellow-900/50' },
+    not_started: { label: 'Não Iniciada', icon: Inbox, color: 'text-zinc-400', bgColor: 'bg-zinc-700/50' },
+    automation: { label: 'Automação', icon: Bot, color: 'text-purple-400', bgColor: 'bg-purple-900/50' },
+    finished: { label: 'Finalizada', icon: CheckCircle2, color: 'text-green-400', bgColor: 'bg-green-900/50' },
+    failed: { label: 'Falha', icon: XCircle, color: 'text-red-400', bgColor: 'bg-red-900/50' },
+};
+
+
+const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, currentUser, onSendMessage, onUpdateConversationStatus }) => {
     const [activeConversationId, setActiveConversationId] = useState<Id | null>(conversations[0]?.id || null);
     const [newMessage, setNewMessage] = useState('');
     const [isLoadingAi, setIsLoadingAi] = useState(false);
     const [aiSuggestion, setAiSuggestion] = useState('');
-
+    const [activeStatusFilter, setActiveStatusFilter] = useState<ChatConversationStatus | 'all'>('all');
+    const [isStatusMenuOpen, setStatusMenuOpen] = useState(false);
+    
+    const statusMenuRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (statusMenuRef.current && !statusMenuRef.current.contains(event.target as Node)) {
+                setStatusMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const leadsMap = useMemo(() => new Map(leads.map(lead => [lead.id, lead])), [leads]);
 
@@ -47,6 +71,34 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
         activeConversation ? leadsMap.get(activeConversation.leadId) : null,
         [activeConversation, leadsMap]
     );
+    
+    const statusFilters: {
+        id: ChatConversationStatus;
+        label: string;
+        icon: React.ElementType;
+    }[] = Object.entries(statusConfig).map(([id, {label, icon}]) => ({ id: id as ChatConversationStatus, label, icon }));
+
+
+    const statusCounts = useMemo(() => {
+        const counts: Record<ChatConversationStatus | 'all', number> = {
+            all: conversations.length,
+            open: 0,
+            waiting: 0,
+            not_started: 0,
+            automation: 0,
+            finished: 0,
+            failed: 0,
+        };
+        conversations.forEach(conv => {
+            counts[conv.status]++;
+        });
+        return counts;
+    }, [conversations]);
+
+    const filteredConversations = useMemo(() => {
+        if (activeStatusFilter === 'all') return conversations;
+        return conversations.filter(c => c.status === activeStatusFilter);
+    }, [conversations, activeStatusFilter]);
 
     const messagesForActiveConversation = useMemo(() => 
         messages
@@ -60,7 +112,6 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
     }, [messagesForActiveConversation]);
     
      useEffect(() => {
-        // Quando a conversa ativa muda, limpa a sugestão da IA.
         setAiSuggestion('');
     }, [activeConversationId]);
 
@@ -112,6 +163,12 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
             setIsLoadingAi(false);
         }
     }
+    
+    const StatusIcon = ({ status }: { status: ChatConversationStatus }) => {
+        const config = statusConfig[status] || statusConfig.open;
+        const Icon = config.icon;
+        return <Icon className={`w-4 h-4 flex-shrink-0 ${config.color}`} title={config.label} />;
+    };
 
     return (
         <div className="flex h-full bg-zinc-900 -m-6 border border-zinc-800 rounded-lg">
@@ -120,19 +177,42 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
                 <div className="p-4 border-b border-zinc-800">
                     <h2 className="text-lg font-bold text-white">Conversas</h2>
                 </div>
+                <div className="p-2 border-b border-zinc-800">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2 -mb-2 no-scrollbar" style={{ scrollbarWidth: 'none' }}>
+                        <button
+                            onClick={() => setActiveStatusFilter('all')}
+                            className={`flex-shrink-0 px-3 py-1 text-xs font-medium rounded-md transition-colors flex items-center gap-2 ${activeStatusFilter === 'all' ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:bg-zinc-700/50'}`}
+                        >
+                            Todas <span className="text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded-full text-xs">{statusCounts.all}</span>
+                        </button>
+                        {statusFilters.map(filter => (
+                            <button
+                                key={filter.id}
+                                onClick={() => setActiveStatusFilter(filter.id)}
+                                className={`flex-shrink-0 px-3 py-1 text-xs font-medium rounded-md transition-colors flex items-center gap-2 ${activeStatusFilter === filter.id ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:bg-zinc-700/50'}`}
+                            >
+                                <filter.icon className="w-3.5 h-3.5" />
+                                {filter.label} <span className="text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded-full text-xs">{statusCounts[filter.id]}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
                 <div className="flex-1 overflow-y-auto">
-                    {conversations.map(conv => {
+                    {filteredConversations.map(conv => {
                         const lead = leadsMap.get(conv.leadId);
                         if (!lead) return null;
                         const isActive = conv.id === activeConversationId;
                         return (
-                            <button key={conv.id} onClick={() => setActiveConversationId(conv.id)} className={`w-full text-left p-4 flex gap-3 transition-colors ${isActive ? 'bg-violet-600/20' : 'hover:bg-zinc-800/50'}`}>
+                            <button key={conv.id} onClick={() => setActiveConversationId(conv.id)} className={`w-full text-left p-4 flex gap-3 transition-colors border-l-4 ${isActive ? 'bg-violet-900 border-violet-700' : 'border-transparent hover:bg-zinc-800/50'}`}>
                                 <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center font-bold text-sm text-white flex-shrink-0">
                                     {lead.name.charAt(0)}
                                 </div>
                                 <div className="flex-1 overflow-hidden">
                                     <div className="flex justify-between items-center">
-                                        <p className="font-semibold text-white truncate">{lead.name}</p>
+                                        <div className="flex items-center gap-2 overflow-hidden">
+                                            <StatusIcon status={conv.status} />
+                                            <p className="font-semibold text-white truncate">{lead.name}</p>
+                                        </div>
                                         <p className="text-xs text-zinc-500 flex-shrink-0">{formatTimestamp(conv.lastMessageTimestamp)}</p>
                                     </div>
                                     <p className="text-sm text-zinc-400 truncate">{conv.lastMessage}</p>
@@ -155,13 +235,50 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
                     </div>
                 ) : (
                     <>
-                        <div className="p-4 border-b border-zinc-800 flex items-center gap-3">
-                             <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center font-bold text-sm text-white flex-shrink-0">
-                                {activeLead.name.charAt(0)}
+                        <div className="p-4 border-b border-zinc-800 flex items-center justify-between gap-3">
+                             <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center font-bold text-sm text-white flex-shrink-0">
+                                    {activeLead.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-white">{activeLead.name}</h3>
+                                    <p className="text-xs text-green-400">Online</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="font-semibold text-white">{activeLead.name}</h3>
-                                <p className="text-xs text-green-400">Online</p>
+                            <div className="relative" ref={statusMenuRef}>
+                                <button
+                                    onClick={() => setStatusMenuOpen(p => !p)}
+                                    className={`flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-md transition-colors ${statusConfig[activeConversation.status].bgColor} ${statusConfig[activeConversation.status].color} hover:opacity-90`}
+                                >
+                                    <StatusIcon status={activeConversation.status}/>
+                                    <span>{statusConfig[activeConversation.status].label}</span>
+                                    <ChevronDown className="w-4 h-4 opacity-70" />
+                                </button>
+                                <AnimatePresence>
+                                    {isStatusMenuOpen && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.15 }}
+                                            className="absolute top-full right-0 mt-2 w-48 bg-zinc-800 rounded-lg border border-zinc-700 shadow-lg z-20 py-1"
+                                        >
+                                            {statusFilters.map(({ id, label, icon: Icon }) => (
+                                                <button
+                                                    key={id}
+                                                    onClick={() => {
+                                                        onUpdateConversationStatus(activeConversation.id, id);
+                                                        setStatusMenuOpen(false);
+                                                    }}
+                                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-700/50"
+                                                >
+                                                    <Icon className={`w-4 h-4 ${statusConfig[id].color}`} />
+                                                    <span>{label}</span>
+                                                </button>
+                                            ))}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">

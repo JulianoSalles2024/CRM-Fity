@@ -105,12 +105,15 @@ export interface ChatMessage {
     timestamp: string; // ISO String
 }
 
+export type ChatConversationStatus = 'not_started' | 'waiting' | 'open' | 'automation' | 'finished' | 'failed';
+
 export interface ChatConversation {
     id: Id;
     leadId: Id;
     lastMessage: string;
     lastMessageTimestamp: string;
     unreadCount: number;
+    status: ChatConversationStatus;
 }
 
 

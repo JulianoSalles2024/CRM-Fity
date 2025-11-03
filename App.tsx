@@ -24,7 +24,7 @@ import ChatView from './components/ChatView';
 
 // Data & Types
 import { initialUsers, initialColumns, initialLeads, initialActivities, initialTasks, initialTags, initialEmailDrafts, initialConversations, initialMessages } from './data';
-import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage } from './types';
+import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus } from './types';
 
 
 // Custom hook for localStorage persistence
@@ -329,6 +329,21 @@ const App: React.FC = () => {
         }
     }, [currentUser, setMessages, setConversations, conversations]);
     
+    const handleUpdateConversationStatus = useCallback((conversationId: Id, status: ChatConversationStatus) => {
+        setConversations(prev => 
+            prev.map(c => 
+                c.id === conversationId 
+                    ? { ...c, status } 
+                    : c
+            )
+        );
+        const conv = conversations.find(c => c.id === conversationId);
+        if (conv) {
+            const leadName = leads.find(l => l.id === conv.leadId)?.name;
+            showNotification(`Status da conversa com "${leadName}" atualizado.`, 'info');
+        }
+    }, [setConversations, conversations, leads, showNotification]);
+
     const handleUpdatePipeline = (newColumns: ColumnData[]) => {
         setColumns(newColumns);
         showNotification("Estrutura do pipeline atualizada!", "success");
@@ -388,7 +403,7 @@ const App: React.FC = () => {
                     {activeView === 'Tarefas' && <ActivitiesView tasks={tasks} leads={leads} onEditTask={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
                     {activeView === 'Calendário' && <CalendarPage tasks={tasks} leads={leads} onNewActivity={(date) => handleOpenCreateTaskModal(undefined, date)} onEditActivity={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
                     {activeView === 'Relatórios' && <ReportsPage leads={leads} columns={columns} tasks={tasks} />}
-                    {activeView === 'Chat' && <ChatView conversations={conversations} messages={messages} leads={leads} currentUser={currentUser} onSendMessage={handleSendMessage} />}
+                    {activeView === 'Chat' && <ChatView conversations={conversations} messages={messages} leads={leads} currentUser={currentUser} onSendMessage={handleSendMessage} onUpdateConversationStatus={handleUpdateConversationStatus} />}
                     {activeView === 'Configurações' && <SettingsPage currentUser={currentUser} onUpdateProfile={handleUpdateProfile} columns={columns} onUpdatePipeline={handleUpdatePipeline}/>}
                     {activeView === 'Notificações' && <div className="text-center p-10 bg-zinc-800/50 rounded-lg border-2 border-dashed border-zinc-700"><h2 className="text-lg font-semibold text-white">Notificações</h2><p className="text-zinc-400 mt-2">Esta seção estará disponível em breve!</p></div>}
                     {activeView === 'Dúvidas' && <div className="text-center p-10 bg-zinc-800/50 rounded-lg border-2 border-dashed border-zinc-700"><h2 className="text-lg font-semibold text-white">Dúvidas e Suporte</h2><p className="text-zinc-400 mt-2">Esta seção estará disponível em breve!</p></div>}

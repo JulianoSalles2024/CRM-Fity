@@ -1,7 +1,6 @@
-
 import React, { useMemo } from 'react';
 import { Lead, ColumnData, Activity, Task } from '../types';
-import { Users, Goal, DollarSign, TrendingUp, LayoutDashboard } from 'lucide-react';
+import { Users, Goal, TrendingUp, LayoutDashboard, XCircle } from 'lucide-react';
 import KpiCard from './KpiCard';
 import PipelineOverview from './PipelineOverview';
 import RecentActivities from './RecentActivities';
@@ -15,24 +14,21 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks, onNavigate }) => {
-    
-    const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-    });
 
     const kpiData = useMemo(() => {
-        const totalLeads = leads.length;
-        const wonLeads = leads.filter(l => l.columnId === 'won').length;
-        const activeLeads = leads.filter(l => l.columnId !== 'won' && l.columnId !== 'lost');
-        const conversionRate = totalLeads > 0 ? ((wonLeads / totalLeads) * 100).toFixed(0) : 0;
-        const pipelineValue = activeLeads.reduce((sum, lead) => sum + lead.value, 0);
+        const wonColumnId = 'closed';
+        const lostColumnId = 'lost';
+
+        const totalDeals = leads.length;
+        const totalWon = leads.filter(l => l.columnId === wonColumnId).length;
+        const totalLost = leads.filter(l => l.columnId === lostColumnId).length;
+        const totalOpen = leads.filter(l => l.columnId !== wonColumnId && l.columnId !== lostColumnId).length;
         
         return {
-            totalLeads: totalLeads,
-            conversionRate,
-            pipelineValue,
-            monthlyGoal: 0, // Placeholder
+            totalDeals,
+            totalWon,
+            totalLost,
+            totalOpen,
         };
     }, [leads]);
 
@@ -49,28 +45,28 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KpiCard 
-                    title="Total de Leads" 
-                    value={kpiData.totalLeads.toString()} 
+                    title="Total de Negócios" 
+                    value={kpiData.totalDeals.toString()} 
                     icon={Users}
                     iconColor="text-violet-500"
                 />
                 <KpiCard 
-                    title="Taxa de Conversão" 
-                    value={`${kpiData.conversionRate}%`} 
+                    title="Total Ganhos" 
+                    value={kpiData.totalWon.toString()} 
                     icon={Goal}
-                    iconColor="text-violet-500"
+                    iconColor="text-emerald-500"
                 />
                 <KpiCard 
-                    title="Valor no Pipeline" 
-                    value={currencyFormatter.format(kpiData.pipelineValue)} 
-                    icon={DollarSign}
-                    iconColor="text-violet-500"
+                    title="Total Perdidos" 
+                    value={kpiData.totalLost.toString()} 
+                    icon={XCircle}
+                    iconColor="text-red-500"
                 />
                  <KpiCard 
-                    title="Meta Mensal" 
-                    value={`${kpiData.monthlyGoal}%`} 
+                    title="Total em Aberto" 
+                    value={kpiData.totalOpen.toString()} 
                     icon={TrendingUp}
-                    iconColor="text-violet-500"
+                    iconColor="text-blue-500"
                 />
             </div>
 

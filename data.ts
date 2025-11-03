@@ -12,6 +12,7 @@ export const initialColumns: ColumnData[] = [
   { id: 'proposal', title: 'Proposta', color: '#ec4899' },
   { id: 'negotiation', title: 'Negociação', color: '#f97316' },
   { id: 'closed', title: 'Fechamento', color: '#10b981' },
+  { id: 'lost', title: 'Perdido', color: '#ef4444' },
 ];
 
 export const initialTags: Tag[] = [
@@ -41,6 +42,48 @@ export const initialLeads: Lead[] = [
         status: 'Ativo',
         source: 'Indicação',
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days ago
+    },
+    {
+        id: 'lead-2',
+        columnId: 'qualify',
+        name: 'Beatriz',
+        company: 'InovaTech',
+        value: 5000.00,
+        avatarUrl: 'https://i.pravatar.cc/150?u=beatriz',
+        tags: [initialTags[1]],
+        lastActivity: 'ontem',
+        status: 'Ativo',
+        description: 'Interessada em pacote enterprise.',
+        email: 'beatriz@inovatech.com',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
+    },
+    {
+        id: 'lead-3',
+        columnId: 'closed',
+        name: 'Carlos',
+        company: 'Soluções Digitais',
+        value: 1250.50,
+        avatarUrl: 'https://i.pravatar.cc/150?u=carlos',
+        tags: [initialTags[4]],
+        lastActivity: '2 dias atrás',
+        status: 'Ativo',
+        description: 'Cliente fechado, aguardando onboarding.',
+        email: 'carlos.s@solucoes.co',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
+    },
+    {
+        id: 'lead-4',
+        columnId: 'lost',
+        name: 'Daniel',
+        company: 'DataCorp',
+        value: 800.00,
+        avatarUrl: 'https://i.pravatar.cc/150?u=daniel',
+        tags: [],
+        lastActivity: '3 dias atrás',
+        status: 'Inativo',
+        description: 'Não respondeu aos contatos.',
+        email: 'daniel@datacorp.com',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8).toISOString(),
     }
 ];
 
@@ -89,6 +132,27 @@ export const initialMessages: ChatMessage[] = [
         text: 'Perfeito! Qual seria o melhor horário para uma breve demonstração?',
         timestamp: new Date(Date.now() - 1000 * 60 * 1).toISOString(),
     },
+    {
+        id: 'msg-4',
+        conversationId: 'conv-2',
+        senderId: 'user1',
+        text: 'Olá Beatriz, te enviei a proposta por e-mail, ok?',
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 25).toISOString(),
+    },
+    {
+        id: 'msg-5',
+        conversationId: 'conv-2',
+        senderId: 'lead-2',
+        text: 'Recebido. Vou analisar e te retorno.',
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    },
+    {
+        id: 'msg-6',
+        conversationId: 'conv-3',
+        senderId: 'lead-3',
+        text: 'Obrigado, negócio fechado!',
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+    },
 ];
 
 export const initialConversations: ChatConversation[] = [
@@ -98,5 +162,22 @@ export const initialConversations: ChatConversation[] = [
         lastMessage: 'Perfeito! Qual seria o melhor horário para uma breve demonstração?',
         lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 1).toISOString(),
         unreadCount: 0,
+        status: 'open',
+    },
+    {
+        id: 'conv-2',
+        leadId: 'lead-2',
+        lastMessage: 'Recebido. Vou analisar e te retorno.',
+        lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+        unreadCount: 1,
+        status: 'waiting',
+    },
+    {
+        id: 'conv-3',
+        leadId: 'lead-3',
+        lastMessage: 'Obrigado, negócio fechado!',
+        lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+        unreadCount: 0,
+        status: 'finished',
     }
 ];
