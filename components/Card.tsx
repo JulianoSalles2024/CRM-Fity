@@ -1,9 +1,10 @@
 
+
 import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DollarSign, Tag, Clock, Building, TrendingUp, Calendar, Mail, Phone, ChevronDown, ChevronUp } from 'lucide-react';
+import { DollarSign, Tag, Clock, Building, TrendingUp, Calendar, Mail, Phone, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
 import type { Lead, CardDisplaySettings, User as UserType, Id } from '../types';
 
 interface CardProps {
@@ -52,6 +53,22 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onClick, mini
         visible: { opacity: 1, height: 'auto', transition: { duration: 0.2, ease: "easeInOut" } },
     };
 
+    const handleWhatsAppClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!lead.phone) return;
+
+        // Sanitize phone number: remove non-numeric characters
+        let sanitizedPhone = lead.phone.replace(/\D/g, '');
+
+        // Add country code for Brazil (55) if not present.
+        if (sanitizedPhone.length >= 10 && !sanitizedPhone.startsWith('55')) {
+            sanitizedPhone = '55' + sanitizedPhone;
+        }
+        
+        const url = `https://wa.me/${sanitizedPhone}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
+    };
+
     return (
         <motion.div
             layout // Animate layout changes (e.g., height)
@@ -64,25 +81,37 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onClick, mini
             onMouseLeave={() => setIsHovered(false)}
             className={`bg-zinc-800 rounded-lg border border-zinc-700/80 shadow-sm cursor-grab active:cursor-grabbing hover:bg-zinc-700/50 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/20 transition-all duration-150 touch-none ${isMinimized ? 'p-3' : 'p-4'}`}
         >
-            <div className="flex justify-between items-start gap-2">
+            <div className="flex justify-between items-center gap-2">
                 <h3 className="font-bold text-white text-md leading-tight flex-1 truncate">{lead.name}</h3>
-                 {(isHovered || isMinimized) && (
-                    <button 
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleLeadMinimize(lead.id);
-                        }}
-                        className="p-1 rounded-full text-zinc-400 hover:bg-zinc-900/50 hover:text-white transition-colors flex-shrink-0"
-                        title={isMinimized ? "Expandir card" : "Minimizar card"}
-                    >
-                        {isMinimized ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                    </button>
-                 )}
-                 {displaySettings.showAssignedTo && assignedUser && (
-                    <div title={assignedUser.name} className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center font-bold text-xs text-white ring-1 ring-zinc-900 flex-shrink-0">
-                         {assignedUser.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                )}
+
+                <div className="flex items-center gap-1 flex-shrink-0">
+                    {isHovered && !isMinimized && lead.phone && (
+                        <button
+                            onClick={handleWhatsAppClick}
+                            className="p-1 rounded-full text-zinc-400 hover:bg-green-500/20 hover:text-green-400 transition-colors"
+                            title="Abrir conversa no WhatsApp"
+                        >
+                            <MessageCircle className="w-4 h-4" />
+                        </button>
+                    )}
+                    {(isHovered || isMinimized) && (
+                        <button 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onToggleLeadMinimize(lead.id);
+                            }}
+                            className="p-1 rounded-full text-zinc-400 hover:bg-zinc-900/50 hover:text-white transition-colors"
+                            title={isMinimized ? "Expandir card" : "Minimizar card"}
+                        >
+                            {isMinimized ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        </button>
+                    )}
+                    {displaySettings.showAssignedTo && assignedUser && (
+                        <div title={assignedUser.name} className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center font-bold text-xs text-white ring-1 ring-zinc-900">
+                             {assignedUser.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                    )}
+                </div>
             </div>
             
             <AnimatePresence initial={false}>
