@@ -1,8 +1,9 @@
 
-import React, { useState, FormEvent, useEffect, ChangeEvent } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, FormEvent, useEffect, ChangeEvent, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import type { Lead, CreateLeadData, UpdateLeadData, ColumnData, Id, Tag } from '../types';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 
 interface CreateEditLeadModalProps {
   lead: Lead | null;
@@ -92,25 +93,74 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
   });
   
   const [isTagDropdownOpen, setTagDropdownOpen] = useState(false);
+  const [initialDataString, setInitialDataString] = useState('');
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const isDirty = useMemo(() => {
+    if (!initialDataString) return false;
+    // Sort tags before stringifying to ensure consistent order for comparison
+    const currentData = { ...formData, tags: [...formData.tags].sort((a, b) => (a.id > b.id ? 1 : -1)) };
+    const currentDataString = JSON.stringify(currentData);
+    return initialDataString !== currentDataString;
+  }, [formData, initialDataString]);
+
 
   useEffect(() => {
-    if (lead) {
-      setFormData({
-        name: lead.name || '',
-        description: lead.description || '',
-        email: lead.email || '',
-        phone: lead.phone || '',
-        company: lead.company || '',
-        value: lead.value?.toString() || '0.00',
-        probability: lead.probability?.toString() || '50',
-        columnId: lead.columnId || columns[0]?.id || '',
-        status: lead.status || 'Ativo',
-        clientId: lead.clientId?.toString() || '',
-        source: lead.source || '',
-        tags: lead.tags || [],
-      });
-    }
+    const getInitialData = (): FormData => {
+        if (lead) {
+            return {
+                name: lead.name || '',
+                description: lead.description || '',
+                email: lead.email || '',
+                phone: lead.phone || '',
+                company: lead.company || '',
+                value: lead.value?.toString() || '0.00',
+                probability: lead.probability?.toString() || '50',
+                columnId: lead.columnId || columns[0]?.id || '',
+                status: lead.status || 'Ativo',
+                clientId: lead.clientId?.toString() || '',
+                source: lead.source || '',
+                tags: lead.tags || [],
+            };
+        }
+        return {
+            name: '',
+            description: '',
+            email: '',
+            phone: '',
+            company: '',
+            value: '0.00',
+            probability: '50',
+            columnId: columns[0]?.id || '',
+            status: 'Ativo',
+            clientId: '',
+            source: '',
+            tags: [],
+        };
+    };
+    
+    const data = getInitialData();
+    setFormData(data);
+    
+    // Sort tags before stringifying to have a consistent initial state for comparison
+    const dataForStringify = { ...data, tags: [...data.tags].sort((a, b) => (a.id > b.id ? 1 : -1)) };
+    setInitialDataString(JSON.stringify(dataForStringify));
   }, [lead, columns]);
+  
+   useEffect(() => {
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+            if (isDirty) {
+                event.preventDefault();
+                event.returnValue = ''; // Required for Chrome
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [isDirty]);
 
   const isEditMode = lead !== null;
 
@@ -133,6 +183,14 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
     
     onSubmit(dataToSubmit);
   };
+  
+   const handleClose = () => {
+        if (isDirty) {
+            setShowConfirmation(true);
+        } else {
+            onClose();
+        }
+    };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -160,120 +218,134 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
   const selectedColumnColor = columns.find(c => c.id === formData.columnId)?.color || '#808080';
 
   return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center backdrop-blur-sm" onClick={onClose}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.2 }}
-        className="bg-zinc-800 rounded-lg shadow-xl w-full max-w-2xl border border-zinc-700 flex flex-col max-h-[90vh]"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex-shrink-0 p-6 border-b border-zinc-700">
-          <div className="flex items-start justify-between">
-            <div>
-                <h2 className="text-xl font-bold text-white">{isEditMode ? 'Editar Lead' : 'Novo Lead'}</h2>
-                <p className="text-sm text-zinc-400 mt-1">Preencha os dados para {isEditMode ? 'editar o lead' : 'criar um novo lead'}</p>
+    <>
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center backdrop-blur-sm" onClick={handleClose}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.2 }}
+          className="bg-zinc-800 rounded-lg shadow-xl w-full max-w-2xl border border-zinc-700 flex flex-col max-h-[90vh]"
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex-shrink-0 p-6 border-b border-zinc-700">
+            <div className="flex items-start justify-between">
+              <div>
+                  <h2 className="text-xl font-bold text-white">{isEditMode ? 'Editar Lead' : 'Novo Lead'}</h2>
+                  <p className="text-sm text-zinc-400 mt-1">Preencha os dados para {isEditMode ? 'editar o lead' : 'criar um novo lead'}</p>
+              </div>
+              <button onClick={handleClose} className="p-1 rounded-full text-zinc-400 hover:bg-zinc-700 transition-colors">
+                <X className="w-5 h-5 text-violet-500/70 hover:text-violet-500" />
+              </button>
             </div>
-            <button onClick={onClose} className="p-1 rounded-full text-zinc-400 hover:bg-zinc-700 transition-colors">
-              <X className="w-5 h-5 text-violet-500/70 hover:text-violet-500" />
-            </button>
           </div>
-        </div>
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
-            <div className="p-6 grid grid-cols-1 md:grid-cols-6 gap-x-4 gap-y-5">
-                <InputField label="Título" name="name" value={formData.name} onChange={handleChange} required placeholder="Nome do lead..." className="md:col-span-6" />
-                <InputField label="Descrição" name="description" value={formData.description} onChange={handleChange} placeholder="Detalhes sobre o lead..." type="textarea" className="md:col-span-6" />
-                
-                <div className="md:col-span-6">
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">Tags</label>
-                    <div className="flex flex-wrap gap-2 items-center p-2 bg-zinc-900 border border-zinc-700 rounded-md min-h-[42px]">
-                        {formData.tags.map(tag => (
-                            <span key={tag.id} className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full text-white/90" style={{ backgroundColor: tag.color }}>
-                                {tag.name}
-                                <button type="button" onClick={() => handleRemoveTag(tag)} className="text-white/70 hover:text-white">
-                                    <X className="w-3 h-3" />
-                                </button>
-                            </span>
-                        ))}
-                        <div className="relative">
-                            <button type="button" onClick={() => setTagDropdownOpen(p => !p)} className="text-sm text-zinc-300 hover:text-white bg-zinc-700 hover:bg-zinc-600 px-3 py-1 rounded-md">
-                                + Adicionar
-                            </button>
-                            {isTagDropdownOpen && (
-                                <div className="absolute top-full left-0 mt-2 w-48 bg-zinc-700 border border-zinc-600 rounded-md shadow-lg z-10 max-h-48 overflow-y-auto">
-                                    {availableTags.length > 0 ? availableTags.map(tag => (
-                                        <button
-                                            key={tag.id}
-                                            type="button"
-                                            onClick={() => handleAddTag(tag)}
-                                            className="w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-600 flex items-center gap-2"
-                                        >
-                                          <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }}></span>
-                                          <span>{tag.name}</span>
-                                        </button>
-                                    )) : (
-                                      <div className="px-3 py-2 text-sm text-zinc-400">Nenhuma tag disponível</div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
+              <div className="p-6 grid grid-cols-1 md:grid-cols-6 gap-x-4 gap-y-5">
+                  <InputField label="Título" name="name" value={formData.name} onChange={handleChange} required placeholder="Nome do lead..." className="md:col-span-6" />
+                  <InputField label="Descrição" name="description" value={formData.description} onChange={handleChange} placeholder="Detalhes sobre o lead..." type="textarea" className="md:col-span-6" />
+                  
+                  <div className="md:col-span-6">
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">Tags</label>
+                      <div className="flex flex-wrap gap-2 items-center p-2 bg-zinc-900 border border-zinc-700 rounded-md min-h-[42px]">
+                          {formData.tags.map(tag => (
+                              <span key={tag.id} className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full text-white/90" style={{ backgroundColor: tag.color }}>
+                                  {tag.name}
+                                  <button type="button" onClick={() => handleRemoveTag(tag)} className="text-white/70 hover:text-white">
+                                      <X className="w-3 h-3" />
+                                  </button>
+                              </span>
+                          ))}
+                          <div className="relative">
+                              <button type="button" onClick={() => setTagDropdownOpen(p => !p)} className="text-sm text-zinc-300 hover:text-white bg-zinc-700 hover:bg-zinc-600 px-3 py-1 rounded-md">
+                                  + Adicionar
+                              </button>
+                              {isTagDropdownOpen && (
+                                  <div className="absolute top-full left-0 mt-2 w-48 bg-zinc-700 border border-zinc-600 rounded-md shadow-lg z-10 max-h-48 overflow-y-auto">
+                                      {availableTags.length > 0 ? availableTags.map(tag => (
+                                          <button
+                                              key={tag.id}
+                                              type="button"
+                                              onClick={() => handleAddTag(tag)}
+                                              className="w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-600 flex items-center gap-2"
+                                          >
+                                            <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }}></span>
+                                            <span>{tag.name}</span>
+                                          </button>
+                                      )) : (
+                                        <div className="px-3 py-2 text-sm text-zinc-400">Nenhuma tag disponível</div>
+                                      )}
+                                  </div>
+                              )}
+                          </div>
+                      </div>
+                  </div>
 
-                <InputField label="E-mail" name="email" value={formData.email} onChange={handleChange} placeholder="email@exemplo.com" type="email" className="md:col-span-2" />
-                <InputField label="Telefone" name="phone" value={formData.phone} onChange={handleChange} placeholder="(11) 99999-9999" className="md:col-span-2" />
-                <InputField label="Empresa" name="company" value={formData.company} onChange={handleChange} placeholder="Nome da empresa" className="md:col-span-2" />
-                <InputField label="Valor (R$)" name="value" value={formData.value} onChange={handleChange} required type="number" className="md:col-span-3" />
-                <InputField label="Probabilidade (%)" name="probability" value={formData.probability} onChange={handleChange} type="number" className="md:col-span-3" />
+                  <InputField label="E-mail" name="email" value={formData.email} onChange={handleChange} placeholder="email@exemplo.com" type="email" className="md:col-span-2" />
+                  <InputField label="Telefone" name="phone" value={formData.phone} onChange={handleChange} placeholder="(11) 99999-9999" className="md:col-span-2" />
+                  <InputField label="Empresa" name="company" value={formData.company} onChange={handleChange} placeholder="Nome da empresa" className="md:col-span-2" />
+                  <InputField label="Valor (R$)" name="value" value={formData.value} onChange={handleChange} required type="number" className="md:col-span-3" />
+                  <InputField label="Probabilidade (%)" name="probability" value={formData.probability} onChange={handleChange} type="number" className="md:col-span-3" />
 
-                <SelectField label="Estágio" name="columnId" value={formData.columnId} onChange={handleChange} required className="md:col-span-3"
-                    customElement={<div className={`absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full`} style={{ backgroundColor: selectedColumnColor }} />}>
-                    {columns.map(col => <option key={col.id} value={col.id}>{col.title}</option>)}
-                </SelectField>
+                  <SelectField label="Estágio" name="columnId" value={formData.columnId} onChange={handleChange} required className="md:col-span-3"
+                      customElement={<div className={`absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full`} style={{ backgroundColor: selectedColumnColor }} />}>
+                      {columns.map(col => <option key={col.id} value={col.id}>{col.title}</option>)}
+                  </SelectField>
 
-                 <SelectField label="Status" name="status" value={formData.status} onChange={handleChange} className="md:col-span-3">
-                    <option value="Ativo">Ativo</option>
-                    <option value="Inativo">Inativo</option>
-                </SelectField>
-                
-                <SelectField label="Cliente" name="clientId" value={formData.clientId} onChange={handleChange} className="md:col-span-6">
-                    <option value="">Nenhum cliente</option>
-                    {/* Placeholder for client list */}
-                </SelectField>
+                   <SelectField label="Status" name="status" value={formData.status} onChange={handleChange} className="md:col-span-3">
+                      <option value="Ativo">Ativo</option>
+                      <option value="Inativo">Inativo</option>
+                  </SelectField>
+                  
+                  <SelectField label="Cliente" name="clientId" value={formData.clientId} onChange={handleChange} className="md:col-span-6">
+                      <option value="">Nenhum cliente</option>
+                      {/* Placeholder for client list */}
+                  </SelectField>
 
-                <div className="md:col-span-6">
-                    <label htmlFor="source" className="block text-sm font-medium text-zinc-300 mb-2">
-                        Origem
-                    </label>
-                    <input
-                        type="text"
-                        id="source"
-                        name="source"
-                        list="source-options"
-                        value={formData.source}
-                        onChange={handleChange}
-                        placeholder="Ex: LinkedIn, Website, Indicação..."
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    />
-                    <datalist id="source-options">
-                        {leadSources.map(source => (
-                            <option key={source} value={source} />
-                        ))}
-                    </datalist>
-                </div>
-            </div>
-            <div className="flex-shrink-0 p-4 bg-zinc-800/50 border-t border-zinc-700 flex justify-end gap-3">
-                 <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700 rounded-md hover:bg-zinc-600 transition-colors">
-                    Cancelar
-                </button>
-                <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700 transition-colors">
-                    {isEditMode ? 'Salvar Alterações' : 'Criar Lead'}
-                </button>
-            </div>
-        </form>
-      </motion.div>
-    </div>
+                  <div className="md:col-span-6">
+                      <label htmlFor="source" className="block text-sm font-medium text-zinc-300 mb-2">
+                          Origem
+                      </label>
+                      <input
+                          type="text"
+                          id="source"
+                          name="source"
+                          list="source-options"
+                          value={formData.source}
+                          onChange={handleChange}
+                          placeholder="Ex: LinkedIn, Website, Indicação..."
+                          className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                      />
+                      <datalist id="source-options">
+                          {leadSources.map(source => (
+                              <option key={source} value={source} />
+                          ))}
+                      </datalist>
+                  </div>
+              </div>
+              <div className="flex-shrink-0 p-4 bg-zinc-800/50 border-t border-zinc-700 flex justify-end gap-3">
+                   <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700 rounded-md hover:bg-zinc-600 transition-colors">
+                      Cancelar
+                  </button>
+                  <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700 transition-colors">
+                      {isEditMode ? 'Salvar Alterações' : 'Criar Lead'}
+                  </button>
+              </div>
+          </form>
+        </motion.div>
+      </div>
+      <AnimatePresence>
+        {showConfirmation && (
+            <ConfirmDeleteModal
+                onClose={() => setShowConfirmation(false)}
+                onConfirm={onClose}
+                title="Descartar alterações?"
+                message="Você tem alterações não salvas. Tem certeza que deseja sair sem salvar?"
+                confirmText="Descartar"
+                confirmVariant="danger"
+            />
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 

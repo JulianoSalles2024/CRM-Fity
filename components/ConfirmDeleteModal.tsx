@@ -8,9 +8,23 @@ interface ConfirmDeleteModalProps {
   onConfirm: () => void;
   title: string;
   message: React.ReactNode;
+  confirmText?: string;
+  confirmVariant?: 'primary' | 'danger';
 }
 
-const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({ onClose, onConfirm, title, message }) => {
+const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({ 
+  onClose, 
+  onConfirm, 
+  title, 
+  message, 
+  confirmText = 'Deletar', 
+  confirmVariant = 'danger' 
+}) => {
+  const confirmButtonClasses = {
+    primary: 'bg-violet-600 hover:bg-violet-700',
+    danger: 'bg-red-600 hover:bg-red-700',
+  };
+  
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center backdrop-blur-sm" onClick={onClose}>
       <motion.div
@@ -38,9 +52,9 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({ onClose, onConf
           <button
             type="button"
             onClick={onConfirm}
-            className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700 transition-colors"
+            className={`px-4 py-2 text-sm font-semibold text-white rounded-md transition-colors ${confirmButtonClasses[confirmVariant]}`}
           >
-            Deletar
+            {confirmText}
           </button>
         </div>
       </motion.div>
