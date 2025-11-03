@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -18,11 +19,12 @@ import ActivitiesView from './components/ActivitiesView';
 import CalendarPage from './components/CalendarPage';
 import ReportsPage from './components/ReportsPage';
 import LeadListView from './components/LeadListView';
+import ChatView from './components/ChatView';
 
 
 // Data & Types
-import { initialUsers, initialColumns, initialLeads, initialActivities, initialTasks, initialTags, initialEmailDrafts } from './data';
-import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData } from './types';
+import { initialUsers, initialColumns, initialLeads, initialActivities, initialTasks, initialTags, initialEmailDrafts, initialConversations, initialMessages } from './data';
+import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage } from './types';
 
 
 // Custom hook for localStorage persistence
@@ -60,8 +62,10 @@ const App: React.FC = () => {
     const [tasks, setTasks] = useLocalStorage<Task[]>('crm-tasks', initialTasks);
     const [tags, setTags] = useLocalStorage<Tag[]>('crm-tags', initialTags);
     const [emailDrafts, setEmailDrafts] = useLocalStorage<EmailDraft[]>('crm-email-drafts', initialEmailDrafts);
+    const [conversations, setConversations] = useLocalStorage<ChatConversation[]>('crm-conversations', initialConversations);
+    const [messages, setMessages] = useLocalStorage<ChatMessage[]>('crm-messages', initialMessages);
 
-    const [currentUser, setCurrentUser] = useLocalStorage<User | null>('crm-currentUser', null);
+    const [currentUser, setCurrentUser] = useLocalStorage<User | null>('crm-currentUser', users[0]);
     const [authError, setAuthError] = useState<string | null>(null);
     const [authSuccessMessage, setAuthSuccessMessage] = useState<string | null>(null);
     
@@ -264,7 +268,7 @@ const App: React.FC = () => {
         showNotification(`Tarefa "${taskTitle}" marcada como ${status === 'completed' ? 'concluída' : 'pendente'}.`, 'info');
     };
     
-    // Activities & Drafts
+    // Activities, Drafts & Chat
     const handleAddNote = (noteText: string) => {
         if (selectedLead) {
             createActivityLog(selectedLead.id, 'note', noteText);
@@ -292,6 +296,38 @@ const App: React.FC = () => {
         setEmailDrafts(emailDrafts.filter(d => d.id !== draftId));
         showNotification("Rascunho deletado.", "success");
     };
+    
+    const handleSendMessage = useCallback((conversationId: Id, text: string) => {
+        if (!currentUser) return;
+    
+        const newMessage: ChatMessage = {
+            id: `msg-${Date.now()}`,
+            conversationId,
+            senderId: currentUser.id,
+            text,
+            timestamp: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, newMessage]);
+    
+        // Simulate a reply from the lead after a short delay
+        const conversation = conversations.find(c => c.id === conversationId);
+        if (conversation) {
+            setTimeout(() => {
+                const reply: ChatMessage = {
+                    id: `msg-${Date.now() + 1}`,
+                    conversationId,
+                    // Fix: Type 'Id' is not assignable to type 'string'.
+                    senderId: conversation.leadId.toString(),
+                    text: "Obrigado pela sua mensagem! Irei verificar e retorno em breve.",
+                    timestamp: new Date().toISOString(),
+                };
+                setMessages(prev => [...prev, reply]);
+                 setConversations(convs => convs.map(c => 
+                    c.id === conversationId ? { ...c, lastMessage: reply.text, lastMessageTimestamp: reply.timestamp } : c
+                ));
+            }, 1500);
+        }
+    }, [currentUser, setMessages, setConversations, conversations]);
     
     const handleUpdatePipeline = (newColumns: ColumnData[]) => {
         setColumns(newColumns);
@@ -352,7 +388,10 @@ const App: React.FC = () => {
                     {activeView === 'Tarefas' && <ActivitiesView tasks={tasks} leads={leads} onEditTask={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
                     {activeView === 'Calendário' && <CalendarPage tasks={tasks} leads={leads} onNewActivity={(date) => handleOpenCreateTaskModal(undefined, date)} onEditActivity={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
                     {activeView === 'Relatórios' && <ReportsPage leads={leads} columns={columns} tasks={tasks} />}
+                    {activeView === 'Chat' && <ChatView conversations={conversations} messages={messages} leads={leads} currentUser={currentUser} onSendMessage={handleSendMessage} />}
                     {activeView === 'Configurações' && <SettingsPage currentUser={currentUser} onUpdateProfile={handleUpdateProfile} columns={columns} onUpdatePipeline={handleUpdatePipeline}/>}
+                    {activeView === 'Notificações' && <div className="text-center p-10 bg-zinc-800/50 rounded-lg border-2 border-dashed border-zinc-700"><h2 className="text-lg font-semibold text-white">Notificações</h2><p className="text-zinc-400 mt-2">Esta seção estará disponível em breve!</p></div>}
+                    {activeView === 'Dúvidas' && <div className="text-center p-10 bg-zinc-800/50 rounded-lg border-2 border-dashed border-zinc-700"><h2 className="text-lg font-semibold text-white">Dúvidas e Suporte</h2><p className="text-zinc-400 mt-2">Esta seção estará disponível em breve!</p></div>}
                 </main>
             </div>
             

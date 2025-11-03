@@ -1,4 +1,4 @@
-import { ColumnData, Lead, Activity, User, Task, Tag, EmailDraft } from './types';
+import { ColumnData, Lead, Activity, User, Task, Tag, EmailDraft, ChatConversation, ChatMessage } from './types';
 
 export const initialUsers: User[] = [
   { id: 'user1', name: 'John Doe', email: 'john.doe@example.com' },
@@ -66,3 +66,37 @@ export const initialActivities: Activity[] = [
 
 export const initialTasks: Task[] = [];
 export const initialEmailDrafts: EmailDraft[] = [];
+
+export const initialMessages: ChatMessage[] = [
+    {
+        id: 'msg-1',
+        conversationId: 'conv-1',
+        senderId: 'user1',
+        text: 'Olá Juliano, tudo bem? Vi seu interesse em nossas soluções de IA. Podemos conversar?',
+        timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+    },
+    {
+        id: 'msg-2',
+        conversationId: 'conv-1',
+        senderId: 'lead-1',
+        text: 'Olá! Tudo bem sim. Claro, tenho interesse em saber mais sobre a otimização de processos.',
+        timestamp: new Date(Date.now() - 1000 * 60 * 3).toISOString(),
+    },
+     {
+        id: 'msg-3',
+        conversationId: 'conv-1',
+        senderId: 'user1',
+        text: 'Perfeito! Qual seria o melhor horário para uma breve demonstração?',
+        timestamp: new Date(Date.now() - 1000 * 60 * 1).toISOString(),
+    },
+];
+
+export const initialConversations: ChatConversation[] = [
+    {
+        id: 'conv-1',
+        leadId: 'lead-1',
+        lastMessage: 'Perfeito! Qual seria o melhor horário para uma breve demonstração?',
+        lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 1).toISOString(),
+        unreadCount: 0,
+    }
+];

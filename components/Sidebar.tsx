@@ -1,7 +1,6 @@
 
-
 import React from 'react';
-import { LayoutDashboard, Columns, Users, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap } from 'lucide-react';
+import { LayoutDashboard, Columns, Users, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap, Bell, HelpCircle, MessageSquare } from 'lucide-react';
 
 interface SidebarProps {
     activeView: string;
@@ -10,14 +9,20 @@ interface SidebarProps {
     onToggle: () => void;
 }
 
-const navItems = [
+const mainNavItems = [
     { icon: LayoutDashboard, label: 'Dashboard' },
     { icon: Columns, label: 'Pipeline' },
     { icon: Users, label: 'Leads' },
     { icon: Contact, label: 'Clientes' },
     { icon: ClipboardList, label: 'Tarefas' },
-    { icon: Calendar, label: 'Calendário' },
     { icon: BarChart, label: 'Relatórios' },
+    { icon: MessageSquare, label: 'Chat' },
+];
+
+const secondaryNavItems = [
+    { icon: Calendar, label: 'Calendário' },
+    { icon: Bell, label: 'Notificações' },
+    { icon: HelpCircle, label: 'Dúvidas' },
     { icon: Settings, label: 'Configurações' },
 ];
 
@@ -52,8 +57,18 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, 
 
       <nav className="flex-1">
         <ul className="space-y-1">
-            {navItems.map((item) => (
+            {mainNavItems.map((item) => (
                 <li key={item.label}>
+                    <NavItem item={item} isActive={activeView === item.label} onClick={() => onNavigate(item.label)} isCollapsed={isCollapsed} />
+                </li>
+            ))}
+        </ul>
+      </nav>
+
+      <nav>
+        <ul className="space-y-1">
+            {secondaryNavItems.map((item) => (
+                 <li key={item.label}>
                     <NavItem item={item} isActive={activeView === item.label} onClick={() => onNavigate(item.label)} isCollapsed={isCollapsed} />
                 </li>
             ))}

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Plus, Bell, TrendingUp, User as UserIcon, ClipboardList, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -62,40 +63,49 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Right Side - Actions */}
             <div className="flex items-center gap-4">
-                {/* Create Button */}
-                <div className="relative" ref={createMenuRef}>
-                    <button
-                        onClick={() => setCreateMenuOpen(prev => !prev)}
-                        className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors"
+                <div className="flex items-center gap-2">
+                     <button
+                        onClick={onOpenCreateTaskModal}
+                        className="flex items-center gap-2 bg-zinc-800 border border-zinc-700 text-zinc-300 px-4 py-2 rounded-md text-sm font-semibold hover:bg-zinc-700 hover:text-white transition-colors"
                     >
-                        <Plus className="w-4 h-4" />
-                        <span>Criar</span>
+                        <ClipboardList className="w-4 h-4" />
+                        <span>Criar Tarefa</span>
                     </button>
-                    <AnimatePresence>
-                        {isCreateMenuOpen && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                transition={{ duration: 0.15 }}
-                                className="absolute top-full right-0 mt-2 w-56 bg-zinc-800 rounded-lg border border-zinc-700 shadow-lg z-20 py-1"
-                            >
-                                {createMenuItems.map(item => (
-                                     <button
-                                        key={item.label}
-                                        onClick={() => { item.action(); setCreateMenuOpen(false); }}
-                                        className="w-full flex items-center justify-between px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-700/50"
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <item.icon className="w-4 h-4 text-zinc-400" />
-                                            <span>{item.label}</span>
-                                        </div>
-                                        <kbd className="font-sans text-xs text-zinc-500">⌘{item.shortcut}</kbd>
-                                    </button>
-                                ))}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                    {/* Create Button */}
+                    <div className="relative" ref={createMenuRef}>
+                        <button
+                            onClick={() => setCreateMenuOpen(prev => !prev)}
+                            className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            <span>Criar</span>
+                        </button>
+                        <AnimatePresence>
+                            {isCreateMenuOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute top-full right-0 mt-2 w-56 bg-zinc-800 rounded-lg border border-zinc-700 shadow-lg z-20 py-1"
+                                >
+                                    {createMenuItems.map(item => (
+                                         <button
+                                            key={item.label}
+                                            onClick={() => { item.action(); setCreateMenuOpen(false); }}
+                                            className="w-full flex items-center justify-between px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-700/50"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <item.icon className="w-4 h-4 text-zinc-400" />
+                                                <span>{item.label}</span>
+                                            </div>
+                                            <kbd className="font-sans text-xs text-zinc-500">⌘{item.shortcut}</kbd>
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </div>
 
                 {/* Notifications Button */}

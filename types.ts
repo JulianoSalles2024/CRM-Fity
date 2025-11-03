@@ -97,6 +97,22 @@ export interface ListDisplaySettings {
   showCreatedAt: boolean;
 }
 
+export interface ChatMessage {
+    id: Id;
+    conversationId: Id;
+    senderId: string; // 'user1' (current user) or leadId
+    text: string;
+    timestamp: string; // ISO String
+}
+
+export interface ChatConversation {
+    id: Id;
+    leadId: Id;
+    lastMessage: string;
+    lastMessageTimestamp: string;
+    unreadCount: number;
+}
+
 
 export type CreateLeadData = Partial<Omit<Lead, 'id'>>;
 export type UpdateLeadData = Partial<Omit<Lead, 'id'>>;

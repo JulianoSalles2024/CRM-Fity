@@ -42,8 +42,8 @@ const leadSources = [
   "Tráfego Pago",
 ];
 
-const InputField: React.FC<{ label: string; name: keyof FormData; value: string; onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void; required?: boolean; placeholder?: string; type?: string; className?: string }> = 
-({ label, name, value, onChange, required = false, placeholder, type = 'text', className = 'md:col-span-6' }) => (
+const InputField: React.FC<{ label: string; name: keyof FormData; value: string; onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void; required?: boolean; placeholder?: string; type?: string; className?: string; maxLength?: number; }> = 
+({ label, name, value, onChange, required = false, placeholder, type = 'text', className = 'md:col-span-6', maxLength }) => (
     <div className={className}>
         <label htmlFor={name} className="block text-sm font-medium text-zinc-300 mb-2">
             {label} {required && <span className="text-red-500">*</span>}
@@ -52,7 +52,7 @@ const InputField: React.FC<{ label: string; name: keyof FormData; value: string;
              <textarea id={name} name={name} value={value} onChange={onChange} placeholder={placeholder} rows={3}
              className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500" />
         ) : (
-            <input type={type} id={name} name={name} value={value} onChange={onChange} required={required} placeholder={placeholder}
+            <input type={type} id={name} name={name} value={value} onChange={onChange} required={required} placeholder={placeholder} maxLength={maxLength}
             className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500" />
         )}
        
@@ -103,6 +103,18 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
     const currentDataString = JSON.stringify(currentData);
     return initialDataString !== currentDataString;
   }, [formData, initialDataString]);
+
+  const applyPhoneMask = (value: string): string => {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    const len = digits.length;
+
+    if (len === 0) return '';
+    if (len <= 2) return `(${digits}`;
+    if (len <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    // Branch for landline (10 digits) vs mobile (11 digits)
+    if (len <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
 
 
   useEffect(() => {
@@ -194,7 +206,11 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({...prev, [name]: value}));
+    if (name === 'phone') {
+        setFormData(prev => ({...prev, phone: applyPhoneMask(value)}));
+    } else {
+        setFormData(prev => ({...prev, [name]: value}));
+    }
   };
 
   const handleAddTag = (tagToAdd: Tag) => {
@@ -281,7 +297,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                   </div>
 
                   <InputField label="E-mail" name="email" value={formData.email} onChange={handleChange} placeholder="email@exemplo.com" type="email" className="md:col-span-2" />
-                  <InputField label="Telefone" name="phone" value={formData.phone} onChange={handleChange} placeholder="(11) 99999-9999" className="md:col-span-2" />
+                  <InputField label="Telefone" name="phone" value={formData.phone} onChange={handleChange} placeholder="(11) 99999-9999" className="md:col-span-2" maxLength={15} />
                   <InputField label="Empresa" name="company" value={formData.company} onChange={handleChange} placeholder="Nome da empresa" className="md:col-span-2" />
                   <InputField label="Valor (R$)" name="value" value={formData.value} onChange={handleChange} required type="number" className="md:col-span-3" />
                   <InputField label="Probabilidade (%)" name="probability" value={formData.probability} onChange={handleChange} type="number" className="md:col-span-3" />
