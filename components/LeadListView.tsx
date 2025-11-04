@@ -98,6 +98,55 @@ const LeadListView: React.FC<LeadListViewProps> = ({
         setSortConfig({ key, direction });
     };
 
+    // --- CSV EXPORT LOGIC ---
+    const handleExportCSV = () => {
+        const headers = ['Nome', 'Empresa'];
+        if (listDisplaySettings.showStatus) headers.push('Status');
+        if (listDisplaySettings.showValue) headers.push('Valor');
+        if (listDisplaySettings.showEmail) headers.push('Email');
+        if (listDisplaySettings.showPhone) headers.push('Telefone');
+        if (listDisplaySettings.showTags) headers.push('Tags');
+        if (listDisplaySettings.showCreatedAt) headers.push('Data de Criação');
+        if (listDisplaySettings.showLastActivity) headers.push('Última Atividade');
+
+        const escapeCsvCell = (cellData: any) => {
+            if (cellData == null) return '';
+            const stringData = String(cellData);
+            if (stringData.includes(',') || stringData.includes('"') || stringData.includes('\n')) {
+                return `"${stringData.replace(/"/g, '""')}"`;
+            }
+            return stringData;
+        };
+
+        const rows = sortedLeads.map(lead => {
+            const rowData: (string | number)[] = [
+                escapeCsvCell(lead.name),
+                escapeCsvCell(lead.company)
+            ];
+            if (listDisplaySettings.showStatus) rowData.push(escapeCsvCell(columnMap[lead.columnId] || 'N/A'));
+            if (listDisplaySettings.showValue) rowData.push(lead.value);
+            if (listDisplaySettings.showEmail) rowData.push(escapeCsvCell(lead.email || ''));
+            if (listDisplaySettings.showPhone) rowData.push(escapeCsvCell(lead.phone || ''));
+            if (listDisplaySettings.showTags) rowData.push(escapeCsvCell(lead.tags.map(t => t.name).join(', ')));
+            if (listDisplaySettings.showCreatedAt) rowData.push(escapeCsvCell(lead.createdAt ? new Date(lead.createdAt).toISOString().split('T')[0] : ''));
+            if (listDisplaySettings.showLastActivity) rowData.push(escapeCsvCell(lead.lastActivity));
+            return rowData.join(',');
+        });
+
+        const csvString = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        const today = new Date().toISOString().split('T')[0];
+        const fileName = `${viewType.toLowerCase()}_export_${today}.csv`;
+
+        link.setAttribute("href", url);
+        link.setAttribute("download", fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     // --- VIRTUALIZATION LOGIC ---
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [virtualRange, setVirtualRange] = useState({ start: 0, end: 30 });
@@ -159,6 +208,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                 onSelectedTagsChange={onSelectedTagsChange}
                 statusFilter={statusFilter}
                 onStatusFilterChange={onStatusFilterChange}
+                onExportCSV={handleExportCSV}
             />
             <div className="bg-zinc-800 rounded-lg border border-zinc-700 overflow-hidden flex-1 flex flex-col">
                 {sortedLeads.length === 0 ? (

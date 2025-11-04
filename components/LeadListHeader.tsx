@@ -1,7 +1,8 @@
 
 
+
 import React, { useState } from 'react';
-import { Users, Contact, SlidersHorizontal, Tag, X } from 'lucide-react';
+import { Users, Contact, SlidersHorizontal, Tag, X, Download } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import ListCustomizationPopup from './ListCustomizationPopup';
 import TagFilterPopup from './TagFilterPopup';
@@ -16,6 +17,7 @@ interface LeadListHeaderProps {
     onSelectedTagsChange: React.Dispatch<React.SetStateAction<TagType[]>>;
     statusFilter: 'all' | 'Ativo' | 'Inativo';
     onStatusFilterChange: (status: 'all' | 'Ativo' | 'Inativo') => void;
+    onExportCSV: () => void;
 }
 
 const LeadListHeader: React.FC<LeadListHeaderProps> = ({ 
@@ -26,7 +28,8 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
     selectedTags,
     onSelectedTagsChange,
     statusFilter,
-    onStatusFilterChange
+    onStatusFilterChange,
+    onExportCSV
 }) => {
     const [isCustomizeOpen, setCustomizeOpen] = useState(false);
     const [isTagFilterOpen, setTagFilterOpen] = useState(false);
@@ -145,6 +148,13 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
                             )}
                         </AnimatePresence>
                     </div>
+                     <button 
+                        onClick={onExportCSV}
+                        className="flex items-center gap-2 text-sm text-zinc-300 bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 rounded-md"
+                    >
+                        <Download className="w-4 h-4" />
+                        <span>Exportar CSV</span>
+                    </button>
                 </div>
             </div>
         </div>
