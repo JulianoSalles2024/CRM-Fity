@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useRef } from 'react';
 import { Lead, ColumnData, Task, Activity } from '../types';
 import { BarChart, RefreshCw, Download, Users, Target, DollarSign, CheckCircle } from 'lucide-react';
@@ -46,26 +47,43 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
         currency: 'BRL',
     });
 
-    const parseRelativeDate = (dateString: string): Date | null => {
-        const now = new Date();
+    const parseRelativeDate = (dateString?: string): Date | null => {
         if (!dateString) return null;
+        
+        const now = new Date();
+        // Create a date with time stripped out for comparing days
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
         const lowerCaseDate = dateString.toLowerCase();
 
-        if (lowerCaseDate === 'agora') return now;
+        if (lowerCaseDate === 'agora') return now; // Keep time for 'agora'
         if (lowerCaseDate === 'ontem') {
-            now.setDate(now.getDate() - 1);
-            return now;
+            const yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            return yesterday;
         }
-        const match = lowerCaseDate.match(/(\d+)\s+dias\s+atrás/);
-        if (match && match[1]) {
-            now.setDate(now.getDate() - parseInt(match[1], 10));
-            return now;
+        const matchDaysAgo = lowerCaseDate.match(/(\d+)\s+dias\s+atrás/);
+        if (matchDaysAgo && matchDaysAgo[1]) {
+            const daysAgo = new Date(today);
+            daysAgo.setDate(today.getDate() - parseInt(matchDaysAgo[1], 10));
+            return daysAgo;
         }
         
-        const parsedDate = new Date(dateString);
+        // Try parsing dd/mm/yyyy
+        const matchDate = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (matchDate) {
+            const [, day, month, year] = matchDate.map(Number);
+            if (day > 0 && day <= 31 && month > 0 && month <= 12) {
+                return new Date(year, month - 1, day);
+            }
+        }
+
+        // Handles ISO strings and some other formats
+        const parsedDate = new Date(dateString); 
         if (!isNaN(parsedDate.getTime())) {
             return parsedDate;
         }
+        
         return null;
     };
 
@@ -147,15 +165,26 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                 });
             }
         } else if (timeRange === '30d') {
-            for (let i = 3; i >= 0; i--) {
-                const weekEnd = new Date(now);
-                weekEnd.setDate(now.getDate() - (i * 7));
-                const weekStart = new Date(weekEnd);
-                weekStart.setDate(weekEnd.getDate() - 6);
+            const today = new Date(now);
+            // Go back to the last Monday. Sunday is 0, Monday is 1 so (day === 0 ? 6 : day - 1)
+            const dayOfWeek = today.getDay();
+            const lastMonday = new Date(today);
+            lastMonday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+            lastMonday.setHours(0, 0, 0, 0);
+
+            // Create 5 weekly buckets to cover a full month and a bit more
+            for (let i = 4; i >= 0; i--) {
+                const weekStart = new Date(lastMonday);
+                weekStart.setDate(lastMonday.getDate() - (i * 7));
+
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekStart.getDate() + 6);
+                weekEnd.setHours(23, 59, 59, 999);
+                
                 buckets.push({
-                    label: `${weekStart.toLocaleDateString('pt-BR', {day: '2-digit'})}/${weekStart.getMonth()+1}`,
-                    startDate: new Date(new Date(weekStart).setHours(0, 0, 0, 0)),
-                    endDate: new Date(new Date(weekEnd).setHours(23, 59, 59, 999)),
+                    label: weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+                    startDate: weekStart,
+                    endDate: weekEnd,
                     revenue: 0, newLeads: 0, churn: 0,
                 });
             }

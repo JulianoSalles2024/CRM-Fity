@@ -184,47 +184,73 @@ export const initialTasks: Task[] = [];
 export const initialEmailDrafts: EmailDraft[] = [];
 
 export const initialMessages: ChatMessage[] = [
+    // Conversation 1 with Juliano (Omnichannel)
     {
         id: 'msg-1',
         conversationId: 'conv-1',
         senderId: 'user1',
         text: 'Olá Juliano, tudo bem? Vi seu interesse em nossas soluções de IA. Podemos conversar?',
-        timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+        channel: 'whatsapp',
     },
     {
         id: 'msg-2',
         conversationId: 'conv-1',
         senderId: 'lead-1',
         text: 'Olá! Tudo bem sim. Claro, tenho interesse em saber mais sobre a otimização de processos.',
-        timestamp: new Date(Date.now() - 1000 * 60 * 3).toISOString(),
+        timestamp: new Date(Date.now() - 1000 * 60 * 58).toISOString(),
+        channel: 'whatsapp',
     },
      {
         id: 'msg-3',
         conversationId: 'conv-1',
         senderId: 'user1',
-        text: 'Perfeito! Qual seria o melhor horário para uma breve demonstração?',
-        timestamp: new Date(Date.now() - 1000 * 60 * 1).toISOString(),
+        text: 'Perfeito! Te enviei um e-mail com mais detalhes e uma apresentação. Por favor, confirme o recebimento.',
+        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+        channel: 'email',
     },
     {
         id: 'msg-4',
+        conversationId: 'conv-1',
+        senderId: 'lead-1',
+        text: 'E-mail recebido! Gostei da apresentação. Vi que vocês estão no Instagram também, mandei uma DM lá.',
+        timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+        channel: 'email',
+    },
+    {
+        id: 'msg-5',
+        conversationId: 'conv-1',
+        senderId: 'lead-1',
+        text: 'Hey! A proposta parece ótima. Qual seria o melhor horário para uma breve demonstração amanhã?',
+        timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+        channel: 'instagram',
+    },
+
+    // Conversation 2 with Beatriz (WhatsApp only)
+    {
+        id: 'msg-6',
         conversationId: 'conv-2',
         senderId: 'user1',
         text: 'Olá Beatriz, te enviei a proposta por e-mail, ok?',
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 25).toISOString(),
+        channel: 'whatsapp',
     },
     {
-        id: 'msg-5',
+        id: 'msg-7',
         conversationId: 'conv-2',
         senderId: 'lead-2',
         text: 'Recebido. Vou analisar e te retorno.',
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+        channel: 'whatsapp',
     },
+    // Conversation 3 with Carlos (Internal note)
     {
-        id: 'msg-6',
+        id: 'msg-8',
         conversationId: 'conv-3',
-        senderId: 'lead-3',
-        text: 'Obrigado, negócio fechado!',
+        senderId: 'user1',
+        text: 'Negócio fechado com Carlos! Cliente super engajado.',
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+        channel: 'internal',
     },
 ];
 
@@ -232,25 +258,28 @@ export const initialConversations: ChatConversation[] = [
     {
         id: 'conv-1',
         leadId: 'lead-1',
-        lastMessage: 'Perfeito! Qual seria o melhor horário para uma breve demonstração?',
-        lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 1).toISOString(),
-        unreadCount: 0,
+        lastMessage: 'Hey! A proposta parece ótima. Qual seria o melhor horário para uma breve demonstração amanhã?',
+        lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+        unreadCount: 1,
         status: 'open',
+        lastMessageChannel: 'instagram',
     },
     {
         id: 'conv-2',
         leadId: 'lead-2',
         lastMessage: 'Recebido. Vou analisar e te retorno.',
         lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-        unreadCount: 1,
+        unreadCount: 0,
         status: 'waiting',
+        lastMessageChannel: 'whatsapp',
     },
     {
         id: 'conv-3',
         leadId: 'lead-3',
-        lastMessage: 'Obrigado, negócio fechado!',
+        lastMessage: 'Negócio fechado com Carlos! Cliente super engajado.',
         lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
         unreadCount: 0,
         status: 'finished',
+        lastMessageChannel: 'internal',
     }
 ];

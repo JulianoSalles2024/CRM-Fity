@@ -27,7 +27,7 @@ import CreateEditGroupModal from './components/CreateEditGroupModal';
 
 // Data & Types
 import { initialUsers, initialColumns, initialLeads, initialActivities, initialTasks, initialTags, initialEmailDrafts, initialConversations, initialMessages, initialGroups } from './data';
-import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData } from './types';
+import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel } from './types';
 
 
 // Custom hook for localStorage persistence
@@ -73,7 +73,7 @@ const App: React.FC = () => {
     const [authError, setAuthError] = useState<string | null>(null);
     const [authSuccessMessage, setAuthSuccessMessage] = useState<string | null>(null);
     
-    const [activeView, setActiveView] = useState('Dashboard');
+    const [activeView, setActiveView] = useState('Chat');
     const [isSidebarCollapsed, setSidebarCollapsed] = useLocalStorage('crm-sidebarCollapsed', false);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -322,37 +322,87 @@ const App: React.FC = () => {
         showNotification("Rascunho deletado.", "success");
     };
     
-    const handleSendMessage = useCallback((conversationId: Id, text: string) => {
+    const generateBotReply = (userMessage: string, leadName: string): string => {
+        const lowerMessage = userMessage.toLowerCase();
+        if (lowerMessage.includes('demonstração') || lowerMessage.includes('demo')) {
+            return `Claro, ${leadName}! Qual seria o melhor horário para uma breve demonstração?`;
+        }
+        if (lowerMessage.includes('preço') || lowerMessage.includes('valor')) {
+            return "O plano Pro custa R$249/mês e te dá acesso a todas as funcionalidades. Acha que faz sentido para você?";
+        }
+        if (lowerMessage.includes('olá') || lowerMessage.includes('oi') || lowerMessage.includes('tudo bem')) {
+            return `Olá! Tudo bem por aqui. Como posso te ajudar hoje?`;
+        }
+        if (lowerMessage.includes('obrigado')) {
+            return `De nada, ${leadName}! Se precisar de mais alguma coisa, é só chamar.`;
+        }
+        // Default reply
+        return "Entendido. Vou verificar essa informação e já te retorno, ok?";
+    };
+    
+    const handleSendMessage = useCallback((conversationId: Id, text: string, channel: ChatChannel) => {
         if (!currentUser) return;
     
+        // 1. Add user's message
         const newMessage: ChatMessage = {
             id: `msg-${Date.now()}`,
             conversationId,
             senderId: currentUser.id,
             text,
             timestamp: new Date().toISOString(),
+            channel,
         };
         setMessages(prev => [...prev, newMessage]);
-    
-        // Simulate a reply from the lead after a short delay
+
         const conversation = conversations.find(c => c.id === conversationId);
-        if (conversation) {
-            setTimeout(() => {
-                const reply: ChatMessage = {
-                    id: `msg-${Date.now() + 1}`,
-                    conversationId,
-                    // Fix: Type 'Id' is not assignable to type 'string'.
-                    senderId: conversation.leadId.toString(),
-                    text: "Obrigado pela sua mensagem! Irei verificar e retorno em breve.",
-                    timestamp: new Date().toISOString(),
-                };
-                setMessages(prev => [...prev, reply]);
-                 setConversations(convs => convs.map(c => 
-                    c.id === conversationId ? { ...c, lastMessage: reply.text, lastMessageTimestamp: reply.timestamp } : c
-                ));
-            }, 1500);
-        }
-    }, [currentUser, setMessages, setConversations, conversations]);
+        if (!conversation) return;
+        
+        const lead = leads.find(l => l.id === conversation.leadId);
+        if (!lead) return;
+
+        // 2. Update conversation with user's message and set status to 'open'
+        setConversations(convs => convs.map(c => 
+            c.id === conversationId 
+                ? { 
+                    ...c, 
+                    lastMessage: text, 
+                    lastMessageTimestamp: newMessage.timestamp, 
+                    status: 'open' as ChatConversationStatus,
+                    lastMessageChannel: channel,
+                  } 
+                : c
+        ));
+
+        // 3. Simulate bot reply
+        setTimeout(() => {
+            const botReplyText = generateBotReply(text, lead.name);
+            const botReplyChannel: ChatChannel = 'whatsapp'; // Simulate bot always replies on whatsapp
+            const botMessage: ChatMessage = {
+                id: `msg-${Date.now() + 1}`, // ensure unique id
+                conversationId,
+                senderId: lead.id,
+                text: botReplyText,
+                timestamp: new Date().toISOString(),
+                channel: botReplyChannel,
+            };
+            setMessages(prev => [...prev, botMessage]);
+            
+            // 4. Update conversation again with bot's reply
+            setConversations(convs => convs.map(c => 
+                c.id === conversationId 
+                    ? { 
+                        ...c, 
+                        lastMessage: botReplyText, 
+                        lastMessageTimestamp: botMessage.timestamp, 
+                        status: 'waiting' as ChatConversationStatus,
+                        lastMessageChannel: botReplyChannel,
+                      } 
+                    : c
+            ));
+
+        }, 1500 + Math.random() * 1000); // Simulate typing delay
+
+    }, [currentUser, setMessages, setConversations, conversations, leads]);
     
     const handleUpdateConversationStatus = useCallback((conversationId: Id, status: ChatConversationStatus) => {
         setConversations(prev => 
@@ -464,7 +514,7 @@ const App: React.FC = () => {
                     {activeView === 'Tarefas' && <ActivitiesView tasks={tasks} leads={leads} onEditTask={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
                     {activeView === 'Calendário' && <CalendarPage tasks={tasks} leads={leads} onNewActivity={(date) => handleOpenCreateTaskModal(undefined, date)} onEditActivity={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
                     {activeView === 'Relatórios' && <ReportsPage leads={leads} columns={columns} tasks={tasks} activities={activities} />}
-                    {activeView === 'Chat' && <ChatView conversations={conversations} messages={messages} leads={leads} currentUser={currentUser} onSendMessage={handleSendMessage} onUpdateConversationStatus={handleUpdateConversationStatus} />}
+                    {activeView === 'Chat' && <ChatView conversations={conversations} messages={messages} leads={leads} currentUser={currentUser} onSendMessage={handleSendMessage} onUpdateConversationStatus={handleUpdateConversationStatus} showNotification={showNotification} />}
                     {activeView === 'Grupos' && (
                         !selectedGroupForView ? (
                             <GroupsDashboard 

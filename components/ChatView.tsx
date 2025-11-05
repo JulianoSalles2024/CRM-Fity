@@ -1,16 +1,17 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Bot, Send, User, Building, DollarSign, Sparkles, FileText, Loader2, MessageSquare, Inbox, FileClock, CheckCircle2, XCircle, MessageCircle as OpenIcon, ChevronDown, Phone, CheckCheck, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Bot, Send, User, Building, DollarSign, Sparkles, FileText, Loader2, MessageSquare, Inbox, FileClock, CheckCircle2, XCircle, MessageCircle as OpenIcon, ChevronDown, Phone, CheckCheck, ChevronRight, ChevronLeft, Mail, Instagram, MessageSquare as WhatsAppIcon } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Lead, ChatConversation, ChatMessage, User as UserType, Id, ChatConversationStatus } from '../types';
+import { Lead, ChatConversation, ChatMessage, User as UserType, Id, ChatConversationStatus, ChatChannel } from '../types';
 
 interface ChatViewProps {
     conversations: ChatConversation[];
     messages: ChatMessage[];
     leads: Lead[];
     currentUser: UserType;
-    onSendMessage: (conversationId: Id, text: string) => void;
+    onSendMessage: (conversationId: Id, text: string, channel: ChatChannel) => void;
     onUpdateConversationStatus: (conversationId: Id, status: ChatConversationStatus) => void;
+    showNotification: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
 const formatTimestamp = (timestamp: string) => {
@@ -27,16 +28,6 @@ const formatTimestamp = (timestamp: string) => {
     return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
 };
 
-const sanitizePhoneNumberForWhatsApp = (phone: string | undefined): string => {
-    if (!phone) return '';
-    let sanitized = phone.replace(/\D/g, '');
-    if (sanitized.length >= 10 && !sanitized.startsWith('55')) {
-        sanitized = '55' + sanitized;
-    }
-    return `https://wa.me/${sanitized}`;
-};
-
-
 const statusConfig: Record<ChatConversationStatus, { label: string; icon: React.ElementType; color: string; bgColor: string; }> = {
     open: { label: 'Em Aberto', icon: OpenIcon, color: 'text-blue-400', bgColor: 'bg-blue-900/50' },
     waiting: { label: 'Aguardando', icon: FileClock, color: 'text-yellow-400', bgColor: 'bg-yellow-900/50' },
@@ -46,8 +37,15 @@ const statusConfig: Record<ChatConversationStatus, { label: string; icon: React.
     failed: { label: 'Falha', icon: XCircle, color: 'text-red-400', bgColor: 'bg-red-900/50' },
 };
 
+const channelConfig: Record<ChatChannel, { icon: React.ElementType; color: string; name: string }> = {
+    whatsapp: { icon: WhatsAppIcon, color: '#25D366', name: 'WhatsApp' },
+    instagram: { icon: Instagram, color: '#E4405F', name: 'Instagram' },
+    email: { icon: Mail, color: '#3b82f6', name: 'E-mail' },
+    internal: { icon: FileText, color: '#a1a1aa', name: 'Nota Interna' },
+};
 
-const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, currentUser, onSendMessage, onUpdateConversationStatus }) => {
+
+const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, currentUser, onSendMessage, onUpdateConversationStatus, showNotification }) => {
     const [activeConversationId, setActiveConversationId] = useState<Id | null>(conversations[0]?.id || null);
     const [newMessage, setNewMessage] = useState('');
     const [isLoadingAi, setIsLoadingAi] = useState(false);
@@ -55,14 +53,21 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
     const [activeStatusFilter, setActiveStatusFilter] = useState<ChatConversationStatus | 'all'>('all');
     const [isStatusMenuOpen, setStatusMenuOpen] = useState(false);
     const [isAiAssistantCollapsed, setIsAiAssistantCollapsed] = useState(false);
+    const [sendChannel, setSendChannel] = useState<ChatChannel>('whatsapp');
+    const [isChannelMenuOpen, setChannelMenuOpen] = useState(false);
+
 
     const statusMenuRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const channelMenuRef = useRef<HTMLDivElement>(null);
     
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (statusMenuRef.current && !statusMenuRef.current.contains(event.target as Node)) {
                 setStatusMenuOpen(false);
+            }
+             if (channelMenuRef.current && !channelMenuRef.current.contains(event.target as Node)) {
+                setChannelMenuOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -123,13 +128,14 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
      useEffect(() => {
         setAiSuggestion('');
     }, [activeConversationId]);
-
+    
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
-        if (newMessage.trim() && activeConversationId) {
-            onSendMessage(activeConversationId, newMessage);
-            setNewMessage('');
+        if (!newMessage.trim() || !activeConversationId) {
+            return;
         }
+        onSendMessage(activeConversationId, newMessage, sendChannel);
+        setNewMessage('');
     };
     
     const generateAiPrompt = (task: 'reply' | 'summary') => {
@@ -137,13 +143,13 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
         
         const conversationHistory = messagesForActiveConversation.map(msg => {
             const senderName = msg.senderId === currentUser.id ? 'Eu (Vendedor)' : activeLead.name;
-            return `${senderName}: ${msg.text}`;
+            return `${senderName} (via ${msg.channel}): ${msg.text}`;
         }).join('\n');
 
         if (task === 'reply') {
-            return `Contexto do Lead:\nNome: ${activeLead.name}\nEmpresa: ${activeLead.company}\nDescrição: ${activeLead.description}\n\nHistórico da Conversa no WhatsApp:\n${conversationHistory}\n\nTarefa: Com base no histórico e no contexto do lead, sugira a próxima resposta ideal para o vendedor (Eu) continuar a conversa no WhatsApp de forma eficaz. A resposta deve ser profissional e direcionada para avançar no processo de venda.`;
+            return `Contexto do Lead:\nNome: ${activeLead.name}\nEmpresa: ${activeLead.company}\nDescrição: ${activeLead.description}\n\nHistórico da Conversa Omnichannel:\n${conversationHistory}\n\nTarefa: Com base no histórico e no contexto do lead, sugira a próxima resposta ideal para o vendedor (Eu) continuar a conversa de forma eficaz. A resposta deve ser profissional e direcionada para avançar no processo de venda.`;
         } else { // summary
-             return `Histórico da Conversa:\n${conversationHistory}\n\nTarefa: Resuma os pontos-chave desta conversa em 3 a 5 tópicos (bullet points).`;
+             return `Histórico da Conversa Omnichannel:\n${conversationHistory}\n\nTarefa: Resuma os pontos-chave desta conversa em 3 a 5 tópicos (bullet points).`;
         }
     };
 
@@ -177,6 +183,12 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
         const config = statusConfig[status] || statusConfig.open;
         const Icon = config.icon;
         return <Icon className={`w-4 h-4 flex-shrink-0 ${config.color}`} title={config.label} />;
+    };
+    
+    const ChannelIcon = ({ channel, className }: { channel: ChatChannel; className?: string }) => {
+        const config = channelConfig[channel] || channelConfig.internal;
+        const Icon = config.icon;
+        return <Icon className={`w-4 h-4 flex-shrink-0 ${className}`} style={{ color: config.color }} title={config.name} />;
     };
 
     return (
@@ -224,7 +236,10 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
                                         </div>
                                         <p className="text-xs text-zinc-500 flex-shrink-0">{formatTimestamp(conv.lastMessageTimestamp)}</p>
                                     </div>
-                                    <p className="text-sm text-zinc-400 truncate">{conv.lastMessage}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <ChannelIcon channel={conv.lastMessageChannel} className="w-3.5 h-3.5 flex-shrink-0" />
+                                        <p className="text-sm text-zinc-400 truncate">{conv.lastMessage}</p>
+                                    </div>
                                 </div>
                             </button>
                         );
@@ -252,10 +267,10 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
                                 <div>
                                     <h3 className="font-semibold text-white">{activeLead.name}</h3>
                                      {activeLead.phone ? (
-                                        <a href={sanitizePhoneNumberForWhatsApp(activeLead.phone)} target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-400 hover:text-green-400 flex items-center gap-1.5 transition-colors">
-                                            <Phone className="w-3 h-3 text-green-500" />
+                                        <p className="text-xs text-zinc-400 flex items-center gap-1.5">
+                                            <Phone className="w-3 h-3 text-zinc-500" />
                                             {activeLead.phone}
-                                        </a>
+                                        </p>
                                     ) : (
                                         <p className="text-xs text-zinc-500">Sem telefone</p>
                                     )}
@@ -298,11 +313,22 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
                             </div>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                            {messagesForActiveConversation.map(msg => (
-                                <div key={msg.id} className={`flex items-end gap-2 ${msg.senderId === currentUser.id ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-xl p-3 rounded-2xl shadow-md ${msg.senderId === currentUser.id ? 'bg-emerald-800 text-white rounded-br-none' : 'bg-zinc-700 text-zinc-200 rounded-bl-none'}`}>
+                             {messagesForActiveConversation.map(msg => {
+                                const isUser = msg.senderId === currentUser.id;
+                                const bubbleColor = isUser ? 'bg-emerald-800 text-white rounded-br-none' : 'bg-zinc-700 text-zinc-200 rounded-bl-none';
+                                const alignment = isUser ? 'justify-end' : 'justify-start';
+
+                                return (
+                                <div key={msg.id} className={`flex items-end gap-2 ${alignment}`}>
+                                    <div className={`max-w-xl p-3 rounded-2xl shadow-md ${bubbleColor}`}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <ChannelIcon channel={msg.channel} className="w-3.5 h-3.5" />
+                                            <p className="text-xs font-semibold" style={{ color: channelConfig[msg.channel]?.color }}>
+                                                {isUser ? 'Você' : activeLead.name} via {channelConfig[msg.channel]?.name}
+                                            </p>
+                                        </div>
                                         <p className="text-sm pb-2">{msg.text}</p>
-                                         {msg.senderId === currentUser.id && (
+                                         {isUser && (
                                             <div className="flex justify-end items-center gap-1.5 -mb-1 -mr-1">
                                                 <span className="text-xs text-emerald-300/70">{new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit'})}</span>
                                                 <CheckCheck className="w-4 h-4 text-emerald-300/90" />
@@ -310,19 +336,52 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
                                         )}
                                     </div>
                                 </div>
-                            ))}
+                                )
+                            })}
                             <div ref={messagesEndRef} />
                         </div>
                         <div className="p-4 border-t border-zinc-800 bg-zinc-900/80 backdrop-blur-sm">
                             <form onSubmit={handleSendMessage} className="flex items-center gap-3">
-                                <input
-                                    type="text"
-                                    value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
-                                    placeholder="Digite uma mensagem para o WhatsApp..."
-                                    className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                                />
-                                <button type="submit" className="w-10 h-10 bg-violet-600 rounded-lg flex items-center justify-center text-white hover:bg-violet-700 transition-colors disabled:opacity-50" disabled={!newMessage.trim()}>
+                                <div className="relative flex-1">
+                                     <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <div className="relative" ref={channelMenuRef}>
+                                            <button
+                                                type="button"
+                                                onClick={() => setChannelMenuOpen(p => !p)}
+                                                className="p-1 text-zinc-400 hover:text-white transition-colors"
+                                                title={`Enviar via ${channelConfig[sendChannel].name}`}
+                                            >
+                                                <ChannelIcon channel={sendChannel} className="w-5 h-5"/>
+                                            </button>
+                                            <AnimatePresence>
+                                                {isChannelMenuOpen && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: 10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: 10 }}
+                                                        transition={{ duration: 0.15 }}
+                                                        className="absolute bottom-full left-0 mb-2 w-48 bg-zinc-800 rounded-lg border border-zinc-700 shadow-lg z-20 py-1"
+                                                    >
+                                                        {Object.entries(channelConfig).map(([key, { name }]) => (
+                                                            <button key={key} type="button" onClick={() => { setSendChannel(key as ChatChannel); setChannelMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-700/50">
+                                                                <ChannelIcon channel={key as ChatChannel} className="w-4 h-4" />
+                                                                <span>{name}</span>
+                                                            </button>
+                                                        ))}
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={newMessage}
+                                        onChange={(e) => setNewMessage(e.target.value)}
+                                        placeholder="Enviar mensagem..."
+                                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-11 pr-4 h-10 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                    />
+                                </div>
+                                <button type="submit" className="w-10 h-10 bg-violet-600 rounded-lg flex items-center justify-center text-white hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0" disabled={!newMessage.trim()}>
                                     <Send className="w-5 h-5" />
                                 </button>
                             </form>
