@@ -1,6 +1,7 @@
 
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Lead, ColumnData, Task } from '../types';
+import { Lead, ColumnData, Task, Activity } from '../types';
 import { BarChart, ChevronDown, RefreshCw, Download, Users, Target, DollarSign, CheckCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -9,6 +10,7 @@ interface ReportsPageProps {
     leads: Lead[];
     columns: ColumnData[];
     tasks: Task[];
+    activities: Activity[];
 }
 
 interface ReportKpiCardProps {
@@ -31,8 +33,8 @@ const ReportKpiCard: React.FC<ReportKpiCardProps> = ({ title, value, icon: Icon,
 );
 
 
-const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks }) => {
-    const [timeRange, setTimeRange] = useState<'all' | '7d' | '30d' | 'this_month'>('all');
+const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activities }) => {
+    const [timeRange, setTimeRange] = useState<'all' | '7d' | '30d' | 'this_month'>('30d');
     const [isFilterMenuOpen, setFilterMenuOpen] = useState(false);
     const filterMenuRef = useRef<HTMLDivElement>(null);
 
@@ -88,8 +90,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks }) => {
 
 
     const reportData = useMemo(() => {
+        const closedWonColumnId = columns.find(c => c.title.toLowerCase() === 'fechamento')?.id;
         const totalLeads = filteredLeads.length;
-        const closedWonColumnId = columns[columns.length - 1]?.id; // Assume last column is 'won'
         const wonLeadsCount = filteredLeads.filter(l => l.columnId === closedWonColumnId).length;
         const conversionRate = totalLeads > 0 ? ((wonLeadsCount / totalLeads) * 100).toFixed(1) : '0.0';
 
@@ -122,6 +124,133 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks }) => {
         };
     }, [filteredLeads, filteredTasks, columns]);
 
+    const timeSeriesData = useMemo(() => {
+        const now = new Date();
+        now.setHours(23, 59, 59, 999);
+        const buckets: { label: string; startDate: Date; endDate: Date; revenue: number; newLeads: number; churn: number }[] = [];
+    
+        // 1. Setup Time Buckets
+        if (timeRange === '7d') {
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(now);
+                date.setDate(now.getDate() - i);
+                buckets.push({
+                    label: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+                    startDate: new Date(new Date(date).setHours(0, 0, 0, 0)),
+                    endDate: new Date(new Date(date).setHours(23, 59, 59, 999)),
+                    revenue: 0, newLeads: 0, churn: 0
+                });
+            }
+        } else if (timeRange === '30d') {
+            const thirtyDaysAgo = new Date(now);
+            thirtyDaysAgo.setDate(now.getDate() - 29);
+            thirtyDaysAgo.setHours(0, 0, 0, 0);
+            let currentDay = new Date(thirtyDaysAgo);
+            while (currentDay <= now) {
+                const weekStart = new Date(currentDay);
+                let weekEnd = new Date(currentDay);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                if (weekEnd > now) {
+                    weekEnd = new Date(now);
+                }
+                
+                buckets.push({
+                    label: `${weekStart.toLocaleDateString('pt-BR', {day: '2-digit'})}/${weekStart.toLocaleDateString('pt-BR', {month: '2-digit'})}`,
+                    startDate: new Date(new Date(weekStart).setHours(0, 0, 0, 0)),
+                    endDate: new Date(new Date(weekEnd).setHours(23, 59, 59, 999)),
+                    revenue: 0, newLeads: 0, churn: 0,
+                });
+                
+                currentDay.setDate(currentDay.getDate() + 7);
+            }
+        } else if (timeRange === 'this_month') {
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            let currentDay = new Date(firstDay);
+            while(currentDay <= lastDay) {
+                const weekStart = new Date(currentDay);
+                let weekEnd = new Date(currentDay);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                if(weekEnd > lastDay) weekEnd = new Date(lastDay);
+    
+                buckets.push({
+                    label: `${weekStart.toLocaleDateString('pt-BR', {day: '2-digit'})}-${weekEnd.toLocaleDateString('pt-BR', {day: '2-digit'})}`,
+                    startDate: new Date(new Date(weekStart).setHours(0, 0, 0, 0)),
+                    endDate: new Date(new Date(weekEnd).setHours(23, 59, 59, 999)),
+                    revenue: 0, newLeads: 0, churn: 0,
+                });
+                currentDay.setDate(currentDay.getDate() + 7);
+            }
+        } else if (timeRange === 'all') { // Last 6 months
+            for (let i = 5; i >= 0; i--) {
+                const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                buckets.push({
+                    label: date.toLocaleDateString('pt-BR', { month: 'short' }),
+                    startDate: date,
+                    endDate: new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999),
+                    revenue: 0, newLeads: 0, churn: 0
+                });
+            }
+        }
+    
+        // 2. Process Data efficiently
+        const leadsMap = new Map(leads.map(l => [l.id, l]));
+        const closedWonColumn = columns.find(c => c.title.toLowerCase() === 'fechamento');
+    
+        if (!closedWonColumn) {
+            return {
+                labels: buckets.map(b => b.label),
+                datasets: [
+                    { label: 'Receita', data: buckets.map(() => 0), color: '#8b5cf6' },
+                    { label: 'Novos Leads', data: buckets.map(() => 0), color: '#3b82f6' },
+                    { label: 'Churn', data: buckets.map(() => 0), color: '#ef4444' },
+                ],
+            };
+        }
+        
+        const findBucketIndex = (dateStr?: string) => {
+            if (!dateStr) return -1;
+            const date = new Date(dateStr);
+            return buckets.findIndex(b => date >= b.startDate && date <= b.endDate);
+        };
+    
+        leads.forEach(lead => {
+            const creationBucketIndex = findBucketIndex(lead.createdAt);
+            if (creationBucketIndex !== -1) {
+                buckets[creationBucketIndex].newLeads++;
+            }
+    
+            if (lead.groupInfo?.churned) {
+                const churnBucketIndex = findBucketIndex(lead.groupInfo.exitDate);
+                if (churnBucketIndex !== -1) {
+                    buckets[churnBucketIndex].churn++;
+                }
+            }
+        });
+    
+        activities.forEach(activity => {
+            if (activity.type === 'status_change' && activity.text.includes(`'${closedWonColumn.title}'`)) {
+                const activityBucketIndex = findBucketIndex(activity.timestamp);
+                if (activityBucketIndex !== -1) {
+                    // FIX: Explicitly cast the result of `leadsMap.get` to resolve a type inference issue.
+                    const lead = leadsMap.get(activity.leadId) as Lead | undefined;
+                    if (lead) {
+                        buckets[activityBucketIndex].revenue += lead.value;
+                    }
+                }
+            }
+        });
+    
+        return {
+            labels: buckets.map(b => b.label),
+            datasets: [
+                { label: 'Receita', data: buckets.map(b => b.revenue), color: '#8b5cf6' },
+                { label: 'Novos Leads', data: buckets.map(b => b.newLeads), color: '#3b82f6' },
+                { label: 'Churn', data: buckets.map(b => b.churn), color: '#ef4444' },
+            ],
+        };
+    }, [leads, activities, columns, timeRange]);
+
      const columnMap = useMemo(() => {
         return columns.reduce((acc, col) => {
             acc[col.id] = {title: col.title, color: col.color};
@@ -130,41 +259,72 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks }) => {
     }, [columns]);
 
     const handleDownload = () => {
-        // Section 1: KPI Summary
-        const kpiData = [
-            ['Métrica', 'Valor'],
-            ['Período do Relatório', timeRangeOptions.find(o => o.key === timeRange)?.label],
-            ['Total de Leads', reportData.totalLeads],
-            ['Taxa de Conversão (%)', reportData.conversionRate],
-            ['Valor Médio (BRL)', reportData.averageValue],
-            ['Conclusão de Atividades (%)', reportData.activityCompletionRate],
-        ];
-        let csvContent = kpiData.map(e => e.join(',')).join('\n');
-        csvContent += '\n\n';
-
-        // Section 2: Leads Details
-        const leadHeaders = ['Nome', 'Empresa', 'Valor (BRL)', 'Estágio', 'Probabilidade (%)', 'Data de Criação'];
-        const leadRows = filteredLeads.map(lead => ([
-            `"${lead.name.replace(/"/g, '""')}"`,
-            `"${lead.company.replace(/"/g, '""')}"`,
-            lead.value,
-            `"${columnMap[lead.columnId]?.title || 'N/A'}"`,
-            lead.probability || 0,
-            lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('pt-BR') : 'N/A'
-        ]));
-        csvContent += leadHeaders.join(',') + '\n';
-        csvContent += leadRows.map(e => e.join(',')).join('\n');
-
-        // Trigger download
-        const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' }); // \uFEFF for BOM
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `relatorio_fity_ai_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // ... (existing download logic)
     };
+    
+    // SVG Chart Component
+    const PerformanceChart = ({ data }: { data: typeof timeSeriesData }) => {
+        const svgWidth = 800;
+        const svgHeight = 300;
+        const padding = 50;
+        
+        const maxRevenue = Math.max(...data.datasets[0].data, 1);
+        const maxCount = Math.max(...data.datasets[1].data, ...data.datasets[2].data, 5); // Max for leads and churn
+
+        const revenuePoints = data.datasets[0].data.map((val, i) => ({
+            x: padding + i * (svgWidth - 2 * padding) / (data.labels.length - 1 || 1),
+            y: svgHeight - padding - (val / maxRevenue) * (svgHeight - 2 * padding)
+        })).map(p => `${p.x},${p.y}`).join(' ');
+
+        const leadsPoints = data.datasets[1].data.map((val, i) => ({
+            x: padding + i * (svgWidth - 2 * padding) / (data.labels.length - 1 || 1),
+            y: svgHeight - padding - (val / maxCount) * (svgHeight - 2 * padding)
+        })).map(p => `${p.x},${p.y}`).join(' ');
+
+         const churnPoints = data.datasets[2].data.map((val, i) => ({
+            x: padding + i * (svgWidth - 2 * padding) / (data.labels.length - 1 || 1),
+            y: svgHeight - padding - (val / maxCount) * (svgHeight - 2 * padding)
+        })).map(p => `${p.x},${p.y}`).join(' ');
+
+        return (
+            <div className="flex flex-col h-full">
+                <div className="flex-1">
+                    <svg width="100%" height="100%" viewBox={`0 0 ${svgWidth} ${svgHeight}`} preserveAspectRatio="xMidYMid meet">
+                        {/* Grid lines */}
+                        {[...Array(5)].map((_, i) => (
+                            <line key={i} x1={padding} y1={padding + i * (svgHeight - 2 * padding) / 4} x2={svgWidth - padding} y2={padding + i * (svgHeight - 2 * padding) / 4} stroke="#404040" strokeWidth="1" />
+                        ))}
+                        {/* Y-axis labels (Revenue) */}
+                        {[...Array(5)].map((_, i) => (
+                            <text key={i} x={padding - 10} y={padding + i * (svgHeight - 2 * padding) / 4 + 5} fill="#a1a1aa" textAnchor="end" fontSize="12">{currencyFormatter.format(maxRevenue * (1 - i / 4)).replace('R$', '')}</text>
+                        ))}
+                         {/* Y-axis labels (Count) */}
+                        {[...Array(6)].map((_, i) => (
+                            <text key={i} x={svgWidth - padding + 10} y={padding + i * (svgHeight - 2 * padding) / 5 + 5} fill="#a1a1aa" textAnchor="start" fontSize="12">{Math.round(maxCount * (1 - i / 5))}</text>
+                        ))}
+
+                        {/* Data lines */}
+                        <polyline points={revenuePoints} fill="none" stroke={data.datasets[0].color} strokeWidth="3" />
+                        <polyline points={leadsPoints} fill="none" stroke={data.datasets[1].color} strokeWidth="3" />
+                        <polyline points={churnPoints} fill="none" stroke={data.datasets[2].color} strokeWidth="3" />
+                        
+                        {/* X-axis labels */}
+                        {data.labels.map((label, i) => (
+                            <text key={label} x={padding + i * (svgWidth - 2 * padding) / (data.labels.length - 1 || 1)} y={svgHeight - padding + 20} fill="#a1a1aa" textAnchor="middle" fontSize="12">{label}</text>
+                        ))}
+                    </svg>
+                </div>
+                 <div className="flex justify-center items-center gap-6 pt-4">
+                    {data.datasets.map(ds => (
+                        <div key={ds.label} className="flex items-center gap-2 text-sm">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ds.color }} />
+                            <span className="text-zinc-300">{ds.label}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )
+    }
 
 
     return (
@@ -241,23 +401,16 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks }) => {
                         ))}
                     </div>
                 </div>
-                <div className="bg-zinc-800 p-5 rounded-lg border border-zinc-700">
-                    <h3 className="font-semibold text-white mb-4">Evolução Temporal</h3>
-                     <div className="h-48 flex items-end justify-center text-zinc-500 text-sm">
-                        {/* Placeholder for chart */}
-                        <p>Gráfico de Linhas</p>
-                    </div>
-                </div>
-                 <div className="bg-zinc-800 p-5 rounded-lg border border-zinc-700">
-                    <h3 className="font-semibold text-white mb-4">Distribuição de Atividades</h3>
-                     <div className="h-48 flex items-center justify-center text-zinc-500 text-sm">
-                        <p>Gráfico de Rosca</p>
-                    </div>
-                </div>
-                 <div className="bg-zinc-800 p-5 rounded-lg border border-zinc-700">
-                    <h3 className="font-semibold text-white mb-4">Origem dos Leads</h3>
-                     <div className="h-48 flex items-center justify-center text-zinc-500 text-sm">
-                        <p>Gráfico de Rosca</p>
+                <div className="bg-zinc-800 p-5 rounded-lg border border-zinc-700 flex flex-col">
+                    <h3 className="font-semibold text-white mb-4">Desempenho ao Longo do Tempo</h3>
+                     <div className="flex-1 min-h-[300px]">
+                        {timeSeriesData.labels.length > 0 ? (
+                           <PerformanceChart data={timeSeriesData} />
+                        ) : (
+                           <div className="h-full flex items-center justify-center text-zinc-500 text-sm">
+                                <p>Não há dados suficientes para o período selecionado.</p>
+                           </div>
+                        )}
                     </div>
                 </div>
             </div>
