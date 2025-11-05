@@ -13,7 +13,7 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon: Icon, iconColor }
     const borderColorClass = iconColor.replace('text-', 'border-');
 
     return (
-        <div className={`bg-zinc-800 p-6 rounded-lg border border-zinc-700 flex items-center gap-5 transition-all duration-200 ease-in-out hover:bg-zinc-700/50 hover:-translate-y-1 hover:shadow-lg border-l-4 ${borderColorClass}`}>
+        <div className={`bg-zinc-800 p-6 rounded-lg border-2 flex items-center gap-5 transition-all duration-200 ease-in-out hover:bg-zinc-700/50 hover:-translate-y-1 hover:shadow-lg ${borderColorClass}`}>
             <div className={`w-12 h-12 rounded-lg bg-zinc-900 flex-shrink-0 flex items-center justify-center`}>
                 <Icon className={`w-6 h-6 ${iconColor}`} />
             </div>

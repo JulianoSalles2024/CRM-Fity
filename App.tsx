@@ -69,7 +69,7 @@ const App: React.FC = () => {
     const [messages, setMessages] = useLocalStorage<ChatMessage[]>('crm-messages', initialMessages);
     const [groups, setGroups] = useLocalStorage<Group[]>('crm-groups', initialGroups);
 
-    const [currentUser, setCurrentUser] = useLocalStorage<User | null>('crm-currentUser', users[0]);
+    const [currentUser, setCurrentUser] = useLocalStorage<User | null>('crm-currentUser', null);
     const [authError, setAuthError] = useState<string | null>(null);
     const [authSuccessMessage, setAuthSuccessMessage] = useState<string | null>(null);
     
@@ -148,14 +148,17 @@ const App: React.FC = () => {
         if (user) {
             setCurrentUser(user);
             setAuthError(null);
+            setAuthSuccessMessage(null);
             showNotification(`Bem-vindo de volta, ${user.name}!`, 'success');
         } else {
             setAuthError("Email ou senha inválidos.");
+            setAuthSuccessMessage(null);
         }
     };
     const handleRegister = async (name: string, email: string, password: string) => {
         if (users.some(u => u.email === email)) {
             setAuthError("Este email já está em uso.");
+            setAuthSuccessMessage(null);
             return;
         }
         const newUser: User = { id: `user-${Date.now()}`, name, email };
