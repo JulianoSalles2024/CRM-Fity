@@ -17,6 +17,7 @@ const mainNavItems = [
     { icon: ClipboardList, label: 'Tarefas' },
     { icon: BarChart, label: 'Relatórios' },
     { icon: MessageSquare, label: 'Chat' },
+    { icon: Users, label: 'Grupos' },
 ];
 
 const secondaryNavItems = [

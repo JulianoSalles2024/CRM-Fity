@@ -20,11 +20,14 @@ import CalendarPage from './components/CalendarPage';
 import ReportsPage from './components/ReportsPage';
 import LeadListView from './components/LeadListView';
 import ChatView from './components/ChatView';
+import GroupsView from './components/GroupsView';
+import GroupsDashboard from './components/GroupsDashboard';
+import CreateEditGroupModal from './components/CreateEditGroupModal';
 
 
 // Data & Types
-import { initialUsers, initialColumns, initialLeads, initialActivities, initialTasks, initialTags, initialEmailDrafts, initialConversations, initialMessages } from './data';
-import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus } from './types';
+import { initialUsers, initialColumns, initialLeads, initialActivities, initialTasks, initialTags, initialEmailDrafts, initialConversations, initialMessages, initialGroups } from './data';
+import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData } from './types';
 
 
 // Custom hook for localStorage persistence
@@ -64,6 +67,7 @@ const App: React.FC = () => {
     const [emailDrafts, setEmailDrafts] = useLocalStorage<EmailDraft[]>('crm-email-drafts', initialEmailDrafts);
     const [conversations, setConversations] = useLocalStorage<ChatConversation[]>('crm-conversations', initialConversations);
     const [messages, setMessages] = useLocalStorage<ChatMessage[]>('crm-messages', initialMessages);
+    const [groups, setGroups] = useLocalStorage<Group[]>('crm-groups', initialGroups);
 
     const [currentUser, setCurrentUser] = useLocalStorage<User | null>('crm-currentUser', users[0]);
     const [authError, setAuthError] = useState<string | null>(null);
@@ -80,6 +84,8 @@ const App: React.FC = () => {
     const [isCreateTaskModalOpen, setCreateTaskModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [preselectedDataForTask, setPreselectedDataForTask] = useState<{leadId: Id, date?: string} | null>(null);
+    const [isGroupModalOpen, setGroupModalOpen] = useState(false);
+    const [editingGroup, setEditingGroup] = useState<Group | null>(null);
 
 
     // Notification State
@@ -99,6 +105,14 @@ const App: React.FC = () => {
     // List View Filters
     const [listSelectedTags, setListSelectedTags] = useState<Tag[]>([]);
     const [listStatusFilter, setListStatusFilter] = useState<'all' | 'Ativo' | 'Inativo'>('all');
+
+    // Groups View State
+    const [selectedGroupForView, setSelectedGroupForView] = useState<Id | null>(null);
+     useEffect(() => {
+        if (activeView !== 'Grupos') {
+            setSelectedGroupForView(null);
+        }
+    }, [activeView]);
 
 
     // --- COMPUTED DATA ---
@@ -220,6 +234,14 @@ const App: React.FC = () => {
         }
     };
     
+    const handleUpdateLeadDetails = (leadId: Id, updates: UpdateLeadData) => {
+        setLeads(prevLeads =>
+            prevLeads.map(lead =>
+                lead.id === leadId ? { ...lead, ...updates } : lead
+            )
+        );
+    };
+
     const handleToggleLeadMinimize = useCallback((leadId: Id) => {
         setMinimizedLeads(prev => 
             prev.includes(leadId) 
@@ -349,6 +371,38 @@ const App: React.FC = () => {
         showNotification("Estrutura do pipeline atualizada!", "success");
     };
 
+    // Groups
+    const handleCreateOrUpdateGroup = (data: CreateGroupData | UpdateGroupData) => {
+        if (editingGroup) { // Update
+            setGroups(groups.map(g => g.id === editingGroup.id ? { ...g, ...data, id: editingGroup.id } : g));
+            showNotification(`Grupo "${data.name}" atualizado.`, 'success');
+        } else { // Create
+            const newGroup: Group = {
+                id: `group-${Date.now()}`,
+                ...(data as CreateGroupData),
+            };
+            setGroups(prev => [...prev, newGroup]);
+            showNotification(`Grupo "${newGroup.name}" criado.`, 'success');
+        }
+        setGroupModalOpen(false);
+        setEditingGroup(null);
+    };
+
+    const handleDeleteGroup = (groupId: Id) => {
+        // Optional: Check if group has members before deleting
+        const groupName = groups.find(g => g.id === groupId)?.name || 'Grupo';
+        setGroups(groups.filter(g => g.id !== groupId));
+        // Also unset this group from any leads
+        setLeads(leads.map(lead => {
+            if (lead.groupInfo?.groupId === groupId) {
+                return { ...lead, groupInfo: { ...lead.groupInfo, groupId: undefined }};
+            }
+            return lead;
+        }));
+        showNotification(`Grupo "${groupName}" foi deletado.`, 'success');
+    };
+
+
 
     // --- UI HANDLERS ---
     const handleOpenCreateLeadModal = (columnId?: Id) => {
@@ -372,6 +426,10 @@ const App: React.FC = () => {
     const handleOpenEditTaskModal = (task: Task) => {
         setEditingTask(task);
         setCreateTaskModalOpen(true);
+    };
+    const handleOpenCreateEditGroupModal = (group: Group | null) => {
+        setEditingGroup(group);
+        setGroupModalOpen(true);
     };
     
 
@@ -404,6 +462,25 @@ const App: React.FC = () => {
                     {activeView === 'Calendário' && <CalendarPage tasks={tasks} leads={leads} onNewActivity={(date) => handleOpenCreateTaskModal(undefined, date)} onEditActivity={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
                     {activeView === 'Relatórios' && <ReportsPage leads={leads} columns={columns} tasks={tasks} />}
                     {activeView === 'Chat' && <ChatView conversations={conversations} messages={messages} leads={leads} currentUser={currentUser} onSendMessage={handleSendMessage} onUpdateConversationStatus={handleUpdateConversationStatus} />}
+                    {activeView === 'Grupos' && (
+                        !selectedGroupForView ? (
+                            <GroupsDashboard 
+                                groups={groups} 
+                                leads={leads}
+                                onSelectGroup={setSelectedGroupForView}
+                                onAddGroup={() => handleOpenCreateEditGroupModal(null)}
+                                onEditGroup={(group) => handleOpenCreateEditGroupModal(group)}
+                                onDeleteGroup={handleDeleteGroup}
+                            />
+                        ) : (
+                            <GroupsView
+                                group={groups.find(g => g.id === selectedGroupForView)!}
+                                leads={leads.filter(l => l.groupInfo?.groupId === selectedGroupForView)}
+                                onUpdateLead={handleUpdateLeadDetails}
+                                onBack={() => setSelectedGroupForView(null)}
+                            />
+                        )
+                    )}
                     {activeView === 'Configurações' && <SettingsPage currentUser={currentUser} onUpdateProfile={handleUpdateProfile} columns={columns} onUpdatePipeline={handleUpdatePipeline}/>}
                     {activeView === 'Notificações' && <div className="text-center p-10 bg-zinc-800/50 rounded-lg border-2 border-dashed border-zinc-700"><h2 className="text-lg font-semibold text-white">Notificações</h2><p className="text-zinc-400 mt-2">Esta seção estará disponível em breve!</p></div>}
                     {activeView === 'Dúvidas' && <div className="text-center p-10 bg-zinc-800/50 rounded-lg border-2 border-dashed border-zinc-700"><h2 className="text-lg font-semibold text-white">Dúvidas e Suporte</h2><p className="text-zinc-400 mt-2">Esta seção estará disponível em breve!</p></div>}
@@ -437,6 +514,7 @@ const App: React.FC = () => {
                         lead={editingLead} 
                         columns={columns}
                         allTags={tags}
+                        groups={groups}
                         onClose={() => { setCreateLeadModalOpen(false); setEditingLead(null); }} 
                         onSubmit={handleCreateOrUpdateLead}
                     />
@@ -452,6 +530,16 @@ const App: React.FC = () => {
                         preselectedDate={preselectedDataForTask?.date || null}
                         onClose={() => { setCreateTaskModalOpen(false); setEditingTask(null); setPreselectedDataForTask(null); }} 
                         onSubmit={handleCreateOrUpdateTask}
+                    />
+                )}
+            </AnimatePresence>
+            
+            <AnimatePresence>
+                {(isGroupModalOpen || editingGroup) && (
+                    <CreateEditGroupModal
+                        group={editingGroup}
+                        onClose={() => { setGroupModalOpen(false); setEditingGroup(null); }}
+                        onSubmit={handleCreateOrUpdateGroup}
                     />
                 )}
             </AnimatePresence>

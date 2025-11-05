@@ -13,6 +13,27 @@ export interface User {
   avatarUrl?: string;
 }
 
+export type GroupStatus = 'Ativo' | 'Lotado' | 'Arquivado';
+
+export interface Group {
+  id: Id;
+  name: string;
+  description?: string;
+  accessLink?: string;
+  status: GroupStatus;
+  memberGoal?: number;
+}
+
+export interface GroupInfo {
+  hasJoined: boolean;
+  groupId?: Id;
+  isStillInGroup: boolean;
+  hasOnboarded: boolean;
+  onboardingCallDate?: string; // ISO String
+  churned: boolean;
+  exitDate?: string; // ISO String
+}
+
 export interface Lead {
   id: Id;
   columnId: Id;
@@ -34,6 +55,7 @@ export interface Lead {
   clientId?: Id; 
   source?: string;
   createdAt?: string;
+  groupInfo?: GroupInfo;
 }
 
 export interface ColumnData {
@@ -122,3 +144,5 @@ export type UpdateLeadData = Partial<Omit<Lead, 'id'>>;
 export type CreateTaskData = Omit<Task, 'id' | 'userId'>;
 export type UpdateTaskData = Partial<CreateTaskData>;
 export type CreateEmailDraftData = Omit<EmailDraft, 'id' | 'createdAt'>;
+export type CreateGroupData = Omit<Group, 'id'>;
+export type UpdateGroupData = Partial<CreateGroupData>;

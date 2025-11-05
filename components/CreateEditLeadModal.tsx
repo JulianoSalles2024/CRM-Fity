@@ -1,14 +1,16 @@
 
+
 import React, { useState, FormEvent, useEffect, ChangeEvent, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import type { Lead, CreateLeadData, UpdateLeadData, ColumnData, Id, Tag } from '../types';
+import type { Lead, CreateLeadData, UpdateLeadData, ColumnData, Id, Tag, Group } from '../types';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 
 interface CreateEditLeadModalProps {
   lead: Lead | null;
   columns: ColumnData[];
   allTags: Tag[];
+  groups: Group[];
   onClose: () => void;
   onSubmit: (data: CreateLeadData | UpdateLeadData) => void;
 }
@@ -26,6 +28,7 @@ type FormData = {
     clientId: string;
     source: string;
     tags: Tag[];
+    groupId: Id;
 }
 
 const leadSources = [
@@ -76,7 +79,7 @@ const SelectField: React.FC<{ label: string; name: keyof FormData; value: Id; on
 )
 
 
-const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns, allTags, onClose, onSubmit }) => {
+const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns, allTags, groups, onClose, onSubmit }) => {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
@@ -90,6 +93,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
     clientId: '',
     source: '',
     tags: [],
+    groupId: '',
   });
   
   const [isTagDropdownOpen, setTagDropdownOpen] = useState(false);
@@ -133,6 +137,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                 clientId: lead.clientId?.toString() || '',
                 source: lead.source || '',
                 tags: lead.tags || [],
+                groupId: lead.groupInfo?.groupId || '',
             };
         }
         return {
@@ -148,6 +153,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
             clientId: '',
             source: '',
             tags: [],
+            groupId: '',
         };
     };
     
@@ -191,6 +197,11 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
         value: leadValue,
         probability: isNaN(leadProbability) ? undefined : leadProbability,
         clientId: formData.clientId || undefined,
+        groupInfo: {
+            ...lead?.groupInfo,
+            hasJoined: !!formData.groupId,
+            groupId: formData.groupId || undefined,
+        }
     };
     
     onSubmit(dataToSubmit);
@@ -296,9 +307,14 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                       </div>
                   </div>
 
-                  <InputField label="E-mail" name="email" value={formData.email} onChange={handleChange} placeholder="email@exemplo.com" type="email" className="md:col-span-2" />
-                  <InputField label="Telefone" name="phone" value={formData.phone} onChange={handleChange} placeholder="(11) 99999-9999" className="md:col-span-2" maxLength={15} />
-                  <InputField label="Empresa" name="company" value={formData.company} onChange={handleChange} placeholder="Nome da empresa" className="md:col-span-2" />
+                  <InputField label="E-mail" name="email" value={formData.email} onChange={handleChange} placeholder="email@exemplo.com" type="email" className="md:col-span-3" />
+                  <InputField label="Telefone" name="phone" value={formData.phone} onChange={handleChange} placeholder="(11) 99999-9999" className="md:col-span-3" maxLength={15} />
+                  <InputField label="Empresa" name="company" value={formData.company} onChange={handleChange} placeholder="Nome da empresa" className="md:col-span-3" />
+                   <SelectField label="Grupo" name="groupId" value={formData.groupId} onChange={handleChange} className="md:col-span-3">
+                        <option value="">Nenhum</option>
+                        {groups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}
+                   </SelectField>
+
                   <InputField label="Valor (R$)" name="value" value={formData.value} onChange={handleChange} required type="number" className="md:col-span-3" />
                   <InputField label="Probabilidade (%)" name="probability" value={formData.probability} onChange={handleChange} type="number" className="md:col-span-3" />
 
@@ -339,7 +355,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                   </div>
               </div>
               <div className="flex-shrink-0 p-4 bg-zinc-800/50 border-t border-zinc-700 flex justify-end gap-3">
-                   <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700 rounded-md hover:bg-zinc-600 transition-colors">
+                   <button type="button" onClick={handleClose} className="px-4 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700 rounded-md hover:bg-zinc-600 transition-colors">
                       Cancelar
                   </button>
                   <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700 transition-colors">

@@ -1,4 +1,4 @@
-import { ColumnData, Lead, Activity, User, Task, Tag, EmailDraft, ChatConversation, ChatMessage } from './types';
+import { ColumnData, Lead, Activity, User, Task, Tag, EmailDraft, ChatConversation, ChatMessage, Group } from './types';
 
 export const initialUsers: User[] = [
   { id: 'user1', name: 'John Doe', email: 'john.doe@example.com' },
@@ -23,6 +23,32 @@ export const initialTags: Tag[] = [
   { id: 'tag-5', name: 'Novo Cliente', color: '#10b981' }, // emerald-500
 ];
 
+export const initialGroups: Group[] = [
+    {
+        id: 'group-alpha',
+        name: 'Grupo Alpha',
+        description: 'Grupo para leads de alto potencial e novos clientes do produto Alpha.',
+        accessLink: 'https://chat.whatsapp.com/alpha',
+        status: 'Ativo',
+        memberGoal: 100,
+    },
+    {
+        id: 'group-beta',
+        name: 'Grupo Beta',
+        description: 'Grupo de teste para o novo produto Beta.',
+        accessLink: 'https://t.me/beta_group',
+        status: 'Ativo',
+        memberGoal: 50,
+    },
+    {
+        id: 'group-onboarding',
+        name: 'Onboarding VIP',
+        description: 'Grupo exclusivo para clientes que fecharam o plano VIP.',
+        status: 'Lotado',
+    }
+];
+
+
 export const initialLeads: Lead[] = [
     {
         id: 'lead-1',
@@ -42,6 +68,14 @@ export const initialLeads: Lead[] = [
         status: 'Ativo',
         source: 'Indicação',
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days ago
+        groupInfo: {
+            hasJoined: true,
+            groupId: 'group-alpha',
+            isStillInGroup: true,
+            hasOnboarded: true,
+            onboardingCallDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString(), // 1 day ago - new member!
+            churned: false,
+        },
     },
     {
         id: 'lead-2',
@@ -70,6 +104,14 @@ export const initialLeads: Lead[] = [
         description: 'Cliente fechado, aguardando onboarding.',
         email: 'carlos.s@solucoes.co',
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
+        groupInfo: {
+            hasJoined: true,
+            groupId: 'group-beta',
+            isStillInGroup: true,
+            hasOnboarded: true,
+            onboardingCallDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 45).toISOString(), // older member
+            churned: false,
+        },
     },
     {
         id: 'lead-4',
@@ -84,6 +126,37 @@ export const initialLeads: Lead[] = [
         description: 'Não respondeu aos contatos.',
         email: 'daniel@datacorp.com',
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8).toISOString(),
+        groupInfo: {
+            hasJoined: true,
+            groupId: 'group-beta',
+            isStillInGroup: false,
+            hasOnboarded: true,
+            onboardingCallDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 50).toISOString(),
+            churned: true,
+            exitDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString(),
+        },
+    },
+    {
+        id: 'lead-5',
+        columnId: 'prospect',
+        name: 'Fernanda',
+        company: 'Agile Solutions',
+        value: 1800.00,
+        avatarUrl: 'https://i.pravatar.cc/150?u=fernanda',
+        tags: [initialTags[2]],
+        lastActivity: '4 dias atrás',
+        status: 'Ativo',
+        description: 'Interessada, mas com orçamento limitado.',
+        email: 'fernanda@agilesol.com',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(),
+        groupInfo: {
+            hasJoined: true,
+            groupId: 'group-alpha',
+            isStillInGroup: false,
+            hasOnboarded: false,
+            churned: true,
+            exitDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+        },
     }
 ];
 
