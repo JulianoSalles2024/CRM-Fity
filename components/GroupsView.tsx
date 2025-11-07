@@ -1,7 +1,7 @@
-
-
-import React from 'react';
-import { ChevronLeft } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { ChevronLeft, Download, Users, UserCheck, UserX, Goal, Sparkles, Loader2 } from 'lucide-react';
+import { GoogleGenAI } from '@google/genai';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { Lead, Id, GroupInfo, UpdateLeadData, Group } from '../types';
 
 interface GroupsViewProps {
@@ -22,7 +22,22 @@ const CheckboxCell: React.FC<{ checked: boolean; onChange: (checked: boolean) =>
     </div>
 );
 
+const KpiCard: React.FC<{ icon: React.ElementType; title: string; value: string; colorClass: string; }> = ({ icon: Icon, title, value, colorClass }) => (
+    <div className="bg-zinc-800 p-4 rounded-lg border border-zinc-700 flex items-center gap-4 transition-all duration-200 ease-in-out hover:bg-zinc-700/50 hover:-translate-y-1">
+        <div className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center ${colorClass.replace('text-', 'bg-')}/20`}>
+            <Icon className={`w-5 h-5 ${colorClass}`} />
+        </div>
+        <div>
+            <p className="text-2xl font-bold text-white">{value}</p>
+            <p className="text-sm text-zinc-400">{title}</p>
+        </div>
+    </div>
+);
+
+
 const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, onUpdateLead, onBack }) => {
+    const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
+    const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
     
     const handleGroupInfoChange = (leadId: Id, field: keyof GroupInfo, value: any) => {
         const lead = leads.find(l => l.id === leadId);
@@ -50,17 +65,196 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, onUpdateLead, onB
         }
     };
 
+    const groupMetrics = useMemo(() => {
+        const totalJoined = leads.filter(l => l.groupInfo?.hasJoined).length;
+        const currentMembers = leads.filter(l => l.groupInfo?.isStillInGroup).length;
+        const totalOnboarded = leads.filter(l => l.groupInfo?.hasOnboarded).length;
+        const totalChurned = leads.filter(l => l.groupInfo?.churned).length;
+
+        const onboardingRate = totalJoined > 0 ? (totalOnboarded / totalJoined) * 100 : 0;
+        const churnRate = totalJoined > 0 ? (totalChurned / totalJoined) * 100 : 0;
+
+        return { currentMembers, onboardingRate, churnRate, totalJoined, totalOnboarded, totalChurned };
+    }, [leads]);
+
+    const handleGenerateAnalysis = async () => {
+        setIsLoadingAnalysis(true);
+        setAiAnalysis(null);
+        
+        try {
+            if (!process.env.API_KEY) {
+                 throw new Error("API Key for Gemini is not configured.");
+            }
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+            const prompt = `Você é um analista de negócios especialista em comunidades online e gestão de leads. Analise os seguintes dados do grupo '${group.name}' e forneça um resumo analítico detalhado.
+
+**Dados do Grupo:**
+- **Nome:** ${group.name}
+- **Descrição:** ${group.description || 'Não fornecida'}
+- **Meta de Membros:** ${group.memberGoal || 'Não definida'}
+
+**Métricas Chave:**
+- **Membros Atuais:** ${groupMetrics.currentMembers}
+- **Taxa de Onboarding (dos que entraram):** ${groupMetrics.onboardingRate.toFixed(1)}%
+- **Taxa de Churn (dos que entraram):** ${groupMetrics.churnRate.toFixed(1)}%
+
+**Dados Gerais dos Membros:**
+- **Total de Leads Associados:** ${leads.length}
+- **Leads que entraram no grupo:** ${groupMetrics.totalJoined}
+- **Leads que permanecem no grupo:** ${groupMetrics.currentMembers}
+- **Leads que saíram (churn):** ${groupMetrics.totalChurned}
+- **Leads que completaram onboarding:** ${groupMetrics.totalOnboarded}
+
+**Sua Tarefa:**
+Com base nesses dados, gere uma análise em texto com as seguintes seções, usando markdown para formatação (títulos com ##, listas com *, negrito com **):
+1.  **Resumo Executivo:** Uma visão geral rápida da saúde e performance do grupo.
+2.  **Pontos Fortes:** Identifique o que está funcionando bem.
+3.  **Pontos de Melhoria:** Aponte áreas que precisam de atenção.
+4.  **Padrões e Insights:** Destaque quaisquer padrões interessantes (ex: alta taxa de churn apesar do bom onboarding, etc.).
+5.  **Recomendações e Próximos Passos:** Sugira 2-3 ações concretas que o gestor do grupo pode tomar para melhorar as métricas, como engajamento, retenção ou conversão.
+
+Seja claro, conciso e use os dados para embasar sua análise.`;
+
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: prompt,
+            });
+
+            setAiAnalysis(response.text);
+
+        } catch(e) {
+            console.error(e);
+            setAiAnalysis("Ocorreu um erro ao gerar a análise. Verifique se a chave de API do Gemini está configurada corretamente.");
+        } finally {
+            setIsLoadingAnalysis(false);
+        }
+    };
+
+    const handleExportCSV = () => {
+        const headers = [
+            'Nome', 'Empresa', 'Email', 'Telefone', 
+            'Entrou no Grupo', 'Permanece no Grupo', 'Onboarding Realizado', 
+            'Data Call Onboarding', 'Churn', 'Data de Saída'
+        ];
+
+        const escapeCsvCell = (cellData: any): string => {
+            if (cellData == null) return '';
+            const stringData = String(cellData);
+            if (stringData.includes(',') || stringData.includes('"') || stringData.includes('\n')) {
+                return `"${stringData.replace(/"/g, '""')}"`;
+            }
+            return stringData;
+        };
+
+        const rows = leads.map(lead => {
+            const groupInfo = lead.groupInfo || {};
+            const rowData = [
+                escapeCsvCell(lead.name),
+                escapeCsvCell(lead.company),
+                escapeCsvCell(lead.email || ''),
+                escapeCsvCell(lead.phone || ''),
+                groupInfo.hasJoined ? 'Sim' : 'Não',
+                groupInfo.isStillInGroup ? 'Sim' : 'Não',
+                groupInfo.hasOnboarded ? 'Sim' : 'Não',
+                groupInfo.onboardingCallDate ? new Date(groupInfo.onboardingCallDate).toLocaleDateString('pt-BR') : '',
+                groupInfo.churned ? 'Sim' : 'Não',
+                groupInfo.exitDate ? new Date(groupInfo.exitDate).toLocaleDateString('pt-BR') : '',
+            ];
+            return rowData.join(',');
+        });
+
+        const csvString = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        const today = new Date().toISOString().split('T')[0];
+        const fileName = `membros_grupo_${group.name.replace(/\s+/g, '_')}_${today}.csv`;
+
+        link.setAttribute("href", url);
+        link.setAttribute("download", fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="flex flex-col gap-6 h-full">
-            <div className="flex items-center gap-4">
-                 <button onClick={onBack} className="p-2 rounded-full text-zinc-400 hover:bg-zinc-800 transition-colors">
-                    <ChevronLeft className="w-6 h-6 text-violet-500/70 hover:text-violet-500" />
-                </button>
-                <div>
-                    <h1 className="text-2xl font-bold text-white">Membros do Grupo: {group.name}</h1>
-                    <p className="text-zinc-400">{group.description || 'Gerencie os membros deste grupo.'}</p>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex items-center gap-4">
+                     <button onClick={onBack} className="p-2 rounded-full text-zinc-400 hover:bg-zinc-800 transition-colors">
+                        <ChevronLeft className="w-6 h-6 text-violet-500/70 hover:text-violet-500" />
+                    </button>
+                    <div>
+                        <h1 className="text-2xl font-bold text-white">Membros do Grupo: {group.name}</h1>
+                        <p className="text-zinc-400">{group.description || 'Gerencie os membros deste grupo.'}</p>
+                    </div>
+                </div>
+                 <div className="flex items-center gap-2">
+                    <button 
+                        onClick={handleExportCSV}
+                        className="flex items-center gap-2 bg-zinc-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-zinc-600 transition-colors"
+                    >
+                        <Download className="w-4 h-4" />
+                        <span>Exportar CSV</span>
+                    </button>
+                    <button 
+                        onClick={handleGenerateAnalysis}
+                        disabled={isLoadingAnalysis}
+                        className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        {isLoadingAnalysis ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <Sparkles className="w-4 h-4" />
+                        )}
+                        <span>{isLoadingAnalysis ? 'Analisando...' : 'Gerar Análise com IA'}</span>
+                    </button>
                 </div>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <KpiCard icon={Users} title="Membros Atuais" value={groupMetrics.currentMembers.toString()} colorClass="text-violet-400" />
+                <KpiCard icon={UserCheck} title="Onboarding" value={`${groupMetrics.onboardingRate.toFixed(0)}%`} colorClass="text-green-400" />
+                <KpiCard icon={UserX} title="Churn" value={`${groupMetrics.churnRate.toFixed(1)}%`} colorClass="text-red-400" />
+                {group.memberGoal ? (
+                    <KpiCard icon={Goal} title="Meta" value={`${groupMetrics.currentMembers} / ${group.memberGoal}`} colorClass="text-blue-400" />
+                ) : (
+                     <div className="bg-zinc-800 p-4 rounded-lg border border-zinc-700 flex items-center gap-4">
+                         <div className="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center bg-zinc-700/50">
+                            <Goal className="w-5 h-5 text-zinc-500" />
+                        </div>
+                        <div>
+                            <p className="text-sm text-zinc-400">Nenhuma meta definida</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+            
+            <AnimatePresence>
+                {(isLoadingAnalysis || aiAnalysis) && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="bg-zinc-800/50 rounded-lg border border-zinc-700 p-6"
+                    >
+                        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                            <Sparkles className="w-5 h-5 text-violet-400" />
+                            Análise da IA
+                        </h2>
+                        {isLoadingAnalysis ? (
+                             <div className="flex items-center justify-center py-10">
+                                <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+                            </div>
+                        ) : (
+                            <div className="prose prose-invert prose-sm max-w-none text-zinc-300 whitespace-pre-wrap"
+                                dangerouslySetInnerHTML={{ __html: aiAnalysis ? aiAnalysis.replace(/## (.*?)\n/g, '<h3 class="text-white font-semibold mt-4 mb-2">$1</h3>').replace(/\* (.*?)\n/g, '<li class="ml-4">$1</li>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') : '' }}
+                            />
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
             
             <div className="bg-zinc-800 rounded-lg border border-zinc-700 overflow-hidden flex-1 flex flex-col">
                 <div className="overflow-auto h-full">
@@ -77,7 +271,7 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, onUpdateLead, onB
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-700">
-                            {leads.map(lead => {
+                             {leads.length > 0 ? leads.map(lead => {
                                 const groupInfo = lead.groupInfo || { hasJoined: false, isStillInGroup: false, hasOnboarded: false, churned: false };
                                 return (
                                 <tr key={lead.id} className="hover:bg-zinc-700/50 transition-colors duration-150">
@@ -96,7 +290,13 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, onUpdateLead, onB
                                         <input type="date" value={formatDateForInput(groupInfo.exitDate)} onChange={e => handleGroupInfoChange(lead.id, 'exitDate', e.target.valueAsDate?.toISOString())} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-1.5 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-violet-500" />
                                     </td>
                                 </tr>
-                            )})}
+                            )}) : (
+                                <tr>
+                                    <td colSpan={7} className="text-center py-10 text-zinc-500">
+                                        Nenhum membro encontrado neste grupo.
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
