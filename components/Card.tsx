@@ -1,5 +1,6 @@
 
 
+
 import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -58,7 +59,7 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onClick, mini
         if (!lead.phone) return;
 
         // Sanitize phone number: remove non-numeric characters
-        let sanitizedPhone = lead.phone.replace(/\D/g, '');
+        let sanitizedPhone = lead.phone.replace(/\D/g, '').slice(0, 11);
 
         // Add country code for Brazil (55) if not present.
         if (sanitizedPhone.length >= 10 && !sanitizedPhone.startsWith('55')) {
@@ -79,16 +80,16 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onClick, mini
             onClick={onClick}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className={`bg-zinc-800 rounded-lg border border-zinc-700/80 shadow-sm cursor-grab active:cursor-grabbing hover:bg-zinc-700/50 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/20 transition-all duration-150 touch-none ${isMinimized ? 'p-3' : 'p-4'}`}
+            className={`bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700/80 shadow-sm cursor-grab active:cursor-grabbing hover:bg-gray-50 dark:hover:bg-zinc-700/50 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/10 dark:hover:shadow-violet-500/20 transition-all duration-150 touch-none ${isMinimized ? 'p-3' : 'p-4'}`}
         >
             <div className="flex justify-between items-center gap-2">
-                <h3 className="font-bold text-white text-md leading-tight flex-1 truncate">{lead.name}</h3>
+                <h3 className="font-bold text-zinc-900 dark:text-white text-md leading-tight flex-1 truncate">{lead.name}</h3>
 
                 <div className="flex items-center gap-1 flex-shrink-0">
                     {isHovered && !isMinimized && lead.phone && (
                         <button
                             onClick={handleWhatsAppClick}
-                            className="p-1 rounded-full text-zinc-400 hover:bg-green-500/20 hover:text-green-400 transition-colors"
+                            className="p-1 rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-green-500/10 dark:hover:bg-green-500/20 hover:text-green-500 dark:hover:text-green-400 transition-colors"
                             title="Abrir conversa no WhatsApp"
                         >
                             <MessageCircle className="w-4 h-4" />
@@ -100,14 +101,14 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onClick, mini
                                 e.stopPropagation();
                                 onToggleLeadMinimize(lead.id);
                             }}
-                            className="p-1 rounded-full text-zinc-400 hover:bg-zinc-900/50 hover:text-white transition-colors"
+                            className="p-1 rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-900/50 hover:text-zinc-900 dark:hover:text-white transition-colors"
                             title={isMinimized ? "Expandir card" : "Minimizar card"}
                         >
                             {isMinimized ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                         </button>
                     )}
                     {displaySettings.showAssignedTo && assignedUser && (
-                        <div title={assignedUser.name} className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center font-bold text-xs text-white ring-1 ring-zinc-900">
+                        <div title={assignedUser.name} className="w-7 h-7 rounded-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center font-bold text-xs text-zinc-600 dark:text-white ring-1 ring-white dark:ring-zinc-900">
                              {assignedUser.name.split(' ').map(n => n[0]).join('')}
                         </div>
                     )}
@@ -125,33 +126,33 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onClick, mini
                         className="overflow-hidden"
                     >
                         <div className="pt-3 space-y-3">
-                            {displaySettings.showCompany && <p className="text-sm text-zinc-400 flex items-center gap-2"><Building className="w-3.5 h-3.5 flex-shrink-0" /> {lead.company}</p>}
+                            {displaySettings.showCompany && <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2"><Building className="w-3.5 h-3.5 flex-shrink-0" /> {lead.company}</p>}
                             
                             {displaySettings.showValue && (
-                                <p className="text-sm font-semibold text-green-400 flex items-center gap-2">
+                                <p className="text-sm font-semibold text-green-500 dark:text-green-400 flex items-center gap-2">
                                     <DollarSign className="w-3.5 h-3.5 flex-shrink-0" />
                                     {currencyFormatter.format(lead.value)}
                                 </p>
                             )}
                             
-                            {displaySettings.showEmail && <p className="text-sm text-zinc-400 flex items-center gap-2 truncate"><Mail className="w-3.5 h-3.5 flex-shrink-0" /> {lead.email || 'N/A'}</p>}
-                            {displaySettings.showPhone && <p className="text-sm text-zinc-400 flex items-center gap-2"><Phone className="w-3.5 h-3.5 flex-shrink-0" /> {lead.phone || 'N/A'}</p>}
+                            {displaySettings.showEmail && <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2 truncate"><Mail className="w-3.5 h-3.5 flex-shrink-0" /> {lead.email || 'N/A'}</p>}
+                            {displaySettings.showPhone && <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2"><Phone className="w-3.5 h-3.5 flex-shrink-0" /> {lead.phone || 'N/A'}</p>}
 
                             {displaySettings.showTags && lead.tags.length > 0 && (
                                  <div className="flex flex-wrap gap-1.5 items-center">
-                                    <Tag className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
+                                    <Tag className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 flex-shrink-0" />
                                     {lead.tags.map(tag => <TagPill key={tag.id} tag={tag} />)}
                                 </div>
                             )}
                             
                             {displaySettings.showProbability && typeof lead.probability === 'number' && (
-                                 <div className="flex items-center gap-2 text-sm text-zinc-400">
+                                 <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
                                     <TrendingUp className="w-3.5 h-3.5 flex-shrink-0" />
                                     <span>Probabilidade: {lead.probability}%</span>
                                 </div>
                             )}
 
-                            <div className="border-t border-zinc-700/50 pt-2 text-xs text-zinc-500 space-y-1.5">
+                            <div className="border-t border-zinc-200/80 dark:border-zinc-700/50 pt-2 text-xs text-zinc-400 dark:text-zinc-500 space-y-1.5">
                                 {displaySettings.showDueDate && lead.dueDate && (
                                     <div className="flex items-center gap-2">
                                         <Calendar className="w-3 h-3 flex-shrink-0" />

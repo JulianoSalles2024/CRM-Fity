@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -45,9 +42,12 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<Re
 
   const setValue = (value: T | ((val: T) => T)) => {
     try {
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
-      setStoredValue(valueToStore);
-      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      // Use the functional update form of useState's setter to prevent stale state.
+      setStoredValue(currentValue => {
+          const valueToStore = value instanceof Function ? value(currentValue) : value;
+          window.localStorage.setItem(key, JSON.stringify(valueToStore));
+          return valueToStore;
+      });
     } catch (error) {
       console.error(error);
     }
@@ -79,6 +79,7 @@ const App: React.FC = () => {
     const [activeView, setActiveView] = useState('Grupos');
     const [isSidebarCollapsed, setSidebarCollapsed] = useLocalStorage('crm-sidebarCollapsed', false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [theme, setTheme] = useLocalStorage<'dark' | 'light'>('crm-theme', 'dark');
 
     // Modal & Slideover States
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -116,6 +117,14 @@ const App: React.FC = () => {
             setSelectedGroupForView(null);
         }
     }, [activeView]);
+
+    useEffect(() => {
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }, [theme]);
 
 
     // --- COMPUTED DATA ---
@@ -525,7 +534,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="flex h-screen w-full bg-zinc-900 text-gray-200 font-sans antialiased overflow-hidden">
+        <div className="flex h-screen w-full bg-gray-50 dark:bg-zinc-900 text-zinc-800 dark:text-gray-200 font-sans antialiased overflow-hidden">
             <Sidebar activeView={activeView} onNavigate={setActiveView} isCollapsed={isSidebarCollapsed} onToggle={() => setSidebarCollapsed(p => !p)} />
             
             <div className="flex flex-col flex-1 overflow-hidden">
@@ -536,6 +545,8 @@ const App: React.FC = () => {
                     onSearchChange={setSearchQuery}
                     onOpenCreateLeadModal={() => handleOpenCreateLeadModal()}
                     onOpenCreateTaskModal={() => handleOpenCreateTaskModal()}
+                    theme={theme}
+                    onThemeToggle={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
                 />
                 
                 <main className="flex-1 p-6 overflow-auto">
@@ -570,8 +581,8 @@ const App: React.FC = () => {
                         )
                     )}
                     {activeView === 'Configurações' && <SettingsPage currentUser={currentUser} onUpdateProfile={handleUpdateProfile} columns={columns} onUpdatePipeline={handleUpdatePipeline}/>}
-                    {activeView === 'Notificações' && <div className="text-center p-10 bg-zinc-800/50 rounded-lg border-2 border-dashed border-zinc-700"><h2 className="text-lg font-semibold text-white">Notificações</h2><p className="text-zinc-400 mt-2">Esta seção estará disponível em breve!</p></div>}
-                    {activeView === 'Dúvidas' && <div className="text-center p-10 bg-zinc-800/50 rounded-lg border-2 border-dashed border-zinc-700"><h2 className="text-lg font-semibold text-white">Dúvidas e Suporte</h2><p className="text-zinc-400 mt-2">Esta seção estará disponível em breve!</p></div>}
+                    {activeView === 'Notificações' && <div className="text-center p-10 bg-white dark:bg-zinc-800/50 rounded-lg border-2 border-dashed border-zinc-200 dark:border-zinc-700"><h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Notificações</h2><p className="text-zinc-500 dark:text-zinc-400 mt-2">Esta seção estará disponível em breve!</p></div>}
+                    {activeView === 'Dúvidas' && <div className="text-center p-10 bg-white dark:bg-zinc-800/50 rounded-lg border-2 border-dashed border-zinc-200 dark:border-zinc-700"><h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Dúvidas e Suporte</h2><p className="text-zinc-500 dark:text-zinc-400 mt-2">Esta seção estará disponível em breve!</p></div>}
                 </main>
             </div>
             

@@ -53,16 +53,16 @@ const CardCustomizationPopup: React.FC<CardCustomizationPopupProps> = ({ setting
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full right-0 mt-2 w-72 bg-zinc-800 rounded-lg border border-zinc-700 shadow-lg z-20"
+            className="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 shadow-lg z-20"
         >
-            <div className="p-4 border-b border-zinc-700">
-                <h3 className="font-semibold text-white">Personalizar Cards</h3>
-                <p className="text-sm text-zinc-400">Escolha quais campos exibir.</p>
+            <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+                <h3 className="font-semibold text-zinc-900 dark:text-white">Personalizar Cards</h3>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">Escolha quais campos exibir.</p>
             </div>
             <div className="p-2 max-h-96 overflow-y-auto">
                 {settingOptions.map(({ key, label }) => (
-                    <div key={key} className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-700/50">
-                        <label className="text-sm font-medium text-white">{label}</label>
+                    <div key={key} className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-700/50">
+                        <label className="text-sm font-medium text-zinc-900 dark:text-white">{label}</label>
                         <ToggleSwitch checked={settings[key]} onChange={() => handleToggle(key)} />
                     </div>
                 ))}

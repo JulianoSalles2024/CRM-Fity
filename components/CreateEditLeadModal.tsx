@@ -1,5 +1,3 @@
-
-
 import React, { useState, FormEvent, useEffect, ChangeEvent, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -192,17 +190,32 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
         return;
     }
     
-    const dataToSubmit = {
-        ...formData,
+    const { groupId, ...restOfFormData } = formData;
+    
+    const dataToSubmit: UpdateLeadData = {
+        ...restOfFormData,
         value: leadValue,
         probability: isNaN(leadProbability) ? undefined : leadProbability,
         clientId: formData.clientId || undefined,
-        groupInfo: {
-            ...lead?.groupInfo,
-            hasJoined: !!formData.groupId,
-            groupId: formData.groupId || undefined,
-        }
     };
+    
+    const newGroupId = groupId || undefined;
+    const oldGroupInfo = lead?.groupInfo;
+
+    // Only include groupInfo if a group is selected, or if there's history
+    if (newGroupId || oldGroupInfo) {
+      const isSwitchingGroup = newGroupId && newGroupId !== oldGroupInfo?.groupId;
+
+      dataToSubmit.groupInfo = {
+        ...(oldGroupInfo || { hasJoined: false, hasOnboarded: false, churned: false }), // Initial state for a lead never in a group
+        hasJoined: oldGroupInfo?.hasJoined || !!newGroupId, // Once joined, always considered to have joined at some point
+        groupId: newGroupId,
+        isStillInGroup: !!newGroupId,
+        // If switching to a new group, reset onboarding status
+        hasOnboarded: isSwitchingGroup ? false : (oldGroupInfo?.hasOnboarded || false),
+        onboardingCallDate: isSwitchingGroup ? undefined : oldGroupInfo?.onboardingCallDate,
+      };
+    }
     
     onSubmit(dataToSubmit);
   };

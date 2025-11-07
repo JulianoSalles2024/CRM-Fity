@@ -37,8 +37,8 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
             <div className="flex items-center gap-4">
                 <LayoutDashboard className="w-8 h-8 text-violet-500" />
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-                    <p className="text-zinc-400">Visão geral das suas métricas e atividades</p>
+                    <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Dashboard</h1>
+                    <p className="text-zinc-500 dark:text-zinc-400">Visão geral das suas métricas e atividades</p>
                 </div>
             </div>
 

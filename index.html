@@ -11,21 +11,31 @@
     <style>
       body {
         font-family: 'Inter', sans-serif;
-        background-color: #18181b; /* bg-zinc-900 */
       }
-      /* Custom scrollbar for a more refined look */
+      /* Light mode scrollbar */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #18181b; /* zinc-900 */
+        background: #f1f5f9; /* slate-100 */
       }
       ::-webkit-scrollbar-thumb {
-        background: #3f3f46; /* zinc-700 */
+        background: #cbd5e1; /* slate-300 */
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8; /* slate-400 */
+      }
+      
+      /* Dark mode scrollbar */
+      .dark ::-webkit-scrollbar-track {
+        background: #18181b; /* zinc-900 */
+      }
+      .dark ::-webkit-scrollbar-thumb {
+        background: #3f3f46; /* zinc-700 */
+      }
+      .dark ::-webkit-scrollbar-thumb:hover {
         background: #52525b; /* zinc-600 */
       }
     </style>
@@ -44,8 +54,16 @@
   }
 }
 </script>
+<script>
+  // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+  if (localStorage.getItem('crm-theme') === 'light') {
+    document.documentElement.classList.remove('dark')
+  } else {
+    document.documentElement.classList.add('dark')
+  }
+</script>
 </head>
-  <body class="bg-zinc-900 text-gray-300">
+  <body class="bg-gray-50 text-zinc-800 dark:bg-zinc-900 dark:text-gray-300">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
