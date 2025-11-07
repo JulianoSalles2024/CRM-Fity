@@ -1,14 +1,17 @@
-import React, { useMemo, useState } from 'react';
-import { ChevronLeft, Download, Users, UserCheck, UserX, Goal, Sparkles, Loader2 } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { ChevronLeft, Download, Users, UserCheck, UserX, Goal, Sparkles, Loader2, Save, FileText, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { Lead, Id, GroupInfo, UpdateLeadData, Group } from '../types';
+import type { Lead, Id, GroupInfo, UpdateLeadData, Group, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData } from '../types';
 
 interface GroupsViewProps {
     group: Group;
     leads: Lead[];
+    analysis: GroupAnalysis | null;
     onUpdateLead: (leadId: Id, updates: UpdateLeadData) => void;
     onBack: () => void;
+    onCreateOrUpdateAnalysis: (data: CreateGroupAnalysisData | UpdateGroupAnalysisData, analysisId?: Id) => void;
+    onDeleteAnalysis: (analysisId: Id) => void;
 }
 
 const CheckboxCell: React.FC<{ checked: boolean; onChange: (checked: boolean) => void }> = ({ checked, onChange }) => (
@@ -35,9 +38,16 @@ const KpiCard: React.FC<{ icon: React.ElementType; title: string; value: string;
 );
 
 
-const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, onUpdateLead, onBack }) => {
+const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdateLead, onBack, onCreateOrUpdateAnalysis, onDeleteAnalysis }) => {
     const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
-    const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+    
+    type CurrentAnalysis = GroupAnalysis | { content: string; status: 'new' };
+    const [currentAnalysis, setCurrentAnalysis] = useState<CurrentAnalysis | null>(null);
+    const [isAnalysisMinimized, setIsAnalysisMinimized] = useState(false);
+
+    useEffect(() => {
+        setCurrentAnalysis(analysis);
+    }, [analysis]);
     
     const handleGroupInfoChange = (leadId: Id, field: keyof GroupInfo, value: any) => {
         const lead = leads.find(l => l.id === leadId);
@@ -79,7 +89,7 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, onUpdateLead, onB
 
     const handleGenerateAnalysis = async () => {
         setIsLoadingAnalysis(true);
-        setAiAnalysis(null);
+        setCurrentAnalysis(null);
         
         try {
             if (!process.env.API_KEY) {
@@ -121,15 +131,37 @@ Seja claro, conciso e use os dados para embasar sua análise.`;
                 contents: prompt,
             });
 
-            setAiAnalysis(response.text);
+            setCurrentAnalysis({ content: response.text, status: 'new' });
+            setIsAnalysisMinimized(false);
 
         } catch(e) {
             console.error(e);
-            setAiAnalysis("Ocorreu um erro ao gerar a análise. Verifique se a chave de API do Gemini está configurada corretamente.");
+            setCurrentAnalysis({ content: "Ocorreu um erro ao gerar a análise. Verifique se a chave de API do Gemini está configurada corretamente.", status: 'new' });
         } finally {
             setIsLoadingAnalysis(false);
         }
     };
+
+    const handleSaveAnalysis = (status: 'saved' | 'draft') => {
+        if (!currentAnalysis) return;
+        const analysisId = 'id' in currentAnalysis ? currentAnalysis.id : undefined;
+        
+        const data = {
+            groupId: group.id,
+            content: currentAnalysis.content,
+            status: status,
+        };
+
+        onCreateOrUpdateAnalysis(data, analysisId);
+    };
+
+    const handleDiscardAnalysis = () => {
+        if (currentAnalysis && 'id' in currentAnalysis) {
+            onDeleteAnalysis(currentAnalysis.id);
+        }
+        setCurrentAnalysis(null);
+    };
+
 
     const handleExportCSV = () => {
         const headers = [
@@ -232,26 +264,59 @@ Seja claro, conciso e use os dados para embasar sua análise.`;
             </div>
             
             <AnimatePresence>
-                {(isLoadingAnalysis || aiAnalysis) && (
+                {(isLoadingAnalysis || currentAnalysis) && (
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         className="bg-zinc-800/50 rounded-lg border border-zinc-700 p-6"
                     >
-                        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                            <Sparkles className="w-5 h-5 text-violet-400" />
-                            Análise da IA
-                        </h2>
-                        {isLoadingAnalysis ? (
-                             <div className="flex items-center justify-center py-10">
-                                <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
-                            </div>
-                        ) : (
-                            <div className="prose prose-invert prose-sm max-w-none text-zinc-300 whitespace-pre-wrap"
-                                dangerouslySetInnerHTML={{ __html: aiAnalysis ? aiAnalysis.replace(/## (.*?)\n/g, '<h3 class="text-white font-semibold mt-4 mb-2">$1</h3>').replace(/\* (.*?)\n/g, '<li class="ml-4">$1</li>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') : '' }}
-                            />
-                        )}
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                                <Sparkles className="w-5 h-5 text-violet-400" />
+                                <span>
+                                    Análise da IA
+                                    {currentAnalysis && currentAnalysis.status !== 'new' && (
+                                        <span className="text-xs font-normal text-zinc-400 ml-2 capitalize">({currentAnalysis.status === 'draft' ? 'Rascunho' : 'Salvo'})</span>
+                                    )}
+                                </span>
+                            </h2>
+                            {currentAnalysis && !isLoadingAnalysis && (
+                                <div className="flex items-center gap-1">
+                                    <button onClick={() => handleSaveAnalysis('saved')} title="Salvar" className="p-2 text-zinc-400 hover:text-white rounded-md hover:bg-zinc-700/50"><Save className="w-4 h-4" /></button>
+                                    <button onClick={() => handleSaveAnalysis('draft')} title="Salvar como Rascunho" className="p-2 text-zinc-400 hover:text-white rounded-md hover:bg-zinc-700/50"><FileText className="w-4 h-4" /></button>
+                                    <button onClick={handleDiscardAnalysis} title="Descartar" className="p-2 text-zinc-400 hover:text-red-500 rounded-md hover:bg-zinc-700/50"><Trash2 className="w-4 h-4" /></button>
+                                    <div className="w-px h-5 bg-zinc-700 mx-1" />
+                                    <button onClick={() => setIsAnalysisMinimized(p => !p)} title={isAnalysisMinimized ? 'Expandir' : 'Minimizar'} className="p-2 text-zinc-400 hover:text-white rounded-md hover:bg-zinc-700/50">
+                                        {isAnalysisMinimized ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        <AnimatePresence>
+                            {!isAnalysisMinimized && (
+                                <motion.div
+                                    key="analysis-content"
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="pt-4">
+                                        {isLoadingAnalysis ? (
+                                            <div className="flex items-center justify-center py-10">
+                                                <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+                                            </div>
+                                        ) : (
+                                            <div className="prose prose-invert prose-sm max-w-none text-zinc-300 whitespace-pre-wrap"
+                                                dangerouslySetInnerHTML={{ __html: currentAnalysis ? currentAnalysis.content.replace(/## (.*?)\n/g, '<h3 class="text-white font-semibold mt-4 mb-2">$1</h3>').replace(/\* (.*?)\n/g, '<li class="ml-4">$1</li>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') : '' }}
+                                            />
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </motion.div>
                 )}
             </AnimatePresence>

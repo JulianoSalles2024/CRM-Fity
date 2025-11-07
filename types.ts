@@ -147,6 +147,14 @@ export interface ChatConversation {
     lastMessageChannel: ChatChannel;
 }
 
+export interface GroupAnalysis {
+  id: Id;
+  groupId: Id;
+  content: string;
+  status: 'saved' | 'draft';
+  createdAt: string; // ISO String
+}
+
 
 export type CreateLeadData = Partial<Omit<Lead, 'id'>>;
 export type UpdateLeadData = Partial<Omit<Lead, 'id'>>;
@@ -155,3 +163,5 @@ export type UpdateTaskData = Partial<CreateTaskData>;
 export type CreateEmailDraftData = Omit<EmailDraft, 'id' | 'createdAt'>;
 export type CreateGroupData = Omit<Group, 'id'>;
 export type UpdateGroupData = Partial<CreateGroupData>;
+export type CreateGroupAnalysisData = Omit<GroupAnalysis, 'id' | 'createdAt'>;
+export type UpdateGroupAnalysisData = Partial<Omit<GroupAnalysis, 'id' | 'createdAt' | 'groupId'>>;

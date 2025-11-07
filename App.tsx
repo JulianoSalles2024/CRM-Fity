@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -27,7 +28,7 @@ import CreateEditGroupModal from './components/CreateEditGroupModal';
 
 // Data & Types
 import { initialUsers, initialColumns, initialLeads, initialActivities, initialTasks, initialTags, initialEmailDrafts, initialConversations, initialMessages, initialGroups } from './data';
-import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel } from './types';
+import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData } from './types';
 
 
 // Custom hook for localStorage persistence
@@ -68,12 +69,14 @@ const App: React.FC = () => {
     const [conversations, setConversations] = useLocalStorage<ChatConversation[]>('crm-conversations', initialConversations);
     const [messages, setMessages] = useLocalStorage<ChatMessage[]>('crm-messages', initialMessages);
     const [groups, setGroups] = useLocalStorage<Group[]>('crm-groups', initialGroups);
+    const [groupAnalyses, setGroupAnalyses] = useLocalStorage<GroupAnalysis[]>('crm-group-analyses', []);
+
 
     const [currentUser, setCurrentUser] = useLocalStorage<User | null>('crm-currentUser', null);
     const [authError, setAuthError] = useState<string | null>(null);
     const [authSuccessMessage, setAuthSuccessMessage] = useState<string | null>(null);
     
-    const [activeView, setActiveView] = useState('Chat');
+    const [activeView, setActiveView] = useState('Grupos');
     const [isSidebarCollapsed, setSidebarCollapsed] = useLocalStorage('crm-sidebarCollapsed', false);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -135,6 +138,14 @@ const App: React.FC = () => {
             return statusMatch && tagMatch;
         })
     }, [leads, listStatusFilter, listSelectedTags]);
+
+    const analysisForGroup = useMemo(() => {
+        if (!selectedGroupForView) return null;
+        return groupAnalyses
+            .filter(a => a.groupId === selectedGroupForView)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            [0] || null;
+    }, [groupAnalyses, selectedGroupForView]);
 
 
     // --- NOTIFICATION HANDLER ---
@@ -454,7 +465,28 @@ const App: React.FC = () => {
         }));
         showNotification(`Grupo "${groupName}" foi deletado.`, 'success');
     };
+    
+    // Group Analysis Handlers
+    const handleCreateOrUpdateGroupAnalysis = (data: CreateGroupAnalysisData | UpdateGroupAnalysisData, analysisId?: Id) => {
+        if (analysisId) { // Update
+            setGroupAnalyses(analyses => analyses.map(a => a.id === analysisId ? { ...a, ...data, id: analysisId } : a));
+            showNotification('Análise atualizada.', 'success');
+        } else { // Create
+            const newAnalysis: GroupAnalysis = {
+                id: `analysis-${Date.now()}`,
+                createdAt: new Date().toISOString(),
+                ...(data as CreateGroupAnalysisData),
+            };
+            // Replace any existing analysis for that group to keep only the latest one.
+            setGroupAnalyses(prev => [...prev.filter(a => a.groupId !== newAnalysis.groupId), newAnalysis]);
+            showNotification(`Análise salva como ${data.status === 'draft' ? 'rascunho' : 'final'}.`, 'success');
+        }
+    };
 
+    const handleDeleteGroupAnalysis = (analysisId: Id) => {
+        setGroupAnalyses(analyses => analyses.filter(a => a.id !== analysisId));
+        showNotification('Análise descartada.', 'success');
+    };
 
 
     // --- UI HANDLERS ---
@@ -529,8 +561,11 @@ const App: React.FC = () => {
                             <GroupsView
                                 group={groups.find(g => g.id === selectedGroupForView)!}
                                 leads={leads.filter(l => l.groupInfo?.groupId === selectedGroupForView)}
+                                analysis={analysisForGroup}
                                 onUpdateLead={handleUpdateLeadDetails}
                                 onBack={() => setSelectedGroupForView(null)}
+                                onCreateOrUpdateAnalysis={handleCreateOrUpdateGroupAnalysis}
+                                onDeleteAnalysis={handleDeleteGroupAnalysis}
                             />
                         )
                     )}
