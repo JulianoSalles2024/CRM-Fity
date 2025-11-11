@@ -282,3 +282,66 @@ Seja claro, conciso e use os dados para embasar sua análise.`;
 
     return response.text;
 }
+
+export const addSampleData = async (sampleLeads: Lead[], sampleTasks: Task[]): Promise<void> => {
+    const user = await getCurrentUser();
+    if (!user) throw new Error("User not authenticated");
+
+    // 1. Prepare and insert leads, keeping track of the original string ID
+    const leadsToInsert = sampleLeads.map(lead => ({
+        name: lead.name,
+        company: lead.company,
+        value: lead.value,
+        avatar_url: lead.avatarUrl,
+        last_activity: lead.lastActivity,
+        due_date: lead.dueDate,
+        assigned_to: lead.assignedTo,
+        description: lead.description,
+        email: lead.email,
+        phone: lead.phone,
+        probability: lead.probability,
+        status: lead.status,
+        client_id: lead.clientId,
+        source: lead.source,
+        created_at: lead.createdAt,
+        column_id: lead.columnId
+    }));
+
+    const { data: insertedLeadsData, error: leadsError } = await supabase
+        .from('leads')
+        .insert(leadsToInsert)
+        .select('id');
+
+    if (leadsError) throw leadsError;
+
+    // 2. Create a map from old string ID to new DB ID
+    const oldIdToNewIdMap = new Map<Id, Id>();
+    sampleLeads.forEach((lead, index) => {
+        oldIdToNewIdMap.set(lead.id, insertedLeadsData[index].id);
+    });
+
+    // 3. Prepare and insert tasks
+    const tasksToInsert = sampleTasks
+        .map(task => {
+            const newLeadId = oldIdToNewIdMap.get(task.leadId);
+            if (!newLeadId) return null;
+
+            return {
+                user_id: user.id,
+                lead_id: newLeadId,
+                type: task.type,
+                title: task.title,
+                description: task.description,
+                due_date: task.dueDate,
+                status: task.status,
+            };
+        })
+        .filter((t): t is NonNullable<typeof t> => t !== null);
+
+    if (tasksToInsert.length > 0) {
+        const { error: tasksError } = await supabase
+            .from('tasks')
+            .insert(tasksToInsert);
+        if (tasksError) throw tasksError;
+    }
+};

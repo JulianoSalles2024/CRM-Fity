@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -22,6 +23,7 @@ import GroupsView from './components/GroupsView';
 import GroupsDashboard from './components/GroupsDashboard';
 import CreateEditGroupModal from './components/CreateEditGroupModal';
 import ConfigurationNotice from './components/ConfigurationNotice';
+import SampleDataPrompt from './components/SampleDataPrompt';
 
 // API & Types
 import * as api from './api';
@@ -29,7 +31,7 @@ import { isSupabaseConfigured } from './services/supabaseClient';
 import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData } from './types';
 
 // Data (for initial structure if backend is empty)
-import { initialColumns, initialTags, initialGroups, initialConversations, initialMessages } from './data';
+import { initialColumns, initialTags, initialGroups, initialConversations, initialMessages, initialLeads, initialTasks as sampleInitialTasks } from './data';
 
 
 const App: React.FC = () => {
@@ -64,6 +66,7 @@ const App: React.FC = () => {
     const [preselectedDataForTask, setPreselectedDataForTask] = useState<{leadId: Id, date?: string} | null>(null);
     const [isGroupModalOpen, setGroupModalOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
+    const [showSampleDataPrompt, setShowSampleDataPrompt] = useState(false);
 
     // Notification State
     const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -110,6 +113,10 @@ const App: React.FC = () => {
                 setCurrentUser(fetchedUser);
                 setLeads(fetchedLeads);
                 setTasks(fetchedTasks);
+
+                if (fetchedLeads.length === 0 && !localStorage.getItem('sampleDataPromptDismissed')) {
+                    setShowSampleDataPrompt(true);
+                }
                 // setActivities(fetchedActivities);
                 // setColumns(fetchedColumns.length ? fetchedColumns : initialColumns);
                 // setTags(fetchedTags.length ? fetchedTags : initialTags);
@@ -124,19 +131,40 @@ const App: React.FC = () => {
             }
         };
 
-        fetchData();
-        
-        // Listen for auth changes
-        const authListener = api.onAuthStateChange((_event, session) => {
+        const handleAuthChange = (_event: string, session: any) => {
             const user = session?.user ? { id: session.user.id, name: session.user.user_metadata.name, email: session.user.email! } : null;
+            const isSignIn = user && !currentUser;
+            const isSignOut = !user && currentUser;
+            
             setCurrentUser(user);
+
+            if (isSignIn) {
+                fetchData(); // Fetch data on login
+            } else if (isSignOut) {
+                // Clear data on logout
+                setLeads([]);
+                setTasks([]);
+                setActivities([]);
+            }
+        };
+
+        // Initial check for user session
+        api.getCurrentUser().then(user => {
             if (user) {
-                fetchData(); // Refetch data on login
+                setCurrentUser(user);
+                fetchData();
+            } else {
+                setIsLoading(false);
             }
         });
+        
+        // Listen for auth changes
+        // FIX: The api.onAuthStateChange function returns the subscription object directly.
+        // The original code was trying to destructure it as if it were wrapped in a `data` object, causing an error.
+        const subscription = api.onAuthStateChange(handleAuthChange);
 
         return () => {
-            authListener?.unsubscribe();
+            subscription?.unsubscribe();
         };
 
     }, []);
@@ -172,9 +200,8 @@ const App: React.FC = () => {
     const handleLogin = async (email: string, password: string) => {
         try {
             setAuthError(null);
-            const user = await api.loginUser(email, password);
-            setCurrentUser(user);
-            showNotification(`Bem-vindo de volta, ${user.name}!`, 'success');
+            await api.loginUser(email, password);
+            // Auth listener will handle user update and data fetch
         } catch (error: any) {
             if (error && error.message === 'Email not confirmed') {
                 setAuthError("Por favor, confirme seu e-mail para ativar sua conta antes de fazer o login.");
@@ -194,7 +221,7 @@ const App: React.FC = () => {
     };
     const handleLogout = async () => {
         await api.logoutUser();
-        setCurrentUser(null);
+        // Auth listener will handle clearing user data
         showNotification("Você saiu com sucesso.", 'info');
     };
     const handleUpdateProfile = (name: string, avatarFile?: File) => {
@@ -304,6 +331,35 @@ const App: React.FC = () => {
         }
     };
     
+    // Sample Data Handlers
+    const handleDismissSampleDataPrompt = () => {
+        localStorage.setItem('sampleDataPromptDismissed', 'true');
+        setShowSampleDataPrompt(false);
+    };
+
+    const handlePopulateSampleData = async () => {
+        try {
+            await api.addSampleData(initialLeads, sampleInitialTasks);
+            showNotification("Dados de exemplo adicionados com sucesso!", 'success');
+            
+            // Refetch data to show the new leads/tasks
+            const [fetchedLeads, fetchedTasks] = await Promise.all([
+                api.getLeads(),
+                api.getTasks(),
+            ]);
+            setLeads(fetchedLeads);
+            setTasks(fetchedTasks);
+            
+            setShowSampleDataPrompt(false);
+            localStorage.setItem('sampleDataPromptDismissed', 'true');
+        } catch (error) {
+            console.error("Error populating sample data:", error);
+            showNotification("Falha ao adicionar dados de exemplo.", 'error');
+            setShowSampleDataPrompt(false); // Hide prompt even on error to avoid getting stuck
+            localStorage.setItem('sampleDataPromptDismissed', 'true'); // Also dismiss on error
+        }
+    };
+
     // UI Handlers
     const handleOpenCreateLeadModal = (columnId?: Id) => {
         setEditingLead(null);
@@ -471,6 +527,14 @@ const App: React.FC = () => {
                         message={notification.message} 
                         type={notification.type} 
                         onClose={() => setNotification(null)}
+                    />
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {showSampleDataPrompt && (
+                    <SampleDataPrompt
+                        onConfirm={handlePopulateSampleData}
+                        onDismiss={handleDismissSampleDataPrompt}
                     />
                 )}
             </AnimatePresence>

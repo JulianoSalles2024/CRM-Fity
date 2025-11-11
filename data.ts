@@ -180,7 +180,48 @@ export const initialActivities: Activity[] = [
     }
 ];
 
-export const initialTasks: Task[] = [];
+export const initialTasks: Task[] = [
+    {
+        id: 'task-1',
+        leadId: 'lead-1', // Juliano
+        userId: 'user1',
+        type: 'call',
+        title: 'Ligar para Juliano para agendar demo',
+        description: 'Discutir a apresentação enviada e marcar um horário para a demonstração da plataforma de IA.',
+        dueDate: new Date(new Date().setDate(new Date().getDate() + 1)).toISOString(), // Tomorrow
+        status: 'pending',
+    },
+    {
+        id: 'task-2',
+        leadId: 'lead-2', // Beatriz
+        userId: 'user1',
+        type: 'email',
+        title: 'Enviar follow-up para Beatriz',
+        description: 'Enviar e-mail de acompanhamento sobre a proposta do pacote enterprise.',
+        dueDate: new Date().toISOString(), // Today
+        status: 'pending',
+    },
+    {
+        id: 'task-3',
+        leadId: 'lead-3', // Carlos
+        userId: 'user1',
+        type: 'task',
+        title: 'Preparar sessão de onboarding para Carlos',
+        description: 'Coletar informações necessárias e preparar materiais para a sessão de onboarding.',
+        dueDate: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString(),
+        status: 'pending',
+    },
+    {
+        id: 'task-4',
+        leadId: 'lead-1', // Juliano
+        userId: 'user1',
+        type: 'meeting',
+        title: 'Reunião de Alinhamento Interno sobre Zenius IA',
+        description: 'Discutir estratégia de negociação antes da demo.',
+        dueDate: new Date().toISOString(),
+        status: 'completed',
+    }
+];
 export const initialEmailDrafts: EmailDraft[] = [];
 
 export const initialMessages: ChatMessage[] = [
