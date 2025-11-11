@@ -22,7 +22,7 @@ const GoogleIcon = () => (
 );
 
 const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, onSignInWithGoogle, error, successMessage }) => {
-  const [mode, setMode] = useState<AuthMode>('login');
+  const [mode, setMode] = useState<AuthMode>('register');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,9 +64,12 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, onSignInWithGo
   const handleModeChange = (newMode: AuthMode) => {
     setMode(newMode);
     setInternalError(null);
-    setName('');
-    setEmail('');
-    setPassword('');
+    // Don't clear fields when switching from register error to login
+    if (newMode === 'register') {
+      setName('');
+      setEmail('');
+      setPassword('');
+    }
   }
 
   return (
@@ -153,7 +156,23 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, onSignInWithGo
               />
             </div>
 
-            {internalError && <p className="text-sm text-red-400">{internalError}</p>}
+            {internalError && (
+              <div>
+                <p className="text-sm text-red-400">{internalError}</p>
+                {mode === 'register' && internalError.includes("email já está em uso") && (
+                  <p className="mt-1 text-sm text-zinc-400">
+                    Já tem uma conta?{' '}
+                    <button
+                      type="button"
+                      onClick={() => handleModeChange('login')}
+                      className="font-semibold text-violet-400 hover:text-violet-300 underline focus:outline-none"
+                    >
+                      Faça o login aqui.
+                    </button>
+                  </p>
+                )}
+              </div>
+            )}
 
             <div>
               <button type="submit" disabled={isSubmitting || isGoogleSubmitting}
