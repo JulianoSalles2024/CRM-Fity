@@ -216,8 +216,18 @@ const App: React.FC = () => {
             setAuthError(null);
             await api.registerUser(name, email, password);
             showNotification("Conta criada! Verifique sua caixa de entrada para confirmar seu e-mail.", 'success');
-        } catch (error) {
-            setAuthError("Este email já está em uso ou a senha é muito fraca.");
+        } catch (error: any) {
+            if (error?.message) {
+                if (error.message.includes('User already registered')) {
+                    setAuthError("Este e-mail já está em uso.");
+                } else if (error.message.toLowerCase().includes('password should be at least')) {
+                    setAuthError("Sua senha é muito fraca. Use pelo menos 6 caracteres.");
+                } else {
+                    setAuthError("Ocorreu um erro ao criar a conta. Tente novamente.");
+                }
+            } else {
+                 setAuthError("Este email já está em uso ou a senha é muito fraca.");
+            }
         }
     };
     const handleLogout = async () => {
