@@ -4,9 +4,13 @@ import { Database, Code, Link } from 'lucide-react';
 const ConfigurationNotice: React.FC = () => {
     const codeSnippet = `
 // services/supabaseClient.ts
+import { createClient } from '@supabase/supabase-js'
 
+// TODO: Replace with your project's credentials
 const supabaseUrl = 'SUA_URL_AQUI'
-const supabaseKey = 'SUA_CHAVE_ANON_AQUI'
+const supabaseAnonKey = 'SUA_CHAVE_ANON_AQUI'
+
+// ...
     `;
 
     return (
@@ -17,7 +21,7 @@ const supabaseKey = 'SUA_CHAVE_ANON_AQUI'
                 </div>
                 <h1 className="text-2xl font-bold text-white mb-2">Configuração do Backend Necessária</h1>
                 <p className="text-zinc-400 mb-6">
-                    Para que o FITY AI CRM funcione, você precisa conectá-lo a um banco de dados Supabase.
+                    Para que o Fity AI CRM funcione, você precisa conectá-lo a um banco de dados Supabase.
                 </p>
 
                 <div className="text-left space-y-4 mb-8">

@@ -4,7 +4,8 @@
 import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { motion, AnimatePresence } from 'framer-motion';
+// FIX: Added Variants to the import to fix typing issue with cardContentVariants.
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { DollarSign, Tag, Clock, Building, TrendingUp, Calendar, Mail, Phone, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
 import type { Lead, CardDisplaySettings, User as UserType, Id } from '../types';
 
@@ -49,7 +50,8 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onClick, mini
     const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
     const formatDate = (dateString?: string) => dateString ? new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'N/A';
     
-    const cardContentVariants = {
+    // FIX: Added Variants type to ensure correct type inference for framer-motion properties like 'ease'.
+    const cardContentVariants: Variants = {
         hidden: { opacity: 0, height: 0 },
         visible: { opacity: 1, height: 'auto', transition: { duration: 0.2, ease: "easeInOut" } },
     };
