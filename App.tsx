@@ -29,6 +29,9 @@ import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, Update
 
 
 // Custom hook for localStorage persistence
+// NOTE FOR PRODUCTION: This demo uses localStorage for simplicity. In a real-world application,
+// this hook would be replaced with a custom hook that fetches and mutates data
+// via secure, authenticated API calls to a backend server (e.g., using React Query or SWR).
 function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
@@ -215,6 +218,9 @@ const App: React.FC = () => {
     }, [currentUser, setActivities]);
     
     // Leads
+    // NOTE FOR PRODUCTION: In a real app, this function would make an API call to a backend endpoint.
+    // For example: `await api.updateLead(editingLead.id, data)` or `await api.createLead(data)`.
+    // The local state would then be updated based on the successful API response.
     const handleCreateOrUpdateLead = (data: CreateLeadData | UpdateLeadData) => {
         if (editingLead) { // Update
             setLeads(leads.map(l => l.id === editingLead.id ? { ...l, ...data, id: editingLead.id } : l));
@@ -577,6 +583,7 @@ const App: React.FC = () => {
                                 onBack={() => setSelectedGroupForView(null)}
                                 onCreateOrUpdateAnalysis={handleCreateOrUpdateGroupAnalysis}
                                 onDeleteAnalysis={handleDeleteGroupAnalysis}
+                                showNotification={showNotification}
                             />
                         )
                     )}

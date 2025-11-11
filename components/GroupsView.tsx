@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ChevronLeft, Download, Users, UserCheck, UserX, Goal, Sparkles, Loader2, Save, FileText, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
 import { motion, AnimatePresence } from 'framer-motion';
+import { generateGroupAnalysis } from '../api';
 import type { Lead, Id, GroupInfo, UpdateLeadData, Group, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData } from '../types';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 
@@ -13,6 +13,7 @@ interface GroupsViewProps {
     onBack: () => void;
     onCreateOrUpdateAnalysis: (data: CreateGroupAnalysisData | UpdateGroupAnalysisData, analysisId?: Id) => void;
     onDeleteAnalysis: (analysisId: Id) => void;
+    showNotification: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
 const CheckboxCell: React.FC<{ checked: boolean; onChange: (checked: boolean) => void }> = ({ checked, onChange }) => (
@@ -38,8 +39,20 @@ const KpiCard: React.FC<{ icon: React.ElementType; title: string; value: string;
     </div>
 );
 
+// A simple sanitizer to prevent XSS. For production, a robust library like DOMPurify is recommended.
+const sanitizeHTML = (htmlString: string): string => {
+    let sanitized = htmlString;
+    // Remove script tags and their content
+    sanitized = sanitized.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+    // Remove on* event attributes. This covers onload, onerror, onclick, etc.
+    sanitized = sanitized.replace(/ on\w+=(?:"[^"]*"|'[^']*'|[^>\s]+)/gi, '');
+    // Remove javascript: from href/src
+    sanitized = sanitized.replace(/(href|src)=["']?javascript:/gi, '$1="about:blank"');
+    return sanitized;
+};
 
-const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdateLead, onBack, onCreateOrUpdateAnalysis, onDeleteAnalysis }) => {
+
+const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdateLead, onBack, onCreateOrUpdateAnalysis, onDeleteAnalysis, showNotification }) => {
     const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
     const [leadToRemove, setLeadToRemove] = useState<Lead | null>(null);
     
@@ -133,51 +146,13 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
         setCurrentAnalysis(null);
         
         try {
-            if (!process.env.API_KEY) {
-                 throw new Error("API Key for Gemini is not configured.");
-            }
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-            const prompt = `Você é um analista de negócios especialista em comunidades online e gestão de leads. Analise os seguintes dados do grupo '${group.name}' e forneça um resumo analítico detalhado.
-
-**Dados do Grupo:**
-- **Nome:** ${group.name}
-- **Descrição:** ${group.description || 'Não fornecida'}
-- **Meta de Membros:** ${group.memberGoal || 'Não definida'}
-
-**Métricas Chave:**
-- **Membros Atuais:** ${groupMetrics.currentMembers}
-- **Taxa de Onboarding (dos que entraram):** ${groupMetrics.onboardingRate.toFixed(1)}%
-- **Taxa de Churn (dos que entraram):** ${groupMetrics.churnRate.toFixed(1)}%
-
-**Dados Gerais dos Membros:**
-- **Total de Leads Associados:** ${leads.length}
-- **Leads que entraram no grupo:** ${groupMetrics.totalJoined}
-- **Leads que permanecem no grupo:** ${groupMetrics.currentMembers}
-- **Leads que saíram (churn):** ${groupMetrics.totalChurned}
-- **Leads que completaram onboarding:** ${groupMetrics.totalOnboarded}
-
-**Sua Tarefa:**
-Com base nesses dados, gere uma análise em texto com as seguintes seções, usando markdown para formatação (títulos com ##, listas com *, negrito com **):
-1.  **Resumo Executivo:** Uma visão geral rápida da saúde e performance do grupo.
-2.  **Pontos Fortes:** Identifique o que está funcionando bem.
-3.  **Pontos de Melhoria:** Aponte áreas que precisam de atenção.
-4.  **Padrões e Insights:** Destaque quaisquer padrões interessantes (ex: alta taxa de churn apesar do bom onboarding, etc.).
-5.  **Recomendações e Próximos Passos:** Sugira 2-3 ações concretas que o gestor do grupo pode tomar para melhorar as métricas, como engajamento, retenção ou conversão.
-
-Seja claro, conciso e use os dados para embasar sua análise.`;
-
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-            });
-
-            setCurrentAnalysis({ content: response.text, status: 'new' });
+            const analysisText = await generateGroupAnalysis(group, groupMetrics, leads);
+            setCurrentAnalysis({ content: analysisText, status: 'new' });
             setIsAnalysisMinimized(false);
-
         } catch(e) {
             console.error(e);
             setCurrentAnalysis({ content: "Ocorreu um erro ao gerar a análise. Verifique se a chave de API do Gemini está configurada corretamente.", status: 'new' });
+            showNotification('Falha ao gerar análise. Verifique a configuração da sua chave de API.', 'error');
         } finally {
             setIsLoadingAnalysis(false);
         }
@@ -378,7 +353,7 @@ Seja claro, conciso e use os dados para embasar sua análise.`;
                                                 </div>
                                             ) : (
                                                 <div className="prose prose-invert prose-sm max-w-none text-zinc-300 whitespace-pre-wrap"
-                                                    dangerouslySetInnerHTML={{ __html: currentAnalysis ? currentAnalysis.content.replace(/## (.*?)\n/g, '<h3 class="text-white font-semibold mt-4 mb-2">$1</h3>').replace(/\* (.*?)\n/g, '<li class="ml-4">$1</li>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') : '' }}
+                                                    dangerouslySetInnerHTML={{ __html: sanitizeHTML(currentAnalysis ? currentAnalysis.content.replace(/## (.*?)\n/g, '<h3 class="text-white font-semibold mt-4 mb-2">$1</h3>').replace(/\* (.*?)\n/g, '<li class="ml-4">$1</li>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') : '') }}
                                                 />
                                             )}
                                         </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Loader2, Copy, Save, X, Send } from 'lucide-react';
-import { GoogleGenAI, Type } from '@google/genai';
 import { motion, AnimatePresence } from 'framer-motion';
+import { generateEmailSuggestion } from '../api';
 import { Lead, Tone, EmailDraft } from '../types';
 
 interface AIComposerProps {
@@ -86,36 +86,8 @@ const AIComposer: React.FC<AIComposerProps> = ({ lead, showNotification, onSaveD
         setGeneratedEmail(null);
 
         try {
-            if (!process.env.API_KEY) {
-                throw new Error("API Key for Gemini is not configured.");
-            }
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-            let prompt = `Escreva um email com o seguinte objetivo: "${objective}". O tom deve ser uma combinação de: ${tones.join(', ')}.`;
-            if (includeLeadInfo && lead) {
-                prompt += `\n\nUse as seguintes informações do lead para personalizar o email (não invente informações que não estão aqui):\n- Nome do Contato: ${lead.name}\n- Empresa: ${lead.company}\n- Valor da Oportunidade: R$${lead.value}\n- Descrição do Lead: ${lead.description || 'Não fornecida'}`;
-            }
-            prompt += `\n\nResponda estritamente com um objeto JSON contendo as chaves "subject" (assunto do email) e "body" (corpo do email). O corpo do email deve usar quebras de linha (\\n) para parágrafos.`;
-
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            subject: { type: Type.STRING },
-                            body: { type: Type.STRING }
-                        },
-                        required: ['subject', 'body']
-                    }
-                }
-            });
-            
-            const jsonResponse = JSON.parse(response.text);
+            const jsonResponse = await generateEmailSuggestion(objective, tones, includeLeadInfo, lead);
             setGeneratedEmail(jsonResponse);
-
         } catch (error) {
             console.error("Error generating email:", error);
             showNotification('Falha ao gerar o e-mail. Verifique a configuração da sua chave de API ou tente novamente.', 'error');
