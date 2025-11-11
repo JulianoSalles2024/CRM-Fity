@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ToyBrick, Copy, Inbox, BookOpen, Settings, Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
 import WebhookDocumentation from './WebhookDocumentation';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 
 interface IntegrationsPageProps {
     showNotification: (message: string, type: 'success' | 'error' | 'info') => void;
@@ -125,55 +127,21 @@ const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ showNotification })
                     <WebhookDocumentation />
                 )}
             </div>
-
-            <ConfirmDeleteModal
-                onClose={() => setShowRegenConfirm(false)}
-                onConfirm={handleRegenerateKey}
-                title="Regerar Chave de API?"
-                message="Gerar uma nova chave invalidará a atual. Você precisará atualizar suas integrações existentes com a nova chave. Deseja continuar?"
-                confirmText="Sim, Regerar"
-                confirmVariant="danger"
-                isOpen={showRegenConfirm}
-            />
+            
+            <AnimatePresence>
+                {showRegenConfirm && (
+                    <ConfirmDeleteModal
+                        onClose={() => setShowRegenConfirm(false)}
+                        onConfirm={handleRegenerateKey}
+                        title="Regerar Chave de API?"
+                        message="Gerar uma nova chave invalidará a atual. Você precisará atualizar suas integrações existentes com a nova chave. Deseja continuar?"
+                        confirmText="Sim, Regerar"
+                        confirmVariant="danger"
+                    />
+                )}
+            </AnimatePresence>
         </>
     );
 };
-
-// Sub-componente para o modal de confirmação, adaptado para ser controlado por prop
-const ConfirmDeleteModal: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  title: string;
-  message: React.ReactNode;
-  confirmText?: string;
-  confirmVariant?: 'primary' | 'danger';
-}> = ({ isOpen, onClose, onConfirm, title, message, confirmText = 'Confirmar', confirmVariant = 'danger' }) => {
-  if (!isOpen) return null;
-
-  const confirmButtonClasses = {
-    primary: 'bg-violet-600 hover:bg-violet-700',
-    danger: 'bg-red-600 hover:bg-red-700',
-  };
-  
-  return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="bg-zinc-800 rounded-lg shadow-xl w-full max-w-md border border-zinc-700 flex flex-col"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="p-6">
-          <h2 className="text-xl font-bold text-white mb-4">{title}</h2>
-          <div className="text-sm text-zinc-300">{message}</div>
-        </div>
-        <div className="p-4 bg-zinc-900/30 border-t border-zinc-700 flex justify-end gap-3">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700 rounded-md hover:bg-zinc-600 transition-colors">Cancelar</button>
-          <button type="button" onClick={onConfirm} className={`px-4 py-2 text-sm font-semibold text-white rounded-md transition-colors ${confirmButtonClasses[confirmVariant]}`}>{confirmText}</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 
 export default IntegrationsPage;

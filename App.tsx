@@ -204,10 +204,20 @@ const App: React.FC = () => {
             await api.loginUser(email, password);
             // Auth listener will handle user update and data fetch
         } catch (error: any) {
-            if (error && error.message === 'Email not confirmed') {
-                setAuthError("Por favor, confirme seu e-mail para ativar sua conta antes de fazer o login.");
+            console.error("Login failed:", error); // Log for debugging
+            if (error?.message) {
+                const message = error.message.toLowerCase();
+                if (message.includes('email not confirmed')) {
+                    setAuthError("Por favor, confirme seu e-mail para ativar sua conta antes de fazer o login.");
+                } else if (message.includes('invalid login credentials')) {
+                    setAuthError("Email ou senha inválidos.");
+                } else if (message.includes('api is not available') || message.includes('failed to fetch')) {
+                    setAuthError("Não foi possível conectar ao servidor. Verifique sua conexão ou tente novamente mais tarde.");
+                } else {
+                    setAuthError("Ocorreu um erro inesperado ao fazer login.");
+                }
             } else {
-                setAuthError("Email ou senha inválidos.");
+                setAuthError("Ocorreu um erro desconhecido ao fazer login.");
             }
         }
     };
@@ -217,16 +227,25 @@ const App: React.FC = () => {
             await api.registerUser(name, email, password);
             showNotification("Conta criada! Verifique sua caixa de entrada para confirmar seu e-mail.", 'success');
         } catch (error: any) {
+            console.error("Registration failed:", error);
+
             if (error?.message) {
-                if (error.message.includes('User already registered')) {
+                const message = error.message.toLowerCase();
+                if (message.includes('user already registered')) {
                     setAuthError("Este e-mail já está em uso.");
-                } else if (error.message.toLowerCase().includes('password should be at least')) {
+                } else if (message.includes('password should be at least')) {
                     setAuthError("Sua senha é muito fraca. Use pelo menos 6 caracteres.");
+                } else if (message.includes('email signups are disabled')) {
+                    setAuthError("O cadastro por e-mail está desabilitado. Por favor, habilite-o nas configurações de autenticação do seu projeto.");
+                } else if (message.includes('api is not available') || message.includes('failed to fetch')) {
+                    setAuthError("Não foi possível conectar ao servidor. Verifique sua conexão ou tente novamente mais tarde.");
+                } else if (message.includes('invalid format')) {
+                    setAuthError("O formato do e-mail é inválido.");
                 } else {
-                    setAuthError("Ocorreu um erro ao criar a conta. Tente novamente.");
+                    setAuthError("Ocorreu um erro inesperado ao criar a conta. Tente novamente.");
                 }
             } else {
-                 setAuthError("Este email já está em uso ou a senha é muito fraca.");
+                 setAuthError("Ocorreu um erro desconhecido. Tente novamente.");
             }
         }
     };
