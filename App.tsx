@@ -175,15 +175,19 @@ const App: React.FC = () => {
             const user = await api.loginUser(email, password);
             setCurrentUser(user);
             showNotification(`Bem-vindo de volta, ${user.name}!`, 'success');
-        } catch (error) {
-            setAuthError("Email ou senha inválidos.");
+        } catch (error: any) {
+            if (error && error.message === 'Email not confirmed') {
+                setAuthError("Por favor, confirme seu e-mail para ativar sua conta antes de fazer o login.");
+            } else {
+                setAuthError("Email ou senha inválidos.");
+            }
         }
     };
     const handleRegister = async (name: string, email: string, password: string) => {
          try {
             setAuthError(null);
             await api.registerUser(name, email, password);
-            showNotification("Conta criada com sucesso! Por favor, faça o login.", 'success');
+            showNotification("Conta criada! Verifique sua caixa de entrada para confirmar seu e-mail.", 'success');
         } catch (error) {
             setAuthError("Este email já está em uso ou a senha é muito fraca.");
         }
