@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { LayoutDashboard, Columns, Users, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap, Bell, HelpCircle, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Columns, Users, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap, Bell, HelpCircle, MessageSquare, ToyBrick } from 'lucide-react';
 
 interface SidebarProps {
     activeView: string;
@@ -19,6 +19,7 @@ const mainNavItems = [
     { icon: BarChart, label: 'Relatórios' },
     { icon: MessageSquare, label: 'Chat' },
     { icon: Users, label: 'Grupos' },
+    { icon: ToyBrick, label: 'Integrações' },
 ];
 
 const secondaryNavItems = [

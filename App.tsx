@@ -24,6 +24,8 @@ import GroupsDashboard from './components/GroupsDashboard';
 import CreateEditGroupModal from './components/CreateEditGroupModal';
 import ConfigurationNotice from './components/ConfigurationNotice';
 import SampleDataPrompt from './components/SampleDataPrompt';
+import IntegrationsPage from './components/IntegrationsPage';
+
 
 // API & Types
 import * as api from './api';
@@ -52,7 +54,7 @@ const App: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [authError, setAuthError] = useState<string | null>(null);
     
-    const [activeView, setActiveView] = useState('Grupos');
+    const [activeView, setActiveView] = useState('Integrações');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -463,6 +465,7 @@ const App: React.FC = () => {
                             />
                         )
                     )}
+                    {activeView === 'Integrações' && <IntegrationsPage showNotification={showNotification} />}
                     {activeView === 'Configurações' && <SettingsPage currentUser={currentUser} onUpdateProfile={handleUpdateProfile} columns={columns} onUpdatePipeline={handleUpdatePipeline}/>}
                 </main>
             </div>
