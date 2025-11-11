@@ -24,15 +24,16 @@ import CreateEditGroupModal from './components/CreateEditGroupModal';
 import ConfigurationNotice from './components/ConfigurationNotice';
 import SampleDataPrompt from './components/SampleDataPrompt';
 import IntegrationsPage from './components/IntegrationsPage';
+import NotificationsView from './components/NotificationsView';
 
 
 // API & Types
 import * as api from './api';
 import { isSupabaseConfigured } from './services/supabaseClient';
-import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData } from './types';
+import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, Notification as NotificationType } from './types';
 
 // Data (for initial structure if backend is empty)
-import { initialColumns, initialTags, initialGroups, initialConversations, initialMessages, initialLeads, initialTasks as sampleInitialTasks } from './data';
+import { initialColumns, initialTags, initialGroups, initialConversations, initialMessages, initialLeads, initialTasks as sampleInitialTasks, initialNotifications } from './data';
 
 
 const App: React.FC = () => {
@@ -49,6 +50,8 @@ const App: React.FC = () => {
     const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
     const [groups, setGroups] = useState<Group[]>(initialGroups);
     const [groupAnalyses, setGroupAnalyses] = useState<GroupAnalysis[]>([]);
+    const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications);
+
 
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [authError, setAuthError] = useState<string | null>(null);
@@ -183,6 +186,7 @@ const App: React.FC = () => {
 
 
     // --- COMPUTED DATA ---
+    const unreadCount = useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);
     const filteredLeads = useMemo(() => leads.filter(lead => {
         const searchLower = searchQuery.toLowerCase();
         return (lead.name.toLowerCase().includes(searchLower) || lead.company.toLowerCase().includes(searchLower) || (lead.email && lead.email.toLowerCase().includes(searchLower)));
@@ -366,6 +370,30 @@ const App: React.FC = () => {
         }
     };
     
+    // Notifications
+    const handleMarkAsRead = (notificationId: Id) => {
+        setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n));
+    };
+    const handleMarkAllAsRead = () => {
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    };
+    const handleClearAllNotifications = () => {
+        setNotifications([]);
+        showNotification("Notificações limpas.", 'info');
+    };
+    const handleNotificationClick = (link: NotificationType['link']) => {
+        if (!link) return;
+
+        setActiveView(link.view);
+
+        if (link.leadId) {
+            const leadToSelect = leads.find(l => l.id === link.leadId);
+            if (leadToSelect) {
+                setSelectedLead(leadToSelect);
+            }
+        }
+    };
+
     // Sample Data Handlers
     const handleDismissSampleDataPrompt = () => {
         localStorage.setItem('sampleDataPromptDismissed', 'true');
@@ -464,6 +492,7 @@ const App: React.FC = () => {
                     onOpenCreateTaskModal={() => handleOpenCreateTaskModal()}
                     theme={theme}
                     onThemeToggle={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+                    unreadCount={unreadCount}
                 />
                 
                 <main className="flex-1 p-6 overflow-auto">
@@ -499,6 +528,7 @@ const App: React.FC = () => {
                         )
                     )}
                     {activeView === 'Integrações' && <IntegrationsPage showNotification={showNotification} />}
+                    {activeView === 'Notificações' && <NotificationsView notifications={notifications} onMarkAsRead={handleMarkAsRead} onMarkAllAsRead={handleMarkAllAsRead} onClearAll={handleClearAllNotifications} onNavigate={handleNotificationClick} />}
                     {activeView === 'Configurações' && <SettingsPage currentUser={currentUser} onUpdateProfile={handleUpdateProfile} columns={columns} onUpdatePipeline={handleUpdatePipeline}/>}
                 </main>
             </div>

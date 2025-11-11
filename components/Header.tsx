@@ -14,6 +14,7 @@ interface HeaderProps {
     onOpenCreateTaskModal: () => void;
     theme: 'dark' | 'light';
     onThemeToggle: () => void;
+    unreadCount: number;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -24,7 +25,8 @@ const Header: React.FC<HeaderProps> = ({
     onOpenCreateLeadModal, 
     onOpenCreateTaskModal,
     theme,
-    onThemeToggle
+    onThemeToggle,
+    unreadCount
 }) => {
     const [isCreateMenuOpen, setCreateMenuOpen] = useState(false);
     const [isUserMenuOpen, setUserMenuOpen] = useState(false);
@@ -132,10 +134,11 @@ const Header: React.FC<HeaderProps> = ({
                 {/* Notifications Button */}
                  <button className="relative p-2 rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-white transition-colors">
                     <Bell className="w-5 h-5" />
-                    <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-violet-500"></span>
-                    </span>
+                    {unreadCount > 0 && (
+                         <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-violet-500 text-white text-xs font-bold">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                    )}
                 </button>
 
                 {/* User Menu */}

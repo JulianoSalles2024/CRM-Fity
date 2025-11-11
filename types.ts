@@ -155,6 +155,23 @@ export interface GroupAnalysis {
   createdAt: string; // ISO String
 }
 
+export type NotificationType = 'new_message' | 'task_due_soon' | 'task_overdue' | 'lead_assigned' | 'mention' | 'system_update';
+
+export interface Notification {
+  id: Id;
+  userId: string;
+  type: NotificationType;
+  text: string;
+  // link allows navigation to the relevant part of the app
+  link?: {
+    view: string; // e.g., 'Pipeline', 'Chat', 'Tarefas'
+    leadId?: Id;   // e.g., to open a specific lead slideover
+    itemId?: Id;   // e.g., a specific task or conversation ID
+  };
+  isRead: boolean;
+  createdAt: string; // ISO string
+}
+
 
 export type CreateLeadData = Partial<Omit<Lead, 'id'>>;
 export type UpdateLeadData = Partial<Omit<Lead, 'id'>>;

@@ -1,4 +1,4 @@
-import { ColumnData, Lead, Activity, User, Task, Tag, EmailDraft, ChatConversation, ChatMessage, Group } from './types';
+import { ColumnData, Lead, Activity, User, Task, Tag, EmailDraft, ChatConversation, ChatMessage, Group, Notification } from './types';
 
 export const initialUsers: User[] = [
   { id: 'user1', name: 'John Doe', email: 'john.doe@example.com' },
@@ -322,5 +322,56 @@ export const initialConversations: ChatConversation[] = [
         unreadCount: 0,
         status: 'finished',
         lastMessageChannel: 'internal',
+    }
+];
+
+export const initialNotifications: Notification[] = [
+    // Today
+    {
+        id: 'notif-1',
+        userId: 'user1',
+        type: 'new_message',
+        text: 'Beatriz da InovaTech respondeu à sua mensagem.',
+        link: { view: 'Chat', itemId: 'conv-2', leadId: 'lead-2' },
+        isRead: false,
+        createdAt: new Date().toISOString(),
+    },
+    {
+        id: 'notif-2',
+        userId: 'user1',
+        type: 'task_due_soon',
+        text: 'Tarefa "Enviar follow-up para Beatriz" vence hoje.',
+        link: { view: 'Tarefas', itemId: 'task-2', leadId: 'lead-2' },
+        isRead: false,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+    },
+    // Yesterday
+    {
+        id: 'notif-3',
+        userId: 'user1',
+        type: 'lead_assigned',
+        text: 'Novo lead "Mariana" foi atribuído a você.',
+        link: { view: 'Pipeline', leadId: 'lead-new' }, // Assuming a new lead id
+        isRead: true,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 25).toISOString(), // 25 hours ago
+    },
+    // Older
+     {
+        id: 'notif-4',
+        userId: 'user1',
+        type: 'mention',
+        text: 'Jane Smith mencionou você em uma nota no lead "Carlos".',
+        link: { view: 'Pipeline', leadId: 'lead-3' },
+        isRead: true,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), // 3 days ago
+    },
+    {
+        id: 'notif-5',
+        userId: 'user1',
+        type: 'system_update',
+        text: 'O Fity AI CRM foi atualizado com novos recursos de relatórios.',
+        link: { view: 'Relatórios' },
+        isRead: true,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(), // 7 days ago
     }
 ];
