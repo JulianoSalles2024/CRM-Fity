@@ -1,12 +1,13 @@
 import React, { useState, FormEvent } from 'react';
 import { Loader2, Zap } from 'lucide-react';
 
-type AuthMode = 'login' | 'register';
+type AuthMode = 'login' | 'register' | 'forgotPassword';
 
 interface AuthPageProps {
   onLogin: (email: string, password: string) => Promise<void>;
   onRegister: (name: string, email: string, password: string) => Promise<void>;
   onSignInWithGoogle: () => Promise<void>;
+  onForgotPassword: (email: string) => Promise<void>;
   error: string | null;
   successMessage?: string | null;
 }
@@ -21,7 +22,7 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, onSignInWithGoogle, error, successMessage }) => {
+const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, onSignInWithGoogle, onForgotPassword, error, successMessage }) => {
   const [mode, setMode] = useState<AuthMode>('register');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -29,6 +30,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, onSignInWithGo
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [internalError, setInternalError] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   React.useEffect(() => {
     setInternalError(error);
@@ -61,15 +63,163 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, onSignInWithGo
     setIsGoogleSubmitting(false);
   };
 
+  const handleForgotPasswordSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setInternalError(null);
+    setInfoMessage(null);
+    try {
+        await onForgotPassword(email);
+        setInfoMessage("Se uma conta com este e-mail existir, um link de redefinição foi enviado.");
+        setMode('login');
+    } catch (error) {
+        // Por segurança, não informamos ao usuário se o e-mail não foi encontrado.
+        setInfoMessage("Se uma conta com este e-mail existir, um link de redefinição foi enviado.");
+        setMode('login');
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
   const handleModeChange = (newMode: AuthMode) => {
     setMode(newMode);
     setInternalError(null);
+    setInfoMessage(null);
     // Don't clear fields when switching from register error to login
     if (newMode === 'register') {
       setName('');
-      setEmail('');
+      // Keep email if switching from forgot password
+      // setEmail(''); 
       setPassword('');
     }
+  }
+
+  const renderContent = () => {
+    if (mode === 'forgotPassword') {
+        return (
+            <>
+                <h2 className="text-2xl font-bold text-white">Redefinir Senha</h2>
+                <p className="text-zinc-400 mt-2 mb-6">Digite seu e-mail para receber o link de redefinição.</p>
+                <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+                     <div>
+                        <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-2">Email</label>
+                        <input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)}
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"/>
+                    </div>
+                    <div>
+                        <button type="submit" disabled={isSubmitting}
+                                className="mt-2 w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin"/> : 'Enviar link'}
+                        </button>
+                    </div>
+                </form>
+                <div className="mt-4 text-center">
+                    <button onClick={() => handleModeChange('login')} className="text-sm text-zinc-400 hover:text-violet-400 transition-colors">Voltar para o login</button>
+                </div>
+            </>
+        )
+    }
+
+    return (
+        <>
+            {/* Form Title */}
+            <h2 className="text-2xl font-bold text-white">
+                {mode === 'login' ? 'Bem-vindo de volta' : 'Crie sua conta'}
+            </h2>
+            <p className="text-zinc-400 mt-2 mb-6">
+                {mode === 'login' ? 'Entre com sua conta para continuar' : 'Preencha os dados abaixo para começar'}
+            </p>
+            
+            {successMessage && mode === 'login' && <p className="mb-4 text-sm text-center text-green-400 bg-green-900/30 p-2 rounded-md">{successMessage}</p>}
+            {infoMessage && mode === 'login' && <p className="mb-4 text-sm text-center text-blue-400 bg-blue-900/30 p-2 rounded-md">{infoMessage}</p>}
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+                {mode === 'register' && (
+                <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-zinc-300 mb-2">
+                    Nome
+                    </label>
+                    <input id="name" name="name" type="text" required value={name} onChange={e => setName(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    />
+                </div>
+                )}
+                <div>
+                <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-2">
+                    Email
+                </label>
+                <input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+                </div>
+                <div>
+                <label htmlFor="password"className="block text-sm font-medium text-zinc-300 mb-2">
+                    Senha
+                </label>
+                <input id="password" name="password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+                </div>
+
+                {internalError && (
+                <div>
+                    <p className="text-sm text-red-400">{internalError}</p>
+                    {mode === 'register' && internalError.includes("email já está em uso") && (
+                    <p className="mt-1 text-sm text-zinc-400">
+                        Já tem uma conta?{' '}
+                        <button
+                        type="button"
+                        onClick={() => handleModeChange('login')}
+                        className="font-semibold text-violet-400 hover:text-violet-300 underline focus:outline-none"
+                        >
+                        Faça o login aqui.
+                        </button>
+                    </p>
+                    )}
+                </div>
+                )}
+
+                <div>
+                <button type="submit" disabled={isSubmitting || isGoogleSubmitting}
+                    className="mt-2 w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {isSubmitting ? 'Processando...' : (mode === 'login' ? 'Entrar' : 'Cadastrar')}
+                </button>
+                </div>
+            </form>
+
+            {mode === 'login' && (
+                <div className="mt-4 text-center">
+                    <button type="button" onClick={() => handleModeChange('forgotPassword')} className="text-sm text-zinc-400 hover:text-violet-400 transition-colors">Esqueci minha senha</button>
+                </div>
+            )}
+
+            {/* Divider */}
+            <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-zinc-700"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                <span className="bg-[#1f1f23] px-2 text-zinc-500">OU</span>
+                </div>
+            </div>
+            
+            {/* Google Login */}
+            <div>
+                <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={isSubmitting || isGoogleSubmitting}
+                className="w-full flex justify-center items-center gap-3 py-2.5 px-4 border border-zinc-700 rounded-md shadow-sm text-sm font-medium text-white bg-zinc-800 hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                {isGoogleSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <GoogleIcon />}
+                {isGoogleSubmitting ? 'Redirecionando...' : 'Continuar com Google'}
+                </button>
+            </div>
+        </>
+    )
   }
 
   return (
@@ -102,116 +252,24 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, onSignInWithGo
             </div>
 
           {/* Tabs */}
-          <div className="p-1 bg-zinc-800 rounded-lg flex items-center gap-1 mb-8 border border-zinc-700">
-            <button
-              onClick={() => handleModeChange('login')}
-              className={`w-1/2 py-2 text-sm font-semibold rounded-md transition-colors ${mode === 'login' ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:text-white'}`}
-            >
-              Entrar
-            </button>
-            <button
-              onClick={() => handleModeChange('register')}
-              className={`w-1/2 py-2 text-sm font-semibold rounded-md transition-colors ${mode === 'register' ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:text-white'}`}
-            >
-              Cadastrar
-            </button>
-          </div>
-
-          {/* Form Title */}
-          <h2 className="text-2xl font-bold text-white">
-            {mode === 'login' ? 'Bem-vindo de volta' : 'Crie sua conta'}
-          </h2>
-          <p className="text-zinc-400 mt-2 mb-6">
-            {mode === 'login' ? 'Entre com sua conta para continuar' : 'Preencha os dados abaixo para começar'}
-          </p>
-          
-          {successMessage && mode === 'login' && <p className="mb-4 text-sm text-center text-green-400 bg-green-900/30 p-2 rounded-md">{successMessage}</p>}
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === 'register' && (
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-zinc-300 mb-2">
-                  Nome
-                </label>
-                <input id="name" name="name" type="text" required value={name} onChange={e => setName(e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
-            )}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-2">
-                Email
-              </label>
-              <input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
+          {mode !== 'forgotPassword' && (
+            <div className="p-1 bg-zinc-800 rounded-lg flex items-center gap-1 mb-8 border border-zinc-700">
+                <button
+                onClick={() => handleModeChange('login')}
+                className={`w-1/2 py-2 text-sm font-semibold rounded-md transition-colors ${mode === 'login' ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:text-white'}`}
+                >
+                Entrar
+                </button>
+                <button
+                onClick={() => handleModeChange('register')}
+                className={`w-1/2 py-2 text-sm font-semibold rounded-md transition-colors ${mode === 'register' ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:text-white'}`}
+                >
+                Cadastrar
+                </button>
             </div>
-            <div>
-              <label htmlFor="password"className="block text-sm font-medium text-zinc-300 mb-2">
-                Senha
-              </label>
-              <input id="password" name="password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-            </div>
-
-            {internalError && (
-              <div>
-                <p className="text-sm text-red-400">{internalError}</p>
-                {mode === 'register' && internalError.includes("email já está em uso") && (
-                  <p className="mt-1 text-sm text-zinc-400">
-                    Já tem uma conta?{' '}
-                    <button
-                      type="button"
-                      onClick={() => handleModeChange('login')}
-                      className="font-semibold text-violet-400 hover:text-violet-300 underline focus:outline-none"
-                    >
-                      Faça o login aqui.
-                    </button>
-                  </p>
-                )}
-              </div>
-            )}
-
-            <div>
-              <button type="submit" disabled={isSubmitting || isGoogleSubmitting}
-                className="mt-2 w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                {isSubmitting ? 'Processando...' : (mode === 'login' ? 'Entrar' : 'Cadastrar')}
-              </button>
-            </div>
-          </form>
-
-          {mode === 'login' && (
-              <div className="mt-4 text-center">
-                <a href="#" className="text-sm text-zinc-400 hover:text-violet-400 transition-colors">Esqueci minha senha</a>
-              </div>
           )}
-
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-zinc-700"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-[#1f1f23] px-2 text-zinc-500">OU</span>
-            </div>
-          </div>
           
-          {/* Google Login */}
-          <div>
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              disabled={isSubmitting || isGoogleSubmitting}
-              className="w-full flex justify-center items-center gap-3 py-2.5 px-4 border border-zinc-700 rounded-md shadow-sm text-sm font-medium text-white bg-zinc-800 hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isGoogleSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <GoogleIcon />}
-              {isGoogleSubmitting ? 'Redirecionando...' : 'Continuar com Google'}
-            </button>
-          </div>
+          {renderContent()}
 
         </div>
       </div>

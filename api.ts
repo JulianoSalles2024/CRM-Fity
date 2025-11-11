@@ -52,6 +52,11 @@ export const logoutUser = async (): Promise<void> => {
     if (error) throw error;
 };
 
+export const sendPasswordResetEmail = async (email: string): Promise<void> => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) throw error;
+};
+
 
 // --- DATA FETCHING & MUTATION ---
 

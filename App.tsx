@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -226,6 +225,11 @@ const App: React.FC = () => {
         // Auth listener will handle clearing user data
         showNotification("Você saiu com sucesso.", 'info');
     };
+    const handleForgotPassword = async (email: string) => {
+        await api.sendPasswordResetEmail(email);
+        // We don't show specific success/error to prevent email enumeration.
+        // The AuthPage will show a generic confirmation message.
+    };
     const handleUpdateProfile = (name: string, avatarFile?: File) => {
         // This would be an API call
     };
@@ -401,7 +405,7 @@ const App: React.FC = () => {
     }
 
     if (!currentUser) {
-        return <AuthPage onLogin={handleLogin} onRegister={handleRegister} onSignInWithGoogle={api.signInWithGoogle} error={authError} />;
+        return <AuthPage onLogin={handleLogin} onRegister={handleRegister} onSignInWithGoogle={api.signInWithGoogle} onForgotPassword={handleForgotPassword} error={authError} />;
     }
 
     // Dummy handlers, to be implemented
