@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { User, ColumnData, Id } from '../types';
 import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit, Bell, Webhook, MessageSquare, Loader2 } from 'lucide-react';
@@ -149,49 +147,31 @@ const SortableStageItem: React.FC<{ column: ColumnData; index: number; onEdit: (
 };
 
 // --- Subcomponente de Pipeline ---
-interface Pipeline {
-    id: Id;
-    name: string;
-    columns: ColumnData[];
-}
 interface PipelineSettingsProps {
     initialColumns: ColumnData[];
     onUpdatePipeline: (columns: ColumnData[]) => void;
 }
 
 const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onUpdatePipeline }) => {
-    const [pipelines, setPipelines] = useState<Pipeline[]>([
-        { id: 'default-1', name: 'Vendas Padrão', columns: initialColumns }
-    ]);
-    const [activePipelineId, setActivePipelineId] = useState<Id>(pipelines[0].id);
-    
+    const [columns, setColumns] = useState<ColumnData[]>(initialColumns);
     const [isCreateStageModalOpen, setCreateStageModalOpen] = useState(false);
     const [editingStage, setEditingStage] = useState<ColumnData | null>(null);
     const [stageToDelete, setStageToDelete] = useState<Id | null>(null);
     const [activeColumn, setActiveColumn] = useState<ColumnData | null>(null);
 
-    const [pipelineToDelete, setPipelineToDelete] = useState<Id | null>(null);
-    const [isPipelineNameModalOpen, setPipelineNameModalOpen] = useState(false);
-    const [editingPipeline, setEditingPipeline] = useState<Pipeline | null>(null);
-    const [newPipelineName, setNewPipelineName] = useState('');
-
-    const activePipeline = useMemo(() => pipelines.find(p => p.id === activePipelineId), [pipelines, activePipelineId]);
-    
     useEffect(() => {
-        if (!activePipeline && pipelines.length > 0) {
-            setActivePipelineId(pipelines[0].id);
-        }
-    }, [activePipeline, pipelines]);
+        setColumns(initialColumns);
+    }, [initialColumns]);
     
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
     );
     
-    const columnIds = useMemo(() => activePipeline?.columns.map(c => c.id) || [], [activePipeline]);
+    const columnIds = useMemo(() => columns.map(c => c.id), [columns]);
 
     const handleDragStart = (event: DragStartEvent) => {
         const { active } = event;
-        setActiveColumn(activePipeline?.columns.find(col => col.id === active.id) || null);
+        setActiveColumn(columns.find(col => col.id === active.id) || null);
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -199,18 +179,11 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
         const { active, over } = event;
 
         if (over && active.id !== over.id) {
-            let newColumns: ColumnData[] = activePipeline?.columns || [];
-            const updatedPipelines = pipelines.map(p => {
-                if (p.id === activePipelineId) {
-                    const oldIndex = p.columns.findIndex(item => item.id === active.id);
-                    const newIndex = p.columns.findIndex(item => item.id === over.id);
-                    newColumns = arrayMove(p.columns, oldIndex, newIndex);
-                    return { ...p, columns: newColumns };
-                }
-                return p;
-            });
-
-            setPipelines(updatedPipelines);
+            const oldIndex = columns.findIndex(item => item.id === active.id);
+            const newIndex = columns.findIndex(item => item.id === over.id);
+            const newColumns = arrayMove(columns, oldIndex, newIndex);
+            
+            setColumns(newColumns);
             onUpdatePipeline(newColumns);
         }
     };
@@ -221,35 +194,24 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
     };
     
     const handleCreateOrUpdateStage = (stageData: {id?: Id, title: string, color: string}) => {
-      let finalColumns: ColumnData[] = [];
-
-        const newPipelines = pipelines.map(p => {
-            if (p.id === activePipelineId) {
-                let updatedColumns;
-                if (stageData.id) { // Update
-                    updatedColumns = p.columns.map(c => 
-                        c.id === stageData.id ? { ...c, title: stageData.title, color: stageData.color } : c
-                    );
-                } else { // Create
-                    const newColumn: ColumnData = { id: `new-stage-${Date.now()}`, title: stageData.title, color: stageData.color };
-                    updatedColumns = [...p.columns, newColumn];
-                }
-                finalColumns = updatedColumns;
-                return { ...p, columns: updatedColumns };
-            }
-            return p;
-        });
-        
-        setPipelines(newPipelines);
-        onUpdatePipeline(finalColumns);
-
+      let newColumns: ColumnData[] = [];
+        if (stageData.id) { // Update
+            newColumns = columns.map(c => 
+                c.id === stageData.id ? { ...c, title: stageData.title, color: stageData.color } : c
+            );
+        } else { // Create
+            const newColumn: ColumnData = { id: `stage-${Date.now()}`, title: stageData.title, color: stageData.color };
+            newColumns = [...columns, newColumn];
+        }
+        setColumns(newColumns);
+        onUpdatePipeline(newColumns);
         setCreateStageModalOpen(false);
         setEditingStage(null);
     };
 
 
     const handleDeleteColumn = (id: Id) => {
-        if (activePipeline && activePipeline.columns.length <= 1) {
+        if (columns.length <= 1) {
             alert("Você deve ter pelo menos um estágio no pipeline.");
             return;
         }
@@ -258,103 +220,36 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
 
     const confirmDeleteStage = () => {
         if (stageToDelete) {
-            let finalColumns: ColumnData[] = [];
-            const newPipelines = pipelines.map(p => {
-                if (p.id === activePipelineId) {
-                    const updatedColumns = p.columns.filter(col => col.id !== stageToDelete);
-                    finalColumns = updatedColumns;
-                    return { ...p, columns: updatedColumns };
-                }
-                return p;
-            });
-
-            setPipelines(newPipelines);
-            onUpdatePipeline(finalColumns);
+            const newColumns = columns.filter(col => col.id !== stageToDelete);
+            setColumns(newColumns);
+            onUpdatePipeline(newColumns);
             setStageToDelete(null);
-        }
-    };
-    
-    const handleOpenPipelineNameModal = (pipeline: Pipeline | null) => {
-        setEditingPipeline(pipeline);
-        setNewPipelineName(pipeline ? pipeline.name : '');
-        setPipelineNameModalOpen(true);
-    };
-
-    const handleSavePipelineName = () => {
-        if (!newPipelineName.trim()) {
-            alert("O nome do funil não pode ser vazio.");
-            return;
-        }
-        if (editingPipeline) { // Rename existing
-            setPipelines(pipelines.map(p => p.id === editingPipeline.id ? { ...p, name: newPipelineName } : p));
-        } else { // Create new
-            const newPipeline: Pipeline = {
-                id: `pipeline-${Date.now()}`,
-                name: newPipelineName,
-                columns: initialColumns.map(c => ({...c, id: `${c.id}-${Date.now()}`})) // Ensure unique ids for new columns
-            };
-            setPipelines([...pipelines, newPipeline]);
-            setActivePipelineId(newPipeline.id);
-        }
-        setPipelineNameModalOpen(false);
-    };
-
-    const confirmDeletePipeline = () => {
-        if (pipelineToDelete) {
-            setPipelines(pipelines.filter(p => p.id !== pipelineToDelete));
-            setPipelineToDelete(null);
         }
     };
 
     return (
         <>
-            <div className="bg-zinc-800/50 rounded-lg border border-zinc-700 mb-6">
-                <div className="p-6 border-b border-zinc-700 flex justify-between items-center">
+            <div className="bg-zinc-800/50 rounded-lg border border-zinc-700">
+                 <div className="p-6 border-b border-zinc-700 flex justify-between items-center">
                     <div>
-                        <h2 className="text-lg font-semibold text-white">Funis de Venda</h2>
-                        <p className="text-sm text-zinc-400 mt-1">Gerencie múltiplos funis de venda.</p>
+                        <h2 className="text-lg font-semibold text-white">Estágios do Pipeline: <span className="text-violet-400">Vendas Padrão</span></h2>
+                        <p className="text-sm text-zinc-400 mt-1">Configure os estágios do seu funil de vendas. Arraste para reordenar.</p>
                     </div>
-                    <button onClick={() => handleOpenPipelineNameModal(null)} className="flex items-center gap-2 bg-zinc-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-zinc-600 transition-colors">
-                        <PlusCircle className="w-4 h-4" /><span>Novo Funil</span>
+                    <button onClick={() => { setEditingStage(null); setCreateStageModalOpen(true); }} className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
+                        <PlusCircle className="w-4 h-4" /><span>Novo Estágio</span>
                     </button>
                 </div>
-                <div className="p-6 space-y-2">
-                    {pipelines.map(pipeline => (
-                        <div key={pipeline.id} onClick={() => setActivePipelineId(pipeline.id)}
-                             className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${activePipelineId === pipeline.id ? 'bg-violet-900/50 border-violet-700' : 'bg-zinc-900/50 border-zinc-700 hover:bg-zinc-700/50'}`}>
-                            <div className="flex-1 font-medium text-white">{pipeline.name}</div>
-                            <button onClick={(e) => { e.stopPropagation(); handleOpenPipelineNameModal(pipeline); }} className="p-2 text-zinc-400 hover:text-white rounded-md"><Edit className="w-4 h-4" /></button>
-                            {pipelines.length > 1 && (
-                                <button onClick={(e) => { e.stopPropagation(); setPipelineToDelete(pipeline.id); }} className="p-2 text-zinc-400 hover:text-red-500 rounded-md"><Trash2 className="w-4 h-4" /></button>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {activePipeline && (
-                <div className="bg-zinc-800/50 rounded-lg border border-zinc-700">
-                     <div className="p-6 border-b border-zinc-700 flex justify-between items-center">
-                        <div>
-                            <h2 className="text-lg font-semibold text-white">Estágios do Pipeline: <span className="text-violet-400">{activePipeline.name}</span></h2>
-                            <p className="text-sm text-zinc-400 mt-1">Configure os estágios do seu funil de vendas. Arraste para reordenar.</p>
-                        </div>
-                        <button onClick={() => { setEditingStage(null); setCreateStageModalOpen(true); }} className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
-                            <PlusCircle className="w-4 h-4" /><span>Novo Estágio</span>
-                        </button>
+                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+                    <div className="p-6 space-y-3">
+                        <SortableContext items={columnIds} strategy={verticalListSortingStrategy}>
+                            {columns.map((col, index) => (
+                                <SortableStageItem key={col.id} column={col} index={index} onEdit={handleOpenEditModal} onDelete={handleDeleteColumn} />
+                            ))}
+                        </SortableContext>
                     </div>
-                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-                        <div className="p-6 space-y-3">
-                            <SortableContext items={columnIds} strategy={verticalListSortingStrategy}>
-                                {activePipeline.columns.map((col, index) => (
-                                    <SortableStageItem key={col.id} column={col} index={index} onEdit={handleOpenEditModal} onDelete={handleDeleteColumn} />
-                                ))}
-                            </SortableContext>
-                        </div>
-                        <DragOverlay>{activeColumn ? <StageItem column={activeColumn} index={activePipeline.columns.findIndex(c => c.id === activeColumn.id)} /> : null}</DragOverlay>
-                    </DndContext>
-                </div>
-            )}
+                    <DragOverlay>{activeColumn ? <StageItem column={activeColumn} index={columns.findIndex(c => c.id === activeColumn.id)} /> : null}</DragOverlay>
+                </DndContext>
+            </div>
             
             <AnimatePresence>
                 {isCreateStageModalOpen && (
@@ -373,32 +268,6 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
                     <ConfirmDeleteModal onClose={() => setStageToDelete(null)} onConfirm={confirmDeleteStage} title="Confirmar Exclusão de Estágio"
                         message={<><p>Tem certeza que deseja deletar este estágio?</p><p className="mt-2 text-sm text-zinc-500">Esta ação não pode ser desfeita. Leads neste estágio não serão excluídos, mas precisarão ser movidos.</p></>}
                     />
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-                {pipelineToDelete && (
-                    <ConfirmDeleteModal onClose={() => setPipelineToDelete(null)} onConfirm={confirmDeletePipeline} title="Confirmar Exclusão de Funil"
-                        message={<p>Tem certeza que deseja deletar este funil? Todos os seus estágios serão removidos. Esta ação não pode ser desfeita.</p>}
-                    />
-                )}
-            </AnimatePresence>
-             <AnimatePresence>
-                {isPipelineNameModalOpen && (
-                     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center backdrop-blur-sm" onClick={() => setPipelineNameModalOpen(false)}>
-                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-zinc-800 rounded-lg shadow-xl w-full max-w-md border border-zinc-700" onClick={e => e.stopPropagation()}>
-                            <div className="p-6">
-                                <h2 className="text-xl font-bold text-white">{editingPipeline ? 'Renomear Funil' : 'Criar Novo Funil'}</h2>
-                                <input type="text" value={newPipelineName} onChange={(e) => setNewPipelineName(e.target.value)}
-                                    placeholder="Nome do Funil" required
-                                    className="mt-4 w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500"/>
-                            </div>
-                            <div className="p-4 bg-zinc-900/30 border-t border-zinc-700 flex justify-end gap-3">
-                                <button onClick={() => setPipelineNameModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700 rounded-md hover:bg-zinc-600">Cancelar</button>
-                                <button onClick={handleSavePipelineName} className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700">Salvar</button>
-                            </div>
-                        </motion.div>
-                    </div>
                 )}
             </AnimatePresence>
         </>
@@ -517,7 +386,7 @@ interface SettingsPageProps {
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpdateProfile, onUpdatePipeline }) => {
-    const [activeTab, setActiveTab] = useState('Integrações');
+    const [activeTab, setActiveTab] = useState('Pipeline');
 
     const tabs = [
         { name: 'Perfil', icon: UserIcon },

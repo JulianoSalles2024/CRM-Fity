@@ -1,6 +1,7 @@
 import { supabase } from './services/supabaseClient';
 import { GoogleGenAI, Type } from '@google/genai';
 import type { ColumnData, Lead, Id, CreateLeadData, UpdateLeadData, Activity, User, Task, CreateTaskData, UpdateTaskData, Tone, Group, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, CreateGroupData, UpdateGroupData, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, ChatChannel, Notification, ChatConversationStatus } from './types';
+import { initialColumns } from './data';
 
 // --- AUTHENTICATION ---
 export const getCurrentUser = async (): Promise<User | null> => {
@@ -192,79 +193,34 @@ export const createActivity = async (activityData: Omit<Activity, 'id' | 'timest
     };
 };
 
+// PIPELINE / COLUMNS
+export const getPipelineSettings = async (): Promise<ColumnData[]> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && user.app_metadata && user.app_metadata.pipeline_config) {
+        return user.app_metadata.pipeline_config;
+    }
+    // For new users or if data is not set, return initial columns
+    return initialColumns;
+};
+
+export const savePipelineSettings = async (columns: ColumnData[]): Promise<void> => {
+    const { error } = await supabase.auth.updateUser({
+        data: { pipeline_config: columns }
+    });
+    if (error) throw error;
+};
+
+
 // EMAIL DRAFTS
 export const getEmailDrafts = async (): Promise<EmailDraft[]> => { return []; };
 export const createEmailDraft = async (draftData: CreateEmailDraftData) => {};
 export const deleteEmailDraft = async (draftId: Id) => {};
 
 // CHAT
-export const getConversations = async (): Promise<ChatConversation[]> => {
-    const { data, error } = await supabase.from('conversations').select('*').order('last_message_timestamp', { ascending: false });
-    if (error) throw error;
-    return data.map(d => ({
-        id: d.id, leadId: d.lead_id, lastMessage: d.last_message, lastMessageTimestamp: d.last_message_timestamp,
-        unreadCount: d.unread_count, status: d.status, lastMessageChannel: d.last_message_channel,
-    }));
-};
-
-export const getMessages = async (): Promise<ChatMessage[]> => {
-    const { data, error } = await supabase.from('messages').select('*').order('timestamp', { ascending: true });
-    if (error) throw error;
-    return data.map(d => ({
-        id: d.id, conversationId: d.conversation_id, senderId: d.sender_id, text: d.text,
-        timestamp: d.timestamp, channel: d.channel,
-    }));
-};
-
-export const sendMessage = async (messageData: { conversationId: Id, senderId: Id, text: string, channel: ChatChannel, leadId?: Id }) => {
-    const { conversationId, senderId, text, channel, leadId } = messageData;
-    
-    // 1. Insert new message
-    const { error: msgError } = await supabase.from('messages').insert({
-        conversation_id: conversationId,
-        sender_id: senderId,
-        text,
-        channel,
-    });
-    if (msgError) throw msgError;
-
-    // 2. Update conversation
-    const { error: convError } = await supabase.from('conversations').update({
-        last_message: text,
-        last_message_timestamp: new Date().toISOString(),
-        last_message_channel: channel,
-        status: 'open',
-    }).eq('id', conversationId);
-    if (convError) throw convError;
-
-    // 3. Simulate WhatsApp reply if applicable
-    if (channel === 'whatsapp' && leadId) {
-        setTimeout(async () => {
-            const replyText = "Recebido! Vou analisar sua mensagem e retorno em breve.";
-            const { error: replyMsgError } = await supabase.from('messages').insert({
-                conversation_id: conversationId,
-                sender_id: leadId,
-                text: replyText,
-                channel: 'whatsapp',
-            });
-            if (replyMsgError) console.error("Error sending mock reply:", replyMsgError);
-
-            const { error: replyConvError } = await supabase.from('conversations').update({
-                last_message: replyText,
-                last_message_timestamp: new Date().toISOString(),
-                last_message_channel: 'whatsapp',
-                unread_count: 1,
-                status: 'waiting',
-            }).eq('id', conversationId);
-            if (replyConvError) console.error("Error updating conversation for mock reply:", replyConvError);
-        }, 2500); // 2.5 second delay
-    }
-};
-
-export const updateConversationStatus = async (conversationId: Id, status: ChatConversationStatus): Promise<void> => {
-    const { error } = await supabase.from('conversations').update({ status }).eq('id', conversationId);
-    if (error) throw error;
-};
+export const getConversations = async (): Promise<ChatConversation[]> => { return []; };
+export const getMessages = async (): Promise<ChatMessage[]> => { return []; };
+export const sendMessage = async (messageData: { conversationId: Id, senderId: Id, text: string, channel: ChatChannel, leadId?: Id }) => {};
+export const updateConversationStatus = async (conversationId: Id, status: ChatConversationStatus): Promise<void> => {};
 
 // GROUPS
 export const getGroups = async (): Promise<Group[]> => { return []; };

@@ -124,7 +124,7 @@ const App: React.FC = () => {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-    const [isChatEnabled, setIsChatEnabled] = useState(true);
+    const [isChatEnabled, setIsChatEnabled] = useState(false);
 
     // Modal & Slideover States
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -167,10 +167,10 @@ const App: React.FC = () => {
             // Fetch core data first
             const [
                 fetchedLeads, fetchedTasks, fetchedActivities,
-                fetchedGroups, fetchedNotifications, fetchedEmailDrafts, fetchedGroupAnalyses
+                fetchedGroups, fetchedNotifications, fetchedEmailDrafts, fetchedGroupAnalyses, fetchedColumns
             ] = await Promise.all([
                 api.getLeads(), api.getTasks(), api.getActivities(),
-                api.getGroups(), api.getNotifications(), api.getEmailDrafts(), api.getGroupAnalyses(),
+                api.getGroups(), api.getNotifications(), api.getEmailDrafts(), api.getGroupAnalyses(), api.getPipelineSettings()
             ]);
 
             setLeads(fetchedLeads);
@@ -180,32 +180,7 @@ const App: React.FC = () => {
             setNotifications(fetchedNotifications);
             setEmailDrafts(fetchedEmailDrafts);
             setGroupAnalyses(fetchedGroupAnalyses);
-
-            // Fetch chat data separately and handle errors gracefully
-            try {
-                const [fetchedConversations, fetchedMessages] = await Promise.all([
-                    api.getConversations(),
-                    api.getMessages(),
-                ]);
-                setConversations(fetchedConversations);
-                setMessages(fetchedMessages);
-                setIsChatEnabled(true);
-            } catch (chatError: any) {
-                const errorMsg = chatError.message || '';
-                if (errorMsg.includes('does not exist') || errorMsg.includes('Could not find the table')) {
-                    console.warn("Chat feature disabled: 'conversations' and/or 'messages' tables not found. Please run the chat schema migrations.");
-                    showNotification("Funcionalidade de Chat desabilitada: Tabelas do banco de dados não encontradas.", 'info');
-                    setConversations([]);
-                    setMessages([]);
-                    setIsChatEnabled(false);
-                    if (activeView === 'Chat') {
-                        setActiveView('Dashboard');
-                    }
-                } else {
-                    throw chatError; // Re-throw other chat-related errors
-                }
-            }
-
+            setColumns(fetchedColumns.length > 0 ? fetchedColumns : initialColumns);
 
             if (fetchedLeads.length === 0 && !localStorage.getItem('sampleDataPromptDismissed')) {
                 setShowSampleDataPrompt(true);
@@ -256,30 +231,28 @@ const App: React.FC = () => {
             setNotifications([]);
             setEmailDrafts([]);
             setGroupAnalyses([]);
+            setColumns(initialColumns);
         }
     }, [currentUser, fetchData]);
 
 
     // --- REALTIME SUBSCRIPTIONS ---
     useEffect(() => {
-        if (!currentUser || !supabase) return;
+        if (!currentUser?.id || !supabase) return;
 
         console.log("Setting up Supabase real-time subscriptions...");
 
         const handleLeadInsert = (payload: any) => {
             const newLead = mapLeadFromDb(payload.new);
             setLeads(current => {
-                // Prevent duplicates from local update vs. realtime
-                if (current.some(lead => lead.id === newLead.id)) {
-                    return current;
-                }
+                if (current.some(lead => lead.id === newLead.id)) return current;
                 return [newLead, ...current];
             });
         };
         const handleLeadUpdate = (payload: any) => setLeads(current => current.map(lead => lead.id === payload.new.id ? mapLeadFromDb(payload.new) : lead));
         const handleLeadDelete = (payload: any) => setLeads(current => current.filter(lead => lead.id !== payload.old.id));
         
-        const handleTaskInsert = (payload: any) => setTasks(current => [...current, mapTaskFromDb(payload.new)]);
+        const handleTaskInsert = (payload: any) => setTasks(current => [mapTaskFromDb(payload.new), ...current]);
         const handleTaskUpdate = (payload: any) => setTasks(current => current.map(task => task.id === payload.new.id ? mapTaskFromDb(payload.new) : task));
         const handleTaskDelete = (payload: any) => setTasks(current => current.filter(task => task.id !== payload.old.id));
 
@@ -301,34 +274,14 @@ const App: React.FC = () => {
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activities' }, handleActivityInsert)
             .subscribe();
         
-        if (isChatEnabled) {
-            const handleMessageInsert = (payload: any) => setMessages(current => [...current, mapMessageFromDb(payload.new)]);
-            const handleConversationUpdate = (payload: any) => {
-                const updatedConversation = mapConversationFromDb(payload.new);
-                setConversations(current => {
-                    const index = current.findIndex(c => c.id === updatedConversation.id);
-                    const newConversations = index > -1 ? [...current] : [updatedConversation, ...current];
-                    if (index > -1) newConversations[index] = updatedConversation;
-                    
-                    return newConversations.sort((a, b) => new Date(b.lastMessageTimestamp).getTime() - new Date(a.lastMessageTimestamp).getTime());
-                });
-            };
-
-            const messagesChannel = supabase.channel('public:messages')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, handleMessageInsert)
-                .subscribe();
-
-            const conversationsChannel = supabase.channel('public:conversations')
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations' }, handleConversationUpdate)
-                .subscribe();
-        }
-        
         return () => {
             console.log("Removing Supabase channels.");
-            supabase.removeAllChannels();
+            supabase.removeChannel(leadsChannel);
+            supabase.removeChannel(tasksChannel);
+            supabase.removeChannel(activitiesChannel);
         };
 
-    }, [currentUser, isChatEnabled]);
+    }, [currentUser?.id]);
 
 
     // Other useEffects
@@ -408,13 +361,14 @@ const App: React.FC = () => {
         try {
             if (editingLead && editingLead.id) {
                 const updatedLead = await api.updateLead(editingLead.id, data);
-                setLeads(current => current.map(lead => lead.id === updatedLead.id ? updatedLead : lead));
+                // No need for setLeads if realtime is working, but it can make UI feel faster
+                // setLeads(current => current.map(lead => lead.id === updatedLead.id ? updatedLead : lead));
                 showNotification(`Lead "${updatedLead.name}" atualizado.`, 'success');
                 createActivityLog(updatedLead.id, 'note', `Lead atualizado.`);
             } else {
                 const newLead = await api.createLead(data as CreateLeadData);
-                // No need for setLeads here if realtime subscription is working, but it provides a faster UI update
-                setLeads(current => [newLead, ...current]);
+                // No need for setLeads here if realtime subscription is working
+                // setLeads(current => [newLead, ...current]);
                 showNotification(`Lead "${newLead.name}" criado.`, 'success');
             }
             setCreateLeadModalOpen(false);
@@ -505,6 +459,20 @@ const App: React.FC = () => {
             await api.updateTask(taskId, { status });
         } catch (error) {
             showNotification("Falha ao atualizar status da tarefa.", 'error');
+        }
+    };
+
+    // Pipeline
+    const handleSavePipeline = async (newColumns: ColumnData[]) => {
+        const originalColumns = columns;
+        setColumns(newColumns); // Optimistic UI Update
+        try {
+            await api.savePipelineSettings(newColumns);
+            showNotification("Funil de vendas atualizado.", 'success');
+        } catch (error) {
+            console.error("Failed to save pipeline:", error);
+            showNotification("Falha ao salvar as alterações do funil.", 'error');
+            setColumns(originalColumns); // Rollback on error
         }
     };
     
@@ -681,7 +649,7 @@ const App: React.FC = () => {
                     )}
                     {activeView === 'Integrações' && <IntegrationsPage showNotification={showNotification} />}
                     {activeView === 'Notificações' && <NotificationsView notifications={notifications} onMarkAsRead={handleMarkAsRead} onMarkAllAsRead={handleMarkAllAsRead} onClearAll={handleClearAllNotifications} onNavigate={handleNotificationClick} />}
-                    {activeView === 'Configurações' && <SettingsPage currentUser={currentUser} onUpdateProfile={handleUpdateProfile} columns={columns} onUpdatePipeline={() => {}}/>}
+                    {activeView === 'Configurações' && <SettingsPage currentUser={currentUser} onUpdateProfile={handleUpdateProfile} columns={columns} onUpdatePipeline={handleSavePipeline}/>}
                 </main>
             </div>
             
