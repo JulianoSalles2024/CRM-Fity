@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { SupabaseClient } from '@supabase/supabase-js';
 
 // Components
 import Sidebar from './components/Sidebar';
@@ -12,7 +11,6 @@ import CreateEditLeadModal from './components/CreateEditLeadModal';
 import CreateEditTaskModal from './components/CreateEditTaskModal';
 import Notification from './components/Notification';
 import FAB from './components/FAB';
-import AuthPage from './components/AuthPage';
 import SettingsPage from './components/SettingsPage';
 import ActivitiesView from './components/ActivitiesView';
 import CalendarPage from './components/CalendarPage';
@@ -22,108 +20,62 @@ import ChatView from './components/ChatView';
 import GroupsView from './components/GroupsView';
 import GroupsDashboard from './components/GroupsDashboard';
 import CreateEditGroupModal from './components/CreateEditGroupModal';
-import ConfigurationNotice from './components/ConfigurationNotice';
-import SampleDataPrompt from './components/SampleDataPrompt';
 import IntegrationsPage from './components/IntegrationsPage';
 import NotificationsView from './components/NotificationsView';
 
-
-// API & Types
-import * as api from './api';
-import { supabase, isSupabaseConfigured } from './services/supabaseClient';
+// Types
 import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, Notification as NotificationType } from './types';
 
-// Data (for initial structure if backend is empty)
-import { initialColumns, initialTags, initialLeads, initialTasks as sampleInitialTasks } from './data';
+// Data
+import { initialColumns, initialTags, initialLeads, initialTasks, initialActivities, initialUsers, initialGroups, initialConversations, initialMessages, initialNotifications } from './data';
 
+const localUser: User = { id: 'local-user', name: 'Usuário Local', email: 'user@local.com' };
 
-// Helper to map Supabase snake_case to our camelCase
-const mapLeadFromDb = (dbLead: any): Lead => ({
-    id: dbLead.id,
-    columnId: dbLead.column_id,
-    name: dbLead.name,
-    company: dbLead.company,
-    value: dbLead.value,
-    avatarUrl: dbLead.avatar_url,
-    tags: dbLead.tags || [],
-    lastActivity: dbLead.last_activity,
-    dueDate: dbLead.due_date,
-    assignedTo: dbLead.assigned_to,
-    description: dbLead.description,
-    email: dbLead.email,
-    phone: dbLead.phone,
-    probability: dbLead.probability,
-    status: dbLead.status,
-    clientId: dbLead.client_id,
-    source: dbLead.source,
-    createdAt: dbLead.created_at,
-    groupInfo: dbLead.group_info,
-});
+// --- Local Storage Hook ---
+function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
+    const [storedValue, setStoredValue] = useState<T>(() => {
+        try {
+            const item = window.localStorage.getItem(key);
+            return item ? JSON.parse(item) : initialValue;
+        } catch (error) {
+            console.error(error);
+            return initialValue;
+        }
+    });
 
-const mapTaskFromDb = (dbTask: any): Task => ({
-    id: dbTask.id,
-    type: dbTask.type,
-    title: dbTask.title,
-    description: dbTask.description,
-    dueDate: dbTask.due_date,
-    status: dbTask.status,
-    leadId: dbTask.lead_id,
-    userId: dbTask.user_id,
-});
+    const setValue: React.Dispatch<React.SetStateAction<T>> = (value) => {
+        try {
+            const valueToStore = value instanceof Function ? value(storedValue) : value;
+            setStoredValue(valueToStore);
+            window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
-const mapActivityFromDb = (dbActivity: any): Activity => ({
-    id: dbActivity.id,
-    leadId: dbActivity.lead_id,
-    type: dbActivity.type,
-    text: dbActivity.text,
-    authorName: dbActivity.author_name,
-    timestamp: dbActivity.timestamp,
-});
-
-const mapMessageFromDb = (dbMessage: any): ChatMessage => ({
-    id: dbMessage.id,
-    conversationId: dbMessage.conversation_id,
-    senderId: dbMessage.sender_id,
-    text: dbMessage.text,
-    timestamp: dbMessage.timestamp,
-    channel: dbMessage.channel,
-});
-
-const mapConversationFromDb = (dbConv: any): ChatConversation => ({
-    id: dbConv.id,
-    leadId: dbConv.lead_id,
-    lastMessage: dbConv.last_message,
-    lastMessageTimestamp: dbConv.last_message_timestamp,
-    unreadCount: dbConv.unread_count,
-    status: dbConv.status,
-    lastMessageChannel: dbConv.last_message_channel,
-});
+    return [storedValue, setValue];
+}
 
 
 const App: React.FC = () => {
-    // --- STATE MANAGEMENT ---
-    const [isLoading, setIsLoading] = useState(true);
-    const [users, setUsers] = useState<User[]>([]);
-    const [columns, setColumns] = useState<ColumnData[]>(initialColumns);
-    const [leads, setLeads] = useState<Lead[]>([]);
-    const [activities, setActivities] = useState<Activity[]>([]);
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [tags, setTags] = useState<Tag[]>(initialTags);
-    const [emailDrafts, setEmailDrafts] = useState<EmailDraft[]>([]);
-    const [conversations, setConversations] = useState<ChatConversation[]>([]);
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [groups, setGroups] = useState<Group[]>([]);
-    const [groupAnalyses, setGroupAnalyses] = useState<GroupAnalysis[]>([]);
-    const [notifications, setNotifications] = useState<NotificationType[]>([]);
+    // --- STATE MANAGEMENT (LOCAL STORAGE) ---
+    const [users, setUsers] = useLocalStorage<User[]>('crm-users', initialUsers);
+    const [columns, setColumns] = useLocalStorage<ColumnData[]>('crm-columns', initialColumns);
+    const [leads, setLeads] = useLocalStorage<Lead[]>('crm-leads', initialLeads);
+    const [activities, setActivities] = useLocalStorage<Activity[]>('crm-activities', initialActivities);
+    const [tasks, setTasks] = useLocalStorage<Task[]>('crm-tasks', initialTasks);
+    const [tags, setTags] = useLocalStorage<Tag[]>('crm-tags', initialTags);
+    const [emailDrafts, setEmailDrafts] = useLocalStorage<EmailDraft[]>('crm-emailDrafts', []);
+    const [conversations, setConversations] = useLocalStorage<ChatConversation[]>('crm-conversations', initialConversations);
+    const [messages, setMessages] = useLocalStorage<ChatMessage[]>('crm-messages', initialMessages);
+    const [groups, setGroups] = useLocalStorage<Group[]>('crm-groups', initialGroups);
+    const [groupAnalyses, setGroupAnalyses] = useLocalStorage<GroupAnalysis[]>('crm-groupAnalyses', []);
+    const [notifications, setNotifications] = useLocalStorage<NotificationType[]>('crm-notifications', initialNotifications);
 
-
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [authError, setAuthError] = useState<string | null>(null);
-    
     const [activeView, setActiveView] = useState('Dashboard');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+    const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('crm-theme') as 'dark' | 'light') || 'dark');
     const [isChatEnabled, setIsChatEnabled] = useState(false);
 
     // Modal & Slideover States
@@ -135,16 +87,15 @@ const App: React.FC = () => {
     const [preselectedDataForTask, setPreselectedDataForTask] = useState<{leadId: Id, date?: string} | null>(null);
     const [isGroupModalOpen, setGroupModalOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
-    const [showSampleDataPrompt, setShowSampleDataPrompt] = useState(false);
 
     // Notification State
     const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
     
-    // Display Settings (still local)
-    const [cardDisplaySettings, setCardDisplaySettings] = useState<CardDisplaySettings>({
+    // Display Settings
+    const [cardDisplaySettings, setCardDisplaySettings] = useLocalStorage<CardDisplaySettings>('crm-cardSettings', {
         showCompany: true, showValue: true, showTags: true, showAssignedTo: true, showDueDate: false, showProbability: false, showEmail: false, showPhone: false, showCreatedAt: false, showStage: false,
     });
-    const [listDisplaySettings, setListDisplaySettings] = useState<ListDisplaySettings>({
+    const [listDisplaySettings, setListDisplaySettings] = useLocalStorage<ListDisplaySettings>('crm-listSettings', {
         showStatus: true, showValue: true, showTags: true, showLastActivity: true, showEmail: true, showPhone: false, showCreatedAt: true,
     });
     const [minimizedLeads, setMinimizedLeads] = useState<Id[]>([]);
@@ -154,145 +105,16 @@ const App: React.FC = () => {
     const [selectedGroupForView, setSelectedGroupForView] = useState<Id | null>(null);
 
     const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => setNotification({ message, type }), []);
-
-    // --- INITIAL DATA FETCH ---
-    const fetchData = useCallback(async () => {
-        if (!isSupabaseConfigured) {
-            setIsLoading(false);
-            return;
-        }
-        try {
-            setIsLoading(true);
-
-            // Fetch core data first
-            const [
-                fetchedLeads, fetchedTasks, fetchedActivities,
-                fetchedGroups, fetchedNotifications, fetchedEmailDrafts, fetchedGroupAnalyses, fetchedColumns
-            ] = await Promise.all([
-                api.getLeads(), api.getTasks(), api.getActivities(),
-                api.getGroups(), api.getNotifications(), api.getEmailDrafts(), api.getGroupAnalyses(), api.getPipelineSettings()
-            ]);
-
-            setLeads(fetchedLeads);
-            setTasks(fetchedTasks);
-            setActivities(fetchedActivities);
-            setGroups(fetchedGroups);
-            setNotifications(fetchedNotifications);
-            setEmailDrafts(fetchedEmailDrafts);
-            setGroupAnalyses(fetchedGroupAnalyses);
-            setColumns(fetchedColumns.length > 0 ? fetchedColumns : initialColumns);
-
-            if (fetchedLeads.length === 0 && !localStorage.getItem('sampleDataPromptDismissed')) {
-                setShowSampleDataPrompt(true);
-            }
-        } catch (error) {
-            console.error("Error fetching initial data:", error);
-            showNotification("Falha ao carregar dados do servidor.", 'error');
-        } finally {
-            setIsLoading(false);
-        }
-    }, [showNotification]);
-
-    // Auth listener effect - runs ONCE to set up listeners
+    
+    // Theme effect
     useEffect(() => {
-        // Set initial user state on page load
-        api.getCurrentUser().then((user) => {
-            if (!user) {
-                setIsLoading(false); // If no user, stop loading, show login page
-            }
-            setCurrentUser(user);
-        });
-        
-        // Listen for auth changes (login, logout)
-        const handleAuthChange = (_event: string, session: any) => {
-            const user = session?.user ? { id: session.user.id, name: session.user.user_metadata.name || session.user.email, email: session.user.email! } : null;
-            setCurrentUser(user);
-        };
-        
-        const subscription = api.onAuthStateChange(handleAuthChange);
-
-        return () => {
-            subscription?.unsubscribe();
-        };
-    }, []); // Empty dependency array means this runs only once on mount
-
-    // Data fetching effect - runs when user state changes
-    useEffect(() => {
-        if (currentUser) {
-            fetchData();
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('crm-theme', 'dark');
         } else {
-            // When currentUser is null (logout or initial state), clear data
-            setLeads([]);
-            setTasks([]);
-            setActivities([]);
-            setGroups([]);
-            setConversations([]);
-            setMessages([]);
-            setNotifications([]);
-            setEmailDrafts([]);
-            setGroupAnalyses([]);
-            setColumns(initialColumns);
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('crm-theme', 'light');
         }
-    }, [currentUser, fetchData]);
-
-
-    // --- REALTIME SUBSCRIPTIONS ---
-    useEffect(() => {
-        if (!currentUser?.id || !supabase) return;
-
-        console.log("Setting up Supabase real-time subscriptions...");
-
-        const handleLeadInsert = (payload: any) => {
-            const newLead = mapLeadFromDb(payload.new);
-            setLeads(current => {
-                if (current.some(lead => lead.id === newLead.id)) return current;
-                return [newLead, ...current];
-            });
-        };
-        const handleLeadUpdate = (payload: any) => setLeads(current => current.map(lead => lead.id === payload.new.id ? mapLeadFromDb(payload.new) : lead));
-        const handleLeadDelete = (payload: any) => setLeads(current => current.filter(lead => lead.id !== payload.old.id));
-        
-        const handleTaskInsert = (payload: any) => setTasks(current => [mapTaskFromDb(payload.new), ...current]);
-        const handleTaskUpdate = (payload: any) => setTasks(current => current.map(task => task.id === payload.new.id ? mapTaskFromDb(payload.new) : task));
-        const handleTaskDelete = (payload: any) => setTasks(current => current.filter(task => task.id !== payload.old.id));
-
-        const handleActivityInsert = (payload: any) => setActivities(current => [mapActivityFromDb(payload.new), ...current]);
-
-        const leadsChannel = supabase.channel('public:leads')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, handleLeadInsert)
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'leads' }, handleLeadUpdate)
-            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'leads' }, handleLeadDelete)
-            .subscribe();
-
-        const tasksChannel = supabase.channel('public:tasks')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tasks' }, handleTaskInsert)
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tasks' }, handleTaskUpdate)
-            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'tasks' }, handleTaskDelete)
-            .subscribe();
-            
-        const activitiesChannel = supabase.channel('public:activities')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activities' }, handleActivityInsert)
-            .subscribe();
-        
-        return () => {
-            console.log("Removing Supabase channels.");
-            supabase.removeChannel(leadsChannel);
-            supabase.removeChannel(tasksChannel);
-            supabase.removeChannel(activitiesChannel);
-        };
-
-    }, [currentUser?.id]);
-
-
-    // Other useEffects
-     useEffect(() => {
-        if (activeView !== 'Grupos') {
-            setSelectedGroupForView(null);
-        }
-    }, [activeView]);
-    useEffect(() => {
-        if (theme === 'dark') document.documentElement.classList.add('dark');
-        else document.documentElement.classList.remove('dark');
     }, [theme]);
 
 
@@ -309,183 +131,116 @@ const App: React.FC = () => {
     }), [leads, listStatusFilter, listSelectedTags]);
     const analysisForGroup = useMemo(() => (selectedGroupForView ? groupAnalyses.find(a => a.groupId === selectedGroupForView) || null : null), [groupAnalyses, selectedGroupForView]);
 
-    // --- HANDLERS ---
+    // --- HANDLERS (LOCAL STATE LOGIC) ---
     
-    // Auth
-    const handleLogin = async (email: string, password: string) => {
-        try {
-            setAuthError(null);
-            await api.loginUser(email, password);
-        } catch (error: any) {
-            setAuthError("Email ou senha inválidos.");
-        }
-    };
-    const handleRegister = async (name: string, email: string, password: string) => {
-         try {
-            setAuthError(null);
-            await api.registerUser(name, email, password);
-            showNotification("Conta criada! Verifique sua caixa de entrada para confirmar seu e-mail.", 'success');
-        } catch (error: any) {
-            setAuthError(error.message || "Ocorreu um erro ao criar a conta.");
-        }
-    };
-    const handleLogout = async () => {
-        await api.logoutUser();
-        showNotification("Você saiu com sucesso.", 'info');
-    };
-    const handleForgotPassword = async (email: string) => {
-        await api.sendPasswordResetEmail(email);
-    };
-    const handleUpdateProfile = (name: string, avatarFile?: File) => {
-        // This would be an API call
-    };
-
     // Activity Log
-    const createActivityLog = useCallback(async (leadId: Id, type: Activity['type'], text: string) => {
-        if (!currentUser) return;
-        try {
-            await api.createActivity({
-                leadId,
-                type,
-                text,
-                authorName: currentUser.name || "Sistema",
-            });
-        } catch (error) {
-            console.error("Failed to create activity log", error);
-            // Don't show UI notification for this background task
-        }
-    }, [currentUser]);
+    const createActivityLog = useCallback((leadId: Id, type: Activity['type'], text: string) => {
+        const newActivity: Activity = {
+            id: `activity-${Date.now()}`,
+            leadId,
+            type,
+            text,
+            authorName: localUser.name || "Sistema",
+            timestamp: new Date().toISOString()
+        };
+        setActivities(current => [newActivity, ...current]);
+    }, [setActivities]);
     
     // Leads
     const handleCreateOrUpdateLead = async (data: CreateLeadData | UpdateLeadData) => {
-        try {
-            if (editingLead && editingLead.id) {
-                const updatedLead = await api.updateLead(editingLead.id, data);
-                // No need for setLeads if realtime is working, but it can make UI feel faster
-                // setLeads(current => current.map(lead => lead.id === updatedLead.id ? updatedLead : lead));
-                showNotification(`Lead "${updatedLead.name}" atualizado.`, 'success');
-                createActivityLog(updatedLead.id, 'note', `Lead atualizado.`);
-            } else {
-                const newLead = await api.createLead(data as CreateLeadData);
-                // No need for setLeads here if realtime subscription is working
-                // setLeads(current => [newLead, ...current]);
-                showNotification(`Lead "${newLead.name}" criado.`, 'success');
-            }
-            setCreateLeadModalOpen(false);
-            setEditingLead(null);
-        } catch (error) {
-            showNotification("Falha ao salvar o lead.", 'error');
-            console.error("Error saving lead:", error);
+        if (editingLead && editingLead.id) { // UPDATE
+            const updatedLead = { ...leads.find(l => l.id === editingLead.id)!, ...data };
+            setLeads(current => current.map(lead => lead.id === editingLead.id ? updatedLead : lead));
+            showNotification(`Lead "${updatedLead.name}" atualizado.`, 'success');
+            createActivityLog(updatedLead.id, 'note', `Lead atualizado.`);
+        } else { // CREATE
+            const newLead: Lead = {
+                id: `lead-${Date.now()}`,
+                ...data,
+                // Required fields for a new lead
+                columnId: data.columnId || columns[0].id,
+                name: data.name || 'Novo Lead',
+                company: data.company || '',
+                value: data.value || 0,
+                avatarUrl: data.avatarUrl || `https://i.pravatar.cc/150?u=${Date.now()}`,
+                tags: data.tags || [],
+                lastActivity: 'agora',
+                createdAt: new Date().toISOString(),
+            };
+            setLeads(current => [newLead, ...current]);
+            showNotification(`Lead "${newLead.name}" criado.`, 'success');
         }
+        setCreateLeadModalOpen(false);
+        setEditingLead(null);
     };
+
     const handleDeleteLead = async (leadId: Id) => {
-        try {
-            await api.deleteLead(leadId);
-            setSelectedLead(null);
-            showNotification(`Lead deletado.`, 'success');
-        } catch (error) {
-            showNotification("Falha ao deletar o lead.", 'error');
-        }
+        setLeads(current => current.filter(lead => lead.id !== leadId));
+        setSelectedLead(null);
+        showNotification(`Lead deletado.`, 'success');
     };
+
     const handleUpdateLeadColumn = async (leadId: Id, newColumnId: Id) => {
         const leadToMove = leads.find(l => l.id === leadId);
-        if (!leadToMove || leadToMove.columnId === newColumnId) {
-            return; // No change needed
-        }
+        if (!leadToMove || leadToMove.columnId === newColumnId) return;
 
-        const originalLeads = leads; // Store original state for rollback
-        const oldColumnId = leadToMove.columnId;
-
-        // Optimistic UI Update
         setLeads(currentLeads =>
             currentLeads.map(l =>
                 l.id === leadId ? { ...l, columnId: newColumnId, lastActivity: 'agora' } : l
             )
         );
-
-        try {
-            // Persist change to the backend
-            await api.updateLead(leadId, { columnId: newColumnId, lastActivity: new Date().toISOString() });
-            
-            // Log activity on success
-            const oldColumnName = columns.find(c => c.id === oldColumnId)?.title;
-            const newColumnName = columns.find(c => c.id === newColumnId)?.title;
-            if(oldColumnName && newColumnName) {
-                createActivityLog(leadId, 'status_change', `Status alterado de '${oldColumnName}' para '${newColumnName}'.`);
-            }
-        } catch (error) {
-            // Rollback on failure
-            showNotification("Falha ao mover o lead. Revertendo.", 'error');
-            console.error("Error moving lead:", error);
-            setLeads(originalLeads); // Revert to the state before the optimistic update
+        
+        const oldColumnName = columns.find(c => c.id === leadToMove.columnId)?.title;
+        const newColumnName = columns.find(c => c.id === newColumnId)?.title;
+        if(oldColumnName && newColumnName) {
+            createActivityLog(leadId, 'status_change', `Status alterado de '${oldColumnName}' para '${newColumnName}'.`);
         }
     };
+
     const handleUpdateLeadDetails = async (leadId: Id, updates: UpdateLeadData) => {
-         try {
-            await api.updateLead(leadId, updates);
-            showNotification("Detalhes do lead atualizados.", 'success');
-        } catch (error) {
-             showNotification("Falha ao atualizar detalhes do lead.", 'error');
-        }
+        setLeads(current => current.map(lead => lead.id === leadId ? { ...lead, ...updates } : lead));
+        showNotification("Detalhes do lead atualizados.", 'success');
     };
 
     // Tasks
     const handleCreateOrUpdateTask = async (data: CreateTaskData | UpdateTaskData) => {
-        try {
-            if (editingTask) {
-                await api.updateTask(editingTask.id, data);
-                showNotification(`Tarefa atualizada.`, 'success');
-            } else {
-                await api.createTask(data as CreateTaskData);
-                showNotification(`Tarefa criada.`, 'success');
-            }
-            setCreateTaskModalOpen(false);
-            setEditingTask(null);
-            setPreselectedDataForTask(null);
-        } catch (error) {
-            showNotification("Falha ao salvar a tarefa.", 'error');
+        if (editingTask) { // UPDATE
+            setTasks(current => current.map(t => t.id === editingTask.id ? { ...t, ...data } : t));
+            showNotification(`Tarefa atualizada.`, 'success');
+        } else { // CREATE
+            const newTask: Task = {
+                id: `task-${Date.now()}`,
+                userId: localUser.id,
+                status: 'pending',
+                ...data as CreateTaskData,
+            };
+            setTasks(current => [newTask, ...current]);
+            showNotification(`Tarefa criada.`, 'success');
         }
+        setCreateTaskModalOpen(false);
+        setEditingTask(null);
+        setPreselectedDataForTask(null);
     };
+
     const handleDeleteTask = async (taskId: Id) => {
-        try {
-            await api.deleteTask(taskId);
-            showNotification("Tarefa deletada.", 'success');
-        } catch(error) {
-            showNotification("Falha ao deletar a tarefa.", 'error');
-        }
+        setTasks(current => current.filter(t => t.id !== taskId));
+        showNotification("Tarefa deletada.", 'success');
     };
+
     const handleUpdateTaskStatus = async (taskId: Id, status: 'pending' | 'completed') => {
-        try {
-            await api.updateTask(taskId, { status });
-        } catch (error) {
-            showNotification("Falha ao atualizar status da tarefa.", 'error');
-        }
+        setTasks(current => current.map(t => t.id === taskId ? { ...t, status } : t));
     };
 
     // Pipeline
     const handleSavePipeline = async (newColumns: ColumnData[]) => {
-        const originalColumns = columns;
-        setColumns(newColumns); // Optimistic UI Update
-        try {
-            await api.savePipelineSettings(newColumns);
-            showNotification("Funil de vendas atualizado.", 'success');
-        } catch (error) {
-            console.error("Failed to save pipeline:", error);
-            showNotification("Falha ao salvar as alterações do funil.", 'error');
-            setColumns(originalColumns); // Rollback on error
-        }
+        setColumns(newColumns);
+        showNotification("Funil de vendas atualizado.", 'success');
     };
     
     // Notifications
-    const handleMarkAsRead = async (notificationId: Id) => {
-        try { await api.updateNotification(notificationId, { is_read: true }); } catch (e) { console.error(e); }
-    };
-    const handleMarkAllAsRead = async () => {
-        try { await api.markAllNotificationsRead(); } catch (e) { console.error(e); }
-    };
-    const handleClearAllNotifications = async () => {
-        try { await api.clearAllNotifications(); showNotification("Notificações limpas.", 'info'); } catch (e) { console.error(e); }
-    };
+    const handleMarkAsRead = async (notificationId: Id) => setNotifications(c => c.map(n => n.id === notificationId ? {...n, isRead: true} : n));
+    const handleMarkAllAsRead = async () => setNotifications(c => c.map(n => ({...n, isRead: true})));
+    const handleClearAllNotifications = async () => { setNotifications([]); showNotification("Notificações limpas.", 'info'); };
     const handleNotificationClick = (link: NotificationType['link']) => {
         if (!link) return;
         setActiveView(link.view);
@@ -497,65 +252,44 @@ const App: React.FC = () => {
     
     // Email Drafts
     const handleSaveDraft = async (draftData: CreateEmailDraftData) => {
-        try { await api.createEmailDraft(draftData); showNotification("Rascunho salvo.", 'success'); } catch (e) { showNotification("Falha ao salvar rascunho.", 'error'); }
-    };
-    const handleDeleteDraft = async (draftId: Id) => {
-        try { await api.deleteEmailDraft(draftId); showNotification("Rascunho deletado.", 'success'); } catch (e) { showNotification("Falha ao deletar rascunho.", 'error'); }
+        const newDraft: EmailDraft = { ...draftData, id: `draft-${Date.now()}`, createdAt: new Date().toISOString() };
+        setEmailDrafts(c => [newDraft, ...c]);
+        showNotification("Rascunho salvo.", 'success');
     };
 
-    // Chat
+    const handleDeleteDraft = async (draftId: Id) => {
+        setEmailDrafts(c => c.filter(d => d.id !== draftId));
+        showNotification("Rascunho deletado.", 'success');
+    };
+
+    // Chat (Simplified Local Logic)
     const handleSendMessage = async (conversationId: Id, text: string, channel: ChatChannel, leadId: Id) => {
-        if(!currentUser) return;
-        try { await api.sendMessage({ conversationId, senderId: currentUser.id, text, channel, leadId }); } catch (e) { showNotification("Falha ao enviar mensagem.", 'error'); }
+        const newMessage: ChatMessage = { id: `msg-${Date.now()}`, conversationId, senderId: localUser.id, text, channel, timestamp: new Date().toISOString() };
+        setMessages(c => [...c, newMessage]);
+        setConversations(c => c.map(conv => conv.id === conversationId ? { ...conv, lastMessage: text, lastMessageTimestamp: newMessage.timestamp, lastMessageChannel: channel } : conv));
     };
     const handleUpdateConversationStatus = async (conversationId: Id, status: ChatConversationStatus) => {
-        try { await api.updateConversationStatus(conversationId, status); showNotification("Status da conversa atualizado.", 'success'); } catch (e) { showNotification("Falha ao atualizar status.", 'error'); }
+        setConversations(c => c.map(conv => conv.id === conversationId ? { ...conv, status } : conv));
+        showNotification("Status da conversa atualizado.", 'success');
     };
 
     // Groups
     const handleCreateOrUpdateGroup = async (data: CreateGroupData | UpdateGroupData) => {
-        try {
-            if (editingGroup) { await api.updateGroup(editingGroup.id, data); showNotification("Grupo atualizado.", 'success');}
-            else { await api.createGroup(data as CreateGroupData); showNotification("Grupo criado.", 'success'); }
-            setGroupModalOpen(false); setEditingGroup(null);
-        } catch(e) { showNotification("Falha ao salvar grupo.", 'error');}
+        if (editingGroup) {
+            setGroups(c => c.map(g => g.id === editingGroup.id ? { ...g, ...data } : g));
+            showNotification("Grupo atualizado.", 'success');
+        } else {
+            const newGroup: Group = { id: `group-${Date.now()}`, ...data as CreateGroupData };
+            setGroups(c => [newGroup, ...c]);
+            showNotification("Grupo criado.", 'success');
+        }
+        setGroupModalOpen(false); setEditingGroup(null);
     };
     const handleDeleteGroup = async (groupId: Id) => {
-        try { await api.deleteGroup(groupId); showNotification("Grupo deletado.", 'success'); } catch(e) { showNotification("Falha ao deletar grupo.", 'error'); }
+        setGroups(c => c.filter(g => g.id !== groupId));
+        showNotification("Grupo deletado.", 'success');
     };
-    const handleCreateOrUpdateGroupAnalysis = async (data: CreateGroupAnalysisData | UpdateGroupAnalysisData, analysisId?: Id) => {
-        try {
-            if (analysisId) { await api.updateGroupAnalysis(analysisId, data); }
-            else { await api.createGroupAnalysis(data as CreateGroupAnalysisData); }
-            showNotification("Análise salva.", 'success');
-        } catch (e) { showNotification("Falha ao salvar análise.", 'error'); }
-    };
-    const handleDeleteGroupAnalysis = async (analysisId: Id) => {
-        try { await api.deleteGroupAnalysis(analysisId); showNotification("Análise descartada.", 'success'); } catch (e) { showNotification("Falha ao descartar análise.", 'error'); }
-    };
-
-
-    // Sample Data Handlers
-    const handleDismissSampleDataPrompt = () => {
-        localStorage.setItem('sampleDataPromptDismissed', 'true');
-        setShowSampleDataPrompt(false);
-    };
-
-    const handlePopulateSampleData = async () => {
-        try {
-            await api.addSampleData(initialLeads, sampleInitialTasks);
-            showNotification("Dados de exemplo adicionados! Atualizando...", 'success');
-            await fetchData(); // Refetch all data
-            setShowSampleDataPrompt(false);
-            localStorage.setItem('sampleDataPromptDismissed', 'true');
-        } catch (error) {
-            console.error("Error populating sample data:", error);
-            showNotification("Falha ao adicionar dados de exemplo.", 'error');
-            setShowSampleDataPrompt(false);
-            localStorage.setItem('sampleDataPromptDismissed', 'true');
-        }
-    };
-
+    
     // UI Handlers
     const handleOpenCreateLeadModal = (columnId?: Id) => {
         setEditingLead(null);
@@ -584,28 +318,14 @@ const App: React.FC = () => {
         setGroupModalOpen(true);
     };
 
-
-    // --- RENDER LOGIC ---
-    if (!isSupabaseConfigured) {
-        return <ConfigurationNotice />;
-    }
-    
-    if (isLoading) {
-        return <div className="flex h-screen w-full items-center justify-center bg-zinc-900 text-white">Carregando...</div>;
-    }
-
-    if (!currentUser) {
-        return <AuthPage onLogin={handleLogin} onRegister={handleRegister} onSignInWithGoogle={api.signInWithGoogle} onForgotPassword={handleForgotPassword} error={authError} />;
-    }
-    
     return (
         <div className="flex h-screen w-full bg-gray-50 dark:bg-zinc-900 text-zinc-800 dark:text-gray-200 font-sans antialiased overflow-hidden">
             <Sidebar activeView={activeView} onNavigate={setActiveView} isCollapsed={isSidebarCollapsed} onToggle={() => setSidebarCollapsed(p => !p)} isChatEnabled={isChatEnabled} />
             
             <div className="flex flex-col flex-1 overflow-hidden">
                 <Header 
-                    currentUser={currentUser}
-                    onLogout={handleLogout}
+                    currentUser={localUser}
+                    onLogout={() => { /* No action needed in local mode */ }}
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
                     onOpenCreateLeadModal={() => handleOpenCreateLeadModal()}
@@ -619,11 +339,11 @@ const App: React.FC = () => {
                      {activeView === 'Dashboard' && <Dashboard leads={leads} columns={columns} activities={activities} tasks={tasks} onNavigate={setActiveView} />}
                     {activeView === 'Pipeline' && <KanbanBoard columns={columns} leads={filteredLeads} users={users} cardDisplaySettings={cardDisplaySettings} onUpdateLeadColumn={handleUpdateLeadColumn} onLeadClick={setSelectedLead} onAddLead={handleOpenCreateLeadModal} onUpdateCardSettings={setCardDisplaySettings} minimizedLeads={minimizedLeads} onToggleLeadMinimize={(id) => setMinimizedLeads(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id])} minimizedColumns={minimizedColumns} onToggleColumnMinimize={(id) => setMinimizedColumns(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id])} />}
                     {activeView === 'Leads' && <LeadListView viewType="Leads" leads={listViewFilteredLeads} columns={columns} onLeadClick={setSelectedLead} listDisplaySettings={listDisplaySettings} onUpdateListSettings={setListDisplaySettings} allTags={tags} selectedTags={listSelectedTags} onSelectedTagsChange={setListSelectedTags} statusFilter={listStatusFilter} onStatusFilterChange={setListStatusFilter} />}
-                    {activeView === 'Clientes' && <LeadListView viewType="Clientes" leads={listViewFilteredLeads} columns={columns} onLeadClick={setSelectedLead} listDisplaySettings={listDisplaySettings} onUpdateListSettings={setListDisplaySettings} allTags={tags} selectedTags={listSelectedTags} onSelectedTagsChange={setListSelectedTags} statusFilter={listStatusFilter} onStatusFilterChange={setListStatusFilter} />}
+                    {activeView === 'Clientes' && <LeadListView viewType="Clientes" leads={listViewFilteredLeads.filter(l => l.columnId === 'closed')} columns={columns} onLeadClick={setSelectedLead} listDisplaySettings={listDisplaySettings} onUpdateListSettings={setListDisplaySettings} allTags={tags} selectedTags={listSelectedTags} onSelectedTagsChange={setListSelectedTags} statusFilter={listStatusFilter} onStatusFilterChange={setListStatusFilter} />}
                     {activeView === 'Tarefas' && <ActivitiesView tasks={tasks} leads={leads} onEditTask={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
                     {activeView === 'Calendário' && <CalendarPage tasks={tasks} leads={leads} onNewActivity={(date) => handleOpenCreateTaskModal(undefined, date)} onEditActivity={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
                     {activeView === 'Relatórios' && <ReportsPage leads={leads} columns={columns} tasks={tasks} activities={activities} />}
-                    {isChatEnabled && activeView === 'Chat' && <ChatView conversations={conversations} messages={messages} leads={leads} currentUser={currentUser} onSendMessage={handleSendMessage} onUpdateConversationStatus={handleUpdateConversationStatus} showNotification={showNotification} />}
+                    {isChatEnabled && activeView === 'Chat' && <ChatView conversations={conversations} messages={messages} leads={leads} currentUser={localUser} onSendMessage={handleSendMessage} onUpdateConversationStatus={handleUpdateConversationStatus} showNotification={showNotification} />}
                     {activeView === 'Grupos' && (
                         !selectedGroupForView ? (
                             <GroupsDashboard 
@@ -641,15 +361,15 @@ const App: React.FC = () => {
                                 analysis={analysisForGroup}
                                 onUpdateLead={handleUpdateLeadDetails}
                                 onBack={() => setSelectedGroupForView(null)}
-                                onCreateOrUpdateAnalysis={handleCreateOrUpdateGroupAnalysis}
-                                onDeleteAnalysis={handleDeleteGroupAnalysis}
+                                onCreateOrUpdateAnalysis={() => { /* Not implemented for local */ }}
+                                onDeleteAnalysis={() => { /* Not implemented for local */ }}
                                 showNotification={showNotification}
                             />
                         )
                     )}
                     {activeView === 'Integrações' && <IntegrationsPage showNotification={showNotification} />}
                     {activeView === 'Notificações' && <NotificationsView notifications={notifications} onMarkAsRead={handleMarkAsRead} onMarkAllAsRead={handleMarkAllAsRead} onClearAll={handleClearAllNotifications} onNavigate={handleNotificationClick} />}
-                    {activeView === 'Configurações' && <SettingsPage currentUser={currentUser} onUpdateProfile={handleUpdateProfile} columns={columns} onUpdatePipeline={handleSavePipeline}/>}
+                    {activeView === 'Configurações' && <SettingsPage currentUser={localUser} onUpdateProfile={() => {}} columns={columns} onUpdatePipeline={handleSavePipeline}/>}
                 </main>
             </div>
             
@@ -713,14 +433,6 @@ const App: React.FC = () => {
                         message={notification.message} 
                         type={notification.type} 
                         onClose={() => setNotification(null)}
-                    />
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-                {showSampleDataPrompt && (
-                    <SampleDataPrompt
-                        onConfirm={handlePopulateSampleData}
-                        onDismiss={handleDismissSampleDataPrompt}
                     />
                 )}
             </AnimatePresence>
