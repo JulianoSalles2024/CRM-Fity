@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { LayoutDashboard, Columns, Users, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap, Bell, HelpCircle, MessageSquare, ToyBrick } from 'lucide-react';
 
@@ -8,19 +6,8 @@ interface SidebarProps {
     onNavigate: (view: string) => void;
     isCollapsed: boolean;
     onToggle: () => void;
+    isChatEnabled: boolean;
 }
-
-const mainNavItems = [
-    { icon: LayoutDashboard, label: 'Dashboard' },
-    { icon: Columns, label: 'Pipeline' },
-    { icon: Users, label: 'Leads' },
-    { icon: Contact, label: 'Clientes' },
-    { icon: ClipboardList, label: 'Tarefas' },
-    { icon: BarChart, label: 'Relatórios' },
-    { icon: MessageSquare, label: 'Chat' },
-    { icon: Users, label: 'Grupos' },
-    { icon: ToyBrick, label: 'Integrações' },
-];
 
 const secondaryNavItems = [
     { icon: Calendar, label: 'Calendário' },
@@ -43,7 +30,19 @@ const NavItem: React.FC<{
     </a>
 );
 
-const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, onToggle }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, onToggle, isChatEnabled }) => {
+  const mainNavItems = [
+    { icon: LayoutDashboard, label: 'Dashboard' },
+    { icon: Columns, label: 'Pipeline' },
+    { icon: Users, label: 'Leads' },
+    { icon: Contact, label: 'Clientes' },
+    { icon: ClipboardList, label: 'Tarefas' },
+    { icon: BarChart, label: 'Relatórios' },
+    { icon: MessageSquare, label: 'Chat' },
+    { icon: Users, label: 'Grupos' },
+    { icon: ToyBrick, label: 'Integrações' },
+  ].filter(item => isChatEnabled || item.label !== 'Chat');
+
   return (
     <aside className={`hidden md:flex flex-col bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800/80 p-4 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-60'}`}>
       <div className={`flex items-center gap-3 mb-8 px-2 h-8 ${isCollapsed ? 'justify-center' : ''}`}>

@@ -84,7 +84,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
     email: '',
     phone: '',
     company: '',
-    value: '0.00',
+    value: '0,00',
     probability: '50',
     columnId: columns[0]?.id || '',
     status: 'Ativo',
@@ -128,7 +128,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                 email: lead.email || '',
                 phone: lead.phone || '',
                 company: lead.company || '',
-                value: lead.value?.toString() || '0.00',
+                value: lead.value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00',
                 probability: lead.probability?.toString() || '50',
                 columnId: lead.columnId || columns[0]?.id || '',
                 status: lead.status || 'Ativo',
@@ -144,7 +144,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
             email: '',
             phone: '',
             company: '',
-            value: '0.00',
+            value: '0,00',
             probability: '50',
             columnId: columns[0]?.id || '',
             status: 'Ativo',
@@ -182,7 +182,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const leadValue = parseFloat(formData.value);
+    const leadValue = parseFloat(formData.value.replace(/\./g, '').replace(',', '.'));
     const leadProbability = parseInt(formData.probability, 10);
     
     if (!formData.name || isNaN(leadValue) || !formData.columnId) {
@@ -328,7 +328,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                         {groups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}
                    </SelectField>
 
-                  <InputField label="Valor (R$)" name="value" value={formData.value} onChange={handleChange} required type="number" className="md:col-span-3" />
+                  <InputField label="Valor (R$)" name="value" value={formData.value} onChange={handleChange} required type="text" className="md:col-span-3" />
                   <InputField label="Probabilidade (%)" name="probability" value={formData.probability} onChange={handleChange} type="number" className="md:col-span-3" />
 
                   <SelectField label="Estágio" name="columnId" value={formData.columnId} onChange={handleChange} required className="md:col-span-3"

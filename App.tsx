@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 // Components
 import Sidebar from './components/Sidebar';
@@ -29,11 +30,74 @@ import NotificationsView from './components/NotificationsView';
 
 // API & Types
 import * as api from './api';
-import { isSupabaseConfigured } from './services/supabaseClient';
+import { supabase, isSupabaseConfigured } from './services/supabaseClient';
 import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, Notification as NotificationType } from './types';
 
 // Data (for initial structure if backend is empty)
-import { initialColumns, initialTags, initialGroups, initialConversations, initialMessages, initialLeads, initialTasks as sampleInitialTasks, initialNotifications } from './data';
+import { initialColumns, initialTags, initialLeads, initialTasks as sampleInitialTasks } from './data';
+
+
+// Helper to map Supabase snake_case to our camelCase
+const mapLeadFromDb = (dbLead: any): Lead => ({
+    id: dbLead.id,
+    columnId: dbLead.column_id,
+    name: dbLead.name,
+    company: dbLead.company,
+    value: dbLead.value,
+    avatarUrl: dbLead.avatar_url,
+    tags: dbLead.tags || [],
+    lastActivity: dbLead.last_activity,
+    dueDate: dbLead.due_date,
+    assignedTo: dbLead.assigned_to,
+    description: dbLead.description,
+    email: dbLead.email,
+    phone: dbLead.phone,
+    probability: dbLead.probability,
+    status: dbLead.status,
+    clientId: dbLead.client_id,
+    source: dbLead.source,
+    createdAt: dbLead.created_at,
+    groupInfo: dbLead.group_info,
+});
+
+const mapTaskFromDb = (dbTask: any): Task => ({
+    id: dbTask.id,
+    type: dbTask.type,
+    title: dbTask.title,
+    description: dbTask.description,
+    dueDate: dbTask.due_date,
+    status: dbTask.status,
+    leadId: dbTask.lead_id,
+    userId: dbTask.user_id,
+});
+
+const mapActivityFromDb = (dbActivity: any): Activity => ({
+    id: dbActivity.id,
+    leadId: dbActivity.lead_id,
+    type: dbActivity.type,
+    text: dbActivity.text,
+    authorName: dbActivity.author_name,
+    timestamp: dbActivity.timestamp,
+});
+
+const mapMessageFromDb = (dbMessage: any): ChatMessage => ({
+    id: dbMessage.id,
+    conversationId: dbMessage.conversation_id,
+    senderId: dbMessage.sender_id,
+    text: dbMessage.text,
+    timestamp: dbMessage.timestamp,
+    channel: dbMessage.channel,
+});
+
+const mapConversationFromDb = (dbConv: any): ChatConversation => ({
+    id: dbConv.id,
+    leadId: dbConv.lead_id,
+    lastMessage: dbConv.last_message,
+    lastMessageTimestamp: dbConv.last_message_timestamp,
+    unreadCount: dbConv.unread_count,
+    status: dbConv.status,
+    lastMessageChannel: dbConv.last_message_channel,
+});
 
 
 const App: React.FC = () => {
@@ -46,20 +110,21 @@ const App: React.FC = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [tags, setTags] = useState<Tag[]>(initialTags);
     const [emailDrafts, setEmailDrafts] = useState<EmailDraft[]>([]);
-    const [conversations, setConversations] = useState<ChatConversation[]>(initialConversations);
-    const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
-    const [groups, setGroups] = useState<Group[]>(initialGroups);
+    const [conversations, setConversations] = useState<ChatConversation[]>([]);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [groups, setGroups] = useState<Group[]>([]);
     const [groupAnalyses, setGroupAnalyses] = useState<GroupAnalysis[]>([]);
-    const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications);
+    const [notifications, setNotifications] = useState<NotificationType[]>([]);
 
 
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [authError, setAuthError] = useState<string | null>(null);
     
-    const [activeView, setActiveView] = useState('Integrações');
+    const [activeView, setActiveView] = useState('Dashboard');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+    const [isChatEnabled, setIsChatEnabled] = useState(true);
 
     // Modal & Slideover States
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -88,90 +153,183 @@ const App: React.FC = () => {
     const [listStatusFilter, setListStatusFilter] = useState<'all' | 'Ativo' | 'Inativo'>('all');
     const [selectedGroupForView, setSelectedGroupForView] = useState<Id | null>(null);
 
+    const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => setNotification({ message, type }), []);
+
     // --- INITIAL DATA FETCH ---
-    useEffect(() => {
+    const fetchData = useCallback(async () => {
         if (!isSupabaseConfigured) {
             setIsLoading(false);
             return;
         }
+        try {
+            setIsLoading(true);
 
-        const fetchData = async () => {
+            // Fetch core data first
+            const [
+                fetchedLeads, fetchedTasks, fetchedActivities,
+                fetchedGroups, fetchedNotifications, fetchedEmailDrafts, fetchedGroupAnalyses
+            ] = await Promise.all([
+                api.getLeads(), api.getTasks(), api.getActivities(),
+                api.getGroups(), api.getNotifications(), api.getEmailDrafts(), api.getGroupAnalyses(),
+            ]);
+
+            setLeads(fetchedLeads);
+            setTasks(fetchedTasks);
+            setActivities(fetchedActivities);
+            setGroups(fetchedGroups);
+            setNotifications(fetchedNotifications);
+            setEmailDrafts(fetchedEmailDrafts);
+            setGroupAnalyses(fetchedGroupAnalyses);
+
+            // Fetch chat data separately and handle errors gracefully
             try {
-                setIsLoading(true);
-                const [
-                    fetchedUser,
-                    fetchedLeads,
-                    fetchedTasks,
-                    // fetchedActivities,
-                    // fetchedColumns, 
-                    // fetchedTags 
-                ] = await Promise.all([
-                    api.getCurrentUser(),
-                    api.getLeads(),
-                    api.getTasks(),
-                    // api.getActivities(),
-                    // api.getColumns(),
-                    // api.getTags(),
+                const [fetchedConversations, fetchedMessages] = await Promise.all([
+                    api.getConversations(),
+                    api.getMessages(),
                 ]);
-
-                setCurrentUser(fetchedUser);
-                setLeads(fetchedLeads);
-                setTasks(fetchedTasks);
-
-                if (fetchedLeads.length === 0 && !localStorage.getItem('sampleDataPromptDismissed')) {
-                    setShowSampleDataPrompt(true);
+                setConversations(fetchedConversations);
+                setMessages(fetchedMessages);
+                setIsChatEnabled(true);
+            } catch (chatError: any) {
+                const errorMsg = chatError.message || '';
+                if (errorMsg.includes('does not exist') || errorMsg.includes('Could not find the table')) {
+                    console.warn("Chat feature disabled: 'conversations' and/or 'messages' tables not found. Please run the chat schema migrations.");
+                    showNotification("Funcionalidade de Chat desabilitada: Tabelas do banco de dados não encontradas.", 'info');
+                    setConversations([]);
+                    setMessages([]);
+                    setIsChatEnabled(false);
+                    if (activeView === 'Chat') {
+                        setActiveView('Dashboard');
+                    }
+                } else {
+                    throw chatError; // Re-throw other chat-related errors
                 }
-                // setActivities(fetchedActivities);
-                // setColumns(fetchedColumns.length ? fetchedColumns : initialColumns);
-                // setTags(fetchedTags.length ? fetchedTags : initialTags);
-            } catch (error) {
-                console.error("Error fetching initial data:", error);
-                showNotification("Falha ao carregar dados do servidor.", 'error');
-                if (error instanceof Error && error.message.includes('Auth session missing')) {
-                    setCurrentUser(null); // Force logout if session is invalid
-                }
-            } finally {
-                setIsLoading(false);
             }
-        };
 
-        const handleAuthChange = (_event: string, session: any) => {
-            const user = session?.user ? { id: session.user.id, name: session.user.user_metadata.name, email: session.user.email! } : null;
-            const isSignIn = user && !currentUser;
-            const isSignOut = !user && currentUser;
-            
+
+            if (fetchedLeads.length === 0 && !localStorage.getItem('sampleDataPromptDismissed')) {
+                setShowSampleDataPrompt(true);
+            }
+        } catch (error) {
+            console.error("Error fetching initial data:", error);
+            showNotification("Falha ao carregar dados do servidor.", 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [showNotification, activeView]);
+
+    // Auth listener effect - runs ONCE to set up listeners
+    useEffect(() => {
+        // Set initial user state on page load
+        api.getCurrentUser().then((user) => {
+            if (!user) {
+                setIsLoading(false); // If no user, stop loading, show login page
+            }
             setCurrentUser(user);
-
-            if (isSignIn) {
-                fetchData(); // Fetch data on login
-            } else if (isSignOut) {
-                // Clear data on logout
-                setLeads([]);
-                setTasks([]);
-                setActivities([]);
-            }
-        };
-
-        // Initial check for user session
-        api.getCurrentUser().then(user => {
-            if (user) {
-                setCurrentUser(user);
-                fetchData();
-            } else {
-                setIsLoading(false);
-            }
         });
         
-        // Listen for auth changes
-        // FIX: The api.onAuthStateChange function returns the subscription object directly.
-        // The original code was trying to destructure it as if it were wrapped in a `data` object, causing an error.
+        // Listen for auth changes (login, logout)
+        const handleAuthChange = (_event: string, session: any) => {
+            const user = session?.user ? { id: session.user.id, name: session.user.user_metadata.name || session.user.email, email: session.user.email! } : null;
+            setCurrentUser(user);
+        };
+        
         const subscription = api.onAuthStateChange(handleAuthChange);
 
         return () => {
             subscription?.unsubscribe();
         };
+    }, []); // Empty dependency array means this runs only once on mount
 
-    }, []);
+    // Data fetching effect - runs when user state changes
+    useEffect(() => {
+        if (currentUser) {
+            fetchData();
+        } else {
+            // When currentUser is null (logout or initial state), clear data
+            setLeads([]);
+            setTasks([]);
+            setActivities([]);
+            setGroups([]);
+            setConversations([]);
+            setMessages([]);
+            setNotifications([]);
+            setEmailDrafts([]);
+            setGroupAnalyses([]);
+        }
+    }, [currentUser, fetchData]);
+
+
+    // --- REALTIME SUBSCRIPTIONS ---
+    useEffect(() => {
+        if (!currentUser || !supabase) return;
+
+        console.log("Setting up Supabase real-time subscriptions...");
+
+        const handleLeadInsert = (payload: any) => {
+            const newLead = mapLeadFromDb(payload.new);
+            setLeads(current => {
+                // Prevent duplicates from local update vs. realtime
+                if (current.some(lead => lead.id === newLead.id)) {
+                    return current;
+                }
+                return [newLead, ...current];
+            });
+        };
+        const handleLeadUpdate = (payload: any) => setLeads(current => current.map(lead => lead.id === payload.new.id ? mapLeadFromDb(payload.new) : lead));
+        const handleLeadDelete = (payload: any) => setLeads(current => current.filter(lead => lead.id !== payload.old.id));
+        
+        const handleTaskInsert = (payload: any) => setTasks(current => [...current, mapTaskFromDb(payload.new)]);
+        const handleTaskUpdate = (payload: any) => setTasks(current => current.map(task => task.id === payload.new.id ? mapTaskFromDb(payload.new) : task));
+        const handleTaskDelete = (payload: any) => setTasks(current => current.filter(task => task.id !== payload.old.id));
+
+        const handleActivityInsert = (payload: any) => setActivities(current => [mapActivityFromDb(payload.new), ...current]);
+
+        const leadsChannel = supabase.channel('public:leads')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, handleLeadInsert)
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'leads' }, handleLeadUpdate)
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'leads' }, handleLeadDelete)
+            .subscribe();
+
+        const tasksChannel = supabase.channel('public:tasks')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tasks' }, handleTaskInsert)
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tasks' }, handleTaskUpdate)
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'tasks' }, handleTaskDelete)
+            .subscribe();
+            
+        const activitiesChannel = supabase.channel('public:activities')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activities' }, handleActivityInsert)
+            .subscribe();
+        
+        if (isChatEnabled) {
+            const handleMessageInsert = (payload: any) => setMessages(current => [...current, mapMessageFromDb(payload.new)]);
+            const handleConversationUpdate = (payload: any) => {
+                const updatedConversation = mapConversationFromDb(payload.new);
+                setConversations(current => {
+                    const index = current.findIndex(c => c.id === updatedConversation.id);
+                    const newConversations = index > -1 ? [...current] : [updatedConversation, ...current];
+                    if (index > -1) newConversations[index] = updatedConversation;
+                    
+                    return newConversations.sort((a, b) => new Date(b.lastMessageTimestamp).getTime() - new Date(a.lastMessageTimestamp).getTime());
+                });
+            };
+
+            const messagesChannel = supabase.channel('public:messages')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, handleMessageInsert)
+                .subscribe();
+
+            const conversationsChannel = supabase.channel('public:conversations')
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations' }, handleConversationUpdate)
+                .subscribe();
+        }
+        
+        return () => {
+            console.log("Removing Supabase channels.");
+            supabase.removeAllChannels();
+        };
+
+    }, [currentUser, isChatEnabled]);
+
 
     // Other useEffects
      useEffect(() => {
@@ -199,30 +357,14 @@ const App: React.FC = () => {
     const analysisForGroup = useMemo(() => (selectedGroupForView ? groupAnalyses.find(a => a.groupId === selectedGroupForView) || null : null), [groupAnalyses, selectedGroupForView]);
 
     // --- HANDLERS ---
-    const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => setNotification({ message, type }), []);
     
     // Auth
     const handleLogin = async (email: string, password: string) => {
         try {
             setAuthError(null);
             await api.loginUser(email, password);
-            // Auth listener will handle user update and data fetch
         } catch (error: any) {
-            console.error("Login failed:", error); // Log for debugging
-            if (error?.message) {
-                const message = error.message.toLowerCase();
-                if (message.includes('email not confirmed')) {
-                    setAuthError("Por favor, confirme seu e-mail para ativar sua conta antes de fazer o login.");
-                } else if (message.includes('invalid login credentials')) {
-                    setAuthError("Email ou senha inválidos.");
-                } else if (message.includes('api is not available') || message.includes('failed to fetch')) {
-                    setAuthError("Não foi possível conectar ao servidor. Verifique sua conexão ou tente novamente mais tarde.");
-                } else {
-                    setAuthError("Ocorreu um erro inesperado ao fazer login.");
-                }
-            } else {
-                setAuthError("Ocorreu um erro desconhecido ao fazer login.");
-            }
+            setAuthError("Email ou senha inválidos.");
         }
     };
     const handleRegister = async (name: string, email: string, password: string) => {
@@ -231,37 +373,15 @@ const App: React.FC = () => {
             await api.registerUser(name, email, password);
             showNotification("Conta criada! Verifique sua caixa de entrada para confirmar seu e-mail.", 'success');
         } catch (error: any) {
-            console.error("Registration failed:", error);
-
-            if (error?.message) {
-                const message = error.message.toLowerCase();
-                if (message.includes('user already registered')) {
-                    setAuthError("Este e-mail já está em uso.");
-                } else if (message.includes('password should be at least')) {
-                    setAuthError("Sua senha é muito fraca. Use pelo menos 6 caracteres.");
-                } else if (message.includes('email signups are disabled')) {
-                    setAuthError("O cadastro por e-mail está desabilitado. Por favor, habilite-o nas configurações de autenticação do seu projeto.");
-                } else if (message.includes('api is not available') || message.includes('failed to fetch')) {
-                    setAuthError("Não foi possível conectar ao servidor. Verifique sua conexão ou tente novamente mais tarde.");
-                } else if (message.includes('invalid format')) {
-                    setAuthError("O formato do e-mail é inválido.");
-                } else {
-                    setAuthError("Ocorreu um erro inesperado ao criar a conta. Tente novamente.");
-                }
-            } else {
-                 setAuthError("Ocorreu um erro desconhecido. Tente novamente.");
-            }
+            setAuthError(error.message || "Ocorreu um erro ao criar a conta.");
         }
     };
     const handleLogout = async () => {
         await api.logoutUser();
-        // Auth listener will handle clearing user data
         showNotification("Você saiu com sucesso.", 'info');
     };
     const handleForgotPassword = async (email: string) => {
         await api.sendPasswordResetEmail(email);
-        // We don't show specific success/error to prevent email enumeration.
-        // The AuthPage will show a generic confirmation message.
     };
     const handleUpdateProfile = (name: string, avatarFile?: File) => {
         // This would be an API call
@@ -270,63 +390,86 @@ const App: React.FC = () => {
     // Activity Log
     const createActivityLog = useCallback(async (leadId: Id, type: Activity['type'], text: string) => {
         if (!currentUser) return;
-        const newActivity = await api.createActivity({
-            leadId,
-            type,
-            text,
-            authorName: currentUser.name || "Sistema",
-        });
-        setActivities(prev => [newActivity, ...prev]);
+        try {
+            await api.createActivity({
+                leadId,
+                type,
+                text,
+                authorName: currentUser.name || "Sistema",
+            });
+        } catch (error) {
+            console.error("Failed to create activity log", error);
+            // Don't show UI notification for this background task
+        }
     }, [currentUser]);
     
     // Leads
     const handleCreateOrUpdateLead = async (data: CreateLeadData | UpdateLeadData) => {
         try {
-            if (editingLead && editingLead.id) { // Update
+            if (editingLead && editingLead.id) {
                 const updatedLead = await api.updateLead(editingLead.id, data);
-                setLeads(leads.map(l => l.id === editingLead.id ? updatedLead : l));
-                showNotification(`Lead "${data.name}" atualizado.`, 'success');
-                createActivityLog(editingLead.id, 'note', `Lead atualizado por ${currentUser?.name}.`);
-            } else { // Create
-                const newLead = await api.createLead(data);
-                setLeads(prev => [...prev, newLead]);
+                setLeads(current => current.map(lead => lead.id === updatedLead.id ? updatedLead : lead));
+                showNotification(`Lead "${updatedLead.name}" atualizado.`, 'success');
+                createActivityLog(updatedLead.id, 'note', `Lead atualizado.`);
+            } else {
+                const newLead = await api.createLead(data as CreateLeadData);
+                // No need for setLeads here if realtime subscription is working, but it provides a faster UI update
+                setLeads(current => [newLead, ...current]);
                 showNotification(`Lead "${newLead.name}" criado.`, 'success');
             }
             setCreateLeadModalOpen(false);
             setEditingLead(null);
         } catch (error) {
             showNotification("Falha ao salvar o lead.", 'error');
+            console.error("Error saving lead:", error);
         }
     };
     const handleDeleteLead = async (leadId: Id) => {
-        const leadName = leads.find(l => l.id === leadId)?.name || 'Lead';
         try {
             await api.deleteLead(leadId);
-            setLeads(leads.filter(l => l.id !== leadId));
             setSelectedLead(null);
-            showNotification(`"${leadName}" foi deletado.`, 'success');
+            showNotification(`Lead deletado.`, 'success');
         } catch (error) {
             showNotification("Falha ao deletar o lead.", 'error');
         }
     };
     const handleUpdateLeadColumn = async (leadId: Id, newColumnId: Id) => {
-        const lead = leads.find(l => l.id === leadId);
-        if (lead && lead.columnId !== newColumnId) {
-            try {
-                const updatedLead = await api.updateLead(leadId, { columnId: newColumnId, lastActivity: new Date().toISOString() });
-                setLeads(leads.map(l => l.id === leadId ? updatedLead : l));
-                const oldColumnName = columns.find(c => c.id === lead.columnId)?.title;
-                const newColumnName = columns.find(c => c.id === newColumnId)?.title;
+        const leadToMove = leads.find(l => l.id === leadId);
+        if (!leadToMove || leadToMove.columnId === newColumnId) {
+            return; // No change needed
+        }
+
+        const originalLeads = leads; // Store original state for rollback
+        const oldColumnId = leadToMove.columnId;
+
+        // Optimistic UI Update
+        setLeads(currentLeads =>
+            currentLeads.map(l =>
+                l.id === leadId ? { ...l, columnId: newColumnId, lastActivity: 'agora' } : l
+            )
+        );
+
+        try {
+            // Persist change to the backend
+            await api.updateLead(leadId, { columnId: newColumnId, lastActivity: new Date().toISOString() });
+            
+            // Log activity on success
+            const oldColumnName = columns.find(c => c.id === oldColumnId)?.title;
+            const newColumnName = columns.find(c => c.id === newColumnId)?.title;
+            if(oldColumnName && newColumnName) {
                 createActivityLog(leadId, 'status_change', `Status alterado de '${oldColumnName}' para '${newColumnName}'.`);
-            } catch (error) {
-                showNotification("Falha ao mover o lead.", 'error');
             }
+        } catch (error) {
+            // Rollback on failure
+            showNotification("Falha ao mover o lead. Revertendo.", 'error');
+            console.error("Error moving lead:", error);
+            setLeads(originalLeads); // Revert to the state before the optimistic update
         }
     };
     const handleUpdateLeadDetails = async (leadId: Id, updates: UpdateLeadData) => {
          try {
-            const updatedLead = await api.updateLead(leadId, updates);
-            setLeads(prevLeads => prevLeads.map(lead => lead.id === leadId ? updatedLead : lead));
+            await api.updateLead(leadId, updates);
+            showNotification("Detalhes do lead atualizados.", 'success');
         } catch (error) {
              showNotification("Falha ao atualizar detalhes do lead.", 'error');
         }
@@ -335,14 +478,12 @@ const App: React.FC = () => {
     // Tasks
     const handleCreateOrUpdateTask = async (data: CreateTaskData | UpdateTaskData) => {
         try {
-            if (editingTask) { // Update
-                const updatedTask = await api.updateTask(editingTask.id, data);
-                setTasks(tasks.map(t => t.id === editingTask.id ? updatedTask : t));
-                showNotification(`Tarefa "${data.title}" atualizada.`, 'success');
-            } else { // Create
-                const newTask = await api.createTask(data as CreateTaskData);
-                setTasks(prev => [newTask, ...prev]);
-                showNotification(`Tarefa "${newTask.title}" criada.`, 'success');
+            if (editingTask) {
+                await api.updateTask(editingTask.id, data);
+                showNotification(`Tarefa atualizada.`, 'success');
+            } else {
+                await api.createTask(data as CreateTaskData);
+                showNotification(`Tarefa criada.`, 'success');
             }
             setCreateTaskModalOpen(false);
             setEditingTask(null);
@@ -354,7 +495,6 @@ const App: React.FC = () => {
     const handleDeleteTask = async (taskId: Id) => {
         try {
             await api.deleteTask(taskId);
-            setTasks(tasks.filter(t => t.id !== taskId));
             showNotification("Tarefa deletada.", 'success');
         } catch(error) {
             showNotification("Falha ao deletar a tarefa.", 'error');
@@ -362,37 +502,70 @@ const App: React.FC = () => {
     };
     const handleUpdateTaskStatus = async (taskId: Id, status: 'pending' | 'completed') => {
         try {
-            const updatedTask = await api.updateTask(taskId, { status });
-            setTasks(tasks.map(t => t.id === taskId ? updatedTask : t));
-            showNotification(`Tarefa marcada como ${status === 'completed' ? 'concluída' : 'pendente'}.`, 'info');
+            await api.updateTask(taskId, { status });
         } catch (error) {
             showNotification("Falha ao atualizar status da tarefa.", 'error');
         }
     };
     
     // Notifications
-    const handleMarkAsRead = (notificationId: Id) => {
-        setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n));
+    const handleMarkAsRead = async (notificationId: Id) => {
+        try { await api.updateNotification(notificationId, { is_read: true }); } catch (e) { console.error(e); }
     };
-    const handleMarkAllAsRead = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    const handleMarkAllAsRead = async () => {
+        try { await api.markAllNotificationsRead(); } catch (e) { console.error(e); }
     };
-    const handleClearAllNotifications = () => {
-        setNotifications([]);
-        showNotification("Notificações limpas.", 'info');
+    const handleClearAllNotifications = async () => {
+        try { await api.clearAllNotifications(); showNotification("Notificações limpas.", 'info'); } catch (e) { console.error(e); }
     };
     const handleNotificationClick = (link: NotificationType['link']) => {
         if (!link) return;
-
         setActiveView(link.view);
-
         if (link.leadId) {
             const leadToSelect = leads.find(l => l.id === link.leadId);
-            if (leadToSelect) {
-                setSelectedLead(leadToSelect);
-            }
+            if (leadToSelect) setSelectedLead(leadToSelect);
         }
     };
+    
+    // Email Drafts
+    const handleSaveDraft = async (draftData: CreateEmailDraftData) => {
+        try { await api.createEmailDraft(draftData); showNotification("Rascunho salvo.", 'success'); } catch (e) { showNotification("Falha ao salvar rascunho.", 'error'); }
+    };
+    const handleDeleteDraft = async (draftId: Id) => {
+        try { await api.deleteEmailDraft(draftId); showNotification("Rascunho deletado.", 'success'); } catch (e) { showNotification("Falha ao deletar rascunho.", 'error'); }
+    };
+
+    // Chat
+    const handleSendMessage = async (conversationId: Id, text: string, channel: ChatChannel, leadId: Id) => {
+        if(!currentUser) return;
+        try { await api.sendMessage({ conversationId, senderId: currentUser.id, text, channel, leadId }); } catch (e) { showNotification("Falha ao enviar mensagem.", 'error'); }
+    };
+    const handleUpdateConversationStatus = async (conversationId: Id, status: ChatConversationStatus) => {
+        try { await api.updateConversationStatus(conversationId, status); showNotification("Status da conversa atualizado.", 'success'); } catch (e) { showNotification("Falha ao atualizar status.", 'error'); }
+    };
+
+    // Groups
+    const handleCreateOrUpdateGroup = async (data: CreateGroupData | UpdateGroupData) => {
+        try {
+            if (editingGroup) { await api.updateGroup(editingGroup.id, data); showNotification("Grupo atualizado.", 'success');}
+            else { await api.createGroup(data as CreateGroupData); showNotification("Grupo criado.", 'success'); }
+            setGroupModalOpen(false); setEditingGroup(null);
+        } catch(e) { showNotification("Falha ao salvar grupo.", 'error');}
+    };
+    const handleDeleteGroup = async (groupId: Id) => {
+        try { await api.deleteGroup(groupId); showNotification("Grupo deletado.", 'success'); } catch(e) { showNotification("Falha ao deletar grupo.", 'error'); }
+    };
+    const handleCreateOrUpdateGroupAnalysis = async (data: CreateGroupAnalysisData | UpdateGroupAnalysisData, analysisId?: Id) => {
+        try {
+            if (analysisId) { await api.updateGroupAnalysis(analysisId, data); }
+            else { await api.createGroupAnalysis(data as CreateGroupAnalysisData); }
+            showNotification("Análise salva.", 'success');
+        } catch (e) { showNotification("Falha ao salvar análise.", 'error'); }
+    };
+    const handleDeleteGroupAnalysis = async (analysisId: Id) => {
+        try { await api.deleteGroupAnalysis(analysisId); showNotification("Análise descartada.", 'success'); } catch (e) { showNotification("Falha ao descartar análise.", 'error'); }
+    };
+
 
     // Sample Data Handlers
     const handleDismissSampleDataPrompt = () => {
@@ -403,23 +576,15 @@ const App: React.FC = () => {
     const handlePopulateSampleData = async () => {
         try {
             await api.addSampleData(initialLeads, sampleInitialTasks);
-            showNotification("Dados de exemplo adicionados com sucesso!", 'success');
-            
-            // Refetch data to show the new leads/tasks
-            const [fetchedLeads, fetchedTasks] = await Promise.all([
-                api.getLeads(),
-                api.getTasks(),
-            ]);
-            setLeads(fetchedLeads);
-            setTasks(fetchedTasks);
-            
+            showNotification("Dados de exemplo adicionados! Atualizando...", 'success');
+            await fetchData(); // Refetch all data
             setShowSampleDataPrompt(false);
             localStorage.setItem('sampleDataPromptDismissed', 'true');
         } catch (error) {
             console.error("Error populating sample data:", error);
             showNotification("Falha ao adicionar dados de exemplo.", 'error');
-            setShowSampleDataPrompt(false); // Hide prompt even on error to avoid getting stuck
-            localStorage.setItem('sampleDataPromptDismissed', 'true'); // Also dismiss on error
+            setShowSampleDataPrompt(false);
+            localStorage.setItem('sampleDataPromptDismissed', 'true');
         }
     };
 
@@ -464,23 +629,10 @@ const App: React.FC = () => {
     if (!currentUser) {
         return <AuthPage onLogin={handleLogin} onRegister={handleRegister} onSignInWithGoogle={api.signInWithGoogle} onForgotPassword={handleForgotPassword} error={authError} />;
     }
-
-    // Dummy handlers, to be implemented
-    const handleAddNote = (noteText: string) => {};
-    const handleSendEmailActivity = (subject: string) => {};
-    const handleSaveDraft = (draftData: CreateEmailDraftData) => {};
-    const handleDeleteDraft = (draftId: Id) => {};
-    const handleSendMessage = (conversationId: Id, text: string, channel: ChatChannel) => {};
-    const handleUpdateConversationStatus = (conversationId: Id, status: ChatConversationStatus) => {};
-    const handleUpdatePipeline = (newColumns: ColumnData[]) => {};
-    const handleCreateOrUpdateGroup = (data: CreateGroupData | UpdateGroupData) => {};
-    const handleDeleteGroup = (groupId: Id) => {};
-    const handleCreateOrUpdateGroupAnalysis = (data: CreateGroupAnalysisData | UpdateGroupAnalysisData, analysisId?: Id) => {};
-    const handleDeleteGroupAnalysis = (analysisId: Id) => {};
-
+    
     return (
         <div className="flex h-screen w-full bg-gray-50 dark:bg-zinc-900 text-zinc-800 dark:text-gray-200 font-sans antialiased overflow-hidden">
-            <Sidebar activeView={activeView} onNavigate={setActiveView} isCollapsed={isSidebarCollapsed} onToggle={() => setSidebarCollapsed(p => !p)} />
+            <Sidebar activeView={activeView} onNavigate={setActiveView} isCollapsed={isSidebarCollapsed} onToggle={() => setSidebarCollapsed(p => !p)} isChatEnabled={isChatEnabled} />
             
             <div className="flex flex-col flex-1 overflow-hidden">
                 <Header 
@@ -503,7 +655,7 @@ const App: React.FC = () => {
                     {activeView === 'Tarefas' && <ActivitiesView tasks={tasks} leads={leads} onEditTask={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
                     {activeView === 'Calendário' && <CalendarPage tasks={tasks} leads={leads} onNewActivity={(date) => handleOpenCreateTaskModal(undefined, date)} onEditActivity={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
                     {activeView === 'Relatórios' && <ReportsPage leads={leads} columns={columns} tasks={tasks} activities={activities} />}
-                    {activeView === 'Chat' && <ChatView conversations={conversations} messages={messages} leads={leads} currentUser={currentUser} onSendMessage={handleSendMessage} onUpdateConversationStatus={handleUpdateConversationStatus} showNotification={showNotification} />}
+                    {isChatEnabled && activeView === 'Chat' && <ChatView conversations={conversations} messages={messages} leads={leads} currentUser={currentUser} onSendMessage={handleSendMessage} onUpdateConversationStatus={handleUpdateConversationStatus} showNotification={showNotification} />}
                     {activeView === 'Grupos' && (
                         !selectedGroupForView ? (
                             <GroupsDashboard 
@@ -529,7 +681,7 @@ const App: React.FC = () => {
                     )}
                     {activeView === 'Integrações' && <IntegrationsPage showNotification={showNotification} />}
                     {activeView === 'Notificações' && <NotificationsView notifications={notifications} onMarkAsRead={handleMarkAsRead} onMarkAllAsRead={handleMarkAllAsRead} onClearAll={handleClearAllNotifications} onNavigate={handleNotificationClick} />}
-                    {activeView === 'Configurações' && <SettingsPage currentUser={currentUser} onUpdateProfile={handleUpdateProfile} columns={columns} onUpdatePipeline={handleUpdatePipeline}/>}
+                    {activeView === 'Configurações' && <SettingsPage currentUser={currentUser} onUpdateProfile={handleUpdateProfile} columns={columns} onUpdatePipeline={() => {}}/>}
                 </main>
             </div>
             
@@ -544,8 +696,8 @@ const App: React.FC = () => {
                         onClose={() => setSelectedLead(null)}
                         onEdit={() => handleOpenEditLeadModal(selectedLead)}
                         onDelete={() => handleDeleteLead(selectedLead.id)}
-                        onAddNote={handleAddNote}
-                        onSendEmailActivity={handleSendEmailActivity}
+                        onAddNote={(noteText) => createActivityLog(selectedLead.id, 'note', noteText)}
+                        onSendEmailActivity={(subject) => createActivityLog(selectedLead.id, 'email_sent', `Email enviado: ${subject}`)}
                         onAddTask={() => handleOpenCreateTaskModal(selectedLead.id)}
                         onSaveDraft={handleSaveDraft}
                         onDeleteDraft={handleDeleteDraft}

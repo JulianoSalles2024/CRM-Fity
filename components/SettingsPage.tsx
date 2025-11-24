@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { User, ColumnData, Id } from '../types';
-import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit, Bell, Webhook } from 'lucide-react';
+import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit, Bell, Webhook, MessageSquare, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { DndContext, closestCenter, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -404,6 +405,100 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
     );
 };
 
+// --- WhatsApp Integration Tab ---
+const WhatsAppChannelSettings: React.FC = () => {
+    type Status = 'disconnected' | 'loading' | 'qr' | 'connected';
+    const [status, setStatus] = useState<Status>(() => {
+        return (localStorage.getItem('whatsapp_status') as Status) || 'disconnected';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('whatsapp_status', status);
+    }, [status]);
+
+    const handleConnect = () => {
+        setStatus('loading');
+        // Simulate fetching QR code
+        setTimeout(() => {
+            setStatus('qr');
+            // Simulate user scanning the QR code and successful connection
+            setTimeout(() => {
+                setStatus('connected');
+            }, 10000); // 10 seconds to "scan"
+        }, 2000); // 2 seconds to "generate" QR
+    };
+
+    const handleDisconnect = () => {
+        setStatus('disconnected');
+    };
+
+    const StatusIndicator = () => {
+        switch(status) {
+            case 'connected': return <div className="flex items-center gap-2 text-sm text-green-400"><div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>Conectado</div>;
+            case 'loading': return <div className="flex items-center gap-2 text-sm text-yellow-400">Carregando...</div>;
+            case 'qr': return <div className="flex items-center gap-2 text-sm text-yellow-400">Aguardando leitura</div>;
+            default: return <div className="flex items-center gap-2 text-sm text-red-400"><div className="w-2 h-2 rounded-full bg-red-500"></div>Desconectado</div>;
+        }
+    };
+
+    return (
+        <div className="bg-zinc-800/50 rounded-lg border border-zinc-700">
+            <div className="p-6 border-b border-zinc-700 flex justify-between items-center">
+                <div>
+                    <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5 text-green-500" />
+                        <span>WhatsApp Web</span>
+                    </h2>
+                    <p className="text-sm text-zinc-400 mt-1">Conecte sua conta do WhatsApp para gerenciar conversas.</p>
+                </div>
+                <StatusIndicator />
+            </div>
+            <div className="p-6">
+                {status === 'disconnected' && (
+                    <div className="text-center">
+                        <p className="text-zinc-400 mb-4">Clique no botão abaixo para gerar um QR Code e conectar sua conta do WhatsApp Web.</p>
+                        <button onClick={handleConnect} className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-md transition-colors">
+                            Conectar ao WhatsApp
+                        </button>
+                    </div>
+                )}
+                {status === 'loading' && (
+                     <div className="flex flex-col items-center justify-center text-center py-10">
+                        <Loader2 className="w-8 h-8 text-violet-400 animate-spin mb-4" />
+                        <p className="text-zinc-300">Gerando QR Code...</p>
+                    </div>
+                )}
+                {status === 'qr' && (
+                    <div className="flex flex-col md:flex-row items-center gap-6">
+                        <div className="bg-white p-4 rounded-lg">
+                             <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=ExampleQRCodeForFityCRM" alt="QR Code" />
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-white text-lg">Leia o QR Code para conectar</h3>
+                            <ol className="list-decimal list-inside text-zinc-400 mt-2 space-y-1 text-sm">
+                                <li>Abra o WhatsApp no seu celular.</li>
+                                <li>Toque em Menu ou Configurações e selecione <strong>Aparelhos conectados</strong>.</li>
+                                <li>Toque em <strong>Conectar um aparelho</strong>.</li>
+                                <li>Aponte seu celular para esta tela para capturar o código.</li>
+                            </ol>
+                            <p className="text-xs text-zinc-500 mt-4">Este QR Code irá expirar em breve.</p>
+                        </div>
+                    </div>
+                )}
+                 {status === 'connected' && (
+                    <div className="text-center">
+                        <p className="text-zinc-300 mb-4">Sua conta do WhatsApp está conectada.</p>
+                         <button onClick={handleDisconnect} className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-md transition-colors">
+                            Desconectar
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
 // --- Placeholder ---
 const PlaceholderTab: React.FC<{ title: string }> = ({ title }) => (
     <div className="text-center p-10 bg-zinc-800/50 rounded-lg border-2 border-dashed border-zinc-700">
@@ -422,7 +517,7 @@ interface SettingsPageProps {
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpdateProfile, onUpdatePipeline }) => {
-    const [activeTab, setActiveTab] = useState('Pipeline');
+    const [activeTab, setActiveTab] = useState('Integrações');
 
     const tabs = [
         { name: 'Perfil', icon: UserIcon },
@@ -460,7 +555,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpd
                 {activeTab === 'Perfil' && <ProfileSettings currentUser={currentUser} onUpdateProfile={onUpdateProfile} />}
                 {activeTab === 'Pipeline' && <PipelineSettings initialColumns={columns} onUpdatePipeline={onUpdatePipeline} />}
                 {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />}
-                {activeTab === 'Integrações' && <PlaceholderTab title="Integrações" />}
+                {activeTab === 'Integrações' && <WhatsAppChannelSettings />}
                 {activeTab === 'Notificações' && <NotificationSettings />}
             </div>
         </div>

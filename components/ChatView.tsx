@@ -9,7 +9,7 @@ interface ChatViewProps {
     messages: ChatMessage[];
     leads: Lead[];
     currentUser: UserType;
-    onSendMessage: (conversationId: Id, text: string, channel: ChatChannel) => void;
+    onSendMessage: (conversationId: Id, text: string, channel: ChatChannel, leadId: Id) => void;
     onUpdateConversationStatus: (conversationId: Id, status: ChatConversationStatus) => void;
     showNotification: (message: string, type: 'success' | 'error' | 'info') => void;
 }
@@ -131,10 +131,10 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
     
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim() || !activeConversationId) {
+        if (!newMessage.trim() || !activeConversationId || !activeLead) {
             return;
         }
-        onSendMessage(activeConversationId, newMessage, sendChannel);
+        onSendMessage(activeConversationId, newMessage, sendChannel, activeLead.id);
         setNewMessage('');
     };
     

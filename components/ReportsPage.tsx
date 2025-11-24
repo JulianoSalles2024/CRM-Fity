@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useRef } from 'react';
 import { Lead, ColumnData, Task, Activity } from '../types';
 import { BarChart, RefreshCw, Download, Users, Target, DollarSign, CheckCircle } from 'lucide-react';
@@ -26,7 +24,7 @@ const ReportKpiCard: React.FC<ReportKpiCardProps> = ({ title, value, icon: Icon,
             <p className="text-sm text-zinc-400">{title}</p>
             <p className="text-2xl font-bold text-white mt-1">{value}</p>
         </div>
-        <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: `${color}20` }}>
+        <div className="w-12 h-12 rounded-full flex items-center justify-center animate-pulse" style={{ backgroundColor: '#8b5cf620' }}>
             <Icon className="w-6 h-6" style={{ color }} />
         </div>
     </div>

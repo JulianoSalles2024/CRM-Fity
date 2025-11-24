@@ -1,6 +1,6 @@
 import { supabase } from './services/supabaseClient';
 import { GoogleGenAI, Type } from '@google/genai';
-import type { ColumnData, Lead, Id, CreateLeadData, UpdateLeadData, Activity, User, Task, CreateTaskData, UpdateTaskData, Tone, Group } from './types';
+import type { ColumnData, Lead, Id, CreateLeadData, UpdateLeadData, Activity, User, Task, CreateTaskData, UpdateTaskData, Tone, Group, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, CreateGroupData, UpdateGroupData, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, ChatChannel, Notification, ChatConversationStatus } from './types';
 
 // --- AUTHENTICATION ---
 export const getCurrentUser = async (): Promise<User | null> => {
@@ -9,7 +9,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
     if (!session) return null;
     return {
         id: session.user.id,
-        name: session.user.user_metadata.name,
+        name: session.user.user_metadata.name || session.user.email,
         email: session.user.email!,
         avatarUrl: session.user.user_metadata.avatar_url,
     };
@@ -62,40 +62,61 @@ export const sendPasswordResetEmail = async (email: string): Promise<void> => {
 
 // LEADS
 export const getLeads = async (): Promise<Lead[]> => {
-    const { data, error } = await supabase.from('leads').select('*');
+    const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
     if (error) throw error;
-    // This is a simplified version. A real app would need to fetch tags separately and join them.
-    return data.map(d => ({...d, tags: []})) as Lead[]; 
+    return data.map(d => ({
+        id: d.id, columnId: d.column_id, name: d.name, company: d.company, value: d.value,
+        avatarUrl: d.avatar_url, tags: d.tags || [], lastActivity: d.last_activity,
+        dueDate: d.due_date, assignedTo: d.assigned_to, description: d.description,
+        email: d.email, phone: d.phone, probability: d.probability, status: d.status,
+        clientId: d.client_id, source: d.source, createdAt: d.created_at, groupInfo: d.group_info
+    })); 
 };
 
 export const createLead = async (leadData: CreateLeadData): Promise<Lead> => {
-    const { tags, columnId, ...restOfData } = leadData;
+    const { columnId, avatarUrl, assignedTo, clientId, createdAt, dueDate, lastActivity, groupInfo, ...rest } = leadData;
     const { data, error } = await supabase
         .from('leads')
-        .insert({ ...restOfData, column_id: columnId })
+        .insert({ 
+            ...rest, 
+            column_id: columnId,
+            avatar_url: avatarUrl,
+            assigned_to: assignedTo,
+            client_id: clientId,
+            created_at: createdAt,
+            due_date: dueDate,
+            last_activity: lastActivity,
+            group_info: groupInfo,
+        })
         .select()
         .single();
 
     if (error) throw error;
-    return { ...data, tags: [] } as Lead;
+    return { ...data, columnId: data.column_id } as Lead;
 };
 
 export const updateLead = async (leadId: Id, updates: UpdateLeadData): Promise<Lead> => {
-    const { columnId, ...restOfUpdates } = updates;
-    const updatePayload: any = restOfUpdates;
-    if (columnId) {
-        updatePayload.column_id = columnId;
-    }
+    const { columnId, avatarUrl, assignedTo, clientId, createdAt, dueDate, lastActivity, groupInfo, ...rest } = updates;
+    const payload: any = {...rest};
+    if (columnId) payload.column_id = columnId;
+    if (avatarUrl) payload.avatar_url = avatarUrl;
+    if (assignedTo) payload.assigned_to = assignedTo;
+    if (clientId) payload.client_id = clientId;
+    if (createdAt) payload.created_at = createdAt;
+    if (dueDate) payload.due_date = dueDate;
+    if (lastActivity) payload.last_activity = lastActivity;
+    if (groupInfo) payload.group_info = groupInfo;
+
 
     const { data, error } = await supabase
         .from('leads')
-        .update(updatePayload)
+        .update(payload)
         .eq('id', leadId)
         .select()
         .single();
         
     if (error) throw error;
-    return { ...data, tags: [] } as Lead;
+    return { ...data, columnId: data.column_id } as Lead;
 };
 
 export const deleteLead = async (leadId: Id): Promise<{ success: true }> => {
@@ -106,18 +127,11 @@ export const deleteLead = async (leadId: Id): Promise<{ success: true }> => {
 
 // TASKS
 export const getTasks = async (): Promise<Task[]> => {
-    const { data, error } = await supabase.from('tasks').select('*');
+    const { data, error } = await supabase.from('tasks').select('*').order('due_date', { ascending: true });
     if (error) throw error;
-    // Map snake_case from DB to camelCase for app
     return data.map(t => ({
-        id: t.id,
-        userId: t.user_id,
-        leadId: t.lead_id,
-        type: t.type,
-        title: t.title,
-        description: t.description,
-        dueDate: t.due_date,
-        status: t.status,
+        id: t.id, userId: t.user_id, leadId: t.lead_id, type: t.type, title: t.title,
+        description: t.description, dueDate: t.due_date, status: t.status,
     }));
 };
 
@@ -125,47 +139,28 @@ export const createTask = async (taskData: CreateTaskData): Promise<Task> => {
     const user = await getCurrentUser();
     if (!user) throw new Error("User not authenticated");
 
-    const payload = {
-        user_id: user.id,
-        lead_id: taskData.leadId,
-        type: taskData.type,
-        title: taskData.title,
-        description: taskData.description,
-        due_date: taskData.dueDate,
-        status: taskData.status
-    };
-
-    const { data, error } = await supabase.from('tasks').insert(payload).select().single();
+    const { data, error } = await supabase.from('tasks').insert({
+        user_id: user.id, lead_id: taskData.leadId, type: taskData.type, title: taskData.title,
+        description: taskData.description, due_date: taskData.dueDate, status: taskData.status
+    }).select().single();
     if (error) throw error;
-    return {
-        id: data.id,
-        userId: data.user_id,
-        leadId: data.lead_id,
-        ...taskData
-    };
+    return { id: data.id, userId: data.user_id, leadId: data.lead_id, ...taskData };
 };
 
 export const updateTask = async (taskId: Id, updates: UpdateTaskData): Promise<Task> => {
-     const payload = {
-        ...(updates.leadId && {lead_id: updates.leadId}),
-        ...(updates.type && {type: updates.type}),
-        ...(updates.title && {title: updates.title}),
-        ...(updates.description && {description: updates.description}),
-        ...(updates.dueDate && {due_date: updates.dueDate}),
-        ...(updates.status && {status: updates.status}),
-    };
+    const payload: any = {};
+    if (updates.leadId) payload.lead_id = updates.leadId;
+    if (updates.type) payload.type = updates.type;
+    if (updates.title) payload.title = updates.title;
+    if (updates.description) payload.description = updates.description;
+    if (updates.dueDate) payload.due_date = updates.dueDate;
+    if (updates.status) payload.status = updates.status;
 
     const { data, error } = await supabase.from('tasks').update(payload).eq('id', taskId).select().single();
     if (error) throw error;
      return {
-        id: data.id,
-        userId: data.user_id,
-        leadId: data.lead_id,
-        type: data.type,
-        title: data.title,
-        description: data.description,
-        dueDate: data.due_date,
-        status: data.status,
+        id: data.id, userId: data.user_id, leadId: data.lead_id, type: data.type, title: data.title,
+        description: data.description, dueDate: data.due_date, status: data.status,
     };
 };
 
@@ -176,24 +171,118 @@ export const deleteTask = async (taskId: Id): Promise<{ success: true }> => {
 };
 
 // ACTIVITIES
+export const getActivities = async (): Promise<Activity[]> => {
+    const { data, error } = await supabase.from('activities').select('*').order('timestamp', { ascending: false });
+    if (error) throw error;
+    return data.map(d => ({
+        id: d.id, leadId: d.lead_id, type: d.type, text: d.text,
+        authorName: d.author_name, timestamp: d.created_at,
+    }));
+};
+
 export const createActivity = async (activityData: Omit<Activity, 'id' | 'timestamp'>): Promise<Activity> => {
-     const payload = {
-        lead_id: activityData.leadId,
-        type: activityData.type,
-        text: activityData.text,
-        author_name: activityData.authorName,
-    };
-    const { data, error } = await supabase.from('activities').insert(payload).select().single();
+    const { data, error } = await supabase.from('activities').insert({
+        lead_id: activityData.leadId, type: activityData.type,
+        text: activityData.text, author_name: activityData.authorName,
+    }).select().single();
     if (error) throw error;
     return {
-        id: data.id,
-        leadId: data.lead_id,
-        type: data.type,
-        text: data.text,
-        authorName: data.author_name,
-        timestamp: data.timestamp,
+        id: data.id, leadId: data.lead_id, type: data.type, text: data.text,
+        authorName: data.author_name, timestamp: data.created_at,
     };
 };
+
+// EMAIL DRAFTS
+export const getEmailDrafts = async (): Promise<EmailDraft[]> => { return []; };
+export const createEmailDraft = async (draftData: CreateEmailDraftData) => {};
+export const deleteEmailDraft = async (draftId: Id) => {};
+
+// CHAT
+export const getConversations = async (): Promise<ChatConversation[]> => {
+    const { data, error } = await supabase.from('conversations').select('*').order('last_message_timestamp', { ascending: false });
+    if (error) throw error;
+    return data.map(d => ({
+        id: d.id, leadId: d.lead_id, lastMessage: d.last_message, lastMessageTimestamp: d.last_message_timestamp,
+        unreadCount: d.unread_count, status: d.status, lastMessageChannel: d.last_message_channel,
+    }));
+};
+
+export const getMessages = async (): Promise<ChatMessage[]> => {
+    const { data, error } = await supabase.from('messages').select('*').order('timestamp', { ascending: true });
+    if (error) throw error;
+    return data.map(d => ({
+        id: d.id, conversationId: d.conversation_id, senderId: d.sender_id, text: d.text,
+        timestamp: d.timestamp, channel: d.channel,
+    }));
+};
+
+export const sendMessage = async (messageData: { conversationId: Id, senderId: Id, text: string, channel: ChatChannel, leadId?: Id }) => {
+    const { conversationId, senderId, text, channel, leadId } = messageData;
+    
+    // 1. Insert new message
+    const { error: msgError } = await supabase.from('messages').insert({
+        conversation_id: conversationId,
+        sender_id: senderId,
+        text,
+        channel,
+    });
+    if (msgError) throw msgError;
+
+    // 2. Update conversation
+    const { error: convError } = await supabase.from('conversations').update({
+        last_message: text,
+        last_message_timestamp: new Date().toISOString(),
+        last_message_channel: channel,
+        status: 'open',
+    }).eq('id', conversationId);
+    if (convError) throw convError;
+
+    // 3. Simulate WhatsApp reply if applicable
+    if (channel === 'whatsapp' && leadId) {
+        setTimeout(async () => {
+            const replyText = "Recebido! Vou analisar sua mensagem e retorno em breve.";
+            const { error: replyMsgError } = await supabase.from('messages').insert({
+                conversation_id: conversationId,
+                sender_id: leadId,
+                text: replyText,
+                channel: 'whatsapp',
+            });
+            if (replyMsgError) console.error("Error sending mock reply:", replyMsgError);
+
+            const { error: replyConvError } = await supabase.from('conversations').update({
+                last_message: replyText,
+                last_message_timestamp: new Date().toISOString(),
+                last_message_channel: 'whatsapp',
+                unread_count: 1,
+                status: 'waiting',
+            }).eq('id', conversationId);
+            if (replyConvError) console.error("Error updating conversation for mock reply:", replyConvError);
+        }, 2500); // 2.5 second delay
+    }
+};
+
+export const updateConversationStatus = async (conversationId: Id, status: ChatConversationStatus): Promise<void> => {
+    const { error } = await supabase.from('conversations').update({ status }).eq('id', conversationId);
+    if (error) throw error;
+};
+
+// GROUPS
+export const getGroups = async (): Promise<Group[]> => { return []; };
+export const createGroup = async (groupData: CreateGroupData) => {};
+export const updateGroup = async (groupId: Id, updates: UpdateGroupData) => {};
+export const deleteGroup = async (groupId: Id) => {};
+
+// GROUP ANALYSIS
+export const getGroupAnalyses = async (): Promise<GroupAnalysis[]> => { return []; };
+export const createGroupAnalysis = async (analysisData: CreateGroupAnalysisData) => {};
+export const updateGroupAnalysis = async (analysisId: Id, updates: UpdateGroupAnalysisData) => {};
+export const deleteGroupAnalysis = async (analysisId: Id) => {};
+
+// NOTIFICATIONS
+export const getNotifications = async (): Promise<Notification[]> => { return []; };
+export const updateNotification = async (notificationId: Id, updates: { is_read: boolean }) => {};
+export const markAllNotificationsRead = async () => {};
+export const clearAllNotifications = async () => {};
 
 
 // --- Gemini AI Services ---
@@ -292,24 +381,12 @@ export const addSampleData = async (sampleLeads: Lead[], sampleTasks: Task[]): P
     const user = await getCurrentUser();
     if (!user) throw new Error("User not authenticated");
 
-    // 1. Prepare and insert leads, keeping track of the original string ID
     const leadsToInsert = sampleLeads.map(lead => ({
-        name: lead.name,
-        company: lead.company,
-        value: lead.value,
-        avatar_url: lead.avatarUrl,
-        last_activity: lead.lastActivity,
-        due_date: lead.dueDate,
-        assigned_to: lead.assignedTo,
-        description: lead.description,
-        email: lead.email,
-        phone: lead.phone,
-        probability: lead.probability,
-        status: lead.status,
-        client_id: lead.clientId,
-        source: lead.source,
-        created_at: lead.createdAt,
-        column_id: lead.columnId
+        name: lead.name, company: lead.company, value: lead.value, avatar_url: lead.avatarUrl,
+        last_activity: lead.lastActivity, due_date: lead.dueDate, assigned_to: lead.assignedTo,
+        description: lead.description, email: lead.email, phone: lead.phone,
+        probability: lead.probability, status: lead.status, client_id: lead.clientId,
+        source: lead.source, created_at: lead.createdAt, column_id: lead.columnId
     }));
 
     const { data: insertedLeadsData, error: leadsError } = await supabase
@@ -319,34 +396,24 @@ export const addSampleData = async (sampleLeads: Lead[], sampleTasks: Task[]): P
 
     if (leadsError) throw leadsError;
 
-    // 2. Create a map from old string ID to new DB ID
     const oldIdToNewIdMap = new Map<Id, Id>();
     sampleLeads.forEach((lead, index) => {
         oldIdToNewIdMap.set(lead.id, insertedLeadsData[index].id);
     });
 
-    // 3. Prepare and insert tasks
     const tasksToInsert = sampleTasks
         .map(task => {
             const newLeadId = oldIdToNewIdMap.get(task.leadId);
             if (!newLeadId) return null;
-
             return {
-                user_id: user.id,
-                lead_id: newLeadId,
-                type: task.type,
-                title: task.title,
-                description: task.description,
-                due_date: task.dueDate,
-                status: task.status,
+                user_id: user.id, lead_id: newLeadId, type: task.type, title: task.title,
+                description: task.description, due_date: task.dueDate, status: task.status,
             };
         })
         .filter((t): t is NonNullable<typeof t> => t !== null);
 
     if (tasksToInsert.length > 0) {
-        const { error: tasksError } = await supabase
-            .from('tasks')
-            .insert(tasksToInsert);
+        const { error: tasksError } = await supabase.from('tasks').insert(tasksToInsert);
         if (tasksError) throw tasksError;
     }
 };
