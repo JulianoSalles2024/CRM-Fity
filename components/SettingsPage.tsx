@@ -148,21 +148,16 @@ const SortableStageItem: React.FC<{ column: ColumnData; index: number; onEdit: (
 
 // --- Subcomponente de Pipeline ---
 interface PipelineSettingsProps {
-    initialColumns: ColumnData[];
+    columns: ColumnData[];
     onUpdatePipeline: (columns: ColumnData[]) => void;
 }
 
-const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onUpdatePipeline }) => {
-    const [columns, setColumns] = useState<ColumnData[]>(initialColumns);
+const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns, onUpdatePipeline }) => {
     const [isCreateStageModalOpen, setCreateStageModalOpen] = useState(false);
     const [editingStage, setEditingStage] = useState<ColumnData | null>(null);
     const [stageToDelete, setStageToDelete] = useState<Id | null>(null);
     const [activeColumn, setActiveColumn] = useState<ColumnData | null>(null);
 
-    useEffect(() => {
-        setColumns(initialColumns);
-    }, [initialColumns]);
-    
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
     );
@@ -182,8 +177,6 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
             const oldIndex = columns.findIndex(item => item.id === active.id);
             const newIndex = columns.findIndex(item => item.id === over.id);
             const newColumns = arrayMove(columns, oldIndex, newIndex);
-            
-            setColumns(newColumns);
             onUpdatePipeline(newColumns);
         }
     };
@@ -203,7 +196,6 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
             const newColumn: ColumnData = { id: `stage-${Date.now()}`, title: stageData.title, color: stageData.color };
             newColumns = [...columns, newColumn];
         }
-        setColumns(newColumns);
         onUpdatePipeline(newColumns);
         setCreateStageModalOpen(false);
         setEditingStage(null);
@@ -221,7 +213,6 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ initialColumns, onU
     const confirmDeleteStage = () => {
         if (stageToDelete) {
             const newColumns = columns.filter(col => col.id !== stageToDelete);
-            setColumns(newColumns);
             onUpdatePipeline(newColumns);
             setStageToDelete(null);
         }
@@ -422,7 +413,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpd
             </div>
             <div>
                 {activeTab === 'Perfil' && <ProfileSettings currentUser={currentUser} onUpdateProfile={onUpdateProfile} />}
-                {activeTab === 'Pipeline' && <PipelineSettings initialColumns={columns} onUpdatePipeline={onUpdatePipeline} />}
+                {activeTab === 'Pipeline' && <PipelineSettings columns={columns} onUpdatePipeline={onUpdatePipeline} />}
                 {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />}
                 {activeTab === 'Integrações' && <WhatsAppChannelSettings />}
                 {activeTab === 'Notificações' && <NotificationSettings />}
