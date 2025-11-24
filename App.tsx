@@ -216,7 +216,7 @@ const App: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [showNotification, activeView]);
+    }, [showNotification]);
 
     // Auth listener effect - runs ONCE to set up listeners
     useEffect(() => {
