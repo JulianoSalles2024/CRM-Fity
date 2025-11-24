@@ -49,7 +49,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, 
          {!isCollapsed && (
              <h1 className="text-xl font-bold text-zinc-900 dark:text-white whitespace-nowrap flex items-center gap-2">
                 <Zap className="w-6 h-6 text-violet-500" />
-                <span>CRM Fity AI</span>
+                <span>CRM</span>
              </h1>
          )}
          <button onClick={onToggle} className={`p-1 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-zinc-600 ${!isCollapsed ? 'ml-auto' : ''}`}>

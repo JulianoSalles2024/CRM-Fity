@@ -1,7 +1,7 @@
 // service-worker.js
 
 self.addEventListener('push', (event) => {
-  let data = { title: 'Fity AI CRM', body: 'Você tem uma nova atualização.' };
+  let data = { title: 'CRM', body: 'Você tem uma nova atualização.' };
   if (event.data) {
     try {
       data = event.data.json();

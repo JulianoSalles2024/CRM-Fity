@@ -96,7 +96,7 @@ const NotificationSettings: React.FC = () => {
         
         const registration = await navigator.serviceWorker.getRegistration();
         if (registration) {
-            registration.showNotification('Notificação de Teste Fity AI', {
+            registration.showNotification('Notificação de Teste CRM', {
                 body: 'Se você pode ver isso, as notificações estão funcionando!',
                 // icon: '/logo.png', // Add this if you have a logo in your root folder
             });

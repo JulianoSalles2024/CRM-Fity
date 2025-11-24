@@ -229,7 +229,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, onSignInWithGo
         <div className="max-w-md w-full">
           <div className="flex items-center gap-3">
             <Zap className="w-8 h-8 text-violet-500" />
-            <span className="text-2xl font-bold text-white">CRM Fity AI</span>
+            <span className="text-2xl font-bold text-white">CRM</span>
           </div>
           <h1 className="mt-8 text-4xl font-bold tracking-tight text-white">
             Gerencie seus leads com <br />
@@ -248,7 +248,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, onSignInWithGo
             {/* Logo for mobile */}
             <div className="flex lg:hidden items-center gap-3 mb-8">
                 <Zap className="w-8 h-8 text-violet-500" />
-                <span className="text-2xl font-bold text-white">CRM Fity AI</span>
+                <span className="text-2xl font-bold text-white">CRM</span>
             </div>
 
           {/* Tabs */}
