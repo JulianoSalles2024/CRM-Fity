@@ -73,10 +73,10 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ tasks, leads, onNewActivity
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
                 {/* Left Column */}
                 <div className="lg:col-span-1 flex flex-col gap-6">
-                    <div className="bg-zinc-800 p-4 rounded-lg border border-zinc-700">
+                    <div className="bg-zinc-900 p-4 rounded-lg border border-zinc-800">
                         <MiniCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} />
                     </div>
-                     <div className="bg-zinc-800 p-4 rounded-lg border border-zinc-700">
+                     <div className="bg-zinc-900 p-4 rounded-lg border border-zinc-800">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-semibold text-white">Filtros</h3>
                             <button onClick={() => setActiveFilters([])} className="text-xs text-violet-400 hover:text-violet-300">Limpar</button>
@@ -105,7 +105,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ tasks, leads, onNewActivity
                     </div>
                 </div>
                 {/* Right Column */}
-                <div className="lg:col-span-2 bg-zinc-800 rounded-lg border border-zinc-700 flex flex-col overflow-hidden">
+                <div className="lg:col-span-2 bg-zinc-900 rounded-lg border border-zinc-800 flex flex-col overflow-hidden">
                      <div className="flex-shrink-0 p-4 flex justify-between items-center border-b border-zinc-700">
                         <h2 className="font-semibold text-white capitalize">{selectedDateString}</h2>
                         <button onClick={() => onNewActivity(selectedDate.toISOString().split('T')[0])} className="flex items-center gap-2 bg-violet-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">

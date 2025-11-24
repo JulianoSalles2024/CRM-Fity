@@ -1,6 +1,3 @@
-
-
-
 import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -82,7 +79,7 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onClick, mini
             onClick={onClick}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className={`bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700/80 shadow-sm cursor-grab active:cursor-grabbing hover:bg-gray-50 dark:hover:bg-zinc-700/50 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/10 dark:hover:shadow-violet-500/20 transition-all duration-150 touch-none ${isMinimized ? 'p-3' : 'p-4'}`}
+            className={`bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm cursor-grab active:cursor-grabbing hover:bg-gray-50 dark:hover:bg-zinc-800/50 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/10 dark:hover:shadow-violet-500/20 transition-all duration-150 touch-none ${isMinimized ? 'p-3' : 'p-4'}`}
         >
             <div className="flex justify-between items-center gap-2">
                 <h3 className="font-bold text-zinc-900 dark:text-white text-md leading-tight flex-1 truncate">{lead.name}</h3>
@@ -103,7 +100,7 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onClick, mini
                                 e.stopPropagation();
                                 onToggleLeadMinimize(lead.id);
                             }}
-                            className="p-1 rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-900/50 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                            className="p-1 rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white transition-colors"
                             title={isMinimized ? "Expandir card" : "Minimizar card"}
                         >
                             {isMinimized ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}

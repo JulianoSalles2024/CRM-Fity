@@ -335,7 +335,7 @@ const App: React.FC = () => {
                     unreadCount={unreadCount}
                 />
                 
-                <main className="flex-1 p-6 overflow-auto">
+                <main className="flex-1 p-6 overflow-auto dark:bg-zinc-800">
                      {activeView === 'Dashboard' && <Dashboard leads={leads} columns={columns} activities={activities} tasks={tasks} onNavigate={setActiveView} />}
                     {activeView === 'Pipeline' && <KanbanBoard columns={columns} leads={filteredLeads} users={users} cardDisplaySettings={cardDisplaySettings} onUpdateLeadColumn={handleUpdateLeadColumn} onLeadClick={setSelectedLead} onAddLead={handleOpenCreateLeadModal} onUpdateCardSettings={setCardDisplaySettings} minimizedLeads={minimizedLeads} onToggleLeadMinimize={(id) => setMinimizedLeads(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id])} minimizedColumns={minimizedColumns} onToggleColumnMinimize={(id) => setMinimizedColumns(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id])} />}
                     {activeView === 'Leads' && <LeadListView viewType="Leads" leads={listViewFilteredLeads} columns={columns} onLeadClick={setSelectedLead} listDisplaySettings={listDisplaySettings} onUpdateListSettings={setListDisplaySettings} allTags={tags} selectedTags={listSelectedTags} onSelectedTagsChange={setListSelectedTags} statusFilter={listStatusFilter} onStatusFilterChange={setListStatusFilter} />}

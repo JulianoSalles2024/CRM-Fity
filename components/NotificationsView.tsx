@@ -70,7 +70,7 @@ const NotificationItem: React.FC<{ notification: Notification; onMarkAsRead: (id
             exit={{ opacity: 0, x: -50 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             onClick={handleClick}
-            className={`flex items-start gap-4 p-4 border border-zinc-700 rounded-lg transition-colors cursor-pointer ${notification.isRead ? 'bg-zinc-800/50 hover:bg-zinc-700/50' : 'bg-violet-900/30 hover:bg-violet-900/50'}`}
+            className={`flex items-start gap-4 p-4 border border-zinc-700 rounded-lg transition-colors cursor-pointer ${notification.isRead ? 'bg-zinc-900/50 hover:bg-zinc-800/50' : 'bg-violet-900/30 hover:bg-violet-900/50'}`}
         >
             {!notification.isRead && <div className="w-2.5 h-2.5 bg-violet-500 rounded-full flex-shrink-0 mt-1.5 animate-pulse"></div>}
             <div className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full ${notification.isRead ? 'bg-zinc-700' : 'bg-violet-800/50'}`}>

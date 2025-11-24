@@ -1,7 +1,3 @@
-
-
-
-
 import React from 'react';
 import { Activity as ActivityIcon, MessageSquare, ArrowRight, ChevronsRight, Mail } from 'lucide-react';
 import { Activity, Lead } from '../types';
@@ -55,7 +51,7 @@ const RecentActivities: React.FC<RecentActivitiesProps> = ({ activities, leads, 
     };
 
     return (
-         <div className="bg-white dark:bg-zinc-800 p-5 rounded-lg border border-zinc-200 dark:border-zinc-700 h-full flex flex-col">
+         <div className="bg-white dark:bg-zinc-900 p-5 rounded-lg border border-zinc-200 dark:border-zinc-800 h-full flex flex-col transition-all duration-200 ease-in-out hover:bg-gray-50 dark:hover:bg-zinc-800/50 hover:-translate-y-1 hover:shadow-lg">
             <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
                     <ActivityIcon className="w-5 h-5 text-violet-400" />
@@ -70,7 +66,7 @@ const RecentActivities: React.FC<RecentActivitiesProps> = ({ activities, leads, 
                 <ul className="space-y-4 flex-1 overflow-y-auto -mr-2 pr-2">
                     {sortedActivities.map(activity => (
                          <li key={activity.id} className="flex gap-3 items-start">
-                            <div className="flex-shrink-0 bg-gray-100 dark:bg-zinc-900/50 h-8 w-8 rounded-full flex items-center justify-center mt-1">
+                            <div className="flex-shrink-0 bg-gray-100 dark:bg-zinc-800 h-8 w-8 rounded-full flex items-center justify-center mt-1">
                                 {getActivityIcon(activity.type)}
                             </div>
                             <div className="flex-1">

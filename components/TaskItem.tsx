@@ -21,7 +21,7 @@ const TaskItem: React.FC<TaskItemProps> =
     const isPending = task.status === 'pending';
 
     return (
-         <div className="flex items-start gap-4 p-4 bg-zinc-800 border border-zinc-700 rounded-lg transition-colors hover:bg-zinc-700/50">
+         <div className="flex items-start gap-4 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-zinc-800/50">
             <div className="flex-shrink-0 mt-1">
                 {isPending ? <Circle className="w-5 h-5 text-zinc-500" /> : <CheckCircle2 className="w-5 h-5 text-green-400" />}
             </div>

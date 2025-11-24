@@ -210,7 +210,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                 onStatusFilterChange={onStatusFilterChange}
                 onExportCSV={handleExportCSV}
             />
-            <div className="bg-zinc-800 rounded-lg border border-zinc-700 overflow-hidden flex-1 flex flex-col">
+            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden flex-1 flex flex-col">
                 {sortedLeads.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-64">
                         <h3 className="text-lg font-semibold text-zinc-300">Nenhum {viewType === 'Clientes' ? 'cliente' : 'lead'} encontrado</h3>
@@ -238,7 +238,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                     </tr>
                                 )}
                                 {virtualLeads.map(lead => (
-                                    <tr key={lead.id} onClick={() => onLeadClick(lead)} className="hover:bg-zinc-700/50 cursor-pointer transition-colors duration-150">
+                                    <tr key={lead.id} onClick={() => onLeadClick(lead)} className="hover:bg-zinc-800/50 cursor-pointer transition-colors duration-150">
                                         <td className="px-4 py-3 whitespace-nowrap">
                                             <div className="flex items-center">
                                                 <div className="flex-shrink-0 h-10 w-10 bg-zinc-700 rounded-full flex items-center justify-center font-bold">

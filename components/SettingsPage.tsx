@@ -40,14 +40,14 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ currentUser, onUpdate
     };
 
     return (
-        <div className="bg-zinc-800/50 rounded-lg border border-zinc-700">
+        <div className="bg-zinc-900 rounded-lg border border-zinc-800">
             <div className="p-6 border-b border-zinc-700">
                 <h2 className="text-lg font-semibold text-white">Informações do Perfil</h2>
                 <p className="text-sm text-zinc-400 mt-1">Atualize suas informações pessoais e foto de perfil</p>
             </div>
             <div className="p-6 space-y-8">
                 <div className="flex items-center gap-5">
-                    <img src={avatarPreview} alt="Avatar" className="w-20 h-20 rounded-full object-cover ring-2 ring-violet-500 ring-offset-2 ring-offset-zinc-800" />
+                    <img src={avatarPreview} alt="Avatar" className="w-20 h-20 rounded-full object-cover ring-2 ring-violet-500 ring-offset-2 ring-offset-zinc-900" />
                     <div>
                         <input type="file" ref={fileInputRef} hidden accept="image/jpeg, image/png, image/webp" onChange={handleAvatarChange} />
                         <button 
@@ -66,7 +66,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ currentUser, onUpdate
                         <label htmlFor="name" className="block text-sm font-medium text-zinc-300 mb-2">Nome Completo</label>
                         <input
                             type="text" id="name" value={name} onChange={(e) => setName(e.target.value)}
-                            className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
                         />
                     </div>
                     <div>
@@ -80,7 +80,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ currentUser, onUpdate
                 </div>
 
             </div>
-             <div className="p-4 bg-zinc-900/30 border-t border-zinc-700 rounded-b-lg flex justify-end">
+             <div className="p-4 bg-zinc-800/50 border-t border-zinc-700 rounded-b-lg flex justify-end">
                 <button
                     onClick={handleSave}
                     className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700 transition-colors"
@@ -97,7 +97,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ currentUser, onUpdate
 
 const StageItem: React.FC<{ column: ColumnData; index: number; onEdit?: (column: ColumnData) => void; onDelete?: (id: Id) => void; listeners?: any }> = ({ column, index, onEdit, onDelete, listeners }) => {
     return (
-        <div className="flex items-center gap-3 p-2 bg-zinc-900/50 rounded-lg border border-zinc-700 touch-none">
+        <div className="flex items-center gap-3 p-2 bg-zinc-800 rounded-lg border border-zinc-700 touch-none">
             <button {...listeners} className="cursor-grab p-1 touch-none">
                 <GripVertical className="w-5 h-5 text-zinc-500 flex-shrink-0" />
             </button>
@@ -152,21 +152,26 @@ interface PipelineSettingsProps {
     onUpdatePipeline: (columns: ColumnData[]) => void;
 }
 
-const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns, onUpdatePipeline }) => {
+const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialColumns, onUpdatePipeline }) => {
+    const [currentColumns, setCurrentColumns] = useState(initialColumns);
     const [isCreateStageModalOpen, setCreateStageModalOpen] = useState(false);
     const [editingStage, setEditingStage] = useState<ColumnData | null>(null);
     const [stageToDelete, setStageToDelete] = useState<Id | null>(null);
     const [activeColumn, setActiveColumn] = useState<ColumnData | null>(null);
 
+     useEffect(() => {
+        setCurrentColumns(initialColumns);
+    }, [initialColumns]);
+
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
     );
     
-    const columnIds = useMemo(() => columns.map(c => c.id), [columns]);
+    const columnIds = useMemo(() => currentColumns.map(c => c.id), [currentColumns]);
 
     const handleDragStart = (event: DragStartEvent) => {
         const { active } = event;
-        setActiveColumn(columns.find(col => col.id === active.id) || null);
+        setActiveColumn(currentColumns.find(col => col.id === active.id) || null);
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -174,9 +179,9 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns, onUpdatePi
         const { active, over } = event;
 
         if (over && active.id !== over.id) {
-            const oldIndex = columns.findIndex(item => item.id === active.id);
-            const newIndex = columns.findIndex(item => item.id === over.id);
-            const newColumns = arrayMove(columns, oldIndex, newIndex);
+            const oldIndex = currentColumns.findIndex(item => item.id === active.id);
+            const newIndex = currentColumns.findIndex(item => item.id === over.id);
+            const newColumns = arrayMove(currentColumns, oldIndex, newIndex);
             onUpdatePipeline(newColumns);
         }
     };
@@ -189,12 +194,12 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns, onUpdatePi
     const handleCreateOrUpdateStage = (stageData: {id?: Id, title: string, color: string}) => {
       let newColumns: ColumnData[] = [];
         if (stageData.id) { // Update
-            newColumns = columns.map(c => 
+            newColumns = currentColumns.map(c => 
                 c.id === stageData.id ? { ...c, title: stageData.title, color: stageData.color } : c
             );
         } else { // Create
             const newColumn: ColumnData = { id: `stage-${Date.now()}`, title: stageData.title, color: stageData.color };
-            newColumns = [...columns, newColumn];
+            newColumns = [...currentColumns, newColumn];
         }
         onUpdatePipeline(newColumns);
         setCreateStageModalOpen(false);
@@ -203,7 +208,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns, onUpdatePi
 
 
     const handleDeleteColumn = (id: Id) => {
-        if (columns.length <= 1) {
+        if (currentColumns.length <= 1) {
             alert("Você deve ter pelo menos um estágio no pipeline.");
             return;
         }
@@ -212,7 +217,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns, onUpdatePi
 
     const confirmDeleteStage = () => {
         if (stageToDelete) {
-            const newColumns = columns.filter(col => col.id !== stageToDelete);
+            const newColumns = currentColumns.filter(col => col.id !== stageToDelete);
             onUpdatePipeline(newColumns);
             setStageToDelete(null);
         }
@@ -220,7 +225,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns, onUpdatePi
 
     return (
         <>
-            <div className="bg-zinc-800/50 rounded-lg border border-zinc-700">
+            <div className="bg-zinc-900 rounded-lg border border-zinc-800">
                  <div className="p-6 border-b border-zinc-700 flex justify-between items-center">
                     <div>
                         <h2 className="text-lg font-semibold text-white">Estágios do Pipeline: <span className="text-violet-400">Vendas Padrão</span></h2>
@@ -233,12 +238,12 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns, onUpdatePi
                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                     <div className="p-6 space-y-3">
                         <SortableContext items={columnIds} strategy={verticalListSortingStrategy}>
-                            {columns.map((col, index) => (
+                            {currentColumns.map((col, index) => (
                                 <SortableStageItem key={col.id} column={col} index={index} onEdit={handleOpenEditModal} onDelete={handleDeleteColumn} />
                             ))}
                         </SortableContext>
                     </div>
-                    <DragOverlay>{activeColumn ? <StageItem column={activeColumn} index={columns.findIndex(c => c.id === activeColumn.id)} /> : null}</DragOverlay>
+                    <DragOverlay>{activeColumn ? <StageItem column={activeColumn} index={currentColumns.findIndex(c => c.id === activeColumn.id)} /> : null}</DragOverlay>
                 </DndContext>
             </div>
             
@@ -302,7 +307,7 @@ const WhatsAppChannelSettings: React.FC = () => {
     };
 
     return (
-        <div className="bg-zinc-800/50 rounded-lg border border-zinc-700">
+        <div className="bg-zinc-900 rounded-lg border border-zinc-800">
             <div className="p-6 border-b border-zinc-700 flex justify-between items-center">
                 <div>
                     <h2 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -361,7 +366,7 @@ const WhatsAppChannelSettings: React.FC = () => {
 
 // --- Placeholder ---
 const PlaceholderTab: React.FC<{ title: string }> = ({ title }) => (
-    <div className="text-center p-10 bg-zinc-800/50 rounded-lg border-2 border-dashed border-zinc-700">
+    <div className="text-center p-10 bg-zinc-900 rounded-lg border-2 border-dashed border-zinc-800">
         <h2 className="text-lg font-semibold text-white">WIP: {title}</h2>
         <p className="text-zinc-400 mt-2">Esta seção estará disponível em breve!</p>
     </div>
