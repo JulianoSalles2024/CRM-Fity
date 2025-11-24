@@ -54,19 +54,19 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     title="Total Ganhos" 
                     value={kpiData.totalWon.toString()} 
                     icon={Goal}
-                    iconColor="text-emerald-500"
+                    iconColor="text-violet-500"
                 />
                 <KpiCard 
                     title="Total Perdidos" 
                     value={kpiData.totalLost.toString()} 
                     icon={XCircle}
-                    iconColor="text-red-500"
+                    iconColor="text-violet-500"
                 />
                  <KpiCard 
                     title="Total em Aberto" 
                     value={kpiData.totalOpen.toString()} 
                     icon={TrendingUp}
-                    iconColor="text-blue-500"
+                    iconColor="text-violet-500"
                 />
             </div>
 
