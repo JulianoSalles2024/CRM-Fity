@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, User, Building, DollarSign, Tag as TagIcon, Clock, Trash2, MessageSquare, ArrowRight, TrendingUp, Sparkles, FileText, Mail, BookOpen, Circle, CheckCircle2 } from 'lucide-react';
@@ -98,20 +99,39 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
 
   const playbookHistoryDetails = useMemo(() => {
     if (!lead.playbookHistory) return [];
-    return lead.playbookHistory
-        .map(historyEntry => ({
-            ...historyEntry,
-            playbook: playbooks.find(p => p.id === historyEntry.playbookId)
-        }))
-        .filter(entry => entry.playbook) // Filter out if playbook not found
-        .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+
+    const sortedHistory = [...lead.playbookHistory].sort(
+      (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+    );
+
+    const uniqueLatestHistory = new Map<Id, PlaybookHistoryEntry & { playbook: Playbook }>();
+
+    for (const historyEntry of sortedHistory) {
+      if (!uniqueLatestHistory.has(historyEntry.playbookId)) {
+        const playbook = playbooks.find(p => p.id === historyEntry.playbookId);
+        if (playbook) {
+          uniqueLatestHistory.set(historyEntry.playbookId, { ...historyEntry, playbook });
+        }
+      }
+    }
+
+    return Array.from(uniqueLatestHistory.values());
   }, [lead.playbookHistory, playbooks]);
 
   const [activeCadenceTab, setActiveCadenceTab] = useState<Id | 'active'>('active');
 
   useEffect(() => {
-    setActiveCadenceTab('active');
-  }, [lead.id, lead.activePlaybook]);
+    // Reset to 'active' tab if there is an active playbook, or to the first history item if not.
+    if (lead.activePlaybook) {
+      setActiveCadenceTab('active');
+    } else if (playbookHistoryDetails.length > 0) {
+      // Check if the current tab is still valid, otherwise switch
+      const currentTabIsValid = activeCadenceTab === 'active' || playbookHistoryDetails.some(h => h.playbookId === activeCadenceTab);
+      if (!currentTabIsValid) {
+        setActiveCadenceTab(playbookHistoryDetails[0].playbookId);
+      }
+    }
+  }, [lead.id, lead.activePlaybook, playbookHistoryDetails]);
 
 
   const getTabIcon = (tabName: string) => {
@@ -207,16 +227,16 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
                     </div>
                     <div className="pl-8 mt-2">
                         <div className="border-b border-zinc-700">
-                            <nav className="flex -mb-px space-x-4" aria-label="Cadence Tabs">
+                            <nav className="flex -mb-px space-x-4 overflow-x-auto" aria-label="Cadence Tabs">
                                 {activePlaybookDetails && (
                                     <button onClick={() => setActiveCadenceTab('active')}
-                                            className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${activeCadenceTab === 'active' ? 'border-violet-500 text-violet-400' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}>
+                                            className={`flex-shrink-0 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${activeCadenceTab === 'active' ? 'border-violet-500 text-violet-400' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}>
                                         Ativa
                                     </button>
                                 )}
                                 {playbookHistoryDetails.map(entry => (
                                     <button key={entry.playbookId} onClick={() => setActiveCadenceTab(entry.playbookId)}
-                                            className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${activeCadenceTab === entry.playbookId ? 'border-violet-500 text-violet-400' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}>
+                                            className={`flex-shrink-0 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${activeCadenceTab === entry.playbookId ? 'border-violet-500 text-violet-400' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}>
                                         {entry.playbookName}
                                     </button>
                                 ))}
