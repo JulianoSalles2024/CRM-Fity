@@ -25,6 +25,7 @@ import CreateEditGroupModal from './components/CreateEditGroupModal';
 import IntegrationsPage from './components/IntegrationsPage';
 import NotificationsView from './components/NotificationsView';
 import PlaybookModal from './components/PlaybookModal';
+import PlaybookSettings from './components/PlaybookSettings';
 
 
 // Types
@@ -439,8 +440,12 @@ const App: React.FC = () => {
         setGroupModalOpen(true);
     };
 
-    const onToggleLeadMinimize = (id: Id) => setMinimizedLeads(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id]);
-    const onToggleColumnMinimize = (id: Id) => setMinimizedColumns(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id]);
+    const onToggleLeadMinimize = (id: Id) => {
+        setMinimizedLeads(p => (p ?? []).includes(id) ? (p ?? []).filter(i => i !== id) : [...(p ?? []), id]);
+    };
+    const onToggleColumnMinimize = (id: Id) => {
+        setMinimizedColumns(p => (p ?? []).includes(id) ? (p ?? []).filter(i => i !== id) : [...(p ?? []), id]);
+    };
 
 
     return (
@@ -463,6 +468,7 @@ const App: React.FC = () => {
                 <main className="flex-1 p-6 overflow-auto dark:bg-zinc-800">
                      {activeView === 'Dashboard' && <Dashboard leads={leads} columns={columns} activities={activities} tasks={tasks} onNavigate={setActiveView} />}
                     {activeView === 'Pipeline' && <KanbanBoard columns={columns} leads={filteredLeads} users={users} cardDisplaySettings={cardDisplaySettings} onUpdateLeadColumn={handleUpdateLeadColumn} onSelectLead={handleSelectLeadForPlaybook} selectedLeadId={selectedLeadForPlaybookId} onAddLead={handleOpenCreateLeadModal} onUpdateCardSettings={setCardDisplaySettings} minimizedLeads={minimizedLeads} onToggleLeadMinimize={onToggleLeadMinimize} minimizedColumns={minimizedColumns} onToggleColumnMinimize={onToggleColumnMinimize} isPlaybookActionEnabled={!!selectedLeadForPlaybookId} onApplyPlaybookClick={() => setPlaybookModalOpen(true)} />}
+                    {activeView === 'Playbooks' && <PlaybookSettings initialPlaybooks={playbooks} onSave={handleUpdatePlaybooks} pipelineColumns={columns} />}
                     {activeView === 'Leads' && <LeadListView viewType="Leads" leads={listViewFilteredLeads} columns={columns} onLeadClick={setSelectedLead} listDisplaySettings={listDisplaySettings} onUpdateListSettings={setListDisplaySettings} allTags={tags} selectedTags={listSelectedTags} onSelectedTagsChange={setListSelectedTags} statusFilter={listStatusFilter} onStatusFilterChange={setListStatusFilter} />}
                     {activeView === 'Clientes' && <LeadListView viewType="Clientes" leads={listViewFilteredLeads.filter(l => l.columnId === 'closed')} columns={columns} onLeadClick={setSelectedLead} listDisplaySettings={listDisplaySettings} onUpdateListSettings={setListDisplaySettings} allTags={tags} selectedTags={listSelectedTags} onSelectedTagsChange={setListSelectedTags} statusFilter={listStatusFilter} onStatusFilterChange={setListStatusFilter} />}
                     {activeView === 'Tarefas' && <ActivitiesView tasks={tasks} leads={leads} onEditTask={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
@@ -494,7 +500,7 @@ const App: React.FC = () => {
                     )}
                     {activeView === 'Integrações' && <IntegrationsPage showNotification={showNotification} />}
                     {activeView === 'Notificações' && <NotificationsView notifications={notifications} onMarkAsRead={handleMarkAsRead} onMarkAllAsRead={handleMarkAllAsRead} onClearAll={handleClearAllNotifications} onNavigate={handleNotificationClick} />}
-                    {activeView === 'Configurações' && <SettingsPage currentUser={localUser} onUpdateProfile={() => {}} columns={columns} onUpdatePipeline={handleUpdatePipeline} playbooks={playbooks} onUpdatePlaybooks={handleUpdatePlaybooks}/>}
+                    {activeView === 'Configurações' && <SettingsPage currentUser={localUser} onUpdateProfile={() => {}} columns={columns} onUpdatePipeline={handleUpdatePipeline} />}
                 </main>
             </div>
             

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Columns, Users, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap, Bell, HelpCircle, MessageSquare, ToyBrick } from 'lucide-react';
+import { LayoutDashboard, Columns, Users, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap, Bell, HelpCircle, MessageSquare, ToyBrick, BookOpen } from 'lucide-react';
 
 interface SidebarProps {
     activeView: string;
@@ -34,6 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, 
   const mainNavItems = [
     { icon: LayoutDashboard, label: 'Dashboard' },
     { icon: Columns, label: 'Pipeline' },
+    { icon: BookOpen, label: 'Playbooks' },
     { icon: Users, label: 'Leads' },
     { icon: Contact, label: 'Clientes' },
     { icon: ClipboardList, label: 'Tarefas' },

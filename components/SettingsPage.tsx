@@ -377,20 +377,17 @@ const PlaceholderTab: React.FC<{ title: string }> = ({ title }) => (
 // --- Componente Principal ---
 interface SettingsPageProps {
     currentUser: User;
-    columns: ColumnData[];
-    playbooks: Playbook[];
+    columns: ColumnData;
     onUpdateProfile: (name: string, avatarFile?: File) => void;
     onUpdatePipeline: (columns: ColumnData[]) => void;
-    onUpdatePlaybooks: (playbooks: Playbook[]) => void;
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, playbooks, onUpdateProfile, onUpdatePipeline, onUpdatePlaybooks }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpdateProfile, onUpdatePipeline }) => {
     const [activeTab, setActiveTab] = useState('Pipeline');
 
     const tabs = [
         { name: 'Perfil', icon: UserIcon },
         { name: 'Pipeline', icon: Settings },
-        { name: 'Playbooks', icon: BookOpen },
         { name: 'Preferências', icon: SlidersHorizontal },
         { name: 'Integrações', icon: Webhook },
         { name: 'Notificações', icon: Bell },
@@ -423,7 +420,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, playb
             <div>
                 {activeTab === 'Perfil' && <ProfileSettings currentUser={currentUser} onUpdateProfile={onUpdateProfile} />}
                 {activeTab === 'Pipeline' && <PipelineSettings columns={columns} onUpdatePipeline={onUpdatePipeline} />}
-                {activeTab === 'Playbooks' && <PlaybookSettings initialPlaybooks={playbooks} onSave={onUpdatePlaybooks} pipelineColumns={columns} />}
                 {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />}
                 {activeTab === 'Integrações' && <WhatsAppChannelSettings />}
                 {activeTab === 'Notificações' && <NotificationSettings />}
