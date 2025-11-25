@@ -194,16 +194,39 @@ const App: React.FC = () => {
     const handleUpdateLeadColumn = async (leadId: Id, newColumnId: Id) => {
         const leadToMove = leads.find(l => l.id === leadId);
         if (!leadToMove || leadToMove.columnId === newColumnId) return;
-
+    
+        let updatedLead: Lead = { ...leadToMove, columnId: newColumnId, lastActivity: 'agora' };
+        let reActivatedPlaybookName: string | null = null;
+    
+        // Logic to re-activate a recently completed playbook if moving back
+        if (leadToMove.playbookHistory && leadToMove.playbookHistory.length > 0) {
+            const lastCompleted = leadToMove.playbookHistory[leadToMove.playbookHistory.length - 1];
+            const playbookDetails = playbooks.find(p => p.id === lastCompleted.playbookId);
+    
+            if (playbookDetails && playbookDetails.stages.includes(newColumnId)) {
+                // Re-activate the playbook
+                const newHistory = leadToMove.playbookHistory.slice(0, -1);
+                updatedLead.activePlaybook = {
+                    playbookId: lastCompleted.playbookId,
+                    playbookName: lastCompleted.playbookName,
+                    startedAt: lastCompleted.startedAt, // Keep original start date
+                };
+                updatedLead.playbookHistory = newHistory;
+                reActivatedPlaybookName = lastCompleted.playbookName;
+            }
+        }
+    
         setLeads(currentLeads =>
-            currentLeads.map(l =>
-                l.id === leadId ? { ...l, columnId: newColumnId, lastActivity: 'agora' } : l
-            )
+            currentLeads.map(l => (l.id === leadId ? updatedLead : l))
         );
-        
+    
+        if (reActivatedPlaybookName) {
+            showNotification(`Cadência "${reActivatedPlaybookName}" foi reativada.`, 'info');
+        }
+    
         const oldColumnName = columns.find(c => c.id === leadToMove.columnId)?.title;
         const newColumnName = columns.find(c => c.id === newColumnId)?.title;
-        if(oldColumnName && newColumnName) {
+        if (oldColumnName && newColumnName) {
             createActivityLog(leadId, 'status_change', `Status alterado de '${oldColumnName}' para '${newColumnName}'.`);
         }
     };
