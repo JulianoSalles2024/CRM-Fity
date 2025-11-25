@@ -194,42 +194,60 @@ const App: React.FC = () => {
     const handleUpdateLeadColumn = async (leadId: Id, newColumnId: Id) => {
         const leadToMove = leads.find(l => l.id === leadId);
         if (!leadToMove || leadToMove.columnId === newColumnId) return;
-    
+
         let updatedLead: Lead = { ...leadToMove, columnId: newColumnId, lastActivity: 'agora' };
-        let reActivatedPlaybookName: string | null = null;
-    
-        // Logic to re-activate a recently completed playbook if moving back
-        if (leadToMove.playbookHistory && leadToMove.playbookHistory.length > 0) {
-            const lastCompleted = leadToMove.playbookHistory[leadToMove.playbookHistory.length - 1];
+        let notificationMessage: string | null = null;
+        let notificationType: 'info' | 'success' = 'info';
+
+        // 1. Check if we are moving back and should re-activate a playbook
+        const canReactivate = leadToMove.playbookHistory && leadToMove.playbookHistory.length > 0 && !leadToMove.activePlaybook;
+        if (canReactivate) {
+            const lastCompleted = leadToMove.playbookHistory![leadToMove.playbookHistory!.length - 1];
             const playbookDetails = playbooks.find(p => p.id === lastCompleted.playbookId);
-    
+
             if (playbookDetails && playbookDetails.stages.includes(newColumnId)) {
-                // Re-activate the playbook
-                const newHistory = leadToMove.playbookHistory.slice(0, -1);
+                const newHistory = leadToMove.playbookHistory!.slice(0, -1);
                 updatedLead.activePlaybook = {
                     playbookId: lastCompleted.playbookId,
                     playbookName: lastCompleted.playbookName,
-                    startedAt: lastCompleted.startedAt, // Keep original start date
+                    startedAt: lastCompleted.startedAt,
                 };
                 updatedLead.playbookHistory = newHistory;
-                reActivatedPlaybookName = lastCompleted.playbookName;
+                notificationMessage = `Cadência "${lastCompleted.playbookName}" foi reativada.`;
+                notificationType = 'info';
             }
+        } 
+        // 2. If not re-activating, check if we should complete an active playbook because the stage changed
+        else if (leadToMove.activePlaybook) {
+            const historyEntry: PlaybookHistoryEntry = {
+                playbookId: leadToMove.activePlaybook.playbookId,
+                playbookName: leadToMove.activePlaybook.playbookName,
+                startedAt: leadToMove.activePlaybook.startedAt,
+                completedAt: new Date().toISOString(),
+            };
+            updatedLead.activePlaybook = undefined;
+            updatedLead.playbookHistory = [...(leadToMove.playbookHistory || []), historyEntry];
+            notificationMessage = `Cadência "${historyEntry.playbookName}" concluída ao mover o lead.`;
+            notificationType = 'success';
         }
-    
+
+        // 3. Update state and show notification
         setLeads(currentLeads =>
             currentLeads.map(l => (l.id === leadId ? updatedLead : l))
         );
-    
-        if (reActivatedPlaybookName) {
-            showNotification(`Cadência "${reActivatedPlaybookName}" foi reativada.`, 'info');
+
+        if (notificationMessage) {
+            showNotification(notificationMessage, notificationType);
         }
-    
+
+        // 4. Log activity
         const oldColumnName = columns.find(c => c.id === leadToMove.columnId)?.title;
         const newColumnName = columns.find(c => c.id === newColumnId)?.title;
         if (oldColumnName && newColumnName) {
             createActivityLog(leadId, 'status_change', `Status alterado de '${oldColumnName}' para '${newColumnName}'.`);
         }
     };
+
 
     const handleUpdateLeadDetails = async (leadId: Id, updates: UpdateLeadData) => {
         setLeads(current => current.map(lead => lead.id === leadId ? { ...lead, ...updates } : lead));
