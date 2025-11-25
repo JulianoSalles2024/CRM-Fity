@@ -1,16 +1,16 @@
 
-
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { X, User, Building, DollarSign, Tag as TagIcon, Clock, Trash2, MessageSquare, ArrowRight, TrendingUp, Sparkles, FileText, Mail } from 'lucide-react';
-import type { Lead, Tag, Activity, EmailDraft, Id, CreateEmailDraftData, Tone } from '../types';
+import { X, User, Building, DollarSign, Tag as TagIcon, Clock, Trash2, MessageSquare, ArrowRight, TrendingUp, Sparkles, FileText, Mail, BookOpen, Circle, CheckCircle2 } from 'lucide-react';
+import type { Lead, Tag, Activity, EmailDraft, Id, CreateEmailDraftData, Tone, Playbook, Task } from '../types';
 import AIComposer from './AIComposer';
 
 interface LeadDetailSlideoverProps {
   lead: Lead;
   activities: Activity[];
   emailDrafts: EmailDraft[];
+  tasks: Task[];
+  playbooks: Playbook[];
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -20,6 +20,7 @@ interface LeadDetailSlideoverProps {
   onSaveDraft: (draftData: CreateEmailDraftData) => void;
   onDeleteDraft: (draftId: Id) => void;
   showNotification: (message: string, type: 'success' | 'error' | 'info') => void;
+  onUpdateTaskStatus: (taskId: Id, status: 'pending' | 'completed') => void;
 }
 
 const TagPill: React.FC<{ tag: Tag }> = ({ tag }) => (
@@ -46,7 +47,7 @@ const formatTimestamp = (timestamp: string) => {
     return date.toLocaleString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
-const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activities, emailDrafts, onClose, onEdit, onDelete, onAddNote, onSendEmailActivity, onAddTask, onSaveDraft, onDeleteDraft, showNotification }) => {
+const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activities, emailDrafts, tasks, playbooks, onClose, onEdit, onDelete, onAddNote, onSendEmailActivity, onAddTask, onSaveDraft, onDeleteDraft, showNotification, onUpdateTaskStatus }) => {
   const [activeTab, setActiveTab] = useState('Visão Geral');
   const tabs = ['Visão Geral', 'AI Composer', 'Atividades', 'Rascunhos'];
   const [newNote, setNewNote] = useState('');
@@ -89,6 +90,11 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
     onSendEmailActivity(email.subject);
     showNotification('Seu cliente de e-mail foi aberto para envio.', 'success');
   };
+
+  const activePlaybookDetails = useMemo(() => {
+    if (!lead.activePlaybook) return null;
+    return playbooks.find(p => p.id === lead.activePlaybook?.playbookId);
+  }, [lead.activePlaybook, playbooks]);
 
 
   const getTabIcon = (tabName: string) => {
@@ -173,6 +179,41 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
                 </div>
             </DetailItem>
             <DetailItem icon={Clock} label="Última Atividade">{lead.lastActivity}</DetailItem>
+
+             {activePlaybookDetails && (
+                <div>
+                    <div className="flex items-start gap-3">
+                        <BookOpen className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
+                        <div className="flex flex-col w-full">
+                            <span className="text-sm text-zinc-500 dark:text-zinc-400">Cadência Ativa</span>
+                            <span className="text-md font-medium text-zinc-800 dark:text-gray-200">{activePlaybookDetails.name}</span>
+                        </div>
+                    </div>
+                    <ul className="mt-4 space-y-2 pl-8">
+                        {activePlaybookDetails.steps.map((step, index) => {
+                            const associatedTask = tasks.find(t => t.leadId === lead.id && t.playbookId === activePlaybookDetails.id && t.playbookStepIndex === index);
+                            const isCompleted = associatedTask?.status === 'completed';
+                            
+                            const handleToggle = () => {
+                                if (associatedTask) {
+                                    onUpdateTaskStatus(associatedTask.id, isCompleted ? 'pending' : 'completed');
+                                }
+                            };
+
+                            return (
+                                <li key={index} className="flex items-center gap-3 text-sm">
+                                    <button onClick={handleToggle} className="flex-shrink-0" disabled={!associatedTask}>
+                                    {isCompleted ? <CheckCircle2 className="w-5 h-5 text-green-400" /> : <Circle className="w-5 h-5 text-zinc-600 hover:text-zinc-400" />}
+                                    </button>
+                                    <span className={`font-semibold ${isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-300'}`}>D+{step.day}:</span>
+                                    <span className={`${isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-400'}`}>{step.instructions}</span>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
+            )}
+
           </div>
         )}
         {activeTab === 'AI Composer' && (

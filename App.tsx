@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -238,7 +239,40 @@ const App: React.FC = () => {
     };
 
     const handleUpdateTaskStatus = async (taskId: Id, status: 'pending' | 'completed') => {
-        setTasks(current => current.map(t => t.id === taskId ? { ...t, status } : t));
+        let taskToUpdate: Task | undefined;
+        const newTasks = tasks.map(t => {
+            if (t.id === taskId) {
+                taskToUpdate = { ...t, status };
+                return taskToUpdate;
+            }
+            return t;
+        });
+        setTasks(newTasks);
+
+        if (status === 'completed' && taskToUpdate?.playbookId) {
+            const lead = leads.find(l => l.id === taskToUpdate!.leadId);
+            const playbook = playbooks.find(p => p.id === taskToUpdate!.playbookId);
+            if (!lead || !lead.activePlaybook || !playbook) return;
+
+            const playbookTasks = newTasks.filter(t => t.leadId === lead.id && t.playbookId === playbook.id);
+            const allComplete = playbookTasks.every(t => t.status === 'completed');
+
+            if (allComplete && playbookTasks.length >= playbook.steps.length) {
+                const currentStageIndex = columns.findIndex(c => c.id === lead.columnId);
+                const nextStage = columns[currentStageIndex + 1];
+
+                if (nextStage && nextStage.id !== 'lost' && nextStage.id !== 'closed') {
+                    const updatedLead = { ...lead, activePlaybook: undefined, columnId: nextStage.id, lastActivity: 'agora' };
+                    setLeads(current => current.map(l => l.id === lead.id ? updatedLead : l));
+                    showNotification(`Playbook concluído! Lead movido para ${nextStage.title}.`, 'success');
+                    createActivityLog(lead.id, 'status_change', `Status alterado de '${columns[currentStageIndex].title}' para '${nextStage.title}' (Playbook Automático).`);
+                } else {
+                     const updatedLead = { ...lead, activePlaybook: undefined, lastActivity: 'agora' };
+                     setLeads(current => current.map(l => l.id === lead.id ? updatedLead : l));
+                     showNotification(`Playbook "${playbook.name}" concluído!`, 'success');
+                }
+            }
+        }
     };
 
     // Pipeline
@@ -254,13 +288,11 @@ const App: React.FC = () => {
     };
     const handleSelectLeadForPlaybook = (leadId: Id) => {
         if (selectedLeadForPlaybookId === leadId) {
-            // If clicking the same lead, open its detail view and deselect for playbook
             const leadToView = leads.find(l => l.id === leadId);
             if (leadToView) setSelectedLead(leadToView);
             setSelectedLeadForPlaybookId(null);
         } else {
-            // If clicking a new lead, select it for playbook
-            setSelectedLead(null); // Close any open slideover
+            setSelectedLead(null);
             setSelectedLeadForPlaybookId(leadId);
         }
     };
@@ -277,11 +309,11 @@ const App: React.FC = () => {
         const playbook = playbooks.find(p => p.id === playbookId);
         if (!playbook) return;
 
-        const newTasks: Task[] = playbook.steps.map(step => {
+        const newTasks: Task[] = playbook.steps.map((step, index) => {
             const dueDate = new Date();
             dueDate.setDate(dueDate.getDate() + step.day);
             return {
-                id: `task-${Date.now()}-${Math.random()}`,
+                id: `task-${Date.now()}-${index}`,
                 leadId: selectedLeadForPlaybook.id,
                 userId: localUser.id,
                 type: step.type,
@@ -289,6 +321,7 @@ const App: React.FC = () => {
                 dueDate: dueDate.toISOString(),
                 status: 'pending',
                 playbookId: playbook.id,
+                playbookStepIndex: index,
             };
         });
 
@@ -456,6 +489,8 @@ const App: React.FC = () => {
                         lead={selectedLead}
                         activities={activities.filter(a => a.leadId === selectedLead.id)}
                         emailDrafts={emailDrafts.filter(d => d.leadId === selectedLead.id)}
+                        tasks={tasks}
+                        playbooks={playbooks}
                         onClose={() => setSelectedLead(null)}
                         onEdit={() => handleOpenEditLeadModal(selectedLead)}
                         onDelete={() => handleDeleteLead(selectedLead.id)}
@@ -465,6 +500,7 @@ const App: React.FC = () => {
                         onSaveDraft={handleSaveDraft}
                         onDeleteDraft={handleDeleteDraft}
                         showNotification={showNotification}
+                        onUpdateTaskStatus={handleUpdateTaskStatus}
                     />
                 )}
             </AnimatePresence>

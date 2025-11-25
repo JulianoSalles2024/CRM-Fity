@@ -89,6 +89,7 @@ export interface Task {
     leadId: Id;
     userId: string;
     playbookId?: Id;
+    playbookStepIndex?: number;
 }
 
 export type Tone = 'Amigável' | 'Formal' | 'Urgente' | 'Persuasivo' | 'Profissional' | 'Entusiástico' | 'Educacional';
