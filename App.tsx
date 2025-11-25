@@ -108,8 +108,8 @@ const App: React.FC = () => {
     const [listDisplaySettings, setListDisplaySettings] = useLocalStorage<ListDisplaySettings>('crm-listSettings', {
         showStatus: true, showValue: true, showTags: true, showLastActivity: true, showEmail: true, showPhone: false, showCreatedAt: true,
     });
-    const [minimizedLeads, setMinimizedLeads] = useState<Id[]>([]);
-    const [minimizedColumns, setMinimizedColumns] = useState<Id[]>([]);
+    const [minimizedLeads, setMinimizedLeads] = useLocalStorage<Id[]>('crm-minimizedLeads', []);
+    const [minimizedColumns, setMinimizedColumns] = useLocalStorage<Id[]>('crm-minimizedColumns', []);
     const [listSelectedTags, setListSelectedTags] = useState<Tag[]>([]);
     const [listStatusFilter, setListStatusFilter] = useState<'all' | 'Ativo' | 'Inativo'>('all');
     const [selectedGroupForView, setSelectedGroupForView] = useState<Id | null>(null);
@@ -196,7 +196,7 @@ const App: React.FC = () => {
 
         setLeads(currentLeads =>
             currentLeads.map(l =>
-                l.id === leadId ? { ...l, columnId: newColumnId, lastActivity: 'agora', activePlaybook: undefined } : l
+                l.id === leadId ? { ...l, columnId: newColumnId, lastActivity: 'agora' } : l
             )
         );
         
@@ -439,6 +439,10 @@ const App: React.FC = () => {
         setGroupModalOpen(true);
     };
 
+    const onToggleLeadMinimize = (id: Id) => setMinimizedLeads(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id]);
+    const onToggleColumnMinimize = (id: Id) => setMinimizedColumns(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id]);
+
+
     return (
         <div className="flex h-screen w-full bg-gray-50 dark:bg-zinc-900 text-zinc-800 dark:text-gray-200 font-sans antialiased overflow-hidden">
             <Sidebar activeView={activeView} onNavigate={setActiveView} isCollapsed={isSidebarCollapsed} onToggle={() => setSidebarCollapsed(p => !p)} isChatEnabled={isChatEnabled} />
@@ -458,7 +462,7 @@ const App: React.FC = () => {
                 
                 <main className="flex-1 p-6 overflow-auto dark:bg-zinc-800">
                      {activeView === 'Dashboard' && <Dashboard leads={leads} columns={columns} activities={activities} tasks={tasks} onNavigate={setActiveView} />}
-                    {activeView === 'Pipeline' && <KanbanBoard columns={columns} leads={filteredLeads} users={users} cardDisplaySettings={cardDisplaySettings} onUpdateLeadColumn={handleUpdateLeadColumn} onSelectLead={handleSelectLeadForPlaybook} selectedLeadId={selectedLeadForPlaybookId} onAddLead={handleOpenCreateLeadModal} onUpdateCardSettings={setCardDisplaySettings} minimizedLeads={minimizedLeads} onToggleLeadMinimize={(id) => setMinimizedLeads(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id])} minimizedColumns={minimizedColumns} onToggleColumnMinimize={(id) => setMinimizedColumns(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id])} isPlaybookActionEnabled={!!selectedLeadForPlaybookId} onApplyPlaybookClick={() => setPlaybookModalOpen(true)} />}
+                    {activeView === 'Pipeline' && <KanbanBoard columns={columns} leads={filteredLeads} users={users} cardDisplaySettings={cardDisplaySettings} onUpdateLeadColumn={handleUpdateLeadColumn} onSelectLead={handleSelectLeadForPlaybook} selectedLeadId={selectedLeadForPlaybookId} onAddLead={handleOpenCreateLeadModal} onUpdateCardSettings={setCardDisplaySettings} minimizedLeads={minimizedLeads} onToggleLeadMinimize={onToggleLeadMinimize} minimizedColumns={minimizedColumns} onToggleColumnMinimize={onToggleColumnMinimize} isPlaybookActionEnabled={!!selectedLeadForPlaybookId} onApplyPlaybookClick={() => setPlaybookModalOpen(true)} />}
                     {activeView === 'Leads' && <LeadListView viewType="Leads" leads={listViewFilteredLeads} columns={columns} onLeadClick={setSelectedLead} listDisplaySettings={listDisplaySettings} onUpdateListSettings={setListDisplaySettings} allTags={tags} selectedTags={listSelectedTags} onSelectedTagsChange={setListSelectedTags} statusFilter={listStatusFilter} onStatusFilterChange={setListStatusFilter} />}
                     {activeView === 'Clientes' && <LeadListView viewType="Clientes" leads={listViewFilteredLeads.filter(l => l.columnId === 'closed')} columns={columns} onLeadClick={setSelectedLead} listDisplaySettings={listDisplaySettings} onUpdateListSettings={setListDisplaySettings} allTags={tags} selectedTags={listSelectedTags} onSelectedTagsChange={setListSelectedTags} statusFilter={listStatusFilter} onStatusFilterChange={setListStatusFilter} />}
                     {activeView === 'Tarefas' && <ActivitiesView tasks={tasks} leads={leads} onEditTask={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
