@@ -1,7 +1,7 @@
 
 
 import React, { useState } from 'react';
-import { SlidersHorizontal, Columns } from 'lucide-react';
+import { SlidersHorizontal, Columns, BookOpen } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import CardCustomizationPopup from './CardCustomizationPopup';
 import type { CardDisplaySettings } from '../types';
@@ -9,9 +9,11 @@ import type { CardDisplaySettings } from '../types';
 interface PipelineHeaderProps {
     cardDisplaySettings: CardDisplaySettings;
     onUpdateCardSettings: (newSettings: CardDisplaySettings) => void;
+    isPlaybookActionEnabled: boolean;
+    onApplyPlaybookClick: () => void;
 }
 
-const PipelineHeader: React.FC<PipelineHeaderProps> = ({ cardDisplaySettings, onUpdateCardSettings }) => {
+const PipelineHeader: React.FC<PipelineHeaderProps> = ({ cardDisplaySettings, onUpdateCardSettings, isPlaybookActionEnabled, onApplyPlaybookClick }) => {
     const [isCustomizeOpen, setCustomizeOpen] = useState(false);
 
     return (
@@ -25,6 +27,14 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({ cardDisplaySettings, on
             </div>
 
             <div className="flex items-center gap-2">
+                 <button
+                    onClick={onApplyPlaybookClick}
+                    disabled={!isPlaybookActionEnabled}
+                    className="flex items-center gap-2 text-sm text-white bg-violet-600 px-3 py-1.5 rounded-md font-semibold transition-colors hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <BookOpen className="w-4 h-4" />
+                    <span>Aplicar Playbook</span>
+                </button>
                  <div className="relative">
                     <button
                         onClick={() => setCustomizeOpen(prev => !prev)}

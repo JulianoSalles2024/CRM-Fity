@@ -57,6 +57,11 @@ export interface Lead {
   source?: string;
   createdAt?: string;
   groupInfo?: GroupInfo;
+  activePlaybook?: {
+    playbookId: Id;
+    playbookName: string;
+    startedAt: string; // ISO string date
+  };
 }
 
 export interface ColumnData {
@@ -83,6 +88,7 @@ export interface Task {
     status: 'pending' | 'completed';
     leadId: Id;
     userId: string;
+    playbookId?: Id;
 }
 
 export type Tone = 'Amigável' | 'Formal' | 'Urgente' | 'Persuasivo' | 'Profissional' | 'Entusiástico' | 'Educacional';
@@ -170,6 +176,19 @@ export interface Notification {
   };
   isRead: boolean;
   createdAt: string; // ISO string
+}
+
+export interface PlaybookStep {
+  day: number;
+  type: Task['type'];
+  instructions: string;
+}
+
+export interface Playbook {
+  id: Id;
+  name: string;
+  stages: Id[]; // Which pipeline stages this playbook applies to
+  steps: PlaybookStep[];
 }
 
 

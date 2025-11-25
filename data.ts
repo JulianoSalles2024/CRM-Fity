@@ -1,4 +1,4 @@
-import { ColumnData, Lead, Activity, User, Task, Tag, EmailDraft, ChatConversation, ChatMessage, Group, Notification } from './types';
+import { ColumnData, Lead, Activity, User, Task, Tag, EmailDraft, ChatConversation, ChatMessage, Group, Notification, Playbook } from './types';
 
 export const initialUsers: User[] = [
   { id: 'user1', name: 'John Doe', email: 'john.doe@example.com' },
@@ -369,9 +369,33 @@ export const initialNotifications: Notification[] = [
         id: 'notif-5',
         userId: 'user1',
         type: 'system_update',
-        text: 'O Fity AI CRM foi atualizado com novos recursos de relatórios.',
-        link: { view: 'Relatórios' },
+        text: 'O CRM foi atualizado com novos recursos de relatórios.',
         isRead: true,
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(), // 7 days ago
     }
+];
+
+export const initialPlaybooks: Playbook[] = [
+  {
+    id: 'playbook-1',
+    name: 'Prospecção Inicial (5 dias)',
+    stages: ['prospect'],
+    steps: [
+      { day: 1, type: 'email', instructions: 'Enviar e-mail de introdução com material de apresentação.' },
+      { day: 2, type: 'call', instructions: 'Ligar para confirmar o recebimento do e-mail e qualificar o interesse inicial.' },
+      { day: 3, type: 'task', instructions: 'Conectar no LinkedIn e interagir com uma postagem recente.' },
+      { day: 5, type: 'email', instructions: 'Enviar e-mail de follow-up com um case de sucesso relevante.' },
+      { day: 5, type: 'call', instructions: 'Ligar para tentar agendar uma demonstração.' },
+    ],
+  },
+  {
+    id: 'playbook-2',
+    name: 'Follow-up Pós-Proposta',
+    stages: ['proposal', 'negotiation'],
+    steps: [
+      { day: 1, type: 'email', instructions: 'Enviar e-mail de agradecimento e confirmar recebimento da proposta.' },
+      { day: 3, type: 'call', instructions: 'Ligar para tirar dúvidas sobre a proposta e identificar próximos passos.' },
+      { day: 7, type: 'email', instructions: 'Enviar e-mail de follow-up com informações adicionais ou respondendo a uma dor específica.' },
+    ],
+  },
 ];

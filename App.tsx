@@ -22,12 +22,14 @@ import GroupsDashboard from './components/GroupsDashboard';
 import CreateEditGroupModal from './components/CreateEditGroupModal';
 import IntegrationsPage from './components/IntegrationsPage';
 import NotificationsView from './components/NotificationsView';
+import PlaybookModal from './components/PlaybookModal';
+
 
 // Types
-import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, Notification as NotificationType } from './types';
+import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, Notification as NotificationType, Playbook } from './types';
 
 // Data
-import { initialColumns, initialTags, initialLeads, initialTasks, initialActivities, initialUsers, initialGroups, initialConversations, initialMessages, initialNotifications } from './data';
+import { initialColumns, initialTags, initialLeads, initialTasks, initialActivities, initialUsers, initialGroups, initialConversations, initialMessages, initialNotifications, initialPlaybooks } from './data';
 
 const localUser: User = { id: 'local-user', name: 'Usuário Local', email: 'user@local.com' };
 
@@ -71,6 +73,8 @@ const App: React.FC = () => {
     const [groups, setGroups] = useLocalStorage<Group[]>('crm-groups', initialGroups);
     const [groupAnalyses, setGroupAnalyses] = useLocalStorage<GroupAnalysis[]>('crm-groupAnalyses', []);
     const [notifications, setNotifications] = useLocalStorage<NotificationType[]>('crm-notifications', initialNotifications);
+    const [playbooks, setPlaybooks] = useLocalStorage<Playbook[]>('crm-playbooks', initialPlaybooks);
+
 
     const [activeView, setActiveView] = useState('Dashboard');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -91,6 +95,12 @@ const App: React.FC = () => {
     // Notification State
     const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
     
+    // Playbook states
+    const [selectedLeadForPlaybookId, setSelectedLeadForPlaybookId] = useState<Id | null>(null);
+    const [isPlaybookModalOpen, setPlaybookModalOpen] = useState(false);
+    const selectedLeadForPlaybook = useMemo(() => leads.find(l => l.id === selectedLeadForPlaybookId), [leads, selectedLeadForPlaybookId]);
+
+
     // Display Settings
     const [cardDisplaySettings, setCardDisplaySettings] = useLocalStorage<CardDisplaySettings>('crm-cardSettings', {
         showCompany: true, showValue: true, showTags: true, showAssignedTo: true, showDueDate: false, showProbability: false, showEmail: false, showPhone: false, showCreatedAt: false, showStage: false,
@@ -232,11 +242,76 @@ const App: React.FC = () => {
     };
 
     // Pipeline
-    const handleSavePipeline = async (newColumns: ColumnData[]) => {
+    const handleUpdatePipeline = async (newColumns: ColumnData[]) => {
         setColumns(newColumns);
         showNotification("Funil de vendas atualizado.", 'success');
     };
     
+    // Playbooks
+    const handleUpdatePlaybooks = (updatedPlaybooks: Playbook[]) => {
+        setPlaybooks(updatedPlaybooks);
+        showNotification("Playbooks atualizados com sucesso.", 'success');
+    };
+    const handleSelectLeadForPlaybook = (leadId: Id) => {
+        if (selectedLeadForPlaybookId === leadId) {
+            // If clicking the same lead, open its detail view and deselect for playbook
+            const leadToView = leads.find(l => l.id === leadId);
+            if (leadToView) setSelectedLead(leadToView);
+            setSelectedLeadForPlaybookId(null);
+        } else {
+            // If clicking a new lead, select it for playbook
+            setSelectedLead(null); // Close any open slideover
+            setSelectedLeadForPlaybookId(leadId);
+        }
+    };
+
+    const handleApplyPlaybook = (playbookId: Id) => {
+        if (!selectedLeadForPlaybook) return;
+
+        if (selectedLeadForPlaybook.activePlaybook) {
+            showNotification("Este lead já possui um playbook ativo.", "error");
+            setPlaybookModalOpen(false);
+            return;
+        }
+
+        const playbook = playbooks.find(p => p.id === playbookId);
+        if (!playbook) return;
+
+        const newTasks: Task[] = playbook.steps.map(step => {
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + step.day);
+            return {
+                id: `task-${Date.now()}-${Math.random()}`,
+                leadId: selectedLeadForPlaybook.id,
+                userId: localUser.id,
+                type: step.type,
+                title: step.instructions,
+                dueDate: dueDate.toISOString(),
+                status: 'pending',
+                playbookId: playbook.id,
+            };
+        });
+
+        setTasks(current => [...current, ...newTasks]);
+        
+        const updatedLead: Lead = {
+            ...selectedLeadForPlaybook,
+            activePlaybook: {
+                playbookId: playbook.id,
+                playbookName: playbook.name,
+                startedAt: new Date().toISOString(),
+            }
+        };
+
+        setLeads(current => current.map(l => l.id === updatedLead.id ? updatedLead : l));
+        
+        showNotification(`Playbook "${playbook.name}" aplicado a ${selectedLeadForPlaybook.name}. ${newTasks.length} tarefas criadas.`, 'success');
+        
+        setPlaybookModalOpen(false);
+        setSelectedLeadForPlaybookId(null);
+    };
+
+
     // Notifications
     const handleMarkAsRead = async (notificationId: Id) => setNotifications(c => c.map(n => n.id === notificationId ? {...n, isRead: true} : n));
     const handleMarkAllAsRead = async () => setNotifications(c => c.map(n => ({...n, isRead: true})));
@@ -337,7 +412,7 @@ const App: React.FC = () => {
                 
                 <main className="flex-1 p-6 overflow-auto dark:bg-zinc-800">
                      {activeView === 'Dashboard' && <Dashboard leads={leads} columns={columns} activities={activities} tasks={tasks} onNavigate={setActiveView} />}
-                    {activeView === 'Pipeline' && <KanbanBoard columns={columns} leads={filteredLeads} users={users} cardDisplaySettings={cardDisplaySettings} onUpdateLeadColumn={handleUpdateLeadColumn} onLeadClick={setSelectedLead} onAddLead={handleOpenCreateLeadModal} onUpdateCardSettings={setCardDisplaySettings} minimizedLeads={minimizedLeads} onToggleLeadMinimize={(id) => setMinimizedLeads(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id])} minimizedColumns={minimizedColumns} onToggleColumnMinimize={(id) => setMinimizedColumns(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id])} />}
+                    {activeView === 'Pipeline' && <KanbanBoard columns={columns} leads={filteredLeads} users={users} cardDisplaySettings={cardDisplaySettings} onUpdateLeadColumn={handleUpdateLeadColumn} onSelectLead={handleSelectLeadForPlaybook} selectedLeadId={selectedLeadForPlaybookId} onAddLead={handleOpenCreateLeadModal} onUpdateCardSettings={setCardDisplaySettings} minimizedLeads={minimizedLeads} onToggleLeadMinimize={(id) => setMinimizedLeads(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id])} minimizedColumns={minimizedColumns} onToggleColumnMinimize={(id) => setMinimizedColumns(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id])} isPlaybookActionEnabled={!!selectedLeadForPlaybookId} onApplyPlaybookClick={() => setPlaybookModalOpen(true)} />}
                     {activeView === 'Leads' && <LeadListView viewType="Leads" leads={listViewFilteredLeads} columns={columns} onLeadClick={setSelectedLead} listDisplaySettings={listDisplaySettings} onUpdateListSettings={setListDisplaySettings} allTags={tags} selectedTags={listSelectedTags} onSelectedTagsChange={setListSelectedTags} statusFilter={listStatusFilter} onStatusFilterChange={setListStatusFilter} />}
                     {activeView === 'Clientes' && <LeadListView viewType="Clientes" leads={listViewFilteredLeads.filter(l => l.columnId === 'closed')} columns={columns} onLeadClick={setSelectedLead} listDisplaySettings={listDisplaySettings} onUpdateListSettings={setListDisplaySettings} allTags={tags} selectedTags={listSelectedTags} onSelectedTagsChange={setListSelectedTags} statusFilter={listStatusFilter} onStatusFilterChange={setListStatusFilter} />}
                     {activeView === 'Tarefas' && <ActivitiesView tasks={tasks} leads={leads} onEditTask={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
@@ -369,7 +444,7 @@ const App: React.FC = () => {
                     )}
                     {activeView === 'Integrações' && <IntegrationsPage showNotification={showNotification} />}
                     {activeView === 'Notificações' && <NotificationsView notifications={notifications} onMarkAsRead={handleMarkAsRead} onMarkAllAsRead={handleMarkAllAsRead} onClearAll={handleClearAllNotifications} onNavigate={handleNotificationClick} />}
-                    {activeView === 'Configurações' && <SettingsPage currentUser={localUser} onUpdateProfile={() => {}} columns={columns} onUpdatePipeline={handleSavePipeline}/>}
+                    {activeView === 'Configurações' && <SettingsPage currentUser={localUser} onUpdateProfile={() => {}} columns={columns} onUpdatePipeline={handleUpdatePipeline} playbooks={playbooks} onUpdatePlaybooks={handleUpdatePlaybooks}/>}
                 </main>
             </div>
             
@@ -433,6 +508,16 @@ const App: React.FC = () => {
                         message={notification.message} 
                         type={notification.type} 
                         onClose={() => setNotification(null)}
+                    />
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {isPlaybookModalOpen && selectedLeadForPlaybook && (
+                    <PlaybookModal
+                        lead={selectedLeadForPlaybook}
+                        playbooks={playbooks}
+                        onClose={() => setPlaybookModalOpen(false)}
+                        onApply={handleApplyPlaybook}
                     />
                 )}
             </AnimatePresence>

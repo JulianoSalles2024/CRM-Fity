@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { User, ColumnData, Id } from '../types';
-import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit, Bell, Webhook, MessageSquare, Loader2 } from 'lucide-react';
+import { User, ColumnData, Id, Playbook } from '../types';
+import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit, Bell, Webhook, MessageSquare, Loader2, BookOpen } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { DndContext, closestCenter, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -9,6 +9,7 @@ import { CSS } from '@dnd-kit/utilities';
 import CreateStageModal from './CreateStageModal';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 import NotificationSettings from './NotificationSettings';
+import PlaybookSettings from './PlaybookSettings';
 
 // --- Subcomponente de Perfil ---
 interface ProfileSettingsProps {
@@ -153,25 +154,25 @@ interface PipelineSettingsProps {
 }
 
 const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialColumns, onUpdatePipeline }) => {
-    const [currentColumns, setCurrentColumns] = useState(initialColumns);
+    const [columns, setColumns] = useState(initialColumns);
     const [isCreateStageModalOpen, setCreateStageModalOpen] = useState(false);
     const [editingStage, setEditingStage] = useState<ColumnData | null>(null);
     const [stageToDelete, setStageToDelete] = useState<Id | null>(null);
     const [activeColumn, setActiveColumn] = useState<ColumnData | null>(null);
 
      useEffect(() => {
-        setCurrentColumns(initialColumns);
+        setColumns(initialColumns);
     }, [initialColumns]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
     );
     
-    const columnIds = useMemo(() => currentColumns.map(c => c.id), [currentColumns]);
+    const columnIds = useMemo(() => columns.map(c => c.id), [columns]);
 
     const handleDragStart = (event: DragStartEvent) => {
         const { active } = event;
-        setActiveColumn(currentColumns.find(col => col.id === active.id) || null);
+        setActiveColumn(columns.find(col => col.id === active.id) || null);
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -179,9 +180,9 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
         const { active, over } = event;
 
         if (over && active.id !== over.id) {
-            const oldIndex = currentColumns.findIndex(item => item.id === active.id);
-            const newIndex = currentColumns.findIndex(item => item.id === over.id);
-            const newColumns = arrayMove(currentColumns, oldIndex, newIndex);
+            const oldIndex = columns.findIndex(item => item.id === active.id);
+            const newIndex = columns.findIndex(item => item.id === over.id);
+            const newColumns = arrayMove(columns, oldIndex, newIndex);
             onUpdatePipeline(newColumns);
         }
     };
@@ -194,12 +195,12 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
     const handleCreateOrUpdateStage = (stageData: {id?: Id, title: string, color: string}) => {
       let newColumns: ColumnData[] = [];
         if (stageData.id) { // Update
-            newColumns = currentColumns.map(c => 
+            newColumns = columns.map(c => 
                 c.id === stageData.id ? { ...c, title: stageData.title, color: stageData.color } : c
             );
         } else { // Create
             const newColumn: ColumnData = { id: `stage-${Date.now()}`, title: stageData.title, color: stageData.color };
-            newColumns = [...currentColumns, newColumn];
+            newColumns = [...columns, newColumn];
         }
         onUpdatePipeline(newColumns);
         setCreateStageModalOpen(false);
@@ -208,7 +209,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
 
 
     const handleDeleteColumn = (id: Id) => {
-        if (currentColumns.length <= 1) {
+        if (columns.length <= 1) {
             alert("Você deve ter pelo menos um estágio no pipeline.");
             return;
         }
@@ -217,7 +218,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
 
     const confirmDeleteStage = () => {
         if (stageToDelete) {
-            const newColumns = currentColumns.filter(col => col.id !== stageToDelete);
+            const newColumns = columns.filter(col => col.id !== stageToDelete);
             onUpdatePipeline(newColumns);
             setStageToDelete(null);
         }
@@ -238,12 +239,12 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                     <div className="p-6 space-y-3">
                         <SortableContext items={columnIds} strategy={verticalListSortingStrategy}>
-                            {currentColumns.map((col, index) => (
+                            {columns.map((col, index) => (
                                 <SortableStageItem key={col.id} column={col} index={index} onEdit={handleOpenEditModal} onDelete={handleDeleteColumn} />
                             ))}
                         </SortableContext>
                     </div>
-                    <DragOverlay>{activeColumn ? <StageItem column={activeColumn} index={currentColumns.findIndex(c => c.id === activeColumn.id)} /> : null}</DragOverlay>
+                    <DragOverlay>{activeColumn ? <StageItem column={activeColumn} index={columns.findIndex(c => c.id === activeColumn.id)} /> : null}</DragOverlay>
                 </DndContext>
             </div>
             
@@ -377,16 +378,19 @@ const PlaceholderTab: React.FC<{ title: string }> = ({ title }) => (
 interface SettingsPageProps {
     currentUser: User;
     columns: ColumnData[];
+    playbooks: Playbook[];
     onUpdateProfile: (name: string, avatarFile?: File) => void;
     onUpdatePipeline: (columns: ColumnData[]) => void;
+    onUpdatePlaybooks: (playbooks: Playbook[]) => void;
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpdateProfile, onUpdatePipeline }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, playbooks, onUpdateProfile, onUpdatePipeline, onUpdatePlaybooks }) => {
     const [activeTab, setActiveTab] = useState('Pipeline');
 
     const tabs = [
         { name: 'Perfil', icon: UserIcon },
         { name: 'Pipeline', icon: Settings },
+        { name: 'Playbooks', icon: BookOpen },
         { name: 'Preferências', icon: SlidersHorizontal },
         { name: 'Integrações', icon: Webhook },
         { name: 'Notificações', icon: Bell },
@@ -419,6 +423,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpd
             <div>
                 {activeTab === 'Perfil' && <ProfileSettings currentUser={currentUser} onUpdateProfile={onUpdateProfile} />}
                 {activeTab === 'Pipeline' && <PipelineSettings columns={columns} onUpdatePipeline={onUpdatePipeline} />}
+                {activeTab === 'Playbooks' && <PlaybookSettings initialPlaybooks={playbooks} onSave={onUpdatePlaybooks} pipelineColumns={columns} />}
                 {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />}
                 {activeTab === 'Integrações' && <WhatsAppChannelSettings />}
                 {activeTab === 'Notificações' && <NotificationSettings />}

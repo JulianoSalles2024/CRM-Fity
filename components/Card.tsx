@@ -3,14 +3,15 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 // FIX: Added Variants to the import to fix typing issue with cardContentVariants.
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { DollarSign, Tag, Clock, Building, TrendingUp, Calendar, Mail, Phone, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
+import { DollarSign, Tag, Clock, Building, TrendingUp, Calendar, Mail, Phone, ChevronDown, ChevronUp, MessageCircle, BookOpen } from 'lucide-react';
 import type { Lead, CardDisplaySettings, User as UserType, Id } from '../types';
 
 interface CardProps {
     lead: Lead;
     displaySettings: CardDisplaySettings;
     users: UserType[];
-    onClick: () => void;
+    onSelect: () => void;
+    isSelected: boolean;
     minimizedLeads: Id[];
     onToggleLeadMinimize: (leadId: Id) => void;
 }
@@ -24,7 +25,7 @@ const TagPill: React.FC<{ tag: { name: string, color: string } }> = ({ tag }) =>
     </span>
 );
 
-const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onClick, minimizedLeads, onToggleLeadMinimize }) => {
+const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onSelect, isSelected, minimizedLeads, onToggleLeadMinimize }) => {
     const {
         attributes,
         listeners,
@@ -76,10 +77,10 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onClick, mini
             style={style}
             {...attributes}
             {...listeners}
-            onClick={onClick}
+            onClick={onSelect}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className={`bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm cursor-grab active:cursor-grabbing hover:bg-gray-50 dark:hover:bg-zinc-800/50 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/10 dark:hover:shadow-violet-500/20 transition-all duration-150 touch-none ${isMinimized ? 'p-3' : 'p-4'}`}
+            className={`bg-white dark:bg-zinc-900 rounded-lg border shadow-sm cursor-grab active:cursor-grabbing hover:bg-gray-50 dark:hover:bg-zinc-800/50 hover:shadow-lg hover:shadow-violet-500/10 dark:hover:shadow-violet-500/20 transition-all duration-150 touch-none ${isMinimized ? 'p-3' : 'p-4'} ${isSelected ? 'border-violet-500 ring-2 ring-violet-500/50' : 'border-zinc-200 dark:border-zinc-800 hover:border-violet-500'}`}
         >
             <div className="flex justify-between items-center gap-2">
                 <h3 className="font-bold text-zinc-900 dark:text-white text-md leading-tight flex-1 truncate">{lead.name}</h3>
@@ -125,6 +126,13 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onClick, mini
                         className="overflow-hidden"
                     >
                         <div className="pt-3 space-y-3">
+                            {lead.activePlaybook && (
+                                <div className="flex items-center gap-2 text-xs font-semibold text-violet-400 bg-violet-900/40 px-2 py-1 rounded-md">
+                                    <BookOpen className="w-3.5 h-3.5" />
+                                    <span className="truncate">{lead.activePlaybook.playbookName}</span>
+                                </div>
+                            )}
+
                             {displaySettings.showCompany && <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2"><Building className="w-3.5 h-3.5 flex-shrink-0" /> {lead.company}</p>}
                             
                             {displaySettings.showValue && (

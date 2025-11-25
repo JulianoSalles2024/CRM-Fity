@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import {
     DndContext,
@@ -22,13 +23,16 @@ interface KanbanBoardProps {
     users: User[];
     cardDisplaySettings: CardDisplaySettings;
     onUpdateLeadColumn: (leadId: Id, newColumnId: Id) => void;
-    onLeadClick: (lead: Lead) => void;
+    onSelectLead: (leadId: Id) => void;
+    selectedLeadId: Id | null;
     onAddLead: (columnId: Id) => void;
     onUpdateCardSettings: (newSettings: CardDisplaySettings) => void;
     minimizedLeads: Id[];
     onToggleLeadMinimize: (leadId: Id) => void;
     minimizedColumns: Id[];
     onToggleColumnMinimize: (columnId: Id) => void;
+    isPlaybookActionEnabled: boolean;
+    onApplyPlaybookClick: () => void;
 }
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ 
@@ -37,13 +41,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     users, 
     cardDisplaySettings,
     onUpdateLeadColumn, 
-    onLeadClick,
+    onSelectLead,
+    selectedLeadId,
     onAddLead,
     onUpdateCardSettings,
     minimizedLeads,
     onToggleLeadMinimize,
     minimizedColumns,
-    onToggleColumnMinimize
+    onToggleColumnMinimize,
+    isPlaybookActionEnabled,
+    onApplyPlaybookClick
 }) => {
     const [activeLead, setActiveLead] = useState<Lead | null>(null);
     const columnIds = useMemo(() => columns.map(c => c.id), [columns]);
@@ -83,7 +90,12 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     return (
         <div className="flex flex-col h-full">
             <div className="relative z-10">
-                <PipelineHeader cardDisplaySettings={cardDisplaySettings} onUpdateCardSettings={onUpdateCardSettings} />
+                <PipelineHeader 
+                    cardDisplaySettings={cardDisplaySettings} 
+                    onUpdateCardSettings={onUpdateCardSettings}
+                    isPlaybookActionEnabled={isPlaybookActionEnabled}
+                    onApplyPlaybookClick={onApplyPlaybookClick}
+                />
             </div>
             <div className="flex-1 overflow-x-auto overflow-y-hidden">
                 <DndContext
@@ -101,7 +113,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                 leads={leads}
                                 users={users}
                                 cardDisplaySettings={cardDisplaySettings}
-                                onLeadClick={onLeadClick}
+                                onSelectLead={onSelectLead}
+                                selectedLeadId={selectedLeadId}
                                 onAddLead={onAddLead}
                                 minimizedLeads={minimizedLeads}
                                 onToggleLeadMinimize={onToggleLeadMinimize}
@@ -116,7 +129,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                 lead={activeLead} 
                                 displaySettings={cardDisplaySettings}
                                 users={users}
-                                onClick={() => {}}
+                                onSelect={() => {}}
+                                isSelected={false}
                                 minimizedLeads={minimizedLeads}
                                 onToggleLeadMinimize={onToggleLeadMinimize}
                             />

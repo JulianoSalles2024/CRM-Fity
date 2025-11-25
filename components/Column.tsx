@@ -13,7 +13,8 @@ interface ColumnProps {
     leads: Lead[];
     users: User[];
     cardDisplaySettings: CardDisplaySettings;
-    onLeadClick: (lead: Lead) => void;
+    onSelectLead: (leadId: Id) => void;
+    selectedLeadId: Id | null;
     onAddLead: (columnId: Id) => void;
     minimizedLeads: Id[];
     onToggleLeadMinimize: (leadId: Id) => void;
@@ -26,7 +27,7 @@ const contentVariants = {
     visible: { opacity: 1, transition: { duration: 0.2, delay: 0.1 } },
 };
 
-const Column: React.FC<ColumnProps> = ({ column, leads, users, cardDisplaySettings, onLeadClick, onAddLead, minimizedLeads, onToggleLeadMinimize, minimizedColumns, onToggleColumnMinimize }) => {
+const Column: React.FC<ColumnProps> = ({ column, leads, users, cardDisplaySettings, onSelectLead, selectedLeadId, onAddLead, minimizedLeads, onToggleLeadMinimize, minimizedColumns, onToggleColumnMinimize }) => {
     const { setNodeRef, isOver } = useDroppable({ id: column.id, data: { type: 'Column', column } });
     
     const leadsInColumn = leads.filter(lead => lead.columnId === column.id);
@@ -109,7 +110,8 @@ const Column: React.FC<ColumnProps> = ({ column, leads, users, cardDisplaySettin
                                             lead={lead} 
                                             displaySettings={cardDisplaySettings} 
                                             users={users} 
-                                            onClick={() => onLeadClick(lead)} 
+                                            onSelect={() => onSelectLead(lead.id)} 
+                                            isSelected={selectedLeadId === lead.id}
                                             minimizedLeads={minimizedLeads}
                                             onToggleLeadMinimize={onToggleLeadMinimize}
                                         />
