@@ -35,6 +35,13 @@ export interface GroupInfo {
   exitDate?: string; // ISO String
 }
 
+export interface PlaybookHistoryEntry {
+  playbookId: Id;
+  playbookName: string;
+  startedAt: string; // ISO string date
+  completedAt: string; // ISO string date
+}
+
 export interface Lead {
   id: Id;
   columnId: Id;
@@ -62,6 +69,7 @@ export interface Lead {
     playbookName: string;
     startedAt: string; // ISO string date
   };
+  playbookHistory?: PlaybookHistoryEntry[];
 }
 
 export interface ColumnData {

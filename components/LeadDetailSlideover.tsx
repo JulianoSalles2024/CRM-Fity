@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, User, Building, DollarSign, Tag as TagIcon, Clock, Trash2, MessageSquare, ArrowRight, TrendingUp, Sparkles, FileText, Mail, BookOpen, Circle, CheckCircle2 } from 'lucide-react';
-import type { Lead, Tag, Activity, EmailDraft, Id, CreateEmailDraftData, Tone, Playbook, Task } from '../types';
+import type { Lead, Tag, Activity, EmailDraft, Id, CreateEmailDraftData, Tone, Playbook, Task, PlaybookHistoryEntry } from '../types';
 import AIComposer from './AIComposer';
 
 interface LeadDetailSlideoverProps {
@@ -96,6 +96,23 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
     return playbooks.find(p => p.id === lead.activePlaybook?.playbookId);
   }, [lead.activePlaybook, playbooks]);
 
+  const playbookHistoryDetails = useMemo(() => {
+    if (!lead.playbookHistory) return [];
+    return lead.playbookHistory
+        .map(historyEntry => ({
+            ...historyEntry,
+            playbook: playbooks.find(p => p.id === historyEntry.playbookId)
+        }))
+        .filter(entry => entry.playbook) // Filter out if playbook not found
+        .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+  }, [lead.playbookHistory, playbooks]);
+
+  const [activeCadenceTab, setActiveCadenceTab] = useState<Id | 'active'>('active');
+
+  useEffect(() => {
+    setActiveCadenceTab('active');
+  }, [lead.id, lead.activePlaybook]);
+
 
   const getTabIcon = (tabName: string) => {
     switch (tabName) {
@@ -180,40 +197,78 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
             </DetailItem>
             <DetailItem icon={Clock} label="Última Atividade">{lead.lastActivity}</DetailItem>
 
-             {activePlaybookDetails && (
-                <div>
+            {(activePlaybookDetails || playbookHistoryDetails.length > 0) && (
+                <div className="border-t border-zinc-700 pt-6">
                     <div className="flex items-start gap-3">
                         <BookOpen className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
                         <div className="flex flex-col w-full">
-                            <span className="text-sm text-zinc-500 dark:text-zinc-400">Cadência Ativa</span>
-                            <span className="text-md font-medium text-zinc-800 dark:text-gray-200">{activePlaybookDetails.name}</span>
+                            <span className="text-sm text-zinc-500 dark:text-zinc-400">Cadências</span>
                         </div>
                     </div>
-                    <ul className="mt-4 space-y-2 pl-8">
-                        {activePlaybookDetails.steps.map((step, index) => {
-                            const associatedTask = tasks.find(t => t.leadId === lead.id && t.playbookId === activePlaybookDetails.id && t.playbookStepIndex === index);
-                            const isCompleted = associatedTask?.status === 'completed';
-                            
-                            const handleToggle = () => {
-                                if (associatedTask) {
-                                    onUpdateTaskStatus(associatedTask.id, isCompleted ? 'pending' : 'completed');
-                                }
-                            };
-
-                            return (
-                                <li key={index} className="flex items-center gap-3 text-sm">
-                                    <button onClick={handleToggle} className="flex-shrink-0" disabled={!associatedTask}>
-                                    {isCompleted ? <CheckCircle2 className="w-5 h-5 text-green-400" /> : <Circle className="w-5 h-5 text-zinc-600 hover:text-zinc-400" />}
+                    <div className="pl-8 mt-2">
+                        <div className="border-b border-zinc-700">
+                            <nav className="flex -mb-px space-x-4" aria-label="Cadence Tabs">
+                                {activePlaybookDetails && (
+                                    <button onClick={() => setActiveCadenceTab('active')}
+                                            className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${activeCadenceTab === 'active' ? 'border-violet-500 text-violet-400' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}>
+                                        Ativa
                                     </button>
-                                    <span className={`font-semibold ${isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-300'}`}>D+{step.day}:</span>
-                                    <span className={`${isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-400'}`}>{step.instructions}</span>
-                                </li>
-                            );
-                        })}
-                    </ul>
+                                )}
+                                {playbookHistoryDetails.map(entry => (
+                                    <button key={entry.playbookId} onClick={() => setActiveCadenceTab(entry.playbookId)}
+                                            className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${activeCadenceTab === entry.playbookId ? 'border-violet-500 text-violet-400' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}>
+                                        {entry.playbookName}
+                                    </button>
+                                ))}
+                            </nav>
+                        </div>
+                        <div className="mt-4">
+                            {activeCadenceTab === 'active' && activePlaybookDetails && (
+                                <>
+                                    <p className="font-semibold text-white">{activePlaybookDetails.name}</p>
+                                    <ul className="mt-2 space-y-2">
+                                        {activePlaybookDetails.steps.map((step, index) => {
+                                            const associatedTask = tasks.find(t => t.leadId === lead.id && t.playbookId === activePlaybookDetails.id && t.playbookStepIndex === index);
+                                            const isCompleted = associatedTask?.status === 'completed';
+                                            const handleToggle = () => {
+                                                if (associatedTask) onUpdateTaskStatus(associatedTask.id, isCompleted ? 'pending' : 'completed');
+                                            };
+                                            return (
+                                                <li key={index} className="flex items-center gap-3 text-sm">
+                                                    <button onClick={handleToggle} className="flex-shrink-0" disabled={!associatedTask}>
+                                                        {isCompleted ? <CheckCircle2 className="w-5 h-5 text-green-400" /> : <Circle className="w-5 h-5 text-zinc-600 hover:text-zinc-400" />}
+                                                    </button>
+                                                    <span className={`font-semibold ${isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-300'}`}>D+{step.day}:</span>
+                                                    <span className={`${isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-400'}`}>{step.instructions}</span>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </>
+                            )}
+                            {activeCadenceTab !== 'active' && (() => {
+                                const historyEntry = playbookHistoryDetails.find(h => h.playbookId === activeCadenceTab);
+                                if (!historyEntry || !historyEntry.playbook) return null;
+                                return (
+                                    <>
+                                        <p className="font-semibold text-white">{historyEntry.playbook.name}</p>
+                                        <p className="text-xs text-zinc-500">Concluído em {new Date(historyEntry.completedAt).toLocaleDateString('pt-BR')}</p>
+                                        <ul className="mt-2 space-y-2">
+                                            {historyEntry.playbook.steps.map((step, index) => (
+                                                <li key={index} className="flex items-center gap-3 text-sm text-zinc-500 line-through">
+                                                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                                    <span className="font-semibold">D+{step.day}:</span>
+                                                    <span>{step.instructions}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    </div>
                 </div>
             )}
-
           </div>
         )}
         {activeTab === 'AI Composer' && (

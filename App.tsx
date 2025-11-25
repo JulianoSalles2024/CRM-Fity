@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -27,7 +28,7 @@ import PlaybookModal from './components/PlaybookModal';
 
 
 // Types
-import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, Notification as NotificationType, Playbook } from './types';
+import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, Notification as NotificationType, Playbook, PlaybookHistoryEntry } from './types';
 
 // Data
 import { initialColumns, initialTags, initialLeads, initialTasks, initialActivities, initialUsers, initialGroups, initialConversations, initialMessages, initialNotifications, initialPlaybooks } from './data';
@@ -46,17 +47,15 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<Re
         }
     });
 
-    const setValue: React.Dispatch<React.SetStateAction<T>> = (value) => {
+    useEffect(() => {
         try {
-            const valueToStore = value instanceof Function ? value(storedValue) : value;
-            setStoredValue(valueToStore);
-            window.localStorage.setItem(key, JSON.stringify(valueToStore));
+            window.localStorage.setItem(key, JSON.stringify(storedValue));
         } catch (error) {
             console.error(error);
         }
-    };
+    }, [key, storedValue]);
 
-    return [storedValue, setValue];
+    return [storedValue, setStoredValue];
 }
 
 
@@ -197,7 +196,7 @@ const App: React.FC = () => {
 
         setLeads(currentLeads =>
             currentLeads.map(l =>
-                l.id === leadId ? { ...l, columnId: newColumnId, lastActivity: 'agora' } : l
+                l.id === leadId ? { ...l, columnId: newColumnId, lastActivity: 'agora', activePlaybook: undefined } : l
             )
         );
         
@@ -258,18 +257,32 @@ const App: React.FC = () => {
             const allComplete = playbookTasks.every(t => t.status === 'completed');
 
             if (allComplete && playbookTasks.length >= playbook.steps.length) {
+                const historyEntry: PlaybookHistoryEntry = {
+                    playbookId: playbook.id,
+                    playbookName: playbook.name,
+                    startedAt: lead.activePlaybook.startedAt,
+                    completedAt: new Date().toISOString(),
+                };
+
                 const currentStageIndex = columns.findIndex(c => c.id === lead.columnId);
                 const nextStage = columns[currentStageIndex + 1];
+                const nextColumnId = (nextStage && nextStage.id !== 'lost' && nextStage.id !== 'closed') ? nextStage.id : lead.columnId;
 
-                if (nextStage && nextStage.id !== 'lost' && nextStage.id !== 'closed') {
-                    const updatedLead = { ...lead, activePlaybook: undefined, columnId: nextStage.id, lastActivity: 'agora' };
-                    setLeads(current => current.map(l => l.id === lead.id ? updatedLead : l));
+                const updatedLead: Lead = { 
+                    ...lead, 
+                    activePlaybook: undefined, 
+                    playbookHistory: [...(lead.playbookHistory || []), historyEntry],
+                    columnId: nextColumnId, 
+                    lastActivity: 'agora' 
+                };
+                
+                setLeads(current => current.map(l => l.id === lead.id ? updatedLead : l));
+
+                if (nextColumnId !== lead.columnId) {
                     showNotification(`Playbook concluído! Lead movido para ${nextStage.title}.`, 'success');
                     createActivityLog(lead.id, 'status_change', `Status alterado de '${columns[currentStageIndex].title}' para '${nextStage.title}' (Playbook Automático).`);
                 } else {
-                     const updatedLead = { ...lead, activePlaybook: undefined, lastActivity: 'agora' };
-                     setLeads(current => current.map(l => l.id === lead.id ? updatedLead : l));
-                     showNotification(`Playbook "${playbook.name}" concluído!`, 'success');
+                    showNotification(`Playbook "${playbook.name}" concluído!`, 'success');
                 }
             }
         }
