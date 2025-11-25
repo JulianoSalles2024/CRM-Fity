@@ -13,7 +13,7 @@ interface ColumnProps {
     leads: Lead[];
     users: User[];
     cardDisplaySettings: CardDisplaySettings;
-    onSelectLead: (leadId: Id) => void;
+    onSelectLead: (lead: Lead) => void;
     selectedLeadId: Id | null;
     onAddLead: (columnId: Id) => void;
     minimizedLeads: Id[];
@@ -110,7 +110,7 @@ const Column: React.FC<ColumnProps> = ({ column, leads, users, cardDisplaySettin
                                             lead={lead} 
                                             displaySettings={cardDisplaySettings} 
                                             users={users} 
-                                            onSelect={() => onSelectLead(lead.id)} 
+                                            onSelect={() => onSelectLead(lead)} 
                                             isSelected={selectedLeadId === lead.id}
                                             minimizedLeads={minimizedLeads}
                                             onToggleLeadMinimize={onToggleLeadMinimize}

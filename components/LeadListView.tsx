@@ -26,6 +26,7 @@ interface LeadListViewProps {
     onSelectedTagsChange: React.Dispatch<React.SetStateAction<Tag[]>>;
     statusFilter: 'all' | 'Ativo' | 'Inativo';
     onStatusFilterChange: (status: 'all' | 'Ativo' | 'Inativo') => void;
+    onExportPDF: () => void;
 }
 
 const LeadListView: React.FC<LeadListViewProps> = ({ 
@@ -39,7 +40,8 @@ const LeadListView: React.FC<LeadListViewProps> = ({
     selectedTags,
     onSelectedTagsChange,
     statusFilter,
-    onStatusFilterChange
+    onStatusFilterChange,
+    onExportPDF
 }) => {
     const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending'});
 
@@ -209,6 +211,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                 statusFilter={statusFilter}
                 onStatusFilterChange={onStatusFilterChange}
                 onExportCSV={handleExportCSV}
+                onExportPDF={onExportPDF}
             />
             <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden flex-1 flex flex-col">
                 {sortedLeads.length === 0 ? (
@@ -240,14 +243,9 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                 {virtualLeads.map(lead => (
                                     <tr key={lead.id} onClick={() => onLeadClick(lead)} className="hover:bg-zinc-800/50 cursor-pointer transition-colors duration-150">
                                         <td className="px-4 py-3 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="flex-shrink-0 h-10 w-10 bg-zinc-700 rounded-full flex items-center justify-center font-bold">
-                                                    {lead.name.charAt(0)}
-                                                </div>
-                                                <div className="ml-4">
-                                                    <div className="text-sm font-medium text-white">{lead.name}</div>
-                                                    <div className="text-sm text-zinc-400">{lead.company}</div>
-                                                </div>
+                                            <div>
+                                                <div className="text-sm font-medium text-white">{lead.name}</div>
+                                                <div className="text-sm text-zinc-400">{lead.company}</div>
                                             </div>
                                         </td>
                                         {listDisplaySettings.showStatus && (

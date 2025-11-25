@@ -18,6 +18,7 @@ interface LeadListHeaderProps {
     statusFilter: 'all' | 'Ativo' | 'Inativo';
     onStatusFilterChange: (status: 'all' | 'Ativo' | 'Inativo') => void;
     onExportCSV: () => void;
+    onExportPDF: () => void;
 }
 
 const LeadListHeader: React.FC<LeadListHeaderProps> = ({ 
@@ -29,7 +30,8 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
     onSelectedTagsChange,
     statusFilter,
     onStatusFilterChange,
-    onExportCSV
+    onExportCSV,
+    onExportPDF
 }) => {
     const [isCustomizeOpen, setCustomizeOpen] = useState(false);
     const [isTagFilterOpen, setTagFilterOpen] = useState(false);
@@ -154,6 +156,13 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
                     >
                         <Download className="w-4 h-4" />
                         <span>Exportar CSV</span>
+                    </button>
+                    <button 
+                        onClick={onExportPDF}
+                        className="flex items-center gap-2 text-sm text-zinc-300 bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 rounded-md"
+                    >
+                        <Download className="w-4 h-4" />
+                        <span>Exportar PDF</span>
                     </button>
                 </div>
             </div>

@@ -26,6 +26,7 @@ import IntegrationsPage from './components/IntegrationsPage';
 import NotificationsView from './components/NotificationsView';
 import PlaybookModal from './components/PlaybookModal';
 import PlaybookSettings from './components/PlaybookSettings';
+import PrintableLeadsReport from './components/PrintableLeadsReport';
 
 
 // Types
@@ -100,6 +101,9 @@ const App: React.FC = () => {
     const [selectedLeadForPlaybookId, setSelectedLeadForPlaybookId] = useState<Id | null>(null);
     const [isPlaybookModalOpen, setPlaybookModalOpen] = useState(false);
     const selectedLeadForPlaybook = useMemo(() => leads.find(l => l.id === selectedLeadForPlaybookId), [leads, selectedLeadForPlaybookId]);
+
+    // Printing state
+    const [isPrinting, setIsPrinting] = useState(false);
 
 
     // Display Settings
@@ -191,186 +195,230 @@ const App: React.FC = () => {
         showNotification(`Lead deletado.`, 'success');
     };
 
-    const handleUpdateLeadColumn = async (leadId: Id, newColumnId: Id) => {
-        const leadToMove = leads.find(l => l.id === leadId);
-        if (!leadToMove || leadToMove.columnId === newColumnId) return;
+    const handleUpdateLeadColumn = (leadId: Id, newColumnId: Id) => {
+        setLeads(prevLeads => {
+            const leadToMove = prevLeads.find(l => l.id === leadId);
+            if (!leadToMove) return prevLeads;
 
-        let updatedLead: Lead = { ...leadToMove, columnId: newColumnId, lastActivity: 'agora' };
-        let notificationMessage: string | null = null;
-        let notificationType: 'info' | 'success' = 'info';
+            // --- SMART PLAYBOOK LOGIC ---
+            let updatedLead = { ...leadToMove, columnId: newColumnId, lastActivity: 'agora' };
 
-        // 1. Check if we are moving back and should re-activate a playbook
-        const canReactivate = leadToMove.playbookHistory && leadToMove.playbookHistory.length > 0 && !leadToMove.activePlaybook;
-        if (canReactivate) {
-            const lastCompleted = leadToMove.playbookHistory![leadToMove.playbookHistory!.length - 1];
-            const playbookDetails = playbooks.find(p => p.id === lastCompleted.playbookId);
-
-            if (playbookDetails && playbookDetails.stages.includes(newColumnId)) {
-                const newHistory = leadToMove.playbookHistory!.slice(0, -1);
-                updatedLead.activePlaybook = {
-                    playbookId: lastCompleted.playbookId,
-                    playbookName: lastCompleted.playbookName,
-                    startedAt: lastCompleted.startedAt,
-                };
-                updatedLead.playbookHistory = newHistory;
-                notificationMessage = `Cadência "${lastCompleted.playbookName}" foi reativada.`;
-                notificationType = 'info';
+            // 1. Re-activate a just-completed playbook if moving back
+            const lastCompletedPlaybook = leadToMove.playbookHistory?.[(leadToMove.playbookHistory?.length || 0) - 1];
+            if (lastCompletedPlaybook) {
+                const playbookDef = playbooks.find(p => p.id === lastCompletedPlaybook.playbookId);
+                if (playbookDef && playbookDef.stages.includes(newColumnId)) {
+                    // It's moving back to a stage of the last playbook, so re-activate it.
+                    updatedLead.activePlaybook = {
+                        playbookId: lastCompletedPlaybook.playbookId,
+                        playbookName: lastCompletedPlaybook.playbookName,
+                        startedAt: lastCompletedPlaybook.startedAt,
+                    };
+                    updatedLead.playbookHistory = leadToMove.playbookHistory?.slice(0, -1); // Remove from history
+                    showNotification(`Playbook "${updatedLead.activePlaybook.playbookName}" reativado.`, 'info');
+                }
             }
-        } 
-        // 2. If not re-activating, check if we should complete an active playbook because the stage changed
-        else if (leadToMove.activePlaybook) {
-            const historyEntry: PlaybookHistoryEntry = {
-                playbookId: leadToMove.activePlaybook.playbookId,
-                playbookName: leadToMove.activePlaybook.playbookName,
-                startedAt: leadToMove.activePlaybook.startedAt,
-                completedAt: new Date().toISOString(),
-            };
-            updatedLead.activePlaybook = undefined;
-            updatedLead.playbookHistory = [...(leadToMove.playbookHistory || []), historyEntry];
-            notificationMessage = `Cadência "${historyEntry.playbookName}" concluída ao mover o lead.`;
-            notificationType = 'success';
-        }
+            
+            // 2. Archive active playbook if moving to a new, unrelated stage
+            if (updatedLead.activePlaybook && !updatedLead.playbookHistory?.some(h => h.playbookId === updatedLead.activePlaybook?.playbookId)) {
+                 const playbookDef = playbooks.find(p => p.id === updatedLead.activePlaybook?.playbookId);
+                 if (playbookDef && !playbookDef.stages.includes(newColumnId)) {
+                     const historyEntry: PlaybookHistoryEntry = {
+                         playbookId: updatedLead.activePlaybook.playbookId,
+                         playbookName: updatedLead.activePlaybook.playbookName,
+                         startedAt: updatedLead.activePlaybook.startedAt,
+                         completedAt: new Date().toISOString(),
+                     };
+                     updatedLead.playbookHistory = [...(updatedLead.playbookHistory || []), historyEntry];
+                     updatedLead.activePlaybook = undefined;
+                     showNotification(`Playbook "${historyEntry.playbookName}" concluído e arquivado.`, 'info');
+                 }
+            }
 
-        // 3. Update state and show notification
-        setLeads(currentLeads =>
-            currentLeads.map(l => (l.id === leadId ? updatedLead : l))
-        );
 
-        if (notificationMessage) {
-            showNotification(notificationMessage, notificationType);
-        }
+            createActivityLog(leadId, 'status_change', `Movido para "${columns.find(c => c.id === newColumnId)?.title}".`);
 
-        // 4. Log activity
-        const oldColumnName = columns.find(c => c.id === leadToMove.columnId)?.title;
-        const newColumnName = columns.find(c => c.id === newColumnId)?.title;
-        if (oldColumnName && newColumnName) {
-            createActivityLog(leadId, 'status_change', `Status alterado de '${oldColumnName}' para '${newColumnName}'.`);
-        }
+            return prevLeads.map(l => l.id === leadId ? updatedLead : l);
+        });
     };
-
-
-    const handleUpdateLeadDetails = async (leadId: Id, updates: UpdateLeadData) => {
-        setLeads(current => current.map(lead => lead.id === leadId ? { ...lead, ...updates } : lead));
-        showNotification("Detalhes do lead atualizados.", 'success');
+    
+    const handleCardClick = (lead: Lead) => {
+        setSelectedLead(lead);
+        setSelectedLeadForPlaybookId(lead.id);
     };
-
+    
     // Tasks
-    const handleCreateOrUpdateTask = async (data: CreateTaskData | UpdateTaskData) => {
+    const handleCreateOrUpdateTask = (data: CreateTaskData | UpdateTaskData) => {
         if (editingTask) { // UPDATE
-            setTasks(current => current.map(t => t.id === editingTask.id ? { ...t, ...data } : t));
-            showNotification(`Tarefa atualizada.`, 'success');
+            const updatedTask = { ...tasks.find(t => t.id === editingTask.id)!, ...data };
+            setTasks(current => current.map(t => t.id === editingTask.id ? updatedTask : t));
+            showNotification('Atividade atualizada.', 'success');
         } else { // CREATE
-            const newTask: Task = {
+             const newTask: Task = {
                 id: `task-${Date.now()}`,
                 userId: localUser.id,
-                status: 'pending',
                 ...data as CreateTaskData,
-            };
-            setTasks(current => [newTask, ...current]);
-            showNotification(`Tarefa criada.`, 'success');
+             };
+             setTasks(current => [newTask, ...current]);
+             showNotification('Nova atividade criada.', 'success');
         }
         setCreateTaskModalOpen(false);
         setEditingTask(null);
         setPreselectedDataForTask(null);
     };
 
-    const handleDeleteTask = async (taskId: Id) => {
+    const handleDeleteTask = (taskId: Id) => {
         setTasks(current => current.filter(t => t.id !== taskId));
-        showNotification("Tarefa deletada.", 'success');
-    };
-
-    const handleUpdateTaskStatus = async (taskId: Id, status: 'pending' | 'completed') => {
-        let taskToUpdate: Task | undefined;
-        const newTasks = tasks.map(t => {
-            if (t.id === taskId) {
-                taskToUpdate = { ...t, status };
-                return taskToUpdate;
-            }
-            return t;
-        });
-        setTasks(newTasks);
-
-        if (status === 'completed' && taskToUpdate?.playbookId) {
-            const lead = leads.find(l => l.id === taskToUpdate!.leadId);
-            const playbook = playbooks.find(p => p.id === taskToUpdate!.playbookId);
-            if (!lead || !lead.activePlaybook || !playbook) return;
-
-            const playbookTasks = newTasks.filter(t => t.leadId === lead.id && t.playbookId === playbook.id);
-            const allComplete = playbookTasks.every(t => t.status === 'completed');
-
-            if (allComplete && playbookTasks.length >= playbook.steps.length) {
-                const historyEntry: PlaybookHistoryEntry = {
-                    playbookId: playbook.id,
-                    playbookName: playbook.name,
-                    startedAt: lead.activePlaybook.startedAt,
-                    completedAt: new Date().toISOString(),
-                };
-
-                const currentStageIndex = columns.findIndex(c => c.id === lead.columnId);
-                const nextStage = columns[currentStageIndex + 1];
-                const nextColumnId = (nextStage && nextStage.id !== 'lost' && nextStage.id !== 'closed') ? nextStage.id : lead.columnId;
-
-                const updatedLead: Lead = { 
-                    ...lead, 
-                    activePlaybook: undefined, 
-                    playbookHistory: [...(lead.playbookHistory || []), historyEntry],
-                    columnId: nextColumnId, 
-                    lastActivity: 'agora' 
-                };
-                
-                setLeads(current => current.map(l => l.id === lead.id ? updatedLead : l));
-
-                if (nextColumnId !== lead.columnId) {
-                    showNotification(`Playbook concluído! Lead movido para ${nextStage.title}.`, 'success');
-                    createActivityLog(lead.id, 'status_change', `Status alterado de '${columns[currentStageIndex].title}' para '${nextStage.title}' (Playbook Automático).`);
-                } else {
-                    showNotification(`Playbook "${playbook.name}" concluído!`, 'success');
-                }
-            }
-        }
-    };
-
-    // Pipeline
-    const handleUpdatePipeline = async (newColumns: ColumnData[]) => {
-        setColumns(newColumns);
-        showNotification("Funil de vendas atualizado.", 'success');
+        showNotification('Atividade deletada.', 'success');
     };
     
-    // Playbooks
-    const handleUpdatePlaybooks = (updatedPlaybooks: Playbook[]) => {
-        setPlaybooks(updatedPlaybooks);
-        showNotification("Playbooks atualizados com sucesso.", 'success');
+    const handleUpdateTaskStatus = (taskId: Id, status: 'pending' | 'completed') => {
+        setTasks(prevTasks => {
+            const newTasks = prevTasks.map(t => t.id === taskId ? { ...t, status } : t);
+            
+            // --- Check for Playbook Completion ---
+            const updatedTask = newTasks.find(t => t.id === taskId);
+            const lead = leads.find(l => l.id === updatedTask?.leadId);
+
+            if (status === 'completed' && lead && lead.activePlaybook && updatedTask?.playbookId === lead.activePlaybook.playbookId) {
+                const playbook = playbooks.find(p => p.id === lead.activePlaybook?.playbookId);
+                const tasksForThisPlaybook = newTasks.filter(t => t.leadId === lead.id && t.playbookId === playbook?.id);
+                
+                if (playbook && tasksForThisPlaybook.length === playbook.steps.length && tasksForThisPlaybook.every(t => t.status === 'completed')) {
+                    // All tasks for this playbook are now complete.
+                    
+                    const currentColumnIndex = columns.findIndex(c => c.id === lead.columnId);
+                    const nextColumn = columns[currentColumnIndex + 1];
+                    
+                    if (nextColumn) {
+                        // Move lead to next stage
+                        const updatedLead = { 
+                            ...lead, 
+                            columnId: nextColumn.id, 
+                            activePlaybook: undefined,
+                            playbookHistory: [
+                                ...(lead.playbookHistory || []),
+                                {
+                                    playbookId: lead.activePlaybook.playbookId,
+                                    playbookName: lead.activePlaybook.playbookName,
+                                    startedAt: lead.activePlaybook.startedAt,
+                                    completedAt: new Date().toISOString(),
+                                }
+                            ]
+                        };
+                        setLeads(prevLeads => prevLeads.map(l => l.id === lead.id ? updatedLead : l));
+                        showNotification(`Playbook concluído! Lead movido para "${nextColumn.title}".`, 'success');
+                    }
+                }
+            }
+
+            return newTasks;
+        });
     };
-    const handleSelectLeadForPlaybook = (leadId: Id) => {
-        if (selectedLeadForPlaybookId === leadId) {
-            const leadToView = leads.find(l => l.id === leadId);
-            if (leadToView) setSelectedLead(leadToView);
-            setSelectedLeadForPlaybookId(null);
+    
+    // Email Drafts
+    const handleSaveDraft = (draftData: CreateEmailDraftData) => {
+        const newDraft: EmailDraft = {
+            id: `draft-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+            ...draftData
+        };
+        setEmailDrafts(current => [newDraft, ...current]);
+        showNotification('Rascunho salvo!', 'success');
+    };
+    
+    const handleDeleteDraft = (draftId: Id) => {
+        setEmailDrafts(current => current.filter(d => d.id !== draftId));
+        showNotification('Rascunho deletado.', 'success');
+    };
+
+    // Groups
+    const handleCreateOrUpdateGroup = (data: CreateGroupData | UpdateGroupData) => {
+        if (editingGroup) {
+            setGroups(current => current.map(g => g.id === editingGroup.id ? { ...g, ...data } as Group : g));
+            showNotification('Grupo atualizado.', 'success');
         } else {
-            setSelectedLead(null);
-            setSelectedLeadForPlaybookId(leadId);
+            const newGroup: Group = { id: `group-${Date.now()}`, ...data as CreateGroupData };
+            setGroups(current => [newGroup, ...current]);
+            showNotification('Grupo criado.', 'success');
+        }
+        setGroupModalOpen(false);
+        setEditingGroup(null);
+    };
+
+    const handleDeleteGroup = (groupId: Id) => {
+        setGroups(current => current.filter(g => g.id !== groupId));
+        showNotification('Grupo deletado.', 'success');
+    };
+    
+    // Group Analysis
+    const handleCreateOrUpdateGroupAnalysis = (data: CreateGroupAnalysisData | UpdateGroupAnalysisData, analysisId?: Id) => {
+        if (analysisId) {
+             setGroupAnalyses(current => current.map(a => a.id === analysisId ? { ...a, ...data } as GroupAnalysis : a));
+             showNotification('Análise atualizada.', 'success');
+        } else {
+            const newAnalysis: GroupAnalysis = { id: `analysis-${Date.now()}`, createdAt: new Date().toISOString(), ...data as CreateGroupAnalysisData };
+            setGroupAnalyses(current => [newAnalysis, ...current]);
+            showNotification('Análise salva.', 'success');
         }
     };
+    
+    const handleDeleteGroupAnalysis = (analysisId: Id) => {
+        setGroupAnalyses(current => current.filter(a => a.id !== analysisId));
+        showNotification('Análise descartada.', 'success');
+    };
+    
+    // Notifications
+    const handleMarkNotificationAsRead = (id: Id) => {
+        setNotifications(current => current.map(n => n.id === id ? { ...n, isRead: true } : n));
+    };
 
+    const handleMarkAllNotificationsRead = () => {
+        setNotifications(current => current.map(n => ({ ...n, isRead: true })));
+    };
+    
+    const handleClearAllNotifications = () => {
+        setNotifications([]);
+        showNotification('Todas as notificações foram limpas.', 'info');
+    };
+    
+    // Pipeline settings
+    const handleUpdatePipeline = (newColumns: ColumnData[]) => {
+        setColumns(newColumns);
+        showNotification('Pipeline atualizado.', 'success');
+    };
+    
+    // Card/List Display Toggles
+    const onToggleLeadMinimize = useCallback((leadId: Id) => {
+        setMinimizedLeads(prev => (prev || []).includes(leadId) ? (prev || []).filter(id => id !== leadId) : [...(prev || []), leadId]);
+    }, [setMinimizedLeads]);
+
+    const onToggleColumnMinimize = useCallback((columnId: Id) => {
+        setMinimizedColumns(prev => (prev || []).includes(columnId) ? (prev || []).filter(id => id !== columnId) : [...(prev || []), columnId]);
+    }, [setMinimizedColumns]);
+    
+    // Playbook handlers
     const handleApplyPlaybook = (playbookId: Id) => {
-        if (!selectedLeadForPlaybook) return;
+        const playbook = playbooks.find(p => p.id === playbookId);
+        const lead = leads.find(l => l.id === selectedLeadForPlaybookId);
 
-        if (selectedLeadForPlaybook.activePlaybook) {
-            showNotification("Este lead já possui um playbook ativo.", "error");
-            setPlaybookModalOpen(false);
+        if (!playbook || !lead) {
+            showNotification('Erro ao aplicar playbook.', 'error');
             return;
         }
-
-        const playbook = playbooks.find(p => p.id === playbookId);
-        if (!playbook) return;
+        
+        if (lead.activePlaybook) {
+            showNotification('Este lead já possui um playbook ativo.', 'error');
+            return;
+        }
 
         const newTasks: Task[] = playbook.steps.map((step, index) => {
             const dueDate = new Date();
             dueDate.setDate(dueDate.getDate() + step.day);
             return {
                 id: `task-${Date.now()}-${index}`,
-                leadId: selectedLeadForPlaybook.id,
                 userId: localUser.id,
+                leadId: lead.id,
                 type: step.type,
                 title: step.instructions,
                 dueDate: dueDate.toISOString(),
@@ -382,185 +430,214 @@ const App: React.FC = () => {
 
         setTasks(current => [...current, ...newTasks]);
         
-        const updatedLead: Lead = {
-            ...selectedLeadForPlaybook,
-            activePlaybook: {
-                playbookId: playbook.id,
+        setLeads(current => current.map(l => l.id === lead.id ? { 
+            ...l, 
+            activePlaybook: { 
+                playbookId: playbook.id, 
                 playbookName: playbook.name,
                 startedAt: new Date().toISOString(),
-            }
-        };
-
-        setLeads(current => current.map(l => l.id === updatedLead.id ? updatedLead : l));
+            } 
+        } : l));
         
-        showNotification(`Playbook "${playbook.name}" aplicado a ${selectedLeadForPlaybook.name}. ${newTasks.length} tarefas criadas.`, 'success');
-        
+        showNotification(`Playbook "${playbook.name}" aplicado com sucesso.`, 'success');
         setPlaybookModalOpen(false);
         setSelectedLeadForPlaybookId(null);
     };
 
-
-    // Notifications
-    const handleMarkAsRead = async (notificationId: Id) => setNotifications(c => c.map(n => n.id === notificationId ? {...n, isRead: true} : n));
-    const handleMarkAllAsRead = async () => setNotifications(c => c.map(n => ({...n, isRead: true})));
-    const handleClearAllNotifications = async () => { setNotifications([]); showNotification("Notificações limpas.", 'info'); };
-    const handleNotificationClick = (link: NotificationType['link']) => {
-        if (!link) return;
-        setActiveView(link.view);
-        if (link.leadId) {
-            const leadToSelect = leads.find(l => l.id === link.leadId);
-            if (leadToSelect) setSelectedLead(leadToSelect);
-        }
+    const handleUpdatePlaybooks = (updatedPlaybooks: Playbook[]) => {
+        setPlaybooks(updatedPlaybooks);
+        showNotification('Playbooks salvos com sucesso.', 'success');
     };
     
-    // Email Drafts
-    const handleSaveDraft = async (draftData: CreateEmailDraftData) => {
-        const newDraft: EmailDraft = { ...draftData, id: `draft-${Date.now()}`, createdAt: new Date().toISOString() };
-        setEmailDrafts(c => [newDraft, ...c]);
-        showNotification("Rascunho salvo.", 'success');
-    };
+    // PDF Export
+    const handleExportLeadsToPDF = useCallback(() => {
+        setIsPrinting(true);
+    }, []);
 
-    const handleDeleteDraft = async (draftId: Id) => {
-        setEmailDrafts(c => c.filter(d => d.id !== draftId));
-        showNotification("Rascunho deletado.", 'success');
-    };
+    const handlePrintEnd = useCallback(() => {
+        setIsPrinting(false);
+    }, []);
 
-    // Chat (Simplified Local Logic)
-    const handleSendMessage = async (conversationId: Id, text: string, channel: ChatChannel, leadId: Id) => {
-        const newMessage: ChatMessage = { id: `msg-${Date.now()}`, conversationId, senderId: localUser.id, text, channel, timestamp: new Date().toISOString() };
-        setMessages(c => [...c, newMessage]);
-        setConversations(c => c.map(conv => conv.id === conversationId ? { ...conv, lastMessage: text, lastMessageTimestamp: newMessage.timestamp, lastMessageChannel: channel } : conv));
-    };
-    const handleUpdateConversationStatus = async (conversationId: Id, status: ChatConversationStatus) => {
-        setConversations(c => c.map(conv => conv.id === conversationId ? { ...conv, status } : conv));
-        showNotification("Status da conversa atualizado.", 'success');
-    };
-
-    // Groups
-    const handleCreateOrUpdateGroup = async (data: CreateGroupData | UpdateGroupData) => {
-        if (editingGroup) {
-            setGroups(c => c.map(g => g.id === editingGroup.id ? { ...g, ...data } : g));
-            showNotification("Grupo atualizado.", 'success');
-        } else {
-            const newGroup: Group = { id: `group-${Date.now()}`, ...data as CreateGroupData };
-            setGroups(c => [newGroup, ...c]);
-            showNotification("Grupo criado.", 'success');
+    const renderView = () => {
+        const groupForView = groups.find(g => g.id === selectedGroupForView);
+        if (selectedGroupForView && groupForView) {
+            const leadsForGroup = leads.filter(l => l.groupInfo?.groupId === selectedGroupForView);
+            return <GroupsView 
+                        group={groupForView} 
+                        leads={leadsForGroup}
+                        analysis={analysisForGroup}
+                        onUpdateLead={(leadId, updates) => setLeads(current => current.map(l => l.id === leadId ? {...l, ...updates} : l))}
+                        onBack={() => setSelectedGroupForView(null)} 
+                        onCreateOrUpdateAnalysis={handleCreateOrUpdateGroupAnalysis}
+                        onDeleteAnalysis={handleDeleteGroupAnalysis}
+                        showNotification={showNotification}
+                   />;
         }
-        setGroupModalOpen(false); setEditingGroup(null);
-    };
-    const handleDeleteGroup = async (groupId: Id) => {
-        setGroups(c => c.filter(g => g.id !== groupId));
-        showNotification("Grupo deletado.", 'success');
-    };
-    
-    // UI Handlers
-    const handleOpenCreateLeadModal = (columnId?: Id) => {
-        setEditingLead(null);
-        if (columnId) {
-             const newLeadTemplate: Partial<Lead> = { columnId: columnId };
-             setEditingLead(newLeadTemplate as Lead);
+        
+        switch (activeView) {
+            case 'Dashboard':
+                return <Dashboard leads={filteredLeads} columns={columns} activities={activities} tasks={tasks} onNavigate={setActiveView} />;
+            case 'Pipeline':
+                return <KanbanBoard 
+                            columns={columns} 
+                            leads={filteredLeads} 
+                            users={users} 
+                            onUpdateLeadColumn={handleUpdateLeadColumn} 
+                            onSelectLead={handleCardClick}
+                            selectedLeadId={selectedLeadForPlaybookId}
+                            onAddLead={(columnId) => { setEditingLead(null); setCreateLeadModalOpen(true); }}
+                            cardDisplaySettings={cardDisplaySettings}
+                            onUpdateCardSettings={setCardDisplaySettings}
+                            minimizedLeads={minimizedLeads}
+                            onToggleLeadMinimize={onToggleLeadMinimize}
+                            minimizedColumns={minimizedColumns}
+                            onToggleColumnMinimize={onToggleColumnMinimize}
+                            isPlaybookActionEnabled={!!selectedLeadForPlaybookId}
+                            onApplyPlaybookClick={() => setPlaybookModalOpen(true)}
+                        />;
+            case 'Playbooks':
+                 return <PlaybookSettings initialPlaybooks={playbooks} pipelineColumns={columns} onSave={handleUpdatePlaybooks} />;
+            case 'Leads':
+                return <LeadListView 
+                            leads={listViewFilteredLeads} 
+                            columns={columns} 
+                            onLeadClick={setSelectedLead} 
+                            viewType="Leads" 
+                            listDisplaySettings={listDisplaySettings}
+                            onUpdateListSettings={setListDisplaySettings}
+                            allTags={tags}
+                            selectedTags={listSelectedTags}
+                            onSelectedTagsChange={setListSelectedTags}
+                            statusFilter={listStatusFilter}
+                            onStatusFilterChange={setListStatusFilter}
+                            onExportPDF={handleExportLeadsToPDF}
+                        />;
+            case 'Clientes':
+                 return <LeadListView 
+                            leads={filteredLeads.filter(l => columns.find(c => c.id === l.columnId)?.title === 'Fechamento')} 
+                            columns={columns} 
+                            onLeadClick={setSelectedLead} 
+                            viewType="Clientes" 
+                            listDisplaySettings={listDisplaySettings}
+                            onUpdateListSettings={setListDisplaySettings}
+                            allTags={tags}
+                            selectedTags={listSelectedTags}
+                            onSelectedTagsChange={setListSelectedTags}
+                            statusFilter={listStatusFilter}
+                            onStatusFilterChange={setListStatusFilter}
+                            onExportPDF={handleExportLeadsToPDF}
+                        />;
+            case 'Tarefas':
+                return <ActivitiesView 
+                            tasks={tasks} 
+                            leads={leads} 
+                            onEditTask={(task) => { setEditingTask(task); setCreateTaskModalOpen(true); }}
+                            onDeleteTask={handleDeleteTask}
+                            onUpdateTaskStatus={handleUpdateTaskStatus}
+                        />;
+            case 'Calendário':
+                return <CalendarPage 
+                            tasks={tasks} 
+                            leads={leads}
+                            onNewActivity={(date) => { setPreselectedDataForTask({ leadId: leads[0]?.id, date }); setEditingTask(null); setCreateTaskModalOpen(true); }}
+                            onEditActivity={(task) => { setEditingTask(task); setCreateTaskModalOpen(true); }}
+                            onDeleteTask={handleDeleteTask}
+                            onUpdateTaskStatus={handleUpdateTaskStatus}
+                        />;
+            case 'Relatórios':
+                return <ReportsPage leads={leads} columns={columns} tasks={tasks} activities={activities} />;
+            case 'Chat':
+                return <ChatView
+                            conversations={conversations}
+                            messages={messages}
+                            leads={leads}
+                            currentUser={localUser}
+                            onSendMessage={(convId, text, channel, leadId) => setMessages(curr => [...curr, {id: `msg-${Date.now()}`, conversationId: convId, senderId: localUser.id, text, timestamp: new Date().toISOString(), channel}])}
+                            onUpdateConversationStatus={(convId, status) => setConversations(curr => curr.map(c => c.id === convId ? {...c, status} : c))}
+                            showNotification={showNotification}
+                        />
+            case 'Grupos':
+                return <GroupsDashboard 
+                            groups={groups} 
+                            leads={leads}
+                            onSelectGroup={setSelectedGroupForView}
+                            onAddGroup={() => { setEditingGroup(null); setGroupModalOpen(true); }}
+                            onEditGroup={(group) => { setEditingGroup(group); setGroupModalOpen(true); }}
+                            onDeleteGroup={handleDeleteGroup}
+                        />;
+            case 'Integrações':
+                return <IntegrationsPage showNotification={showNotification} />;
+            case 'Notificações':
+                 return <NotificationsView
+                            notifications={notifications}
+                            onMarkAsRead={handleMarkNotificationAsRead}
+                            onMarkAllAsRead={handleMarkAllNotificationsRead}
+                            onClearAll={handleClearAllNotifications}
+                            onNavigate={(link) => {
+                                if (link?.view) setActiveView(link.view);
+                                if (link?.leadId) {
+                                    const leadToSelect = leads.find(l => l.id === link.leadId);
+                                    if(leadToSelect) setSelectedLead(leadToSelect);
+                                }
+                            }}
+                        />;
+            case 'Configurações':
+                return <SettingsPage
+                            currentUser={localUser}
+                            columns={columns}
+                            onUpdateProfile={() => showNotification("Perfil atualizado!", "success")}
+                            onUpdatePipeline={handleUpdatePipeline}
+                        />;
+            default:
+                return <div>Página não encontrada</div>;
         }
-        setCreateLeadModalOpen(true);
-    };
-    const handleOpenEditLeadModal = (lead: Lead) => {
-        setEditingLead(lead);
-        setSelectedLead(null);
-        setCreateLeadModalOpen(true);
-    };
-    const handleOpenCreateTaskModal = (leadId?: Id, date?: string) => {
-        setEditingTask(null);
-        setPreselectedDataForTask(leadId ? { leadId, date } : null);
-        setCreateTaskModalOpen(true);
-    };
-    const handleOpenEditTaskModal = (task: Task) => {
-        setEditingTask(task);
-        setCreateTaskModalOpen(true);
-    };
-    const handleOpenCreateEditGroupModal = (group: Group | null) => {
-        setEditingGroup(group);
-        setGroupModalOpen(true);
     };
 
-    const onToggleLeadMinimize = (id: Id) => {
-        setMinimizedLeads(p => (p ?? []).includes(id) ? (p ?? []).filter(i => i !== id) : [...(p ?? []), id]);
-    };
-    const onToggleColumnMinimize = (id: Id) => {
-        setMinimizedColumns(p => (p ?? []).includes(id) ? (p ?? []).filter(i => i !== id) : [...(p ?? []), id]);
-    };
-
+    if (isPrinting) {
+        return <PrintableLeadsReport leads={listViewFilteredLeads} tasks={tasks} activities={activities} onPrintEnd={handlePrintEnd} />;
+    }
 
     return (
-        <div className="flex h-screen w-full bg-gray-50 dark:bg-zinc-900 text-zinc-800 dark:text-gray-200 font-sans antialiased overflow-hidden">
-            <Sidebar activeView={activeView} onNavigate={setActiveView} isCollapsed={isSidebarCollapsed} onToggle={() => setSidebarCollapsed(p => !p)} isChatEnabled={isChatEnabled} />
-            
-            <div className="flex flex-col flex-1 overflow-hidden">
+        <div className={`flex h-screen bg-gray-100 dark:bg-zinc-800 text-zinc-900 dark:text-gray-200 transition-colors`}>
+            <Sidebar 
+                activeView={activeView} 
+                onNavigate={setActiveView} 
+                isCollapsed={isSidebarCollapsed} 
+                onToggle={() => setSidebarCollapsed(p => !p)}
+                isChatEnabled={isChatEnabled}
+            />
+            <div className="flex-1 flex flex-col overflow-hidden">
                 <Header 
                     currentUser={localUser}
-                    onLogout={() => { /* No action needed in local mode */ }}
+                    onLogout={() => {}}
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
-                    onOpenCreateLeadModal={() => handleOpenCreateLeadModal()}
-                    onOpenCreateTaskModal={() => handleOpenCreateTaskModal()}
+                    onOpenCreateLeadModal={() => { setEditingLead(null); setCreateLeadModalOpen(true); }}
+                    onOpenCreateTaskModal={() => { setEditingTask(null); setCreateTaskModalOpen(true); }}
                     theme={theme}
-                    onThemeToggle={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+                    onThemeToggle={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                     unreadCount={unreadCount}
                 />
-                
-                <main className="flex-1 p-6 overflow-auto dark:bg-zinc-800">
-                     {activeView === 'Dashboard' && <Dashboard leads={leads} columns={columns} activities={activities} tasks={tasks} onNavigate={setActiveView} />}
-                    {activeView === 'Pipeline' && <KanbanBoard columns={columns} leads={filteredLeads} users={users} cardDisplaySettings={cardDisplaySettings} onUpdateLeadColumn={handleUpdateLeadColumn} onSelectLead={handleSelectLeadForPlaybook} selectedLeadId={selectedLeadForPlaybookId} onAddLead={handleOpenCreateLeadModal} onUpdateCardSettings={setCardDisplaySettings} minimizedLeads={minimizedLeads} onToggleLeadMinimize={onToggleLeadMinimize} minimizedColumns={minimizedColumns} onToggleColumnMinimize={onToggleColumnMinimize} isPlaybookActionEnabled={!!selectedLeadForPlaybookId} onApplyPlaybookClick={() => setPlaybookModalOpen(true)} />}
-                    {activeView === 'Playbooks' && <PlaybookSettings initialPlaybooks={playbooks} onSave={handleUpdatePlaybooks} pipelineColumns={columns} />}
-                    {activeView === 'Leads' && <LeadListView viewType="Leads" leads={listViewFilteredLeads} columns={columns} onLeadClick={setSelectedLead} listDisplaySettings={listDisplaySettings} onUpdateListSettings={setListDisplaySettings} allTags={tags} selectedTags={listSelectedTags} onSelectedTagsChange={setListSelectedTags} statusFilter={listStatusFilter} onStatusFilterChange={setListStatusFilter} />}
-                    {activeView === 'Clientes' && <LeadListView viewType="Clientes" leads={listViewFilteredLeads.filter(l => l.columnId === 'closed')} columns={columns} onLeadClick={setSelectedLead} listDisplaySettings={listDisplaySettings} onUpdateListSettings={setListDisplaySettings} allTags={tags} selectedTags={listSelectedTags} onSelectedTagsChange={setListSelectedTags} statusFilter={listStatusFilter} onStatusFilterChange={setListStatusFilter} />}
-                    {activeView === 'Tarefas' && <ActivitiesView tasks={tasks} leads={leads} onEditTask={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
-                    {activeView === 'Calendário' && <CalendarPage tasks={tasks} leads={leads} onNewActivity={(date) => handleOpenCreateTaskModal(undefined, date)} onEditActivity={handleOpenEditTaskModal} onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus} />}
-                    {activeView === 'Relatórios' && <ReportsPage leads={leads} columns={columns} tasks={tasks} activities={activities} />}
-                    {isChatEnabled && activeView === 'Chat' && <ChatView conversations={conversations} messages={messages} leads={leads} currentUser={localUser} onSendMessage={handleSendMessage} onUpdateConversationStatus={handleUpdateConversationStatus} showNotification={showNotification} />}
-                    {activeView === 'Grupos' && (
-                        !selectedGroupForView ? (
-                            <GroupsDashboard 
-                                groups={groups} 
-                                leads={leads}
-                                onSelectGroup={setSelectedGroupForView}
-                                onAddGroup={() => handleOpenCreateEditGroupModal(null)}
-                                onEditGroup={(group) => handleOpenCreateEditGroupModal(group)}
-                                onDeleteGroup={handleDeleteGroup}
-                            />
-                        ) : (
-                            <GroupsView
-                                group={groups.find(g => g.id === selectedGroupForView)!}
-                                leads={leads.filter(l => l.groupInfo?.groupId === selectedGroupForView)}
-                                analysis={analysisForGroup}
-                                onUpdateLead={handleUpdateLeadDetails}
-                                onBack={() => setSelectedGroupForView(null)}
-                                onCreateOrUpdateAnalysis={() => { /* Not implemented for local */ }}
-                                onDeleteAnalysis={() => { /* Not implemented for local */ }}
-                                showNotification={showNotification}
-                            />
-                        )
-                    )}
-                    {activeView === 'Integrações' && <IntegrationsPage showNotification={showNotification} />}
-                    {activeView === 'Notificações' && <NotificationsView notifications={notifications} onMarkAsRead={handleMarkAsRead} onMarkAllAsRead={handleMarkAllAsRead} onClearAll={handleClearAllNotifications} onNavigate={handleNotificationClick} />}
-                    {activeView === 'Configurações' && <SettingsPage currentUser={localUser} onUpdateProfile={() => {}} columns={columns} onUpdatePipeline={handleUpdatePipeline} />}
+                <main className="flex-1 overflow-y-auto p-6">
+                    {renderView()}
                 </main>
             </div>
-            
-            <FAB onOpenCreateLeadModal={() => handleOpenCreateLeadModal()} onOpenCreateTaskModal={() => handleOpenCreateTaskModal()} />
 
+            {/* Modals and Slideovers */}
             <AnimatePresence>
                 {selectedLead && (
-                    <LeadDetailSlideover 
+                    <LeadDetailSlideover
                         lead={selectedLead}
                         activities={activities.filter(a => a.leadId === selectedLead.id)}
                         emailDrafts={emailDrafts.filter(d => d.leadId === selectedLead.id)}
                         tasks={tasks}
                         playbooks={playbooks}
                         onClose={() => setSelectedLead(null)}
-                        onEdit={() => handleOpenEditLeadModal(selectedLead)}
+                        onEdit={() => { setEditingLead(selectedLead); setCreateLeadModalOpen(true); }}
                         onDelete={() => handleDeleteLead(selectedLead.id)}
-                        onAddNote={(noteText) => createActivityLog(selectedLead.id, 'note', noteText)}
-                        onSendEmailActivity={(subject) => createActivityLog(selectedLead.id, 'email_sent', `Email enviado: ${subject}`)}
-                        onAddTask={() => handleOpenCreateTaskModal(selectedLead.id)}
+                        onAddNote={(note) => createActivityLog(selectedLead.id, 'note', note)}
+                        onSendEmailActivity={(subject) => createActivityLog(selectedLead.id, 'email_sent', `Email enviado: "${subject}"`)}
+                        onAddTask={() => { setPreselectedDataForTask({ leadId: selectedLead.id }); setEditingTask(null); setCreateTaskModalOpen(true); }}
                         onSaveDraft={handleSaveDraft}
                         onDeleteDraft={handleDeleteDraft}
                         showNotification={showNotification}
@@ -568,12 +645,11 @@ const App: React.FC = () => {
                     />
                 )}
             </AnimatePresence>
-
             <AnimatePresence>
-                 {(isCreateLeadModalOpen || editingLead) && (
+                {(isCreateLeadModalOpen || editingLead) && (
                     <CreateEditLeadModal 
                         lead={editingLead} 
-                        columns={columns}
+                        columns={columns} 
                         allTags={tags}
                         groups={groups}
                         onClose={() => { setCreateLeadModalOpen(false); setEditingLead(null); }} 
@@ -581,33 +657,24 @@ const App: React.FC = () => {
                     />
                 )}
             </AnimatePresence>
-            <AnimatePresence>
-                 {(isCreateTaskModalOpen || editingTask) && (
+             <AnimatePresence>
+                {(isCreateTaskModalOpen || editingTask || preselectedDataForTask) && (
                     <CreateEditTaskModal 
                         task={editingTask} 
                         leads={leads}
-                        preselectedLeadId={preselectedDataForTask?.leadId || null}
-                        preselectedDate={preselectedDataForTask?.date || null}
-                        onClose={() => { setCreateTaskModalOpen(false); setEditingTask(null); setPreselectedDataForTask(null); }} 
+                        preselectedLeadId={preselectedDataForTask?.leadId}
+                        preselectedDate={preselectedDataForTask?.date}
+                        onClose={() => { setCreateTaskModalOpen(false); setEditingTask(null); setPreselectedDataForTask(null); }}
                         onSubmit={handleCreateOrUpdateTask}
                     />
                 )}
             </AnimatePresence>
             <AnimatePresence>
                 {(isGroupModalOpen || editingGroup) && (
-                    <CreateEditGroupModal
-                        group={editingGroup}
+                    <CreateEditGroupModal 
+                        group={editingGroup} 
                         onClose={() => { setGroupModalOpen(false); setEditingGroup(null); }}
                         onSubmit={handleCreateOrUpdateGroup}
-                    />
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-                {notification && (
-                    <Notification 
-                        message={notification.message} 
-                        type={notification.type} 
-                        onClose={() => setNotification(null)}
                     />
                 )}
             </AnimatePresence>
@@ -621,6 +688,19 @@ const App: React.FC = () => {
                     />
                 )}
             </AnimatePresence>
+
+            {/* Global UI */}
+            <AnimatePresence>
+                {notification && (
+                    <Notification
+                        message={notification.message}
+                        type={notification.type}
+                        onClose={() => setNotification(null)}
+                    />
+                )}
+            </AnimatePresence>
+            
+            <FAB onOpenCreateLeadModal={() => { setEditingLead(null); setCreateLeadModalOpen(true); }} onOpenCreateTaskModal={() => { setEditingTask(null); setCreateTaskModalOpen(true); }} />
         </div>
     );
 };

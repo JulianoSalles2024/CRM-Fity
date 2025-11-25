@@ -96,42 +96,20 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
     if (!lead.activePlaybook) return null;
     return playbooks.find(p => p.id === lead.activePlaybook?.playbookId);
   }, [lead.activePlaybook, playbooks]);
+  
+  const combinedActivities = useMemo(() => {
+    const historyAsActivities: (Activity & { type: 'playbook_completed' })[] = (lead.playbookHistory || []).map(entry => ({
+      id: `playbook-${entry.playbookId}-${entry.completedAt}`,
+      leadId: lead.id,
+      type: 'playbook_completed', // custom type
+      text: `Cadência "${entry.playbookName}" concluída.`,
+      authorName: 'Sistema',
+      timestamp: entry.completedAt,
+    }));
 
-  const playbookHistoryDetails = useMemo(() => {
-    if (!lead.playbookHistory) return [];
-
-    const sortedHistory = [...lead.playbookHistory].sort(
-      (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
-    );
-
-    const uniqueLatestHistory = new Map<Id, PlaybookHistoryEntry & { playbook: Playbook }>();
-
-    for (const historyEntry of sortedHistory) {
-      if (!uniqueLatestHistory.has(historyEntry.playbookId)) {
-        const playbook = playbooks.find(p => p.id === historyEntry.playbookId);
-        if (playbook) {
-          uniqueLatestHistory.set(historyEntry.playbookId, { ...historyEntry, playbook });
-        }
-      }
-    }
-
-    return Array.from(uniqueLatestHistory.values());
-  }, [lead.playbookHistory, playbooks]);
-
-  const [activeCadenceTab, setActiveCadenceTab] = useState<Id | 'active'>('active');
-
-  useEffect(() => {
-    // Reset to 'active' tab if there is an active playbook, or to the first history item if not.
-    if (lead.activePlaybook) {
-      setActiveCadenceTab('active');
-    } else if (playbookHistoryDetails.length > 0) {
-      // Check if the current tab is still valid, otherwise switch
-      const currentTabIsValid = activeCadenceTab === 'active' || playbookHistoryDetails.some(h => h.playbookId === activeCadenceTab);
-      if (!currentTabIsValid) {
-        setActiveCadenceTab(playbookHistoryDetails[0].playbookId);
-      }
-    }
-  }, [lead.id, lead.activePlaybook, playbookHistoryDetails]);
+    const allItems = [...sortedActivities, ...historyAsActivities];
+    return allItems.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }, [sortedActivities, lead.playbookHistory, lead.id]);
 
 
   const getTabIcon = (tabName: string) => {
@@ -216,76 +194,35 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
                 </div>
             </DetailItem>
             <DetailItem icon={Clock} label="Última Atividade">{lead.lastActivity}</DetailItem>
-
-            {(activePlaybookDetails || playbookHistoryDetails.length > 0) && (
+            
+            {activePlaybookDetails && (
                 <div className="border-t border-zinc-700 pt-6">
                     <div className="flex items-start gap-3">
                         <BookOpen className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
                         <div className="flex flex-col w-full">
-                            <span className="text-sm text-zinc-500 dark:text-zinc-400">Cadências</span>
+                            <span className="text-sm text-zinc-500 dark:text-zinc-400">Cadência Ativa</span>
                         </div>
                     </div>
                     <div className="pl-8 mt-2">
-                        <div className="border-b border-zinc-700">
-                            <nav className="flex -mb-px space-x-4 overflow-x-auto" aria-label="Cadence Tabs">
-                                {activePlaybookDetails && (
-                                    <button onClick={() => setActiveCadenceTab('active')}
-                                            className={`flex-shrink-0 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${activeCadenceTab === 'active' ? 'border-violet-500 text-violet-400' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}>
-                                        Ativa
-                                    </button>
-                                )}
-                                {playbookHistoryDetails.map(entry => (
-                                    <button key={entry.playbookId} onClick={() => setActiveCadenceTab(entry.playbookId)}
-                                            className={`flex-shrink-0 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${activeCadenceTab === entry.playbookId ? 'border-violet-500 text-violet-400' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}>
-                                        {entry.playbookName}
-                                    </button>
-                                ))}
-                            </nav>
-                        </div>
-                        <div className="mt-4">
-                            {activeCadenceTab === 'active' && activePlaybookDetails && (
-                                <>
-                                    <p className="font-semibold text-white">{activePlaybookDetails.name}</p>
-                                    <ul className="mt-2 space-y-2">
-                                        {activePlaybookDetails.steps.map((step, index) => {
-                                            const associatedTask = tasks.find(t => t.leadId === lead.id && t.playbookId === activePlaybookDetails.id && t.playbookStepIndex === index);
-                                            const isCompleted = associatedTask?.status === 'completed';
-                                            const handleToggle = () => {
-                                                if (associatedTask) onUpdateTaskStatus(associatedTask.id, isCompleted ? 'pending' : 'completed');
-                                            };
-                                            return (
-                                                <li key={index} className="flex items-center gap-3 text-sm">
-                                                    <button onClick={handleToggle} className="flex-shrink-0" disabled={!associatedTask}>
-                                                        {isCompleted ? <CheckCircle2 className="w-5 h-5 text-green-400" /> : <Circle className="w-5 h-5 text-zinc-600 hover:text-zinc-400" />}
-                                                    </button>
-                                                    <span className={`font-semibold ${isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-300'}`}>D+{step.day}:</span>
-                                                    <span className={`${isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-400'}`}>{step.instructions}</span>
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                </>
-                            )}
-                            {activeCadenceTab !== 'active' && (() => {
-                                const historyEntry = playbookHistoryDetails.find(h => h.playbookId === activeCadenceTab);
-                                if (!historyEntry || !historyEntry.playbook) return null;
+                         <p className="font-semibold text-white">{activePlaybookDetails.name}</p>
+                         <ul className="mt-2 space-y-2">
+                            {activePlaybookDetails.steps.map((step, index) => {
+                                const associatedTask = tasks.find(t => t.leadId === lead.id && t.playbookId === activePlaybookDetails.id && t.playbookStepIndex === index);
+                                const isCompleted = associatedTask?.status === 'completed';
+                                const handleToggle = () => {
+                                    if (associatedTask) onUpdateTaskStatus(associatedTask.id, isCompleted ? 'pending' : 'completed');
+                                };
                                 return (
-                                    <>
-                                        <p className="font-semibold text-white">{historyEntry.playbook.name}</p>
-                                        <p className="text-xs text-zinc-500">Concluído em {new Date(historyEntry.completedAt).toLocaleDateString('pt-BR')}</p>
-                                        <ul className="mt-2 space-y-2">
-                                            {historyEntry.playbook.steps.map((step, index) => (
-                                                <li key={index} className="flex items-center gap-3 text-sm text-zinc-500 line-through">
-                                                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                                                    <span className="font-semibold">D+{step.day}:</span>
-                                                    <span>{step.instructions}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </>
+                                    <li key={index} className="flex items-center gap-3 text-sm">
+                                        <button onClick={handleToggle} className="flex-shrink-0" disabled={!associatedTask}>
+                                            {isCompleted ? <CheckCircle2 className="w-5 h-5 text-green-400" /> : <Circle className="w-5 h-5 text-zinc-600 hover:text-zinc-400" />}
+                                        </button>
+                                        <span className={`font-semibold ${isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-300'}`}>D+{step.day}:</span>
+                                        <span className={`${isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-400'}`}>{step.instructions}</span>
+                                    </li>
                                 );
-                            })()}
-                        </div>
+                            })}
+                        </ul>
                     </div>
                 </div>
             )}
@@ -321,10 +258,13 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
                 </div>
             </div>
             <ul className="space-y-4">
-              {sortedActivities.length > 0 ? sortedActivities.map(activity => (
+              {combinedActivities.length > 0 ? combinedActivities.map(activity => (
                  <li key={activity.id} className="flex gap-3 items-start">
                     <div className="flex-shrink-0 bg-gray-100 dark:bg-zinc-800 h-8 w-8 rounded-full flex items-center justify-center mt-1">
-                        {activity.type === 'note' ? <MessageSquare className="w-4 h-4 text-violet-400" /> : activity.type === 'email_sent' ? <Mail className="w-4 h-4 text-violet-400" /> : <ArrowRight className="w-4 h-4 text-violet-400" />}
+                        {activity.type === 'note' ? <MessageSquare className="w-4 h-4 text-violet-400" /> : 
+                         activity.type === 'email_sent' ? <Mail className="w-4 h-4 text-violet-400" /> :
+                         activity.type === 'playbook_completed' ? <BookOpen className="w-4 h-4 text-violet-400" /> :
+                         <ArrowRight className="w-4 h-4 text-violet-400" />}
                     </div>
                     <div>
                         <p className="text-xs text-zinc-400 dark:text-zinc-500">
@@ -334,7 +274,7 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
                     </div>
                 </li>
               )) : (
-                <p className="text-center text-zinc-400 dark:text-zinc-500 py-8">Nenhuma atividade registrada para este lead.</p>
+                <p className="text-center text-zinc-400 dark:text-zinc-500 py-8">Nenhuma atividade ou cadência concluída registrada.</p>
               )}
             </ul>
           </div>

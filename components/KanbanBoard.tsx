@@ -23,7 +23,7 @@ interface KanbanBoardProps {
     users: User[];
     cardDisplaySettings: CardDisplaySettings;
     onUpdateLeadColumn: (leadId: Id, newColumnId: Id) => void;
-    onSelectLead: (leadId: Id) => void;
+    onSelectLead: (lead: Lead) => void;
     selectedLeadId: Id | null;
     onAddLead: (columnId: Id) => void;
     onUpdateCardSettings: (newSettings: CardDisplaySettings) => void;
