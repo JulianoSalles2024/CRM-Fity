@@ -1,9 +1,6 @@
-
-
-
-import React, { useState } from 'react';
-import { Users, Contact, SlidersHorizontal, Tag, X, Download } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
+import React, { useState, useRef, useEffect } from 'react';
+import { Users, Contact, SlidersHorizontal, Tag, X, Download, Plus, TrendingUp, User as UserIcon, ClipboardList } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import ListCustomizationPopup from './ListCustomizationPopup';
 import TagFilterPopup from './TagFilterPopup';
 import type { ListDisplaySettings, Tag as TagType } from '../types';
@@ -19,6 +16,8 @@ interface LeadListHeaderProps {
     onStatusFilterChange: (status: 'all' | 'Ativo' | 'Inativo') => void;
     onExportCSV: () => void;
     onExportPDF: () => void;
+    onOpenCreateLeadModal: () => void;
+    onOpenCreateTaskModal: () => void;
 }
 
 const LeadListHeader: React.FC<LeadListHeaderProps> = ({ 
@@ -31,13 +30,29 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
     statusFilter,
     onStatusFilterChange,
     onExportCSV,
-    onExportPDF
+    onExportPDF,
+    onOpenCreateLeadModal,
+    onOpenCreateTaskModal,
 }) => {
     const [isCustomizeOpen, setCustomizeOpen] = useState(false);
     const [isTagFilterOpen, setTagFilterOpen] = useState(false);
+    const [isCreateMenuOpen, setCreateMenuOpen] = useState(false);
+    
+    const createMenuRef = useRef<HTMLDivElement>(null);
+    
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (createMenuRef.current && !createMenuRef.current.contains(event.target as Node)) {
+                setCreateMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const isClientsView = viewType === 'Clientes';
     const Icon = isClientsView ? Contact : Users;
-    const title = isClientsView ? 'Clientes' : 'Leads';
+    const title = isClientsView ? 'Clientes' : 'Clientes';
     const description = isClientsView ? 'Gerencie seus clientes e relacionamentos' : 'Gerencie todos os seus leads e clientes';
 
     const handleTagToggle = (tagToToggle: TagType) => {
@@ -53,6 +68,12 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
     const handleClearTags = () => {
         onSelectedTagsChange([]);
     };
+
+    const createMenuItems = [
+        { label: 'Novo Lead', icon: TrendingUp, action: onOpenCreateLeadModal },
+        { label: 'Novo Cliente', icon: UserIcon, action: onOpenCreateLeadModal },
+        { label: 'Nova Atividade', icon: ClipboardList, action: onOpenCreateTaskModal },
+    ];
 
     return (
         <div className="flex flex-col gap-4">
@@ -109,6 +130,40 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2">
+                     <div className="relative" ref={createMenuRef}>
+                        <button
+                            onClick={() => setCreateMenuOpen(prev => !prev)}
+                            className="flex items-center gap-2 bg-violet-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            <span>Criar</span>
+                        </button>
+                        <AnimatePresence>
+                            {isCreateMenuOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute top-full right-0 mt-2 w-56 bg-zinc-800 rounded-lg border border-zinc-700 shadow-lg z-20 py-1"
+                                >
+                                    {createMenuItems.map(item => (
+                                        <button
+                                            key={item.label}
+                                            onClick={() => { item.action(); setCreateMenuOpen(false); }}
+                                            className="w-full flex items-center justify-between px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-700/50"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <item.icon className="w-4 h-4 text-zinc-400" />
+                                                <span>{item.label}</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
                      <div className="relative">
                         <button 
                             onClick={() => setTagFilterOpen(p => !p)}

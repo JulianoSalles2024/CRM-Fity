@@ -558,6 +558,8 @@ const App: React.FC = () => {
                             statusFilter={listStatusFilter}
                             onStatusFilterChange={setListStatusFilter}
                             onExportPDF={handleExportLeadsToPDF}
+                            onOpenCreateLeadModal={() => { setEditingLead(null); setCreateLeadModalOpen(true); }}
+                            onOpenCreateTaskModal={() => { setEditingTask(null); setCreateTaskModalOpen(true); }}
                         />;
             case 'Clientes':
                  return <LeadListView 
@@ -573,6 +575,8 @@ const App: React.FC = () => {
                             statusFilter={listStatusFilter}
                             onStatusFilterChange={setListStatusFilter}
                             onExportPDF={handleExportLeadsToPDF}
+                            onOpenCreateLeadModal={() => { setEditingLead(null); setCreateLeadModalOpen(true); }}
+                            onOpenCreateTaskModal={() => { setEditingTask(null); setCreateTaskModalOpen(true); }}
                         />;
             case 'Tarefas':
                 return <ActivitiesView 
@@ -659,8 +663,6 @@ const App: React.FC = () => {
                     onLogout={() => {}}
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
-                    onOpenCreateLeadModal={() => { setEditingLead(null); setCreateLeadModalOpen(true); }}
-                    onOpenCreateTaskModal={() => { setEditingTask(null); setCreateTaskModalOpen(true); }}
                     theme={theme}
                     onThemeToggle={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                     unreadCount={unreadCount}

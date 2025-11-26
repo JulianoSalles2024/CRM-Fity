@@ -27,6 +27,8 @@ interface LeadListViewProps {
     statusFilter: 'all' | 'Ativo' | 'Inativo';
     onStatusFilterChange: (status: 'all' | 'Ativo' | 'Inativo') => void;
     onExportPDF: () => void;
+    onOpenCreateLeadModal: () => void;
+    onOpenCreateTaskModal: () => void;
 }
 
 const LeadListView: React.FC<LeadListViewProps> = ({ 
@@ -41,7 +43,9 @@ const LeadListView: React.FC<LeadListViewProps> = ({
     onSelectedTagsChange,
     statusFilter,
     onStatusFilterChange,
-    onExportPDF
+    onExportPDF,
+    onOpenCreateLeadModal,
+    onOpenCreateTaskModal
 }) => {
     const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending'});
 
@@ -212,6 +216,8 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                 onStatusFilterChange={onStatusFilterChange}
                 onExportCSV={handleExportCSV}
                 onExportPDF={onExportPDF}
+                onOpenCreateLeadModal={onOpenCreateLeadModal}
+                onOpenCreateTaskModal={onOpenCreateTaskModal}
             />
             <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden flex-1 flex flex-col">
                 {sortedLeads.length === 0 ? (
