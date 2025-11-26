@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, User, Building, DollarSign, Tag as TagIcon, Clock, Trash2, MessageSquare, ArrowRight, TrendingUp, Sparkles, FileText, Mail, BookOpen, Circle, CheckCircle2 } from 'lucide-react';
@@ -97,11 +98,13 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
     return playbooks.find(p => p.id === lead.activePlaybook?.playbookId);
   }, [lead.activePlaybook, playbooks]);
   
+  // FIX: Removed the problematic type intersection `Activity & { type: 'playbook_completed' }`
+  // which was reducing to `never`. Let TypeScript infer the correct union type.
   const combinedActivities = useMemo(() => {
-    const historyAsActivities: (Activity & { type: 'playbook_completed' })[] = (lead.playbookHistory || []).map(entry => ({
+    const historyAsActivities = (lead.playbookHistory || []).map(entry => ({
       id: `playbook-${entry.playbookId}-${entry.completedAt}`,
       leadId: lead.id,
-      type: 'playbook_completed', // custom type
+      type: 'playbook_completed' as const, // custom type
       text: `Cadência "${entry.playbookName}" concluída.`,
       authorName: 'Sistema',
       timestamp: entry.completedAt,

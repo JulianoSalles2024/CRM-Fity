@@ -30,13 +30,20 @@ const CreateEditPlaybookModal: React.FC<CreateEditPlaybookModalProps> = ({ playb
         setStages(prev => prev.includes(stageId) ? prev.filter(id => id !== stageId) : [...prev, stageId]);
     };
 
+    // FIX: Correctly handle type assignments for different fields within a PlaybookStep.
     const handleStepChange = (index: number, field: keyof PlaybookStep, value: string | number) => {
         const newSteps = [...steps];
+        const stepToUpdate = { ...newSteps[index] };
+
         if (field === 'day') {
-            newSteps[index][field] = Math.max(1, Number(value));
-        } else {
-            newSteps[index][field] = value as Task['type'] | string;
+            stepToUpdate.day = Math.max(1, Number(value));
+        } else if (field === 'type') {
+            stepToUpdate.type = value as Task['type'];
+        } else { // instructions
+            stepToUpdate.instructions = value as string;
         }
+
+        newSteps[index] = stepToUpdate;
         setSteps(newSteps);
     };
 

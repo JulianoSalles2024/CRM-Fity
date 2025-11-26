@@ -20,7 +20,6 @@ type FormData = {
     phone: string;
     company: string;
     value: string;
-    probability: string;
     columnId: Id;
     status: string;
     clientId: string;
@@ -85,7 +84,6 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
     phone: '',
     company: '',
     value: '0,00',
-    probability: '50',
     columnId: columns[0]?.id || '',
     status: 'Ativo',
     clientId: '',
@@ -129,7 +127,6 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                 phone: lead.phone || '',
                 company: lead.company || '',
                 value: lead.value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00',
-                probability: lead.probability?.toString() || '50',
                 columnId: lead.columnId || columns[0]?.id || '',
                 status: lead.status || 'Ativo',
                 clientId: lead.clientId?.toString() || '',
@@ -145,7 +142,6 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
             phone: '',
             company: '',
             value: '0,00',
-            probability: '50',
             columnId: columns[0]?.id || '',
             status: 'Ativo',
             clientId: '',
@@ -183,7 +179,6 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     const leadValue = parseFloat(formData.value.replace(/\./g, '').replace(',', '.'));
-    const leadProbability = parseInt(formData.probability, 10);
     
     if (!formData.name || isNaN(leadValue) || !formData.columnId) {
         alert('Por favor, preencha os campos obrigatórios (*).');
@@ -192,10 +187,9 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
     
     const { groupId, ...restOfFormData } = formData;
     
-    const dataToSubmit: UpdateLeadData = {
+    const dataToSubmit: Omit<UpdateLeadData, 'probability'> = {
         ...restOfFormData,
         value: leadValue,
-        probability: isNaN(leadProbability) ? undefined : leadProbability,
         clientId: formData.clientId || undefined,
     };
     
@@ -328,8 +322,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                         {groups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}
                    </SelectField>
 
-                  <InputField label="Valor (R$)" name="value" value={formData.value} onChange={handleChange} required type="text" className="md:col-span-3" />
-                  <InputField label="Probabilidade (%)" name="probability" value={formData.probability} onChange={handleChange} type="number" className="md:col-span-3" />
+                  <InputField label="Valor (R$)" name="value" value={formData.value} onChange={handleChange} required type="text" className="md:col-span-6" />
 
                   <SelectField label="Estágio" name="columnId" value={formData.columnId} onChange={handleChange} required className="md:col-span-3"
                       customElement={<div className={`absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full`} style={{ backgroundColor: selectedColumnColor }} />}>

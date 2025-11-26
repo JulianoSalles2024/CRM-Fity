@@ -152,7 +152,7 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onSelect, isS
                                 </div>
                             )}
                             
-                            {displaySettings.showProbability && typeof lead.probability === 'number' && (
+                            {typeof lead.probability === 'number' && (
                                  <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
                                     <TrendingUp className="w-3.5 h-3.5 flex-shrink-0" />
                                     <span>Probabilidade: {lead.probability}%</span>

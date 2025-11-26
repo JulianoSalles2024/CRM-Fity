@@ -377,7 +377,8 @@ const PlaceholderTab: React.FC<{ title: string }> = ({ title }) => (
 // --- Componente Principal ---
 interface SettingsPageProps {
     currentUser: User;
-    columns: ColumnData;
+    // FIX: Changed type from ColumnData to ColumnData[] to match the type of the passed prop.
+    columns: ColumnData[];
     onUpdateProfile: (name: string, avatarFile?: File) => void;
     onUpdatePipeline: (columns: ColumnData[]) => void;
 }

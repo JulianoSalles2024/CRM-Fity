@@ -133,8 +133,32 @@ const App: React.FC = () => {
     }, [theme]);
 
 
-    // --- COMPUTED DATA ---
+    // --- COMPUTED DATA & UTILS ---
     const unreadCount = useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);
+    
+    const calculateProbabilityForStage = useCallback((stageId: Id, allColumns: ColumnData[]): number => {
+        const closingStageIndex = allColumns.findIndex(c => c.id === 'closed');
+        const lostStageId = allColumns.find(c => c.id === 'lost')?.id;
+
+        if (stageId === lostStageId) return 0;
+        if (stageId === allColumns[closingStageIndex]?.id) return 100;
+        
+        if (closingStageIndex === -1) return 50; // Fallback if no closing stage found
+
+        const funnelStages = allColumns.slice(0, closingStageIndex);
+        const currentStageIndexInFunnel = funnelStages.findIndex(c => c.id === stageId);
+        
+        if (currentStageIndexInFunnel === -1) {
+            return 0; // Not in the main funnel (e.g., 'lost' or other terminal stage)
+        }
+
+        const totalFunnelSteps = funnelStages.length;
+        if (totalFunnelSteps === 0) return 50; // 'closed' is the first stage
+
+        const probability = ((currentStageIndexInFunnel + 1) / (totalFunnelSteps + 1)) * 100;
+        return Math.round(probability);
+    }, []);
+
     const filteredLeads = useMemo(() => leads.filter(lead => {
         const searchLower = searchQuery.toLowerCase();
         return (lead.name.toLowerCase().includes(searchLower) || lead.company.toLowerCase().includes(searchLower) || (lead.email && lead.email.toLowerCase().includes(searchLower)));
@@ -164,7 +188,11 @@ const App: React.FC = () => {
     // Leads
     const handleCreateOrUpdateLead = async (data: CreateLeadData | UpdateLeadData) => {
         if (editingLead && editingLead.id) { // UPDATE
-            const updatedLead = { ...leads.find(l => l.id === editingLead.id)!, ...data };
+            const oldLead = leads.find(l => l.id === editingLead.id)!;
+            const newColumnId = data.columnId || oldLead.columnId;
+            const newProbability = calculateProbabilityForStage(newColumnId, columns);
+            const updatedLead = { ...oldLead, ...data, probability: newProbability };
+
             setLeads(current => current.map(lead => lead.id === editingLead.id ? updatedLead : lead));
             showNotification(`Lead "${updatedLead.name}" atualizado.`, 'success');
             createActivityLog(updatedLead.id, 'note', `Lead atualizado.`);
@@ -172,7 +200,6 @@ const App: React.FC = () => {
             const newLead: Lead = {
                 id: `lead-${Date.now()}`,
                 ...data,
-                // Required fields for a new lead
                 columnId: data.columnId || columns[0].id,
                 name: data.name || 'Novo Lead',
                 company: data.company || '',
@@ -182,6 +209,7 @@ const App: React.FC = () => {
                 lastActivity: 'agora',
                 createdAt: new Date().toISOString(),
             };
+            newLead.probability = calculateProbabilityForStage(newLead.columnId, columns);
             setLeads(current => [newLead, ...current]);
             showNotification(`Lead "${newLead.name}" criado.`, 'success');
         }
@@ -200,21 +228,21 @@ const App: React.FC = () => {
             const leadToMove = prevLeads.find(l => l.id === leadId);
             if (!leadToMove) return prevLeads;
 
-            // --- SMART PLAYBOOK LOGIC ---
-            let updatedLead = { ...leadToMove, columnId: newColumnId, lastActivity: 'agora' };
+            const newProbability = calculateProbabilityForStage(newColumnId, columns);
+            let updatedLead = { ...leadToMove, columnId: newColumnId, lastActivity: 'agora', probability: newProbability };
 
+            // SMART PLAYBOOK LOGIC
             // 1. Re-activate a just-completed playbook if moving back
             const lastCompletedPlaybook = leadToMove.playbookHistory?.[(leadToMove.playbookHistory?.length || 0) - 1];
             if (lastCompletedPlaybook) {
                 const playbookDef = playbooks.find(p => p.id === lastCompletedPlaybook.playbookId);
                 if (playbookDef && playbookDef.stages.includes(newColumnId)) {
-                    // It's moving back to a stage of the last playbook, so re-activate it.
                     updatedLead.activePlaybook = {
                         playbookId: lastCompletedPlaybook.playbookId,
                         playbookName: lastCompletedPlaybook.playbookName,
                         startedAt: lastCompletedPlaybook.startedAt,
                     };
-                    updatedLead.playbookHistory = leadToMove.playbookHistory?.slice(0, -1); // Remove from history
+                    updatedLead.playbookHistory = leadToMove.playbookHistory?.slice(0, -1);
                     showNotification(`Playbook "${updatedLead.activePlaybook.playbookName}" reativado.`, 'info');
                 }
             }
@@ -234,7 +262,6 @@ const App: React.FC = () => {
                      showNotification(`Playbook "${historyEntry.playbookName}" concluído e arquivado.`, 'info');
                  }
             }
-
 
             createActivityLog(leadId, 'status_change', `Movido para "${columns.find(c => c.id === newColumnId)?.title}".`);
 
@@ -276,7 +303,6 @@ const App: React.FC = () => {
         setTasks(prevTasks => {
             const newTasks = prevTasks.map(t => t.id === taskId ? { ...t, status } : t);
             
-            // --- Check for Playbook Completion ---
             const updatedTask = newTasks.find(t => t.id === taskId);
             const lead = leads.find(l => l.id === updatedTask?.leadId);
 
@@ -285,16 +311,15 @@ const App: React.FC = () => {
                 const tasksForThisPlaybook = newTasks.filter(t => t.leadId === lead.id && t.playbookId === playbook?.id);
                 
                 if (playbook && tasksForThisPlaybook.length === playbook.steps.length && tasksForThisPlaybook.every(t => t.status === 'completed')) {
-                    // All tasks for this playbook are now complete.
-                    
                     const currentColumnIndex = columns.findIndex(c => c.id === lead.columnId);
                     const nextColumn = columns[currentColumnIndex + 1];
                     
                     if (nextColumn) {
-                        // Move lead to next stage
+                        const newProbability = calculateProbabilityForStage(nextColumn.id, columns);
                         const updatedLead = { 
                             ...lead, 
-                            columnId: nextColumn.id, 
+                            columnId: nextColumn.id,
+                            probability: newProbability, 
                             activePlaybook: undefined,
                             playbookHistory: [
                                 ...(lead.playbookHistory || []),
@@ -385,6 +410,12 @@ const App: React.FC = () => {
     // Pipeline settings
     const handleUpdatePipeline = (newColumns: ColumnData[]) => {
         setColumns(newColumns);
+        setLeads(currentLeads => 
+            currentLeads.map(lead => ({
+                ...lead,
+                probability: calculateProbabilityForStage(lead.columnId, newColumns)
+            }))
+        );
         showNotification('Pipeline atualizado.', 'success');
     };
     
