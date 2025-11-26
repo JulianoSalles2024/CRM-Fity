@@ -12,6 +12,7 @@ interface CreateStageModalProps {
 const typeOptions: { value: ColumnData['type']; label: string }[] = [
     { value: 'open', label: 'Abertura' },
     { value: 'follow-up', label: 'Follow-up' },
+    { value: 'scheduling', label: 'Agendamento' },
     { value: 'won', label: 'Ganho' },
     { value: 'lost', label: 'Perda' },
 ];
@@ -104,13 +105,13 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
                              <label className="block text-sm font-medium text-zinc-300 mb-2">
                                 Tipo de Estágio
                             </label>
-                             <div className="flex gap-2 rounded-md bg-zinc-900 p-1 border border-zinc-700">
+                             <div className="flex gap-1 rounded-md bg-zinc-900 p-1 border border-zinc-700 flex-wrap">
                                 {typeOptions.map(option => (
                                     <button
                                         type="button"
                                         key={option.value}
                                         onClick={() => setType(option.value)}
-                                        className={`w-full py-1.5 text-sm font-semibold rounded-md transition-colors ${type === option.value ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:bg-zinc-700/50'}`}
+                                        className={`flex-1 min-w-[80px] py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-colors ${type === option.value ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:bg-zinc-700/50'}`}
                                     >
                                         {option.label}
                                     </button>

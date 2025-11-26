@@ -76,13 +76,13 @@ export interface ColumnData {
   id: Id;
   title: string;
   color: string;
-  type: 'open' | 'follow-up' | 'won' | 'lost';
+  type: 'open' | 'follow-up' | 'scheduling' | 'won' | 'lost';
 }
 
 export interface Activity {
   id: Id;
   leadId: Id;
-  type: 'note' | 'status_change' | 'email_sent';
+  type: 'note' | 'status_change' | 'email_sent' | 'playbook_completed';
   text: string;
   authorName: string;
   timestamp: string; // ISO string

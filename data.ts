@@ -11,6 +11,7 @@ export const initialColumns: ColumnData[] = [
   { id: 'qualify', title: 'Qualificação', color: '#8b5cf6', type: 'open' },
   { id: 'proposal', title: 'Proposta', color: '#ec4899', type: 'follow-up' },
   { id: 'negotiation', title: 'Negociação', color: '#f97316', type: 'follow-up' },
+  { id: 'scheduling', title: 'Agendamento', color: '#14b8a6', type: 'scheduling' }, // teal-500
   { id: 'closed', title: 'Fechamento', color: '#10b981', type: 'won' },
   { id: 'lost', title: 'Perdido', color: '#ef4444', type: 'lost' },
 ];

@@ -155,10 +155,6 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ tasks, leads, onNewActivity
                             <div className="flex flex-col items-center justify-center h-full text-center">
                                 <p className="font-semibold text-zinc-300">Nenhuma atividade agendada</p>
                                 <p className="text-sm text-zinc-500 mb-4">Nenhuma atividade agendada para este dia</p>
-                                <button onClick={() => onNewActivity(selectedDate.toISOString().split('T')[0])} className="flex items-center gap-2 bg-zinc-700 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-zinc-600 transition-colors">
-                                     <Plus className="w-4 h-4" />
-                                    <span>Criar Atividade</span>
-                                </button>
                             </div>
                         )}
                      </div>

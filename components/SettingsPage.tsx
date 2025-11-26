@@ -100,12 +100,14 @@ const StageItem: React.FC<{ column: ColumnData; index: number; onEdit?: (column:
     const typeStyles: Record<ColumnData['type'], string> = {
         open: 'bg-zinc-700 text-zinc-300',
         'follow-up': 'bg-blue-900/50 text-blue-400',
+        scheduling: 'bg-teal-900/50 text-teal-400',
         won: 'bg-green-900/50 text-green-400',
         lost: 'bg-red-900/50 text-red-400',
     };
     const typeLabels: Record<ColumnData['type'], string> = {
         open: 'Abertura',
         'follow-up': 'Follow-up',
+        scheduling: 'Agendamento',
         won: 'Ganho',
         lost: 'Perda',
     };

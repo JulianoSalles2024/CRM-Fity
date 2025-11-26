@@ -143,36 +143,38 @@ const App: React.FC = () => {
         if (stage.type === 'lost') return 0;
         if (stage.type === 'won') return 100;
 
-        const activeFunnelStages = allColumns.filter(c => c.type === 'open' || c.type === 'follow-up');
-        
-        const openStages = activeFunnelStages.filter(c => c.type === 'open');
-        const followUpStages = activeFunnelStages.filter(c => c.type === 'follow-up');
+        const openStages = allColumns.filter(c => c.type === 'open');
+        const followUpStages = allColumns.filter(c => c.type === 'follow-up');
+        const schedulingStages = allColumns.filter(c => c.type === 'scheduling');
 
         if (stage.type === 'open') {
             const currentIndex = openStages.findIndex(c => c.id === stageId);
-            const totalOpen = openStages.length;
-            
-            if (totalOpen <= 1) return 25;
-            
-            const baseProbability = 10;
-            const range = 50 - baseProbability;
-            const probability = baseProbability + (currentIndex / (totalOpen - 1)) * range;
-            return Math.round(probability);
+            const total = openStages.length;
+            if (total <= 1) return 25; // Midpoint of 10-40 range
+            const base = 10;
+            const range = 40 - base;
+            return Math.round(base + (currentIndex / (total - 1)) * range);
         }
 
         if (stage.type === 'follow-up') {
             const currentIndex = followUpStages.findIndex(c => c.id === stageId);
-            const totalFollowUp = followUpStages.length;
-            
-            if (totalFollowUp <= 1) return 75;
-
-            const baseProbability = 51;
-            const range = 99 - baseProbability;
-            const probability = baseProbability + (currentIndex / (totalFollowUp - 1)) * range;
-            return Math.round(probability);
+            const total = followUpStages.length;
+            if (total <= 1) return 60; // Midpoint of 41-80 range
+            const base = 41;
+            const range = 80 - base;
+            return Math.round(base + (currentIndex / (total - 1)) * range);
         }
 
-        return 0; 
+        if (stage.type === 'scheduling') {
+            const currentIndex = schedulingStages.findIndex(c => c.id === stageId);
+            const total = schedulingStages.length;
+            if (total <= 1) return 90; // Midpoint of 81-99 range
+            const base = 81;
+            const range = 99 - base;
+            return Math.round(base + (currentIndex / (total - 1)) * range);
+        }
+
+        return 0;
     }, []);
 
     const filteredLeads = useMemo(() => leads.filter(lead => {
@@ -280,6 +282,23 @@ const App: React.FC = () => {
             }
 
             createActivityLog(leadId, 'status_change', `Movido para "${columns.find(c => c.id === newColumnId)?.title}".`);
+            
+            // AGENDAMENTO AUTOMATION
+            const newColumn = columns.find(c => c.id === newColumnId);
+            if (newColumn?.type === 'scheduling') {
+                const newTask: Task = {
+                    id: `task-${Date.now()}`,
+                    userId: localUser.id,
+                    leadId: leadId,
+                    type: 'meeting',
+                    title: `Agendar reunião com ${leadToMove.name}`,
+                    dueDate: new Date().toISOString(),
+                    status: 'pending',
+                };
+                setTasks(current => [newTask, ...current]);
+                showNotification(`Tarefa de reunião criada para "${leadToMove.name}".`, 'success');
+            }
+
 
             return prevLeads.map(l => l.id === leadId ? updatedLead : l);
         });
