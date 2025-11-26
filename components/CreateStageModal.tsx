@@ -11,6 +11,7 @@ interface CreateStageModalProps {
 
 const typeOptions: { value: ColumnData['type']; label: string }[] = [
     { value: 'open', label: 'Abertura' },
+    { value: 'follow-up', label: 'Follow-up' },
     { value: 'won', label: 'Ganho' },
     { value: 'lost', label: 'Perda' },
 ];

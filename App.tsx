@@ -143,24 +143,36 @@ const App: React.FC = () => {
         if (stage.type === 'lost') return 0;
         if (stage.type === 'won') return 100;
 
-        const firstWonStageIndex = allColumns.findIndex(c => c.type === 'won');
+        const activeFunnelStages = allColumns.filter(c => c.type === 'open' || c.type === 'follow-up');
         
-        if (firstWonStageIndex === -1) return 50; 
+        const openStages = activeFunnelStages.filter(c => c.type === 'open');
+        const followUpStages = activeFunnelStages.filter(c => c.type === 'follow-up');
 
-        const potentialFunnelStages = allColumns.slice(0, firstWonStageIndex);
-        const openFunnelStages = potentialFunnelStages.filter(c => c.type === 'open');
-
-        const currentStageIndexInFunnel = openFunnelStages.findIndex(c => c.id === stageId);
-        
-        if (currentStageIndexInFunnel === -1) {
-            return 0;
+        if (stage.type === 'open') {
+            const currentIndex = openStages.findIndex(c => c.id === stageId);
+            const totalOpen = openStages.length;
+            
+            if (totalOpen <= 1) return 25;
+            
+            const baseProbability = 10;
+            const range = 50 - baseProbability;
+            const probability = baseProbability + (currentIndex / (totalOpen - 1)) * range;
+            return Math.round(probability);
         }
 
-        const totalOpenStages = openFunnelStages.length;
-        if (totalOpenStages === 0) return 100;
+        if (stage.type === 'follow-up') {
+            const currentIndex = followUpStages.findIndex(c => c.id === stageId);
+            const totalFollowUp = followUpStages.length;
+            
+            if (totalFollowUp <= 1) return 75;
 
-        const probability = ((currentStageIndexInFunnel + 1) / (totalOpenStages + 1)) * 100;
-        return Math.round(probability);
+            const baseProbability = 51;
+            const range = 99 - baseProbability;
+            const probability = baseProbability + (currentIndex / (totalFollowUp - 1)) * range;
+            return Math.round(probability);
+        }
+
+        return 0; 
     }, []);
 
     const filteredLeads = useMemo(() => leads.filter(lead => {

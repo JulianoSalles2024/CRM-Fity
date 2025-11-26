@@ -9,8 +9,8 @@ export const initialUsers: User[] = [
 export const initialColumns: ColumnData[] = [
   { id: 'prospect', title: 'Prospecção', color: '#3b82f6', type: 'open' },
   { id: 'qualify', title: 'Qualificação', color: '#8b5cf6', type: 'open' },
-  { id: 'proposal', title: 'Proposta', color: '#ec4899', type: 'open' },
-  { id: 'negotiation', title: 'Negociação', color: '#f97316', type: 'open' },
+  { id: 'proposal', title: 'Proposta', color: '#ec4899', type: 'follow-up' },
+  { id: 'negotiation', title: 'Negociação', color: '#f97316', type: 'follow-up' },
   { id: 'closed', title: 'Fechamento', color: '#10b981', type: 'won' },
   { id: 'lost', title: 'Perdido', color: '#ef4444', type: 'lost' },
 ];

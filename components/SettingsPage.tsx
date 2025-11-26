@@ -99,11 +99,13 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ currentUser, onUpdate
 const StageItem: React.FC<{ column: ColumnData; index: number; onEdit?: (column: ColumnData) => void; onDelete?: (id: Id) => void; listeners?: any }> = ({ column, index, onEdit, onDelete, listeners }) => {
     const typeStyles: Record<ColumnData['type'], string> = {
         open: 'bg-zinc-700 text-zinc-300',
+        'follow-up': 'bg-blue-900/50 text-blue-400',
         won: 'bg-green-900/50 text-green-400',
         lost: 'bg-red-900/50 text-red-400',
     };
     const typeLabels: Record<ColumnData['type'], string> = {
         open: 'Abertura',
+        'follow-up': 'Follow-up',
         won: 'Ganho',
         lost: 'Perda',
     };
