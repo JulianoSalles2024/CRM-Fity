@@ -97,6 +97,17 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ currentUser, onUpdate
 // --- Componentes para Drag-and-Drop de Estágios ---
 
 const StageItem: React.FC<{ column: ColumnData; index: number; onEdit?: (column: ColumnData) => void; onDelete?: (id: Id) => void; listeners?: any }> = ({ column, index, onEdit, onDelete, listeners }) => {
+    const typeStyles: Record<ColumnData['type'], string> = {
+        open: 'bg-zinc-700 text-zinc-300',
+        won: 'bg-green-900/50 text-green-400',
+        lost: 'bg-red-900/50 text-red-400',
+    };
+    const typeLabels: Record<ColumnData['type'], string> = {
+        open: 'Abertura',
+        won: 'Ganho',
+        lost: 'Perda',
+    };
+
     return (
         <div className="flex items-center gap-3 p-2 bg-zinc-800 rounded-lg border border-zinc-700 touch-none">
             <button {...listeners} className="cursor-grab p-1 touch-none">
@@ -107,6 +118,7 @@ const StageItem: React.FC<{ column: ColumnData; index: number; onEdit?: (column:
                 <span className="font-medium text-white">{column.title}</span>
                 <span className="text-sm text-zinc-500">Posição: {index + 1}</span>
             </div>
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${typeStyles[column.type]}`}>{typeLabels[column.type]}</span>
             {onEdit && (
                 <button onClick={() => onEdit(column)} className="p-2 text-zinc-400 hover:text-white rounded-md">
                     <Edit className="w-4 h-4" />
@@ -192,14 +204,14 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
         setCreateStageModalOpen(true);
     };
     
-    const handleCreateOrUpdateStage = (stageData: {id?: Id, title: string, color: string}) => {
+    const handleCreateOrUpdateStage = (stageData: {id?: Id, title: string, color: string, type: ColumnData['type']}) => {
       let newColumns: ColumnData[] = [];
         if (stageData.id) { // Update
             newColumns = columns.map(c => 
-                c.id === stageData.id ? { ...c, title: stageData.title, color: stageData.color } : c
+                c.id === stageData.id ? { ...c, title: stageData.title, color: stageData.color, type: stageData.type } : c
             );
         } else { // Create
-            const newColumn: ColumnData = { id: `stage-${Date.now()}`, title: stageData.title, color: stageData.color };
+            const newColumn: ColumnData = { id: `stage-${Date.now()}`, title: stageData.title, color: stageData.color, type: stageData.type };
             newColumns = [...columns, newColumn];
         }
         onUpdatePipeline(newColumns);

@@ -108,7 +108,7 @@ const App: React.FC = () => {
 
     // Display Settings
     const [cardDisplaySettings, setCardDisplaySettings] = useLocalStorage<CardDisplaySettings>('crm-cardSettings', {
-        showCompany: true, showValue: true, showTags: true, showAssignedTo: true, showDueDate: false, showProbability: false, showEmail: false, showPhone: false, showCreatedAt: false, showStage: false,
+        showCompany: true, showValue: true, showTags: true, showAssignedTo: true, showDueDate: false, showProbability: true, showEmail: false, showPhone: false, showCreatedAt: false, showStage: false,
     });
     const [listDisplaySettings, setListDisplaySettings] = useLocalStorage<ListDisplaySettings>('crm-listSettings', {
         showStatus: true, showValue: true, showTags: true, showLastActivity: true, showEmail: true, showPhone: false, showCreatedAt: true,
@@ -137,25 +137,29 @@ const App: React.FC = () => {
     const unreadCount = useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);
     
     const calculateProbabilityForStage = useCallback((stageId: Id, allColumns: ColumnData[]): number => {
-        const closingStageIndex = allColumns.findIndex(c => c.id === 'closed');
-        const lostStageId = allColumns.find(c => c.id === 'lost')?.id;
+        const stage = allColumns.find(c => c.id === stageId);
+        if (!stage) return 0;
 
-        if (stageId === lostStageId) return 0;
-        if (stageId === allColumns[closingStageIndex]?.id) return 100;
+        if (stage.type === 'lost') return 0;
+        if (stage.type === 'won') return 100;
+
+        const firstWonStageIndex = allColumns.findIndex(c => c.type === 'won');
         
-        if (closingStageIndex === -1) return 50; // Fallback if no closing stage found
+        if (firstWonStageIndex === -1) return 50; 
 
-        const funnelStages = allColumns.slice(0, closingStageIndex);
-        const currentStageIndexInFunnel = funnelStages.findIndex(c => c.id === stageId);
+        const potentialFunnelStages = allColumns.slice(0, firstWonStageIndex);
+        const openFunnelStages = potentialFunnelStages.filter(c => c.type === 'open');
+
+        const currentStageIndexInFunnel = openFunnelStages.findIndex(c => c.id === stageId);
         
         if (currentStageIndexInFunnel === -1) {
-            return 0; // Not in the main funnel (e.g., 'lost' or other terminal stage)
+            return 0;
         }
 
-        const totalFunnelSteps = funnelStages.length;
-        if (totalFunnelSteps === 0) return 50; // 'closed' is the first stage
+        const totalOpenStages = openFunnelStages.length;
+        if (totalOpenStages === 0) return 100;
 
-        const probability = ((currentStageIndexInFunnel + 1) / (totalFunnelSteps + 1)) * 100;
+        const probability = ((currentStageIndexInFunnel + 1) / (totalOpenStages + 1)) * 100;
         return Math.round(probability);
     }, []);
 
@@ -545,7 +549,7 @@ const App: React.FC = () => {
                         />;
             case 'Clientes':
                  return <LeadListView 
-                            leads={filteredLeads.filter(l => columns.find(c => c.id === l.columnId)?.title === 'Fechamento')} 
+                            leads={filteredLeads.filter(l => columns.find(c => c.id === l.columnId)?.type === 'won')} 
                             columns={columns} 
                             onLeadClick={setSelectedLead} 
                             viewType="Clientes" 

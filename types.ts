@@ -76,6 +76,7 @@ export interface ColumnData {
   id: Id;
   title: string;
   color: string;
+  type: 'open' | 'won' | 'lost';
 }
 
 export interface Activity {

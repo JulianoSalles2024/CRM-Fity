@@ -5,19 +5,27 @@ import { ColumnData, Id } from '../types';
 
 interface CreateStageModalProps {
   onClose: () => void;
-  onSubmit: (data: { id?: Id, title: string, color: string }) => void;
+  onSubmit: (data: { id?: Id, title: string, color: string, type: ColumnData['type'] }) => void;
   stageToEdit?: ColumnData | null;
 }
+
+const typeOptions: { value: ColumnData['type']; label: string }[] = [
+    { value: 'open', label: 'Abertura' },
+    { value: 'won', label: 'Ganho' },
+    { value: 'lost', label: 'Perda' },
+];
 
 const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, stageToEdit }) => {
     const [title, setTitle] = useState('');
     const [color, setColor] = useState('#3b82f6');
+    const [type, setType] = useState<ColumnData['type']>('open');
     const isEditMode = !!stageToEdit;
 
     useEffect(() => {
         if (stageToEdit) {
             setTitle(stageToEdit.title);
             setColor(stageToEdit.color);
+            setType(stageToEdit.type || 'open');
         }
     }, [stageToEdit]);
 
@@ -27,7 +35,7 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
             alert('Por favor, insira um nome para o estágio.');
             return;
         }
-        onSubmit({ id: stageToEdit?.id, title, color });
+        onSubmit({ id: stageToEdit?.id, title, color, type });
     };
 
     return (
@@ -89,6 +97,23 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
                                     onChange={(e) => setColor(e.target.value)}
                                     className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
                                 />
+                            </div>
+                        </div>
+                        <div>
+                             <label className="block text-sm font-medium text-zinc-300 mb-2">
+                                Tipo de Estágio
+                            </label>
+                             <div className="flex gap-2 rounded-md bg-zinc-900 p-1 border border-zinc-700">
+                                {typeOptions.map(option => (
+                                    <button
+                                        type="button"
+                                        key={option.value}
+                                        onClick={() => setType(option.value)}
+                                        className={`w-full py-1.5 text-sm font-semibold rounded-md transition-colors ${type === option.value ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:bg-zinc-700/50'}`}
+                                    >
+                                        {option.label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </div>

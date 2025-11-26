@@ -16,13 +16,13 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks, onNavigate }) => {
 
     const kpiData = useMemo(() => {
-        const wonColumnId = 'closed';
-        const lostColumnId = 'lost';
+        const wonColumnIds = columns.filter(c => c.type === 'won').map(c => c.id);
+        const lostColumnIds = columns.filter(c => c.type === 'lost').map(c => c.id);
 
         const totalDeals = leads.length;
-        const totalWon = leads.filter(l => l.columnId === wonColumnId).length;
-        const totalLost = leads.filter(l => l.columnId === lostColumnId).length;
-        const totalOpen = leads.filter(l => l.columnId !== wonColumnId && l.columnId !== lostColumnId).length;
+        const totalWon = leads.filter(l => wonColumnIds.includes(l.columnId)).length;
+        const totalLost = leads.filter(l => lostColumnIds.includes(l.columnId)).length;
+        const totalOpen = totalDeals - totalWon - totalLost;
         
         return {
             totalDeals,
@@ -30,7 +30,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
             totalLost,
             totalOpen,
         };
-    }, [leads]);
+    }, [leads, columns]);
 
     return (
         <div className="flex flex-col gap-6">
