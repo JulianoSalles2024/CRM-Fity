@@ -30,7 +30,7 @@ const contentVariants = {
 const Column: React.FC<ColumnProps> = ({ column, leads, users, cardDisplaySettings, onSelectLead, selectedLeadId, onAddLead, minimizedLeads, onToggleLeadMinimize, minimizedColumns, onToggleColumnMinimize }) => {
     const { setNodeRef, isOver } = useDroppable({ id: column.id, data: { type: 'Column', column } });
     
-    const leadsInColumn = leads.filter(lead => lead.columnId === column.id);
+    const leadsInColumn = leads.filter(lead => lead.columnId === column.id && !lead.reactivationDate);
     const leadIds = React.useMemo(() => leadsInColumn.map(l => l.id), [leadsInColumn]);
 
     const totalValue = leadsInColumn.reduce((sum, lead) => sum + lead.value, 0);
