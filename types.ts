@@ -70,6 +70,8 @@ export interface Lead {
     startedAt: string; // ISO string date
   };
   playbookHistory?: PlaybookHistoryEntry[];
+  lostReason?: string;
+  reactivationDate?: string; // ISO String
 }
 
 export interface ColumnData {
@@ -171,7 +173,7 @@ export interface GroupAnalysis {
   createdAt: string; // ISO String
 }
 
-export type NotificationType = 'new_message' | 'task_due_soon' | 'task_overdue' | 'lead_assigned' | 'mention' | 'system_update';
+export type NotificationType = 'new_message' | 'task_due_soon' | 'task_overdue' | 'lead_assigned' | 'mention' | 'system_update' | 'lead_reactivation';
 
 export interface Notification {
   id: Id;

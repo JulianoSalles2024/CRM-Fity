@@ -136,6 +136,8 @@ export const initialLeads: Lead[] = [
             churned: true,
             exitDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString(),
         },
+        lostReason: 'Timing',
+        reactivationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
     },
     {
         id: 'lead-5',

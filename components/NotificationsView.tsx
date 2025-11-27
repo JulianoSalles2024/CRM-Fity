@@ -1,5 +1,6 @@
 import React from 'react';
-import { Bell, CheckCheck, Trash2, MessageSquare, ClipboardList, UserPlus, Zap, AlertCircle } from 'lucide-react';
+// FIX: Import RefreshCw to use as an icon for lead_reactivation notifications.
+import { Bell, CheckCheck, Trash2, MessageSquare, ClipboardList, UserPlus, Zap, AlertCircle, RefreshCw } from 'lucide-react';
 import { Id, Notification, NotificationType } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -18,6 +19,8 @@ const notificationIcons: Record<NotificationType, React.ElementType> = {
     lead_assigned: UserPlus,
     mention: (props: any) => <span {...props}>@</span>,
     system_update: Zap,
+    // FIX: Add the missing 'lead_reactivation' icon to satisfy the Record type.
+    lead_reactivation: RefreshCw,
 };
 
 const formatTimestamp = (timestamp: string) => {

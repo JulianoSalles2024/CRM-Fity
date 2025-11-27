@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Columns, Users, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap, Bell, HelpCircle, MessageSquare, ToyBrick, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Columns, Users, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap, Bell, HelpCircle, MessageSquare, ToyBrick, BookOpen, ArchiveRestore } from 'lucide-react';
 
 interface SidebarProps {
     activeView: string;
@@ -39,6 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, 
     { icon: Contact, label: 'Clientes' },
     { icon: ClipboardList, label: 'Tarefas' },
     { icon: BarChart, label: 'Relatórios' },
+    { icon: ArchiveRestore, label: 'Recuperação' },
     { icon: MessageSquare, label: 'Chat' },
     { icon: Users, label: 'Grupos' },
     { icon: ToyBrick, label: 'Integrações' },
