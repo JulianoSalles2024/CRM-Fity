@@ -715,6 +715,7 @@ const App: React.FC = () => {
                             leads={recoveryLeads}
                             onReactivateLead={handleReactivateLead}
                             onExportPDF={handleExportPDF}
+                            onDeleteLead={handleDeleteLead}
                         />;
             case 'Chat':
                 return <ChatView
