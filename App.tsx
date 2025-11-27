@@ -107,7 +107,7 @@ const App: React.FC = () => {
     const selectedLeadForPlaybook = useMemo(() => leads.find(l => l.id === selectedLeadForPlaybookId), [leads, selectedLeadForPlaybookId]);
 
     // Printing state
-    const [isPrinting, setIsPrinting] = useState(false);
+    const [leadsToPrint, setLeadsToPrint] = useState<Lead[] | null>(null);
 
 
     // Display Settings
@@ -608,12 +608,12 @@ const App: React.FC = () => {
     };
     
     // PDF Export
-    const handleExportLeadsToPDF = useCallback(() => {
-        setIsPrinting(true);
+    const handleExportPDF = useCallback((leadsToExport: Lead[]) => {
+        setLeadsToPrint(leadsToExport);
     }, []);
 
     const handlePrintEnd = useCallback(() => {
-        setIsPrinting(false);
+        setLeadsToPrint(null);
     }, []);
 
     const renderView = () => {
@@ -668,13 +668,14 @@ const App: React.FC = () => {
                             onSelectedTagsChange={setListSelectedTags}
                             statusFilter={listStatusFilter}
                             onStatusFilterChange={setListStatusFilter}
-                            onExportPDF={handleExportLeadsToPDF}
+                            onExportPDF={() => handleExportPDF(listViewFilteredLeads)}
                             onOpenCreateLeadModal={() => { setEditingLead(null); setCreateLeadModalOpen(true); }}
                             onOpenCreateTaskModal={() => { setEditingTask(null); setCreateTaskModalOpen(true); }}
                         />;
             case 'Clientes':
+                 const clientes = filteredLeads.filter(l => columns.find(c => c.id === l.columnId)?.type === 'won');
                  return <LeadListView 
-                            leads={filteredLeads.filter(l => columns.find(c => c.id === l.columnId)?.type === 'won')} 
+                            leads={clientes} 
                             columns={columns} 
                             onLeadClick={setSelectedLead} 
                             viewType="Clientes" 
@@ -685,7 +686,7 @@ const App: React.FC = () => {
                             onSelectedTagsChange={setListSelectedTags}
                             statusFilter={listStatusFilter}
                             onStatusFilterChange={setListStatusFilter}
-                            onExportPDF={handleExportLeadsToPDF}
+                            onExportPDF={() => handleExportPDF(clientes)}
                             onOpenCreateLeadModal={() => { setEditingLead(null); setCreateLeadModalOpen(true); }}
                             onOpenCreateTaskModal={() => { setEditingTask(null); setCreateTaskModalOpen(true); }}
                         />;
@@ -713,6 +714,7 @@ const App: React.FC = () => {
                 return <RecoveryView 
                             leads={recoveryLeads}
                             onReactivateLead={handleReactivateLead}
+                            onExportPDF={handleExportPDF}
                         />;
             case 'Chat':
                 return <ChatView
@@ -761,8 +763,8 @@ const App: React.FC = () => {
         }
     };
 
-    if (isPrinting) {
-        return <PrintableLeadsReport leads={listViewFilteredLeads} tasks={tasks} activities={activities} onPrintEnd={handlePrintEnd} />;
+    if (leadsToPrint) {
+        return <PrintableLeadsReport leads={leadsToPrint} tasks={tasks} activities={activities} onPrintEnd={handlePrintEnd} />;
     }
 
     return (
