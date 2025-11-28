@@ -47,6 +47,7 @@ export interface Lead {
   columnId: Id;
   name: string;
   company: string;
+  segment?: string;
   value: number;
   avatarUrl: string;
   tags: Tag[];
@@ -119,6 +120,7 @@ export interface EmailDraft {
 
 export interface CardDisplaySettings {
   showCompany: boolean;
+  showSegment: boolean;
   showValue: boolean;
   showTags: boolean;
   showProbability: boolean;

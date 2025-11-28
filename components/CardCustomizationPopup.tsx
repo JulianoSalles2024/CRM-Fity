@@ -35,6 +35,7 @@ const CardCustomizationPopup: React.FC<CardCustomizationPopupProps> = ({ setting
 
     const settingOptions: { key: keyof CardDisplaySettings; label: string }[] = [
         { key: 'showCompany', label: 'Mostrar Empresa' },
+        { key: 'showSegment', label: 'Mostrar Segmento' },
         { key: 'showValue', label: 'Mostrar Valor do Lead' },
         { key: 'showTags', label: 'Mostrar Tags' },
         { key: 'showProbability', label: 'Mostrar Probabilidade' },

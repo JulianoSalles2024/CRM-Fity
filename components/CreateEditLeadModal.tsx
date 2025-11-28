@@ -19,6 +19,7 @@ type FormData = {
     email: string;
     phone: string;
     company: string;
+    segment: string;
     value: string;
     columnId: Id;
     status: string;
@@ -83,6 +84,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
     email: '',
     phone: '',
     company: '',
+    segment: '',
     value: '0,00',
     columnId: columns[0]?.id || '',
     status: 'Ativo',
@@ -126,6 +128,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                 email: lead.email || '',
                 phone: lead.phone || '',
                 company: lead.company || '',
+                segment: lead.segment || '',
                 value: lead.value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00',
                 columnId: lead.columnId || columns[0]?.id || '',
                 status: lead.status || 'Ativo',
@@ -141,6 +144,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
             email: '',
             phone: '',
             company: '',
+            segment: '',
             value: '0,00',
             columnId: columns[0]?.id || '',
             status: 'Ativo',
@@ -321,6 +325,28 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                         <option value="">Nenhum</option>
                         {groups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}
                    </SelectField>
+
+                  <div className="md:col-span-6">
+                      <label htmlFor="segment" className="block text-sm font-medium text-zinc-300 mb-2">
+                          Segmento
+                      </label>
+                      <input
+                          type="text"
+                          id="segment"
+                          name="segment"
+                          list="segment-options"
+                          value={formData.segment}
+                          onChange={handleChange}
+                          placeholder="Ex: Personal Trainer, Coach..."
+                          className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                      />
+                      <datalist id="segment-options">
+                          <option value="Personal Trainer" />
+                          <option value="Nutricionista" />
+                          <option value="Coach" />
+                          <option value="Influencer" />
+                      </datalist>
+                  </div>
 
                   <InputField label="Valor (R$)" name="value" value={formData.value} onChange={handleChange} required type="text" className="md:col-span-6" />
 

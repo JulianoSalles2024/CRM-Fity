@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 // FIX: Added Variants to the import to fix typing issue with cardContentVariants.
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { DollarSign, Tag, Clock, Building, TrendingUp, Calendar, Mail, Phone, ChevronDown, ChevronUp, MessageCircle, BookOpen } from 'lucide-react';
+import { DollarSign, Tag, Clock, Building, TrendingUp, Calendar, Mail, Phone, ChevronDown, ChevronUp, MessageCircle, BookOpen, Briefcase } from 'lucide-react';
 import type { Lead, CardDisplaySettings, User as UserType, Id } from '../types';
 
 interface CardProps {
@@ -135,6 +135,12 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onSelect, isS
 
                             {displaySettings.showCompany && <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2"><Building className="w-3.5 h-3.5 flex-shrink-0" /> {lead.company}</p>}
                             
+                            {displaySettings.showSegment && lead.segment && (
+                               <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
+                                   <Briefcase className="w-3.5 h-3.5 flex-shrink-0" /> {lead.segment}
+                               </p>
+                           )}
+
                             {displaySettings.showValue && (
                                 <p className="text-sm font-semibold text-green-500 dark:text-green-400 flex items-center gap-2">
                                     <DollarSign className="w-3.5 h-3.5 flex-shrink-0" />
