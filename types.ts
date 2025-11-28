@@ -72,13 +72,15 @@ export interface Lead {
   playbookHistory?: PlaybookHistoryEntry[];
   lostReason?: string;
   reactivationDate?: string; // ISO String
+  qualificationStatus?: 'pending' | 'qualified' | 'disqualified';
+  disqualificationReason?: string;
 }
 
 export interface ColumnData {
   id: Id;
   title: string;
   color: string;
-  type: 'open' | 'follow-up' | 'scheduling' | 'won' | 'lost';
+  type: 'open' | 'qualification' | 'follow-up' | 'scheduling' | 'won' | 'lost';
 }
 
 export interface Activity {

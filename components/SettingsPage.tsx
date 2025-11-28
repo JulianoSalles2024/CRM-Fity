@@ -97,15 +97,19 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ currentUser, onUpdate
 // --- Componentes para Drag-and-Drop de Estágios ---
 
 const StageItem: React.FC<{ column: ColumnData; index: number; onEdit?: (column: ColumnData) => void; onDelete?: (id: Id) => void; listeners?: any }> = ({ column, index, onEdit, onDelete, listeners }) => {
+    // FIX: Add missing 'qualification' property to satisfy the Record type.
     const typeStyles: Record<ColumnData['type'], string> = {
         open: 'bg-zinc-700 text-zinc-300',
+        qualification: 'bg-purple-900/50 text-purple-400',
         'follow-up': 'bg-blue-900/50 text-blue-400',
         scheduling: 'bg-teal-900/50 text-teal-400',
         won: 'bg-green-900/50 text-green-400',
         lost: 'bg-red-900/50 text-red-400',
     };
+    // FIX: Add missing 'qualification' property to satisfy the Record type.
     const typeLabels: Record<ColumnData['type'], string> = {
         open: 'Abertura',
+        qualification: 'Qualificação',
         'follow-up': 'Follow-up',
         scheduling: 'Agendamento',
         won: 'Ganho',
@@ -393,7 +397,6 @@ const PlaceholderTab: React.FC<{ title: string }> = ({ title }) => (
 // --- Componente Principal ---
 interface SettingsPageProps {
     currentUser: User;
-    // FIX: Changed type from ColumnData to ColumnData[] to match the type of the passed prop.
     columns: ColumnData[];
     onUpdateProfile: (name: string, avatarFile?: File) => void;
     onUpdatePipeline: (columns: ColumnData[]) => void;

@@ -8,7 +8,7 @@ export const initialUsers: User[] = [
 
 export const initialColumns: ColumnData[] = [
   { id: 'prospect', title: 'Prospecção', color: '#3b82f6', type: 'open' },
-  { id: 'qualify', title: 'Qualificação', color: '#8b5cf6', type: 'open' },
+  { id: 'qualify', title: 'Qualificação', color: '#8b5cf6', type: 'qualification' },
   { id: 'proposal', title: 'Proposta', color: '#ec4899', type: 'follow-up' },
   { id: 'negotiation', title: 'Negociação', color: '#f97316', type: 'follow-up' },
   { id: 'scheduling', title: 'Agendamento', color: '#14b8a6', type: 'scheduling' }, // teal-500
@@ -69,6 +69,7 @@ export const initialLeads: Lead[] = [
         status: 'Ativo',
         source: 'Indicação',
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days ago
+        qualificationStatus: 'pending',
         groupInfo: {
             hasJoined: true,
             groupId: 'group-alpha',
@@ -91,6 +92,7 @@ export const initialLeads: Lead[] = [
         description: 'Interessada em pacote enterprise.',
         email: 'beatriz@inovatech.com',
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
+        qualificationStatus: 'pending',
     },
     {
         id: 'lead-3',
@@ -105,6 +107,7 @@ export const initialLeads: Lead[] = [
         description: 'Cliente fechado, aguardando onboarding.',
         email: 'carlos.s@solucoes.co',
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
+        qualificationStatus: 'qualified',
         groupInfo: {
             hasJoined: true,
             groupId: 'group-beta',
@@ -127,6 +130,8 @@ export const initialLeads: Lead[] = [
         description: 'Não respondeu aos contatos.',
         email: 'daniel@datacorp.com',
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8).toISOString(),
+        qualificationStatus: 'disqualified',
+        disqualificationReason: 'Sem Resposta',
         groupInfo: {
             hasJoined: true,
             groupId: 'group-beta',
@@ -152,6 +157,7 @@ export const initialLeads: Lead[] = [
         description: 'Interessada, mas com orçamento limitado.',
         email: 'fernanda@agilesol.com',
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(),
+        qualificationStatus: 'pending',
         groupInfo: {
             hasJoined: true,
             groupId: 'group-alpha',
