@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 // FIX: Added Variants to the import to fix typing issue with cardContentVariants.
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { DollarSign, Tag, Clock, Building, TrendingUp, Calendar, Mail, Phone, ChevronDown, ChevronUp, MessageCircle, BookOpen, Briefcase } from 'lucide-react';
+import { DollarSign, Tag, Clock, Building, TrendingUp, Calendar, Mail, Phone, ChevronDown, ChevronUp, MessageCircle, BookOpen, Briefcase, ShieldCheck, ShieldX } from 'lucide-react';
 import type { Lead, CardDisplaySettings, User as UserType, Id } from '../types';
 
 interface CardProps {
@@ -70,6 +70,12 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onSelect, isS
         window.open(url, '_blank', 'noopener,noreferrer');
     };
 
+    const qualificationIcon = lead.qualificationStatus === 'qualified' 
+        ? <ShieldCheck className="w-4 h-4 text-green-500 flex-shrink-0" title="Qualificado" /> 
+        : lead.qualificationStatus === 'disqualified' 
+        ? <ShieldX className="w-4 h-4 text-zinc-500 flex-shrink-0" title="Não Qualificado" /> 
+        : null;
+
     return (
         <motion.div
             layout // Animate layout changes (e.g., height)
@@ -83,7 +89,15 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onSelect, isS
             className={`bg-white dark:bg-zinc-900 rounded-lg border shadow-sm cursor-grab active:cursor-grabbing hover:bg-gray-50 dark:hover:bg-zinc-800/50 hover:shadow-lg hover:shadow-violet-500/10 dark:hover:shadow-violet-500/20 transition-all duration-150 touch-none ${isMinimized ? 'p-3' : 'p-4'} ${isSelected ? 'border-violet-500 ring-2 ring-violet-500/50' : 'border-zinc-200 dark:border-zinc-800 hover:border-violet-500'}`}
         >
             <div className="flex justify-between items-center gap-2">
-                <h3 className="font-bold text-zinc-900 dark:text-white text-md leading-tight flex-1 truncate">{lead.name}</h3>
+                 <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                    {qualificationIcon}
+                    <h3 className="font-bold text-zinc-900 dark:text-white text-md leading-tight truncate">{lead.name}</h3>
+                    {isMinimized && lead.activePlaybook && (
+                        <div title={lead.activePlaybook.playbookName} className="flex-shrink-0">
+                            <BookOpen className="w-4 h-4 text-violet-500" />
+                        </div>
+                    )}
+                </div>
 
                 <div className="flex items-center gap-1 flex-shrink-0">
                     {isHovered && !isMinimized && lead.phone && (
