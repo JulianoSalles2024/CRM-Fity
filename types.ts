@@ -52,6 +52,7 @@ export interface Lead {
   avatarUrl: string;
   tags: Tag[];
   lastActivity: string;
+  lastActivityTimestamp: string;
   dueDate?: string; 
   assignedTo?: string;
 

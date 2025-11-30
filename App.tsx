@@ -256,11 +256,12 @@ const App: React.FC = () => {
     
     // Leads
     const handleCreateOrUpdateLead = async (data: CreateLeadData | UpdateLeadData) => {
+        const now = new Date().toISOString();
         if (editingLead && editingLead.id) { // UPDATE
             const oldLead = leads.find(l => l.id === editingLead.id)!;
             const newColumnId = data.columnId || oldLead.columnId;
             const newProbability = calculateProbabilityForStage(newColumnId, columns);
-            const updatedLead = { ...oldLead, ...data, probability: newProbability };
+            const updatedLead = { ...oldLead, ...data, probability: newProbability, lastActivity: 'agora', lastActivityTimestamp: now };
 
             setLeads(current => current.map(lead => lead.id === editingLead.id ? updatedLead : lead));
             showNotification(`Lead "${updatedLead.name}" atualizado.`, 'success');
@@ -276,7 +277,8 @@ const App: React.FC = () => {
                 avatarUrl: data.avatarUrl || `https://i.pravatar.cc/150?u=${Date.now()}`,
                 tags: data.tags || [],
                 lastActivity: 'agora',
-                createdAt: new Date().toISOString(),
+                lastActivityTimestamp: now,
+                createdAt: now,
             };
             newLead.probability = calculateProbabilityForStage(newLead.columnId, columns);
             setLeads(current => [newLead, ...current]);
@@ -305,8 +307,9 @@ const App: React.FC = () => {
         }
 
         setLeads(prevLeads => {
+            const now = new Date().toISOString();
             const newProbability = calculateProbabilityForStage(newColumnId, columns);
-            let updatedLead = { ...leadToMove, columnId: newColumnId, lastActivity: 'agora', probability: newProbability };
+            let updatedLead = { ...leadToMove, columnId: newColumnId, lastActivity: 'agora', lastActivityTimestamp: now, probability: newProbability };
 
             // SMART PLAYBOOK LOGIC
             const lastCompletedPlaybook = leadToMove.playbookHistory?.[(leadToMove.playbookHistory?.length || 0) - 1];
@@ -330,7 +333,7 @@ const App: React.FC = () => {
                          playbookId: updatedLead.activePlaybook.playbookId,
                          playbookName: updatedLead.activePlaybook.playbookName,
                          startedAt: updatedLead.activePlaybook.startedAt,
-                         completedAt: new Date().toISOString(),
+                         completedAt: now,
                      };
                      updatedLead.playbookHistory = [...(updatedLead.playbookHistory || []), historyEntry];
                      updatedLead.activePlaybook = undefined;
@@ -348,7 +351,7 @@ const App: React.FC = () => {
                     leadId: leadId,
                     type: 'meeting',
                     title: `Agendar reunião com ${leadToMove.name}`,
-                    dueDate: new Date().toISOString(),
+                    dueDate: now,
                     status: 'pending',
                 };
                 setTasks(current => [newTask, ...current]);
@@ -360,6 +363,7 @@ const App: React.FC = () => {
     };
 
      const handleProcessLostLead = (leadId: Id, columnId: Id, reason: string, reactivationDate: string | null) => {
+        const now = new Date().toISOString();
         const newProbability = calculateProbabilityForStage(columnId, columns);
         setLeads(prevLeads => prevLeads.map(l => 
             l.id === leadId 
@@ -369,6 +373,7 @@ const App: React.FC = () => {
                 lostReason: reason, 
                 reactivationDate: reactivationDate || undefined, 
                 lastActivity: 'agora',
+                lastActivityTimestamp: now,
                 probability: newProbability,
               } 
             : l
@@ -388,7 +393,7 @@ const App: React.FC = () => {
             
             return prevLeads.map(l => 
                 l.id === leadId
-                ? { ...l, columnId: firstColumnId, lostReason: undefined, reactivationDate: undefined, lastActivity: 'agora', probability: newProbability }
+                ? { ...l, columnId: firstColumnId, lostReason: undefined, reactivationDate: undefined, lastActivity: 'agora', lastActivityTimestamp: new Date().toISOString(), probability: newProbability }
                 : l
             );
         });
@@ -428,6 +433,7 @@ const App: React.FC = () => {
     
     const handleUpdateTaskStatus = (taskId: Id, status: 'pending' | 'completed') => {
         setTasks(prevTasks => {
+            const now = new Date().toISOString();
             const newTasks = prevTasks.map(t => t.id === taskId ? { ...t, status } : t);
             
             const updatedTask = newTasks.find(t => t.id === taskId);
@@ -447,6 +453,8 @@ const App: React.FC = () => {
                             ...lead, 
                             columnId: nextColumn.id,
                             probability: newProbability, 
+                            lastActivity: 'agora',
+                            lastActivityTimestamp: now,
                             activePlaybook: undefined,
                             playbookHistory: [
                                 ...(lead.playbookHistory || []),
@@ -454,7 +462,7 @@ const App: React.FC = () => {
                                     playbookId: lead.activePlaybook.playbookId,
                                     playbookName: lead.activePlaybook.playbookName,
                                     startedAt: lead.activePlaybook.startedAt,
-                                    completedAt: new Date().toISOString(),
+                                    completedAt: now,
                                 }
                             ]
                         };

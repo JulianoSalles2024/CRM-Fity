@@ -156,7 +156,7 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onSelect, isS
                            )}
 
                             {displaySettings.showValue && (
-                                <p className="text-sm font-semibold text-green-500 dark:text-green-400 flex items-center gap-2">
+                                <p className="text-sm font-semibold text-teal-700 dark:text-teal-400 flex items-center gap-2">
                                     <DollarSign className="w-3.5 h-3.5 flex-shrink-0" />
                                     {currencyFormatter.format(lead.value)}
                                 </p>

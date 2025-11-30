@@ -43,7 +43,7 @@ const PipelineOverview: React.FC<PipelineOverviewProps> = ({ columns, leads, onN
                             <p className="font-medium text-zinc-900 dark:text-white">{stage.title}</p>
                             <p className="text-xs text-zinc-500 dark:text-zinc-400">{stage.leadCount} leads</p>
                         </div>
-                        <p className="font-semibold text-green-500 dark:text-green-400">{currencyFormatter.format(stage.value)}</p>
+                        <p className="font-semibold text-teal-700 dark:text-teal-400">{currencyFormatter.format(stage.value)}</p>
                     </div>
                 ))}
             </div>

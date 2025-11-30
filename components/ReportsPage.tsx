@@ -32,68 +32,20 @@ const ReportKpiCard: React.FC<ReportKpiCardProps> = ({ title, value, icon: Icon,
 
 
 const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activities }) => {
-    const [timeRange, setTimeRange] = useState<'7d' | '30d' | '365d'>('30d');
+    const [timeRange, setTimeRange] = useState<'30d' | '365d'>('30d');
+    const [chartViewMode, setChartViewMode] = useState<'day' | 'week' | 'month'>('week');
 
-    const timeRangeTabs: { key: typeof timeRange, label: string }[] = [
-        { key: '7d', label: 'Semanal' },
-        { key: '30d', label: 'Mensal' },
-        { key: '365d', label: 'Anual' },
-    ];
     
     const currencyFormatter = new Intl.NumberFormat('pt-BR', {
         style: 'currency',
         currency: 'BRL',
     });
 
-    const parseRelativeDate = (dateString?: string): Date | null => {
-        if (!dateString) return null;
-        
-        const now = new Date();
-        // Create a date with time stripped out for comparing days
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-        const lowerCaseDate = dateString.toLowerCase();
-
-        if (lowerCaseDate === 'agora') return now; // Keep time for 'agora'
-        if (lowerCaseDate === 'ontem') {
-            const yesterday = new Date(today);
-            yesterday.setDate(today.getDate() - 1);
-            return yesterday;
-        }
-        const matchDaysAgo = lowerCaseDate.match(/(\d+)\s+dias\s+atrás/);
-        if (matchDaysAgo && matchDaysAgo[1]) {
-            const daysAgo = new Date(today);
-            daysAgo.setDate(today.getDate() - parseInt(matchDaysAgo[1], 10));
-            return daysAgo;
-        }
-        
-        // Try parsing dd/mm/yyyy
-        const matchDate = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-        if (matchDate) {
-            const [, day, month, year] = matchDate.map(Number);
-            if (day > 0 && day <= 31 && month > 0 && month <= 12) {
-                return new Date(year, month - 1, day);
-            }
-        }
-
-        // Handles ISO strings and some other formats
-        const parsedDate = new Date(dateString); 
-        if (!isNaN(parsedDate.getTime())) {
-            return parsedDate;
-        }
-        
-        return null;
-    };
-
-
     const { filteredLeads, filteredTasks } = useMemo(() => {
         const now = new Date();
         let startDate = new Date();
 
         switch (timeRange) {
-            case '7d':
-                startDate.setDate(now.getDate() - 7);
-                break;
             case '30d':
                 startDate.setDate(now.getDate() - 30);
                 break;
@@ -112,9 +64,9 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
 
 
     const reportData = useMemo(() => {
-        const closedWonColumnId = columns.find(c => c.title.toLowerCase() === 'fechamento')?.id;
+        const wonLeads = filteredLeads.filter(l => columns.find(c => c.id === l.columnId)?.type === 'won');
         const totalLeads = filteredLeads.length;
-        const wonLeadsCount = filteredLeads.filter(l => l.columnId === closedWonColumnId).length;
+        const wonLeadsCount = wonLeads.length;
         const conversionRate = totalLeads > 0 ? ((wonLeadsCount / totalLeads) * 100).toFixed(1) : '0.0';
 
         const totalValue = filteredLeads.reduce((sum, lead) => sum + lead.value, 0);
@@ -148,12 +100,26 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
 
     const timeSeriesData = useMemo(() => {
         const now = new Date();
-        now.setHours(23, 59, 59, 999);
         const buckets: { label: string; startDate: Date; endDate: Date; revenue: number; newLeads: number; churn: number }[] = [];
-    
-        if (timeRange === '7d') {
+        
+        if (chartViewMode === 'day') {
+            const todayStart = new Date(now);
+            todayStart.setHours(0,0,0,0);
+            for (let i = 0; i < 24; i++) {
+                const hourStart = new Date(todayStart);
+                hourStart.setHours(i);
+                const hourEnd = new Date(hourStart);
+                hourEnd.setHours(i, 59, 59, 999);
+                buckets.push({
+                    label: `${String(i).padStart(2, '0')}:00`,
+                    startDate: hourStart,
+                    endDate: hourEnd,
+                    revenue: 0, newLeads: 0, churn: 0
+                });
+            }
+        } else if (chartViewMode === 'week') {
             for (let i = 6; i >= 0; i--) {
-                const date = new Date(now);
+                const date = new Date();
                 date.setDate(now.getDate() - i);
                 buckets.push({
                     label: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
@@ -162,67 +128,39 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                     revenue: 0, newLeads: 0, churn: 0
                 });
             }
-        } else if (timeRange === '30d') {
-            const today = new Date(now);
-            // Go back to the last Monday. Sunday is 0, Monday is 1 so (day === 0 ? 6 : day - 1)
-            const dayOfWeek = today.getDay();
-            const lastMonday = new Date(today);
-            lastMonday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-            lastMonday.setHours(0, 0, 0, 0);
-
-            // Create 5 weekly buckets to cover a full month and a bit more
-            for (let i = 4; i >= 0; i--) {
-                const weekStart = new Date(lastMonday);
-                weekStart.setDate(lastMonday.getDate() - (i * 7));
-
-                const weekEnd = new Date(weekStart);
-                weekEnd.setDate(weekStart.getDate() + 6);
-                weekEnd.setHours(23, 59, 59, 999);
+        } else if (chartViewMode === 'month') {
+             for (let i = 3; i >= 0; i--) {
+                const weekEnd = new Date();
+                weekEnd.setDate(now.getDate() - (i * 7));
+                const weekStart = new Date(weekEnd);
+                weekStart.setDate(weekEnd.getDate() - 6);
                 
                 buckets.push({
-                    label: weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-                    startDate: weekStart,
-                    endDate: weekEnd,
-                    revenue: 0, newLeads: 0, churn: 0,
-                });
-            }
-        } else if (timeRange === '365d') {
-            for (let i = 11; i >= 0; i--) {
-                const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                buckets.push({
-                    label: date.toLocaleDateString('pt-BR', { month: 'short' }),
-                    startDate: date,
-                    endDate: new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999),
+                    label: `Semana ${4 - i}`,
+                    startDate: new Date(new Date(weekStart).setHours(0,0,0,0)),
+                    endDate: new Date(new Date(weekEnd).setHours(23,59,59,999)),
                     revenue: 0, newLeads: 0, churn: 0
                 });
-            }
+             }
         }
     
-        const closedWonColumn = columns.find(c => c.title.toLowerCase() === 'fechamento');
+        const wonColumnIds = columns.filter(c => c.type === 'won').map(c => c.id);
+        const lostColumnIds = columns.filter(c => c.type === 'lost').map(c => c.id);
         
-        const findBucketIndex = (dateInput?: string) => {
-            if (!dateInput) return -1;
-            const date = parseRelativeDate(dateInput);
-            if (!date) return -1;
-            return buckets.findIndex(b => date >= b.startDate && date <= b.endDate);
-        };
-    
         leads.forEach(lead => {
-            const creationBucketIndex = findBucketIndex(lead.createdAt);
-            if (creationBucketIndex !== -1) {
-                buckets[creationBucketIndex].newLeads++;
-            }
+            const creationDate = lead.createdAt ? new Date(lead.createdAt) : null;
+            const wonDate = (lead.lastActivityTimestamp && wonColumnIds.includes(lead.columnId)) ? new Date(lead.lastActivityTimestamp) : null;
+            const churnDate = (lead.lastActivityTimestamp && lostColumnIds.includes(lead.columnId)) ? new Date(lead.lastActivityTimestamp) : null;
     
-            if (lead.groupInfo?.churned) {
-                const churnBucketIndex = findBucketIndex(lead.groupInfo.exitDate);
-                if (churnBucketIndex !== -1) {
-                    buckets[churnBucketIndex].churn++;
+            for (const bucket of buckets) {
+                if (creationDate && creationDate >= bucket.startDate && creationDate <= bucket.endDate) {
+                    bucket.newLeads++;
                 }
-            }
-             if (closedWonColumn && lead.columnId === closedWonColumn.id) {
-                const wonBucketIndex = findBucketIndex(lead.lastActivity); 
-                if (wonBucketIndex !== -1) {
-                    buckets[wonBucketIndex].revenue += lead.value;
+                if (wonDate && wonDate >= bucket.startDate && wonDate <= bucket.endDate) {
+                    bucket.revenue += lead.value;
+                }
+                 if (churnDate && churnDate >= bucket.startDate && churnDate <= bucket.endDate) {
+                    bucket.churn++;
                 }
             }
         });
@@ -235,7 +173,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                 { label: 'Churn', data: buckets.map(b => b.churn), color: '#ef4444' },
             ],
         };
-    }, [leads, columns, timeRange]);
+    }, [leads, columns, chartViewMode]);
 
      const columnMap = useMemo(() => {
         return columns.reduce((acc, col) => {
@@ -243,10 +181,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
             return acc;
         }, {} as Record<string, {title: string, color: string}>);
     }, [columns]);
-
-    const handleDownload = () => {
-        // ... (existing download logic)
-    };
     
     const PerformanceChart = ({ data }: { data: typeof timeSeriesData }) => {
         const svgRef = useRef<SVGSVGElement>(null);
@@ -402,21 +336,10 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                     <div className="flex items-center gap-1 p-1 bg-zinc-800 border border-zinc-700 rounded-lg">
-                        {timeRangeTabs.map(tab => (
-                            <button
-                                key={tab.key}
-                                onClick={() => setTimeRange(tab.key)}
-                                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors duration-200 ${timeRange === tab.key ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-400 hover:bg-zinc-700/50 hover:text-white'}`}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
                     <button className="p-2.5 text-zinc-300 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 rounded-lg" title="Atualizar dados">
                         <RefreshCw className="w-4 h-4" />
                     </button>
-                     <button onClick={handleDownload} className="p-2.5 text-zinc-300 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 rounded-lg" title="Baixar relatório">
+                     <button className="p-2.5 text-zinc-300 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 rounded-lg" title="Baixar relatório">
                         <Download className="w-4 h-4" />
                     </button>
                 </div>
@@ -459,7 +382,20 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                     </div>
                 </div>
                 <div className="bg-zinc-800 p-5 rounded-lg border border-zinc-700 flex flex-col">
-                    <h3 className="font-semibold text-white mb-4">Desempenho ao Longo do Tempo</h3>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-semibold text-white">Desempenho ao Longo do Tempo</h3>
+                        <div className="flex items-center gap-1 p-1 bg-zinc-900/50 border border-zinc-700 rounded-lg">
+                            {(['day', 'week', 'month'] as const).map(view => (
+                                <button
+                                    key={view}
+                                    onClick={() => setChartViewMode(view)}
+                                    className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors duration-200 ${chartViewMode === view ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-400 hover:bg-zinc-700/50 hover:text-white'}`}
+                                >
+                                    {view === 'day' ? 'Dia' : view === 'week' ? 'Semana' : 'Mês'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                      <div className="flex-1 min-h-[300px]">
                         {timeSeriesData.labels.length > 1 ? (
                            <PerformanceChart data={timeSeriesData} />
@@ -473,7 +409,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
             </div>
 
             <div className="bg-zinc-800 rounded-lg border border-zinc-700 overflow-hidden">
-                <h3 className="font-semibold text-white p-5">Top 10 Leads por Valor ({timeRangeTabs.find(o => o.key === timeRange)?.label})</h3>
+                <h3 className="font-semibold text-white p-5">Top 10 Leads por Valor</h3>
                  <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-zinc-700">
                         <thead className="bg-zinc-900/50">
