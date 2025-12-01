@@ -22,6 +22,11 @@ export const initialTags: Tag[] = [
   { id: 'tag-3', name: 'Baixo', color: '#3b82f6' },    // blue-500
   { id: 'tag-4', name: 'Follow-up', color: '#eab308' }, // yellow-500
   { id: 'tag-5', name: 'Novo Cliente', color: '#10b981' }, // emerald-500
+  { id: 'tag-6', name: 'A contactar', color: '#64748b' }, // slate-500
+  { id: 'tag-7', name: 'Contactado', color: '#0ea5e9' }, // sky-500
+  { id: 'tag-8', name: 'Agendado', color: '#8b5cf6' }, // violet-500
+  { id: 'tag-9', name: 'Perdido', color: '#71717a' }, // zinc-500
+  { id: 'tag-10', name: 'Recuperar', color: '#f59e0b' }, // amber-500
 ];
 
 export const initialGroups: Group[] = [
