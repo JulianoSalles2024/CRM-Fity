@@ -1,6 +1,7 @@
-import React, { useState, FormEvent } from 'react';
+
+import React, { useState, FormEvent, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Archive, RefreshCw, Calendar } from 'lucide-react';
 import type { Lead } from '../types';
 
 interface LostLeadModalProps {
@@ -14,8 +15,15 @@ const lossReasons = ['Preço', 'Timing', 'Concorrência', 'Sem Resposta', 'Outro
 const LostLeadModal: React.FC<LostLeadModalProps> = ({ lead, onClose, onSubmit }) => {
   const [reason, setReason] = useState(lossReasons[0]);
   const [customReason, setCustomReason] = useState('');
-  const [scheduleReactivation, setScheduleReactivation] = useState(false);
+  const [actionType, setActionType] = useState<'archive' | 'recovery'>('archive');
   const [reactivationDate, setReactivationDate] = useState('');
+
+  // Set default reactivation date to 30 days from now
+  useEffect(() => {
+    const date = new Date();
+    date.setDate(date.getDate() + 30);
+    setReactivationDate(date.toISOString().split('T')[0]);
+  }, []);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -24,7 +32,9 @@ const LostLeadModal: React.FC<LostLeadModalProps> = ({ lead, onClose, onSubmit }
         alert('Por favor, especifique o motivo da perda.');
         return;
     }
-    onSubmit(finalReason, scheduleReactivation ? reactivationDate : null);
+    
+    // If recovery is selected, pass the date. If archive, pass null.
+    onSubmit(finalReason, actionType === 'recovery' ? reactivationDate : null);
   };
 
   return (
@@ -38,9 +48,10 @@ const LostLeadModal: React.FC<LostLeadModalProps> = ({ lead, onClose, onSubmit }
       >
         <div className="p-6 border-b border-zinc-700">
           <div className="flex justify-between items-start">
-            <h2 className="text-xl font-bold text-white">Processar Lead Perdido: {lead.name}</h2>
+            <h2 className="text-xl font-bold text-white">Processar Lead Perdido</h2>
             <button onClick={onClose} className="p-1 rounded-full text-zinc-400 hover:bg-zinc-700"><X className="w-5 h-5" /></button>
           </div>
+          <p className="text-sm text-zinc-400 mt-1">{lead.name} - {lead.company}</p>
         </div>
         <form onSubmit={handleSubmit}>
             <div className="p-6 space-y-6">
@@ -61,20 +72,40 @@ const LostLeadModal: React.FC<LostLeadModalProps> = ({ lead, onClose, onSubmit }
                 </div>
 
                 <div>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={scheduleReactivation}
-                            onChange={e => setScheduleReactivation(e.target.checked)}
-                            className="h-5 w-5 rounded bg-zinc-700 border-zinc-600 text-violet-600 focus:ring-violet-500 focus:ring-offset-zinc-800"
-                        />
-                        <span className="text-sm font-medium text-zinc-300">Agendar Reativação Futura?</span>
-                    </label>
+                    <label className="block text-sm font-medium text-zinc-300 mb-3">Próximo Passo</label>
+                    <div className="grid grid-cols-2 gap-4">
+                        <button
+                            type="button"
+                            onClick={() => setActionType('archive')}
+                            className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${actionType === 'archive' ? 'border-zinc-500 bg-zinc-700/50 text-white' : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/30'}`}
+                        >
+                            <Archive className="w-6 h-6 mb-2" />
+                            <span className="text-sm font-semibold">Encerrar</span>
+                            <span className="text-xs opacity-70 mt-1">Sem contato futuro</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setActionType('recovery')}
+                            className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${actionType === 'recovery' ? 'border-violet-500 bg-violet-500/10 text-violet-100' : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/30'}`}
+                        >
+                            <RefreshCw className="w-6 h-6 mb-2" />
+                            <span className="text-sm font-semibold">Recuperação</span>
+                            <span className="text-xs opacity-70 mt-1">Tentar novamente</span>
+                        </button>
+                    </div>
                 </div>
 
-                {scheduleReactivation && (
-                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                        <label htmlFor="reactivationDate" className="block text-sm font-medium text-zinc-300 mb-2">Data de Reativação</label>
+                {actionType === 'recovery' && (
+                    <motion.div 
+                        initial={{ opacity: 0, height: 0 }} 
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="bg-violet-900/20 border border-violet-500/30 rounded-md p-4"
+                    >
+                        <div className="flex items-center gap-2 mb-2">
+                            <Calendar className="w-4 h-4 text-violet-400" />
+                            <label htmlFor="reactivationDate" className="block text-sm font-medium text-violet-200">Data de Reativação</label>
+                        </div>
                         <input
                             type="date"
                             id="reactivationDate"
@@ -82,14 +113,22 @@ const LostLeadModal: React.FC<LostLeadModalProps> = ({ lead, onClose, onSubmit }
                             onChange={e => setReactivationDate(e.target.value)}
                             required
                             min={new Date().toISOString().split('T')[0]}
-                            className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white focus:ring-violet-500"
+                            className="w-full bg-zinc-900 border border-zinc-600 rounded-md px-3 py-2 text-sm text-white focus:ring-violet-500 focus:border-violet-500"
                         />
+                        <p className="text-xs text-violet-300/70 mt-2">
+                            O lead aparecerá na aba "Recuperação" nesta data.
+                        </p>
                     </motion.div>
                 )}
             </div>
             <div className="p-4 bg-zinc-800/50 border-t border-zinc-700 flex justify-end gap-3">
                 <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700 rounded-md hover:bg-zinc-600">Cancelar</button>
-                <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700">Confirmar</button>
+                <button 
+                    type="submit" 
+                    className={`px-4 py-2 text-sm font-semibold text-white rounded-md transition-colors ${actionType === 'recovery' ? 'bg-violet-600 hover:bg-violet-700' : 'bg-zinc-600 hover:bg-zinc-500'}`}
+                >
+                    {actionType === 'recovery' ? 'Salvar na Recuperação' : 'Confirmar Encerramento'}
+                </button>
             </div>
         </form>
       </motion.div>
