@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -732,7 +733,13 @@ const App: React.FC = () => {
                 return <ReportsPage leads={leads} columns={columns} tasks={tasks} activities={activities} />;
             case 'Recuperação':
                 const recoveryLeads = leads.filter(l => l.reactivationDate);
-                return <RecoveryView leads={recoveryLeads} onReactivateLead={handleReactivateLead} onExportPDF={handleExportPDF} onDeleteLead={handleDeleteLead} />;
+                return <RecoveryView 
+                    leads={recoveryLeads} 
+                    onReactivateLead={handleReactivateLead} 
+                    onExportPDF={handleExportPDF} 
+                    onDeleteLead={handleDeleteLead}
+                    onLeadClick={handleCardClick}
+                />;
             case 'Chat':
                 return <ChatView
                     conversations={conversations} messages={messages} leads={filteredLeads} currentUser={localUser}

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Lead, Id } from '../types';
 import { ArchiveRestore, RefreshCw, User, Calendar, MessageCircle, Download, Trash2 } from 'lucide-react';
@@ -9,9 +10,10 @@ interface RecoveryViewProps {
     onReactivateLead: (leadId: Id) => void;
     onExportPDF: (leads: Lead[]) => void;
     onDeleteLead: (leadId: Id) => void;
+    onLeadClick: (lead: Lead) => void;
 }
 
-const RecoveryView: React.FC<RecoveryViewProps> = ({ leads, onReactivateLead, onExportPDF, onDeleteLead }) => {
+const RecoveryView: React.FC<RecoveryViewProps> = ({ leads, onReactivateLead, onExportPDF, onDeleteLead, onLeadClick }) => {
     const [dateFilter, setDateFilter] = useState({
         start: '',
         end: ''
@@ -109,7 +111,11 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ leads, onReactivateLead, on
                     {sortedLeads.length > 0 ? (
                         <ul className="divide-y divide-zinc-800">
                             {sortedLeads.map(lead => (
-                                <li key={lead.id} className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 hover:bg-zinc-800/50">
+                                <li 
+                                    key={lead.id} 
+                                    onClick={() => onLeadClick(lead)}
+                                    className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 hover:bg-zinc-800/50 cursor-pointer transition-colors"
+                                >
                                     <div className="flex-1">
                                         <p className="font-semibold text-white">{lead.name}</p>
                                         <p className="text-sm text-zinc-400">{lead.company}</p>
@@ -126,14 +132,20 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ leads, onReactivateLead, on
                                     </div>
                                     <div className="flex items-center gap-2 self-start sm:self-center">
                                         <button
-                                            onClick={() => onReactivateLead(lead.id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onReactivateLead(lead.id);
+                                            }}
                                             className="flex items-center gap-2 bg-violet-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors"
                                         >
                                             <RefreshCw className="w-4 h-4" />
                                             <span>Reativar</span>
                                         </button>
                                         <button
-                                            onClick={() => setLeadToDelete(lead)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setLeadToDelete(lead);
+                                            }}
                                             className="p-2 text-zinc-400 hover:text-red-500 hover:bg-zinc-700/50 rounded-md"
                                             title="Excluir lead permanentemente"
                                         >
