@@ -71,9 +71,11 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onSelect, isS
     };
 
     const qualificationIcon = lead.qualificationStatus === 'qualified' 
-        ? <ShieldCheck className="w-4 h-4 text-green-500 flex-shrink-0" title="Qualificado" /> 
+// FIX: The `title` prop is not recognized on Lucide icons. Wrapped the icon in a `span` with a `title` attribute to provide a tooltip and resolve the type error.
+        ? <span title="Qualificado"><ShieldCheck className="w-4 h-4 text-green-500 flex-shrink-0" /></span> 
         : lead.qualificationStatus === 'disqualified' 
-        ? <ShieldX className="w-4 h-4 text-zinc-500 flex-shrink-0" title="Não Qualificado" /> 
+// FIX: The `title` prop is not recognized on Lucide icons. Wrapped the icon in a `span` with a `title` attribute to provide a tooltip and resolve the type error.
+        ? <span title="Não Qualificado"><ShieldX className="w-4 h-4 text-zinc-500 flex-shrink-0" /></span> 
         : null;
 
     return (

@@ -400,9 +400,10 @@ interface SettingsPageProps {
     columns: ColumnData[];
     onUpdateProfile: (name: string, avatarFile?: File) => void;
     onUpdatePipeline: (columns: ColumnData[]) => void;
+    onResetApplication: () => void;
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpdateProfile, onUpdatePipeline }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpdateProfile, onUpdatePipeline, onResetApplication }) => {
     const [activeTab, setActiveTab] = useState('Pipeline');
 
     const tabs = [
@@ -437,12 +438,29 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpd
                     </nav>
                 </div>
             </div>
-            <div>
+            <div className="space-y-6">
                 {activeTab === 'Perfil' && <ProfileSettings currentUser={currentUser} onUpdateProfile={onUpdateProfile} />}
                 {activeTab === 'Pipeline' && <PipelineSettings columns={columns} onUpdatePipeline={onUpdatePipeline} />}
                 {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />}
                 {activeTab === 'Integrações' && <WhatsAppChannelSettings />}
                 {activeTab === 'Notificações' && <NotificationSettings />}
+            </div>
+
+            {/* Danger Zone */}
+            <div className="bg-zinc-900 rounded-lg border border-red-500/30 mt-4">
+                <div className="p-6 border-b border-red-500/20">
+                    <h2 className="text-lg font-semibold text-red-400">Zona de Perigo</h2>
+                    <p className="text-sm text-zinc-400 mt-1">Ações destrutivas que não podem ser desfeitas.</p>
+                </div>
+                <div className="p-6 flex justify-between items-center">
+                    <div>
+                        <h3 className="font-medium text-white">Resetar Aplicação</h3>
+                        <p className="text-sm text-zinc-500">Isso irá apagar todos os dados do local storage e recarregar a aplicação.</p>
+                    </div>
+                    <button onClick={onResetApplication} className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-md transition-colors">
+                        Resetar Dados
+                    </button>
+                </div>
             </div>
         </div>
     );

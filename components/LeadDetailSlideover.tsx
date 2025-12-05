@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, User, Building, DollarSign, Tag as TagIcon, Clock, Trash2, MessageSquare, ArrowRight, TrendingUp, Sparkles, FileText, Mail, BookOpen, Circle, CheckCircle2 } from 'lucide-react';
@@ -23,6 +24,7 @@ interface LeadDetailSlideoverProps {
   onDeleteDraft: (draftId: Id) => void;
   showNotification: (message: string, type: 'success' | 'error' | 'info') => void;
   onUpdateTaskStatus: (taskId: Id, status: 'pending' | 'completed') => void;
+  onDeactivatePlaybook: () => void;
 }
 
 const TagPill: React.FC<{ tag: Tag }> = ({ tag }) => (
@@ -49,7 +51,7 @@ const formatTimestamp = (timestamp: string) => {
     return date.toLocaleString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
-const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activities, emailDrafts, tasks, playbooks, onClose, onEdit, onDelete, onAddNote, onSendEmailActivity, onAddTask, onSaveDraft, onDeleteDraft, showNotification, onUpdateTaskStatus }) => {
+const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activities, emailDrafts, tasks, playbooks, onClose, onEdit, onDelete, onAddNote, onSendEmailActivity, onAddTask, onSaveDraft, onDeleteDraft, showNotification, onUpdateTaskStatus, onDeactivatePlaybook }) => {
   const [activeTab, setActiveTab] = useState('Visão Geral');
   const tabs = ['Visão Geral', 'AI Composer', 'Atividades', 'Rascunhos'];
   const [newNote, setNewNote] = useState('');
@@ -207,7 +209,10 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
                         </div>
                     </div>
                     <div className="pl-8 mt-2">
-                         <p className="font-semibold text-white">{activePlaybookDetails.name}</p>
+                         <div className="flex justify-between items-center">
+                            <p className="font-semibold text-white">{activePlaybookDetails.name}</p>
+                            <button onClick={onDeactivatePlaybook} className="text-xs font-medium text-red-500 hover:text-red-400">Desativar</button>
+                         </div>
                          <ul className="mt-2 space-y-2">
                             {activePlaybookDetails.steps.map((step, index) => {
                                 const associatedTask = tasks.find(t => t.leadId === lead.id && t.playbookId === activePlaybookDetails.id && t.playbookStepIndex === index);

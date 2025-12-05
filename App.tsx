@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -12,7 +10,6 @@ import LeadDetailSlideover from './components/LeadDetailSlideover';
 import CreateEditLeadModal from './components/CreateEditLeadModal';
 import CreateEditTaskModal from './components/CreateEditTaskModal';
 import Notification from './components/Notification';
-import FAB from './components/FAB';
 import SettingsPage from './components/SettingsPage';
 import ActivitiesView from './components/ActivitiesView';
 import CalendarPage from './components/CalendarPage';
@@ -29,6 +26,7 @@ import PlaybookSettings from './components/PlaybookSettings';
 import PrintableLeadsReport from './components/PrintableLeadsReport';
 import LostLeadModal from './components/LostLeadModal';
 import RecoveryView from './components/RecoveryView';
+import QualificationModal from './components/QualificationModal';
 
 
 // Types
@@ -54,7 +52,8 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<Re
     useEffect(() => {
         try {
             window.localStorage.setItem(key, JSON.stringify(storedValue));
-        } catch (error) {
+        } catch (error)
+        {
             console.error(error);
         }
     }, [key, storedValue]);
@@ -96,6 +95,7 @@ const App: React.FC = () => {
     const [isGroupModalOpen, setGroupModalOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
     const [lostLeadInfo, setLostLeadInfo] = useState<{lead: Lead, columnId: Id} | null>(null);
+    const [qualificationInfo, setQualificationInfo] = useState<{ lead: Lead, targetColumnId: Id } | null>(null);
 
 
     // Notification State
@@ -181,7 +181,7 @@ const App: React.FC = () => {
             setNotifications(current => [...current, ...newNotifications]);
             showNotification(`Você tem ${newTasks.length} lead(s) para reativar hoje.`, 'info');
         }
-    }, [leads]);
+    }, [leads, setTasks, setNotifications, showNotification]);
 
 
     // --- COMPUTED DATA & UTILS ---
@@ -194,49 +194,60 @@ const App: React.FC = () => {
         if (stage.type === 'lost') return 0;
         if (stage.type === 'won') return 100;
 
-        const openStages = allColumns.filter(c => c.type === 'open');
+        const openStages = allColumns.filter(c => c.type === 'open' || c.type === 'qualification');
         const followUpStages = allColumns.filter(c => c.type === 'follow-up');
         const schedulingStages = allColumns.filter(c => c.type === 'scheduling');
 
-        if (stage.type === 'open') {
+        if (stage.type === 'open' || stage.type === 'qualification') {
             const currentIndex = openStages.findIndex(c => c.id === stageId);
             const total = openStages.length;
-            if (total <= 1) return 25; // Midpoint of 10-40 range
+            if (total <= 1) return 25;
             const base = 10;
-            const range = 40 - base;
+            const range = 40; // 10% to 50%
             return Math.round(base + (currentIndex / (total - 1)) * range);
         }
 
         if (stage.type === 'follow-up') {
             const currentIndex = followUpStages.findIndex(c => c.id === stageId);
             const total = followUpStages.length;
-            if (total <= 1) return 60; // Midpoint of 41-80 range
+            if (total <= 1) return 60;
             const base = 41;
-            const range = 80 - base;
+            const range = 39; // 41% to 80%
             return Math.round(base + (currentIndex / (total - 1)) * range);
         }
 
         if (stage.type === 'scheduling') {
             const currentIndex = schedulingStages.findIndex(c => c.id === stageId);
             const total = schedulingStages.length;
-            if (total <= 1) return 90; // Midpoint of 81-99 range
+            if (total <= 1) return 90;
             const base = 81;
-            const range = 99 - base;
+            const range = 18; // 81% to 99%
             return Math.round(base + (currentIndex / (total - 1)) * range);
         }
 
         return 0;
     }, []);
 
-    const filteredLeads = useMemo(() => leads.filter(lead => {
-        const searchLower = searchQuery.toLowerCase();
-        return (lead.name.toLowerCase().includes(searchLower) || lead.company.toLowerCase().includes(searchLower) || (lead.email && lead.email.toLowerCase().includes(searchLower)));
-    }), [leads, searchQuery]);
-    const listViewFilteredLeads = useMemo(() => leads.filter(lead => {
-        const statusMatch = listStatusFilter === 'all' || lead.status === listStatusFilter;
-        const tagMatch = listSelectedTags.length === 0 || listSelectedTags.every(st => lead.tags.some(lt => lt.id === st.id));
-        return statusMatch && tagMatch;
-    }), [leads, listStatusFilter, listSelectedTags]);
+    const searchedLeads = useMemo(() => {
+      const searchLower = searchQuery.toLowerCase();
+      const baseLeads = leads;
+
+      const filtered = baseLeads.filter(lead => 
+          lead.name.toLowerCase().includes(searchLower) || 
+          lead.company.toLowerCase().includes(searchLower) || 
+          (lead.email && lead.email.toLowerCase().includes(searchLower))
+      );
+
+      if (activeView === 'Leads' || activeView === 'Clientes') {
+         return filtered.filter(lead => {
+            const statusMatch = listStatusFilter === 'all' || lead.status === listStatusFilter;
+            const tagMatch = listSelectedTags.length === 0 || listSelectedTags.every(st => lead.tags.some(lt => lt.id === st.id));
+            return statusMatch && tagMatch;
+        });
+      }
+      return filtered;
+    }, [leads, searchQuery, activeView, listStatusFilter, listSelectedTags]);
+    
     const analysisForGroup = useMemo(() => (selectedGroupForView ? groupAnalyses.find(a => a.groupId === selectedGroupForView) || null : null), [groupAnalyses, selectedGroupForView]);
 
     // --- HANDLERS (LOCAL STATE LOGIC) ---
@@ -279,6 +290,7 @@ const App: React.FC = () => {
                 lastActivity: 'agora',
                 lastActivityTimestamp: now,
                 createdAt: now,
+                qualificationStatus: 'pending',
             };
             newLead.probability = calculateProbabilityForStage(newLead.columnId, columns);
             setLeads(current => [newLead, ...current]);
@@ -294,132 +306,169 @@ const App: React.FC = () => {
         showNotification(`Lead deletado.`, 'success');
     };
 
-    const handleUpdateLeadColumn = (leadId: Id, newColumnId: Id) => {
+    const handleUpdateLeadColumn = (leadId: Id, newColumnId: Id, isAutomated: boolean = false) => {
         const leadToMove = leads.find(l => l.id === leadId);
         const newColumn = columns.find(c => c.id === newColumnId);
+        const oldColumn = columns.find(c => c.id === leadToMove?.columnId);
         
         if (!leadToMove || !newColumn) return;
 
-        // Open LostLeadModal if moving to a 'lost' stage
+        // --- QUALIFICATION GATE ---
+        if (oldColumn?.type === 'qualification' && newColumn.id !== oldColumn.id && leadToMove.qualificationStatus === 'pending') {
+            setQualificationInfo({ lead: leadToMove, targetColumnId: newColumnId });
+            return; 
+        }
+
+        // --- LOST LEAD MODAL ---
         if (newColumn.type === 'lost' && leadToMove.columnId !== newColumn.id) {
             setLostLeadInfo({ lead: leadToMove, columnId: newColumnId });
             return; 
         }
 
-        setLeads(prevLeads => {
-            const now = new Date().toISOString();
-            const newProbability = calculateProbabilityForStage(newColumnId, columns);
-            let updatedLead = { ...leadToMove, columnId: newColumnId, lastActivity: 'agora', lastActivityTimestamp: now, probability: newProbability };
+        // --- DIRECT MOVE ---
+        const now = new Date().toISOString();
+        const newProbability = calculateProbabilityForStage(newColumnId, columns);
+        let updatedLead = { ...leadToMove, columnId: newColumnId, lastActivity: 'agora', lastActivityTimestamp: now, probability: newProbability };
 
-            // SMART PLAYBOOK LOGIC
-            const lastCompletedPlaybook = leadToMove.playbookHistory?.[(leadToMove.playbookHistory?.length || 0) - 1];
-            if (lastCompletedPlaybook) {
-                const playbookDef = playbooks.find(p => p.id === lastCompletedPlaybook.playbookId);
-                if (playbookDef && playbookDef.stages.includes(newColumnId)) {
-                    updatedLead.activePlaybook = {
-                        playbookId: lastCompletedPlaybook.playbookId,
-                        playbookName: lastCompletedPlaybook.playbookName,
-                        startedAt: lastCompletedPlaybook.startedAt,
-                    };
-                    updatedLead.playbookHistory = leadToMove.playbookHistory?.slice(0, -1);
-                    showNotification(`Playbook "${updatedLead.activePlaybook.playbookName}" reativado.`, 'info');
-                }
-            }
-            
-            if (updatedLead.activePlaybook && !updatedLead.playbookHistory?.some(h => h.playbookId === updatedLead.activePlaybook?.playbookId)) {
-                 const playbookDef = playbooks.find(p => p.id === updatedLead.activePlaybook?.playbookId);
-                 if (playbookDef && !playbookDef.stages.includes(newColumnId)) {
-                     const historyEntry: PlaybookHistoryEntry = {
-                         playbookId: updatedLead.activePlaybook.playbookId,
-                         playbookName: updatedLead.activePlaybook.playbookName,
-                         startedAt: updatedLead.activePlaybook.startedAt,
-                         completedAt: now,
-                     };
-                     updatedLead.playbookHistory = [...(updatedLead.playbookHistory || []), historyEntry];
-                     updatedLead.activePlaybook = undefined;
-                     showNotification(`Playbook "${historyEntry.playbookName}" concluído e arquivado.`, 'info');
-                 }
-            }
+        // --- PLAYBOOK LOGIC ---
+        if (updatedLead.activePlaybook && !updatedLead.playbookHistory?.some(h => h.playbookId === updatedLead.activePlaybook?.playbookId)) {
+             const playbookDef = playbooks.find(p => p.id === updatedLead.activePlaybook?.playbookId);
+             if (playbookDef && !playbookDef.stages.includes(newColumnId)) {
+                 const historyEntry: PlaybookHistoryEntry = {
+                     playbookId: updatedLead.activePlaybook.playbookId,
+                     playbookName: updatedLead.activePlaybook.playbookName,
+                     startedAt: updatedLead.activePlaybook.startedAt,
+                     completedAt: now,
+                 };
+                 updatedLead.playbookHistory = [...(updatedLead.playbookHistory || []), historyEntry];
+                 updatedLead.activePlaybook = undefined;
 
-            createActivityLog(leadId, 'status_change', `Movido para "${columns.find(c => c.id === newColumnId)?.title}".`);
-            
-            // AGENDAMENTO AUTOMATION
-            if (newColumn?.type === 'scheduling') {
-                const newTask: Task = {
-                    id: `task-${Date.now()}`,
-                    userId: localUser.id,
-                    leadId: leadId,
-                    type: 'meeting',
-                    title: `Agendar reunião com ${leadToMove.name}`,
-                    dueDate: now,
-                    status: 'pending',
+                  // Remove pending tasks from this playbook
+                setTasks(currentTasks => currentTasks.filter(task => 
+                    !(task.leadId === updatedLead.id && task.playbookId === historyEntry.playbookId && task.status === 'pending')
+                ));
+             }
+        }
+        
+        // Re-activate a playbook if moving back to its stage
+        const lastCompletedPlaybook = updatedLead.playbookHistory?.[updatedLead.playbookHistory.length - 1];
+        if (lastCompletedPlaybook) {
+            const playbookDef = playbooks.find(p => p.id === lastCompletedPlaybook.playbookId);
+            if (playbookDef?.stages.includes(newColumnId)) {
+                updatedLead.activePlaybook = {
+                    playbookId: lastCompletedPlaybook.playbookId,
+                    playbookName: lastCompletedPlaybook.playbookName,
+                    startedAt: lastCompletedPlaybook.startedAt,
                 };
-                setTasks(current => [newTask, ...current]);
-                showNotification(`Tarefa de reunião criada para "${leadToMove.name}".`, 'success');
+                updatedLead.playbookHistory = updatedLead.playbookHistory?.slice(0, -1);
+                showNotification(`Playbook "${updatedLead.activePlaybook.playbookName}" reativado.`, 'info');
             }
+        }
 
-            return prevLeads.map(l => l.id === leadId ? updatedLead : l);
-        });
+        // AUTOMATION: Create a task when moving to "Agendamento"
+        if (newColumn.type === 'scheduling' && oldColumn?.type !== 'scheduling') {
+            const newTask: Task = {
+                id: `task-sched-${updatedLead.id}-${Date.now()}`,
+                userId: localUser.id,
+                leadId: updatedLead.id,
+                type: 'meeting',
+                title: `Agendar reunião com ${updatedLead.name}`,
+                description: 'Lead movido para o estágio de agendamento.',
+                dueDate: new Date().toISOString(), // Due today
+                status: 'pending',
+            };
+            setTasks(current => [newTask, ...current]);
+            showNotification(`Tarefa de agendamento criada para ${updatedLead.name}.`, 'info');
+        }
+
+        setLeads(current => current.map(l => l.id === leadId ? updatedLead : l));
+        if (oldColumn && oldColumn.id !== newColumn.id && !isAutomated) {
+             createActivityLog(leadId, 'status_change', `Movido de "${oldColumn.title}" para "${newColumn.title}".`);
+        }
     };
 
-     const handleProcessLostLead = (leadId: Id, columnId: Id, reason: string, reactivationDate: string | null) => {
+    const handleProcessLostLead = (reason: string, reactivationDate: string | null) => {
+        if (!lostLeadInfo) return;
+        const { lead, columnId } = lostLeadInfo;
         const now = new Date().toISOString();
         const newProbability = calculateProbabilityForStage(columnId, columns);
-        setLeads(prevLeads => prevLeads.map(l => 
-            l.id === leadId 
-            ? { 
-                ...l, 
-                columnId, 
-                lostReason: reason, 
-                reactivationDate: reactivationDate || undefined, 
-                lastActivity: 'agora',
-                lastActivityTimestamp: now,
-                probability: newProbability,
-              } 
-            : l
-        ));
-        const leadName = leads.find(l => l.id === leadId)?.name;
-        showNotification(`Lead "${leadName}" movido para Perdido.`, 'info');
+        
+        const updatedLead = { 
+            ...lead, 
+            columnId, 
+            lastActivity: 'agora', 
+            lastActivityTimestamp: now, 
+            probability: newProbability,
+            lostReason: reason,
+            reactivationDate: reactivationDate ? new Date(reactivationDate).toISOString() : undefined,
+        };
+
+        setLeads(current => current.map(l => (l.id === lead.id ? updatedLead : l)));
+        createActivityLog(lead.id, 'status_change', `Lead movido para "${columns.find(c=>c.id === columnId)?.title}" (Motivo: ${reason}).`);
         setLostLeadInfo(null);
     };
-    
+
     const handleReactivateLead = (leadId: Id) => {
-        const firstColumnId = columns.find(c => c.type === 'open')?.id || columns[0].id;
-        setLeads(prevLeads => {
-            const leadToUpdate = prevLeads.find(l => l.id === leadId);
-            if (!leadToUpdate) return prevLeads;
-            
-            const newProbability = calculateProbabilityForStage(firstColumnId, columns);
-            
-            return prevLeads.map(l => 
-                l.id === leadId
-                ? { ...l, columnId: firstColumnId, lostReason: undefined, reactivationDate: undefined, lastActivity: 'agora', lastActivityTimestamp: new Date().toISOString(), probability: newProbability }
-                : l
-            );
-        });
-        const leadName = leads.find(l => l.id === leadId)?.name;
-        showNotification(`Lead "${leadName}" reativado!`, 'success');
+        const lead = leads.find(l => l.id === leadId);
+        if (!lead) return;
+
+        const firstColumn = columns.find(c => c.type === 'open' || c.type === 'qualification') || columns[0];
+        
+        const updatedLead = {
+            ...lead,
+            columnId: firstColumn.id,
+            lostReason: undefined,
+            reactivationDate: undefined,
+            lastActivity: 'agora',
+            lastActivityTimestamp: new Date().toISOString(),
+        };
+        updatedLead.probability = calculateProbabilityForStage(updatedLead.columnId, columns);
+
+        setLeads(current => current.map(l => (l.id === leadId ? updatedLead : l)));
+        showNotification(`Lead "${lead.name}" foi reativado!`, 'success');
+        createActivityLog(leadId, 'status_change', `Lead reativado da lista de recuperação.`);
     };
-    
-    const handleCardClick = (lead: Lead) => {
-        setSelectedLead(lead);
-        setSelectedLeadForPlaybookId(lead.id);
+
+    const handleProcessQualification = (leadId: Id, targetColumnId: Id, status: 'qualified' | 'disqualified', reason?: string) => {
+        const lead = leads.find(l => l.id === leadId);
+        if (!lead) return;
+
+        const updatedLead = {
+            ...lead,
+            qualificationStatus: status,
+            disqualificationReason: status === 'disqualified' ? reason : undefined,
+        };
+        
+        setLeads(current => current.map(l => l.id === leadId ? updatedLead : l));
+        
+        if (status === 'qualified') {
+            handleUpdateLeadColumn(leadId, targetColumnId);
+        } else {
+            // If disqualified, open the "Lost Lead" modal to decide what to do next
+            const lostColumn = columns.find(c => c.type === 'lost');
+            if (lostColumn) {
+                setLostLeadInfo({ lead: updatedLead, columnId: lostColumn.id });
+            }
+        }
+        
+        setQualificationInfo(null);
     };
-    
+
+
     // Tasks
     const handleCreateOrUpdateTask = (data: CreateTaskData | UpdateTaskData) => {
-        if (editingTask) { // UPDATE
-            const updatedTask = { ...tasks.find(t => t.id === editingTask.id)!, ...data };
+        if (editingTask && editingTask.id) { // Update
+            const updatedTask: Task = { ...editingTask, ...data };
             setTasks(current => current.map(t => t.id === editingTask.id ? updatedTask : t));
-            showNotification('Atividade atualizada.', 'success');
-        } else { // CREATE
-             const newTask: Task = {
+            showNotification(`Tarefa "${updatedTask.title}" atualizada.`, 'success');
+        } else { // Create
+            const newTask: Task = {
                 id: `task-${Date.now()}`,
                 userId: localUser.id,
-                ...data as CreateTaskData,
-             };
-             setTasks(current => [newTask, ...current]);
-             showNotification('Nova atividade criada.', 'success');
+                ...data as CreateTaskData
+            };
+            setTasks(current => [newTask, ...current]);
+            showNotification(`Tarefa "${newTask.title}" criada.`, 'success');
         }
         setCreateTaskModalOpen(false);
         setEditingTask(null);
@@ -428,163 +477,74 @@ const App: React.FC = () => {
 
     const handleDeleteTask = (taskId: Id) => {
         setTasks(current => current.filter(t => t.id !== taskId));
-        showNotification('Atividade deletada.', 'success');
+        showNotification('Tarefa deletada.', 'success');
     };
-    
+
     const handleUpdateTaskStatus = (taskId: Id, status: 'pending' | 'completed') => {
-        setTasks(prevTasks => {
-            const now = new Date().toISOString();
-            const newTasks = prevTasks.map(t => t.id === taskId ? { ...t, status } : t);
-            
-            const updatedTask = newTasks.find(t => t.id === taskId);
-            const lead = leads.find(l => l.id === updatedTask?.leadId);
-
-            if (status === 'completed' && lead && lead.activePlaybook && updatedTask?.playbookId === lead.activePlaybook.playbookId) {
-                const playbook = playbooks.find(p => p.id === lead.activePlaybook?.playbookId);
-                const tasksForThisPlaybook = newTasks.filter(t => t.leadId === lead.id && t.playbookId === playbook?.id);
-                
-                if (playbook && tasksForThisPlaybook.length === playbook.steps.length && tasksForThisPlaybook.every(t => t.status === 'completed')) {
-                    const currentColumnIndex = columns.findIndex(c => c.id === lead.columnId);
-                    const nextColumn = columns[currentColumnIndex + 1];
-                    
-                    if (nextColumn) {
-                        const newProbability = calculateProbabilityForStage(nextColumn.id, columns);
-                        const updatedLead = { 
-                            ...lead, 
-                            columnId: nextColumn.id,
-                            probability: newProbability, 
-                            lastActivity: 'agora',
-                            lastActivityTimestamp: now,
-                            activePlaybook: undefined,
-                            playbookHistory: [
-                                ...(lead.playbookHistory || []),
-                                {
-                                    playbookId: lead.activePlaybook.playbookId,
-                                    playbookName: lead.activePlaybook.playbookName,
-                                    startedAt: lead.activePlaybook.startedAt,
-                                    completedAt: now,
+        let leadToMove: Lead | null = null;
+        let targetColumnId: Id | null = null;
+    
+        setTasks(current => {
+            const updatedTasks = current.map(task => {
+                if (task.id === taskId) {
+                    const updatedTask = { ...task, status };
+    
+                    // Check for playbook completion
+                    const lead = leads.find(l => l.id === task.leadId);
+                    if (lead?.activePlaybook && task.playbookId === lead.activePlaybook.playbookId) {
+                        const playbook = playbooks.find(p => p.id === task.playbookId);
+                        if (playbook) {
+                            const allPlaybookTasks = current.filter(t => t.leadId === lead.id && t.playbookId === playbook.id);
+                            const otherTasks = allPlaybookTasks.filter(t => t.id !== taskId);
+                            
+                            const areAllOtherTasksCompleted = otherTasks.every(t => t.status === 'completed');
+                            
+                            if (status === 'completed' && areAllOtherTasksCompleted) {
+                                // This is the last task being completed
+                                const currentStageIndex = columns.findIndex(c => c.id === lead.columnId);
+                                const nextColumn = columns[currentStageIndex + 1];
+                                if (nextColumn) {
+                                    leadToMove = lead;
+                                    targetColumnId = nextColumn.id;
                                 }
-                            ]
-                        };
-                        setLeads(prevLeads => prevLeads.map(l => l.id === lead.id ? updatedLead : l));
-                        showNotification(`Playbook concluído! Lead movido para "${nextColumn.title}".`, 'success');
+                            }
+                        }
                     }
+                    return updatedTask;
                 }
-            }
-
-            return newTasks;
+                return task;
+            });
+            return updatedTasks;
         });
-    };
-    
-    // Email Drafts
-    const handleSaveDraft = (draftData: CreateEmailDraftData) => {
-        const newDraft: EmailDraft = {
-            id: `draft-${Date.now()}`,
-            createdAt: new Date().toISOString(),
-            ...draftData
-        };
-        setEmailDrafts(current => [newDraft, ...current]);
-        showNotification('Rascunho salvo!', 'success');
-    };
-    
-    const handleDeleteDraft = (draftId: Id) => {
-        setEmailDrafts(current => current.filter(d => d.id !== draftId));
-        showNotification('Rascunho deletado.', 'success');
-    };
 
-    // Groups
-    const handleCreateOrUpdateGroup = (data: CreateGroupData | UpdateGroupData) => {
-        if (editingGroup) {
-            setGroups(current => current.map(g => g.id === editingGroup.id ? { ...g, ...data } as Group : g));
-            showNotification('Grupo atualizado.', 'success');
-        } else {
-            const newGroup: Group = { id: `group-${Date.now()}`, ...data as CreateGroupData };
-            setGroups(current => [newGroup, ...current]);
-            showNotification('Grupo criado.', 'success');
-        }
-        setGroupModalOpen(false);
-        setEditingGroup(null);
-    };
-
-    const handleDeleteGroup = (groupId: Id) => {
-        setGroups(current => current.filter(g => g.id !== groupId));
-        showNotification('Grupo deletado.', 'success');
-    };
-    
-    // Group Analysis
-    const handleCreateOrUpdateGroupAnalysis = (data: CreateGroupAnalysisData | UpdateGroupAnalysisData, analysisId?: Id) => {
-        if (analysisId) {
-             setGroupAnalyses(current => current.map(a => a.id === analysisId ? { ...a, ...data } as GroupAnalysis : a));
-             showNotification('Análise atualizada.', 'success');
-        } else {
-            const newAnalysis: GroupAnalysis = { id: `analysis-${Date.now()}`, createdAt: new Date().toISOString(), ...data as CreateGroupAnalysisData };
-            setGroupAnalyses(current => [newAnalysis, ...current]);
-            showNotification('Análise salva.', 'success');
+        if (leadToMove && targetColumnId) {
+            handleUpdateLeadColumn(leadToMove.id, targetColumnId, true);
         }
     };
     
-    const handleDeleteGroupAnalysis = (analysisId: Id) => {
-        setGroupAnalyses(current => current.filter(a => a.id !== analysisId));
-        showNotification('Análise descartada.', 'success');
+    // Playbooks
+    const handleSelectLeadForPlaybook = (leadId: Id) => {
+        if (selectedLeadForPlaybookId === leadId) {
+            setSelectedLeadForPlaybookId(null);
+        } else {
+            setSelectedLeadForPlaybookId(leadId);
+        }
     };
     
-    // Notifications
-    const handleMarkNotificationAsRead = (id: Id) => {
-        setNotifications(current => current.map(n => n.id === id ? { ...n, isRead: true } : n));
-    };
-
-    const handleMarkAllNotificationsRead = () => {
-        setNotifications(current => current.map(n => ({ ...n, isRead: true })));
-    };
-    
-    const handleClearAllNotifications = () => {
-        setNotifications([]);
-        showNotification('Todas as notificações foram limpas.', 'info');
-    };
-    
-    // Pipeline settings
-    const handleUpdatePipeline = (newColumns: ColumnData[]) => {
-        setColumns(newColumns);
-        setLeads(currentLeads => 
-            currentLeads.map(lead => ({
-                ...lead,
-                probability: calculateProbabilityForStage(lead.columnId, newColumns)
-            }))
-        );
-        showNotification('Pipeline atualizado.', 'success');
-    };
-    
-    // Card/List Display Toggles
-    const onToggleLeadMinimize = useCallback((leadId: Id) => {
-        setMinimizedLeads(prev => (prev || []).includes(leadId) ? (prev || []).filter(id => id !== leadId) : [...(prev || []), leadId]);
-    }, [setMinimizedLeads]);
-
-    const onToggleColumnMinimize = useCallback((columnId: Id) => {
-        setMinimizedColumns(prev => (prev || []).includes(columnId) ? (prev || []).filter(id => id !== columnId) : [...(prev || []), columnId]);
-    }, [setMinimizedColumns]);
-    
-    // Playbook handlers
     const handleApplyPlaybook = (playbookId: Id) => {
+        if (!selectedLeadForPlaybook) return;
+
         const playbook = playbooks.find(p => p.id === playbookId);
-        const lead = leads.find(l => l.id === selectedLeadForPlaybookId);
-
-        if (!playbook || !lead) {
-            showNotification('Erro ao aplicar playbook.', 'error');
-            return;
-        }
+        if (!playbook) return;
         
-        if (lead.activePlaybook) {
-            showNotification('Este lead já possui um playbook ativo.', 'error');
-            return;
-        }
-
+        const now = new Date();
         const newTasks: Task[] = playbook.steps.map((step, index) => {
-            const dueDate = new Date();
-            dueDate.setDate(dueDate.getDate() + step.day);
+            const dueDate = new Date(now);
+            dueDate.setDate(now.getDate() + step.day);
             return {
-                id: `task-${Date.now()}-${index}`,
+                id: `task-pb-${selectedLeadForPlaybook.id}-${playbookId}-${index}-${Date.now()}`,
                 userId: localUser.id,
-                leadId: lead.id,
+                leadId: selectedLeadForPlaybook.id,
                 type: step.type,
                 title: step.instructions,
                 dueDate: dueDate.toISOString(),
@@ -595,80 +555,143 @@ const App: React.FC = () => {
         });
 
         setTasks(current => [...current, ...newTasks]);
-        
-        setLeads(current => current.map(l => l.id === lead.id ? { 
-            ...l, 
-            activePlaybook: { 
-                playbookId: playbook.id, 
+
+        const updatedLead: Lead = {
+            ...selectedLeadForPlaybook,
+            activePlaybook: {
+                playbookId: playbook.id,
                 playbookName: playbook.name,
                 startedAt: new Date().toISOString(),
-            } 
-        } : l));
-        
-        showNotification(`Playbook "${playbook.name}" aplicado com sucesso.`, 'success');
+            }
+        };
+        setLeads(current => current.map(l => l.id === updatedLead.id ? updatedLead : l));
+        showNotification(`Playbook "${playbook.name}" aplicado a ${updatedLead.name}.`, 'success');
         setPlaybookModalOpen(false);
         setSelectedLeadForPlaybookId(null);
     };
 
-    const handleUpdatePlaybooks = (updatedPlaybooks: Playbook[]) => {
-        setPlaybooks(updatedPlaybooks);
-        showNotification('Playbooks salvos com sucesso.', 'success');
+    const handleDeactivatePlaybook = (leadId: Id) => {
+        const lead = leads.find(l => l.id === leadId);
+        if (!lead || !lead.activePlaybook) return;
+
+        const playbookId = lead.activePlaybook.playbookId;
+
+        // Remove pending tasks for this playbook
+        setTasks(current => current.filter(task => 
+            !(task.leadId === leadId && task.playbookId === playbookId && task.status === 'pending')
+        ));
+        
+        // Remove active playbook from lead
+        const { activePlaybook, ...restOfLead } = lead;
+        const updatedLead = restOfLead;
+        
+        setLeads(current => current.map(l => (l.id === leadId ? updatedLead : l)));
+        setSelectedLead(updatedLead); // Update slideover view
+        showNotification(`Cadência desativada para ${lead.name}.`, 'info');
+    };
+
+
+    // Groups
+    const handleCreateOrUpdateGroup = (data: CreateGroupData | UpdateGroupData) => {
+         if (editingGroup && editingGroup.id) { // UPDATE
+            const updatedGroup: Group = { ...editingGroup, ...data };
+            setGroups(current => current.map(g => g.id === editingGroup.id ? updatedGroup : g));
+            showNotification(`Grupo "${updatedGroup.name}" atualizado.`, 'success');
+        } else { // CREATE
+            const newGroup: Group = { id: `group-${Date.now()}`, ...data as CreateGroupData };
+            setGroups(current => [newGroup, ...current]);
+            showNotification(`Grupo "${newGroup.name}" criado.`, 'success');
+        }
+        setGroupModalOpen(false);
+        setEditingGroup(null);
+    };
+    const handleDeleteGroup = (groupId: Id) => {
+        setGroups(current => current.filter(g => g.id !== groupId));
+        showNotification('Grupo deletado.', 'success');
     };
     
-    // PDF Export
-    const handleExportPDF = useCallback((leadsToExport: Lead[]) => {
+    // Group Analysis
+    const handleCreateOrUpdateGroupAnalysis = (data: CreateGroupAnalysisData | UpdateGroupAnalysisData, analysisId?: Id) => {
+        if (analysisId) {
+            setGroupAnalyses(current => current.map(a => a.id === analysisId ? { ...a, ...data } : a));
+            showNotification('Análise atualizada.', 'success');
+        } else {
+            const newAnalysis: GroupAnalysis = {
+                id: `analysis-${Date.now()}`,
+                createdAt: new Date().toISOString(),
+                ...data as CreateGroupAnalysisData
+            };
+            // FIX: Type assertion to ensure 'groupId' exists on 'data' in the creation path.
+            setGroupAnalyses(current => [...current.filter(a => a.groupId !== (data as CreateGroupAnalysisData).groupId), newAnalysis]);
+             showNotification('Análise salva.', 'success');
+        }
+    };
+    const handleDeleteGroupAnalysis = (analysisId: Id) => {
+         setGroupAnalyses(current => current.filter(a => a.id !== analysisId));
+         showNotification('Rascunho da análise descartado.', 'info');
+    };
+    
+    const handleExportPDF = (leadsToExport: Lead[]) => {
         setLeadsToPrint(leadsToExport);
-    }, []);
+    };
 
-    const handlePrintEnd = useCallback(() => {
-        setLeadsToPrint(null);
-    }, []);
+    const handleResetApplication = () => {
+        // Clear all relevant local storage keys
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('crm-')) {
+                localStorage.removeItem(key);
+            }
+        });
+        // Reload the page to apply initial state
+        window.location.reload();
+    };
+    
+    const handleCardClick = (lead: Lead) => {
+        setSelectedLead(lead);
+        setSelectedLeadForPlaybookId(lead.id);
+    };
 
+
+    // --- RENDER LOGIC ---
     const renderView = () => {
-        const groupForView = groups.find(g => g.id === selectedGroupForView);
-        if (selectedGroupForView && groupForView) {
-            const leadsForGroup = leads.filter(l => l.groupInfo?.groupId === selectedGroupForView);
-            return <GroupsView 
-                        group={groupForView} 
-                        leads={leadsForGroup}
-                        analysis={analysisForGroup}
-                        onUpdateLead={(leadId, updates) => setLeads(current => current.map(l => l.id === leadId ? {...l, ...updates} : l))}
-                        onBack={() => setSelectedGroupForView(null)} 
-                        onCreateOrUpdateAnalysis={handleCreateOrUpdateGroupAnalysis}
-                        onDeleteAnalysis={handleDeleteGroupAnalysis}
-                        showNotification={showNotification}
-                   />;
+        if (leadsToPrint) {
+            return <PrintableLeadsReport leads={leadsToPrint} tasks={tasks} activities={activities} onPrintEnd={() => setLeadsToPrint(null)} />;
         }
         
+        const filteredLeads = searchedLeads;
+        // FIX: Define listViewFilteredLeads here to be available for both Leads and Clientes views.
+        let listViewFilteredLeads: Lead[];
+
         switch (activeView) {
             case 'Dashboard':
                 return <Dashboard leads={filteredLeads} columns={columns} activities={activities} tasks={tasks} onNavigate={setActiveView} />;
             case 'Pipeline':
-                return <KanbanBoard 
-                            columns={columns} 
-                            leads={filteredLeads} 
-                            users={users} 
-                            onUpdateLeadColumn={handleUpdateLeadColumn} 
-                            onSelectLead={handleCardClick}
-                            selectedLeadId={selectedLeadForPlaybookId}
-                            onAddLead={(columnId) => { setEditingLead(null); setCreateLeadModalOpen(true); }}
-                            cardDisplaySettings={cardDisplaySettings}
-                            onUpdateCardSettings={setCardDisplaySettings}
-                            minimizedLeads={minimizedLeads}
-                            onToggleLeadMinimize={onToggleLeadMinimize}
-                            minimizedColumns={minimizedColumns}
-                            onToggleColumnMinimize={onToggleColumnMinimize}
-                            isPlaybookActionEnabled={!!selectedLeadForPlaybookId}
-                            onApplyPlaybookClick={() => setPlaybookModalOpen(true)}
-                        />;
+                return <KanbanBoard
+                    columns={columns}
+                    leads={filteredLeads}
+                    users={users}
+                    cardDisplaySettings={cardDisplaySettings}
+                    onUpdateLeadColumn={handleUpdateLeadColumn}
+                    onSelectLead={handleCardClick}
+                    selectedLeadId={selectedLeadForPlaybookId}
+                    onAddLead={(columnId) => { setEditingLead(null); setCreateLeadModalOpen(true); }}
+                    onUpdateCardSettings={setCardDisplaySettings}
+                    minimizedLeads={minimizedLeads}
+                    onToggleLeadMinimize={(leadId: Id) => setMinimizedLeads(p => (p || []).includes(leadId) ? (p || []).filter(id => id !== leadId) : [...(p || []), leadId])}
+                    minimizedColumns={minimizedColumns}
+                    onToggleColumnMinimize={(colId: Id) => setMinimizedColumns(p => (p || []).includes(colId) ? (p || []).filter(id => id !== colId) : [...(p || []), colId])}
+                    isPlaybookActionEnabled={!!selectedLeadForPlaybook}
+                    onApplyPlaybookClick={() => setPlaybookModalOpen(true)}
+                />;
             case 'Playbooks':
-                 return <PlaybookSettings initialPlaybooks={playbooks} pipelineColumns={columns} onSave={handleUpdatePlaybooks} />;
-            case 'Leads':
+                return <PlaybookSettings initialPlaybooks={playbooks} pipelineColumns={columns} onSave={setPlaybooks} />;
+            case 'Leads': {
+                listViewFilteredLeads = filteredLeads.filter(l => l.columnId !== 'closed');
                 return <LeadListView 
-                            leads={listViewFilteredLeads} 
+                            leads={listViewFilteredLeads}
                             columns={columns} 
-                            onLeadClick={setSelectedLead} 
-                            viewType="Leads" 
+                            onLeadClick={setSelectedLead}
+                            viewType="Leads"
                             listDisplaySettings={listDisplaySettings}
                             onUpdateListSettings={setListDisplaySettings}
                             allTags={tags}
@@ -677,16 +700,17 @@ const App: React.FC = () => {
                             statusFilter={listStatusFilter}
                             onStatusFilterChange={setListStatusFilter}
                             onExportPDF={() => handleExportPDF(listViewFilteredLeads)}
-                            onOpenCreateLeadModal={() => { setEditingLead(null); setCreateLeadModalOpen(true); }}
-                            onOpenCreateTaskModal={() => { setEditingTask(null); setCreateTaskModalOpen(true); }}
-                        />;
-            case 'Clientes':
-                 const clientes = filteredLeads.filter(l => columns.find(c => c.id === l.columnId)?.type === 'won');
-                 return <LeadListView 
-                            leads={clientes} 
-                            columns={columns} 
-                            onLeadClick={setSelectedLead} 
-                            viewType="Clientes" 
+                            onOpenCreateLeadModal={() => setCreateLeadModalOpen(true)}
+                            onOpenCreateTaskModal={() => setCreateTaskModalOpen(true)}
+                       />;
+            }
+            case 'Clientes': {
+                listViewFilteredLeads = filteredLeads.filter(l => l.columnId === 'closed');
+                return <LeadListView
+                            leads={listViewFilteredLeads}
+                            columns={columns}
+                            onLeadClick={setSelectedLead}
+                            viewType="Clientes"
                             listDisplaySettings={listDisplaySettings}
                             onUpdateListSettings={setListDisplaySettings}
                             allTags={tags}
@@ -694,201 +718,242 @@ const App: React.FC = () => {
                             onSelectedTagsChange={setListSelectedTags}
                             statusFilter={listStatusFilter}
                             onStatusFilterChange={setListStatusFilter}
-                            onExportPDF={() => handleExportPDF(clientes)}
-                            onOpenCreateLeadModal={() => { setEditingLead(null); setCreateLeadModalOpen(true); }}
-                            onOpenCreateTaskModal={() => { setEditingTask(null); setCreateTaskModalOpen(true); }}
-                        />;
-            case 'Tarefas':
-                return <ActivitiesView 
-                            tasks={tasks} 
-                            leads={leads} 
+                            onExportPDF={() => handleExportPDF(listViewFilteredLeads)}
+                             onOpenCreateLeadModal={() => setCreateLeadModalOpen(true)}
+                            onOpenCreateTaskModal={() => setCreateTaskModalOpen(true)}
+                       />;
+            }
+             case 'Tarefas':
+                return <ActivitiesView tasks={tasks} leads={filteredLeads}
                             onEditTask={(task) => { setEditingTask(task); setCreateTaskModalOpen(true); }}
-                            onDeleteTask={handleDeleteTask}
-                            onUpdateTaskStatus={handleUpdateTaskStatus}
-                        />;
-            case 'Calendário':
-                return <CalendarPage 
-                            tasks={tasks} 
-                            leads={leads}
-                            onNewActivity={(date) => { setPreselectedDataForTask({ leadId: leads[0]?.id, date }); setEditingTask(null); setCreateTaskModalOpen(true); }}
-                            onEditActivity={(task) => { setEditingTask(task); setCreateTaskModalOpen(true); }}
-                            onDeleteTask={handleDeleteTask}
-                            onUpdateTaskStatus={handleUpdateTaskStatus}
-                        />;
+                            onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus}
+                       />;
             case 'Relatórios':
                 return <ReportsPage leads={leads} columns={columns} tasks={tasks} activities={activities} />;
             case 'Recuperação':
-                const recoveryLeads = leads.filter(l => l.reactivationDate && columns.some(c => c.id === l.columnId && c.type === 'lost'));
-                return <RecoveryView 
-                            leads={recoveryLeads}
-                            onReactivateLead={handleReactivateLead}
-                            onExportPDF={handleExportPDF}
-                            onDeleteLead={handleDeleteLead}
-                        />;
+                const recoveryLeads = leads.filter(l => l.reactivationDate);
+                return <RecoveryView leads={recoveryLeads} onReactivateLead={handleReactivateLead} onExportPDF={handleExportPDF} onDeleteLead={handleDeleteLead} />;
             case 'Chat':
                 return <ChatView
-                            conversations={conversations}
-                            messages={messages}
-                            leads={leads}
-                            currentUser={localUser}
-                            onSendMessage={(convId, text, channel, leadId) => setMessages(curr => [...curr, {id: `msg-${Date.now()}`, conversationId: convId, senderId: localUser.id, text, timestamp: new Date().toISOString(), channel}])}
-                            onUpdateConversationStatus={(convId, status) => setConversations(curr => curr.map(c => c.id === convId ? {...c, status} : c))}
-                            showNotification={showNotification}
-                        />
+                    conversations={conversations} messages={messages} leads={filteredLeads} currentUser={localUser}
+                    onSendMessage={(convId, text, channel, leadId) => {
+                        const newMessage: ChatMessage = { id: `msg-${Date.now()}`, conversationId: convId, senderId: localUser.id, text, timestamp: new Date().toISOString(), channel };
+                        setMessages(curr => [...curr, newMessage]);
+                        setConversations(curr => curr.map(c => c.id === convId ? {...c, lastMessage: text, lastMessageTimestamp: newMessage.timestamp, lastMessageChannel: channel, unreadCount: 0 } : c));
+                    }}
+                    onUpdateConversationStatus={(convId, status) => setConversations(curr => curr.map(c => c.id === convId ? {...c, status} : c))}
+                    showNotification={showNotification}
+                 />;
             case 'Grupos':
-                return <GroupsDashboard 
-                            groups={groups} 
-                            leads={leads}
-                            onSelectGroup={setSelectedGroupForView}
-                            onAddGroup={() => { setEditingGroup(null); setGroupModalOpen(true); }}
-                            onEditGroup={(group) => { setEditingGroup(group); setGroupModalOpen(true); }}
-                            onDeleteGroup={handleDeleteGroup}
-                        />;
+                if (selectedGroupForView) {
+                    const group = groups.find(g => g.id === selectedGroupForView);
+                    const groupLeads = leads.filter(l => l.groupInfo?.groupId === selectedGroupForView);
+                    if (!group) { setSelectedGroupForView(null); return null; }
+                    return <GroupsView
+                                group={group}
+                                leads={groupLeads}
+                                analysis={analysisForGroup}
+                                onUpdateLead={(leadId, updates) => {
+                                    const lead = leads.find(l => l.id === leadId);
+                                    if (lead) {
+                                        const updatedLead = { ...lead, ...updates, lastActivity: 'agora', lastActivityTimestamp: new Date().toISOString() };
+                                        setLeads(current => current.map(l => (l.id === leadId ? updatedLead : l)));
+                                        if (selectedLead?.id === leadId) {
+                                            setSelectedLead(updatedLead);
+                                        }
+                                        createActivityLog(leadId, 'note', 'Informações de grupo do lead atualizadas.');
+                                        showNotification('Informações de grupo atualizadas.', 'success');
+                                    }
+                                }}
+                                onBack={() => setSelectedGroupForView(null)}
+                                onCreateOrUpdateAnalysis={handleCreateOrUpdateGroupAnalysis}
+                                onDeleteAnalysis={handleDeleteGroupAnalysis}
+                                showNotification={showNotification}
+                           />;
+                }
+                return <GroupsDashboard
+                    groups={groups}
+                    leads={leads}
+                    onSelectGroup={setSelectedGroupForView}
+                    onAddGroup={() => { setEditingGroup(null); setGroupModalOpen(true); }}
+                    onEditGroup={(group) => { setEditingGroup(group); setGroupModalOpen(true); }}
+                    onDeleteGroup={handleDeleteGroup}
+                 />;
             case 'Integrações':
                 return <IntegrationsPage showNotification={showNotification} />;
+            case 'Calendário':
+                return <CalendarPage
+                    tasks={tasks} leads={filteredLeads}
+                    onNewActivity={(date) => { setPreselectedDataForTask({ leadId: leads[0]?.id, date }); setCreateTaskModalOpen(true); }}
+                    onEditActivity={(task) => { setEditingTask(task); setCreateTaskModalOpen(true); }}
+                    onDeleteTask={handleDeleteTask}
+                    onUpdateTaskStatus={handleUpdateTaskStatus}
+                 />;
             case 'Notificações':
-                 return <NotificationsView
-                            notifications={notifications}
-                            onMarkAsRead={handleMarkNotificationAsRead}
-                            onMarkAllAsRead={handleMarkAllNotificationsRead}
-                            onClearAll={handleClearAllNotifications}
-                            onNavigate={(link) => {
-                                if (link?.view) setActiveView(link.view);
-                                if (link?.leadId) {
-                                    const leadToSelect = leads.find(l => l.id === link.leadId);
-                                    if(leadToSelect) setSelectedLead(leadToSelect);
-                                }
-                            }}
-                        />;
+                return <NotificationsView
+                    notifications={notifications}
+                    onMarkAsRead={(id) => setNotifications(curr => curr.map(n => n.id === id ? { ...n, isRead: true } : n))}
+                    onMarkAllAsRead={() => setNotifications(curr => curr.map(n => ({...n, isRead: true})))}
+                    onClearAll={() => setNotifications([])}
+                    onNavigate={(link) => {
+                        if (link) {
+                            if (link.view) setActiveView(link.view);
+                            if (link.leadId) {
+                                const leadToSelect = leads.find(l => l.id === link.leadId);
+                                if (leadToSelect) setSelectedLead(leadToSelect);
+                            }
+                        }
+                    }}
+                />
             case 'Configurações':
                 return <SettingsPage
-                            currentUser={localUser}
-                            columns={columns}
-                            onUpdateProfile={() => showNotification("Perfil atualizado!", "success")}
-                            onUpdatePipeline={handleUpdatePipeline}
-                        />;
+                    currentUser={localUser}
+                    columns={columns}
+                    onUpdateProfile={(name) => showNotification("Perfil atualizado!", 'success')}
+                    onUpdatePipeline={(newColumns) => {
+                        setColumns(newColumns);
+                        // Recalculate probabilities for all leads
+                        setLeads(currentLeads => currentLeads.map(lead => ({
+                            ...lead,
+                            probability: calculateProbabilityForStage(lead.columnId, newColumns)
+                        })));
+                        showNotification("Pipeline salvo!", 'success');
+                    }}
+                    onResetApplication={handleResetApplication}
+                />;
             default:
-                return <div>Página não encontrada</div>;
+                return <div>View not found</div>;
         }
     };
 
-    if (leadsToPrint) {
-        return <PrintableLeadsReport leads={leadsToPrint} tasks={tasks} activities={activities} onPrintEnd={handlePrintEnd} />;
-    }
-
     return (
-        <div className={`flex h-screen bg-gray-100 dark:bg-zinc-800 text-zinc-900 dark:text-gray-200 transition-colors`}>
-            <Sidebar 
-                activeView={activeView} 
-                onNavigate={setActiveView} 
-                isCollapsed={isSidebarCollapsed} 
-                onToggle={() => setSidebarCollapsed(p => !p)}
-                isChatEnabled={isChatEnabled}
+      <div className="flex h-screen bg-gray-50 dark:bg-zinc-800 text-zinc-800 dark:text-gray-300">
+        <Sidebar
+            activeView={activeView}
+            onNavigate={setActiveView}
+            isCollapsed={isSidebarCollapsed}
+            onToggle={() => setSidebarCollapsed(p => !p)}
+            isChatEnabled={isChatEnabled}
+        />
+        <div className="flex-1 flex flex-col overflow-hidden">
+            <Header
+                currentUser={localUser}
+                onLogout={() => {}}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                theme={theme}
+                onThemeToggle={() => setTheme(p => p === 'dark' ? 'light' : 'dark')}
+                unreadCount={unreadCount}
             />
-            <div className="flex-1 flex flex-col overflow-hidden">
-                <Header 
-                    currentUser={localUser}
-                    onLogout={() => {}}
-                    searchQuery={searchQuery}
-                    onSearchChange={setSearchQuery}
-                    theme={theme}
-                    onThemeToggle={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                    unreadCount={unreadCount}
-                />
-                <main className="flex-1 overflow-y-auto p-6">
-                    {renderView()}
-                </main>
-            </div>
-
-            {/* Modals and Slideovers */}
-            <AnimatePresence>
-                {selectedLead && (
-                    <LeadDetailSlideover
-                        lead={selectedLead}
-                        activities={activities.filter(a => a.leadId === selectedLead.id)}
-                        emailDrafts={emailDrafts.filter(d => d.leadId === selectedLead.id)}
-                        tasks={tasks}
-                        playbooks={playbooks}
-                        onClose={() => setSelectedLead(null)}
-                        onEdit={() => { setEditingLead(selectedLead); setCreateLeadModalOpen(true); }}
-                        onDelete={() => handleDeleteLead(selectedLead.id)}
-                        onAddNote={(note) => createActivityLog(selectedLead.id, 'note', note)}
-                        onSendEmailActivity={(subject) => createActivityLog(selectedLead.id, 'email_sent', `Email enviado: "${subject}"`)}
-                        onAddTask={() => { setPreselectedDataForTask({ leadId: selectedLead.id }); setEditingTask(null); setCreateTaskModalOpen(true); }}
-                        onSaveDraft={handleSaveDraft}
-                        onDeleteDraft={handleDeleteDraft}
-                        showNotification={showNotification}
-                        onUpdateTaskStatus={handleUpdateTaskStatus}
-                    />
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-                {(isCreateLeadModalOpen || editingLead) && (
-                    <CreateEditLeadModal 
-                        lead={editingLead} 
-                        columns={columns} 
-                        allTags={tags}
-                        groups={groups}
-                        onClose={() => { setCreateLeadModalOpen(false); setEditingLead(null); }} 
-                        onSubmit={handleCreateOrUpdateLead}
-                    />
-                )}
-            </AnimatePresence>
-             <AnimatePresence>
-                {(isCreateTaskModalOpen || editingTask || preselectedDataForTask) && (
-                    <CreateEditTaskModal 
-                        task={editingTask} 
-                        leads={leads}
-                        preselectedLeadId={preselectedDataForTask?.leadId}
-                        preselectedDate={preselectedDataForTask?.date}
-                        onClose={() => { setCreateTaskModalOpen(false); setEditingTask(null); setPreselectedDataForTask(null); }}
-                        onSubmit={handleCreateOrUpdateTask}
-                    />
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-                {(isGroupModalOpen || editingGroup) && (
-                    <CreateEditGroupModal 
-                        group={editingGroup} 
-                        onClose={() => { setGroupModalOpen(false); setEditingGroup(null); }}
-                        onSubmit={handleCreateOrUpdateGroup}
-                    />
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-                {isPlaybookModalOpen && selectedLeadForPlaybook && (
-                    <PlaybookModal
-                        lead={selectedLeadForPlaybook}
-                        playbooks={playbooks}
-                        onClose={() => setPlaybookModalOpen(false)}
-                        onApply={handleApplyPlaybook}
-                    />
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-                {lostLeadInfo && (
-                    <LostLeadModal 
-                        lead={lostLeadInfo.lead}
-                        onClose={() => setLostLeadInfo(null)}
-                        onSubmit={(reason, date) => handleProcessLostLead(lostLeadInfo.lead.id, lostLeadInfo.columnId, reason, date)}
-                    />
-                )}
-            </AnimatePresence>
-
-
-            {/* Global UI */}
-            <AnimatePresence>
-                {notification && (
-                    <Notification
-                        message={notification.message}
-                        type={notification.type}
-                        onClose={() => setNotification(null)}
-                    />
-                )}
-            </AnimatePresence>
-            
-            <FAB onOpenCreateLeadModal={() => { setEditingLead(null); setCreateLeadModalOpen(true); }} onOpenCreateTaskModal={() => { setEditingTask(null); setCreateTaskModalOpen(true); }} />
+            <main className="flex-1 overflow-auto p-6">
+                {renderView()}
+            </main>
         </div>
+
+        <AnimatePresence>
+            {selectedLead && (
+                <LeadDetailSlideover
+                    lead={selectedLead}
+                    activities={activities.filter(a => a.leadId === selectedLead.id)}
+                    emailDrafts={emailDrafts.filter(d => d.leadId === selectedLead.id)}
+                    tasks={tasks}
+                    playbooks={playbooks}
+                    onClose={() => setSelectedLead(null)}
+                    onEdit={() => { setEditingLead(selectedLead); setCreateLeadModalOpen(true); }}
+                    onDelete={() => handleDeleteLead(selectedLead.id)}
+                    onAddNote={(text) => createActivityLog(selectedLead.id, 'note', text)}
+                    onSendEmailActivity={(subject) => createActivityLog(selectedLead.id, 'email_sent', `Email enviado: "${subject}"`)}
+                    onAddTask={() => { setPreselectedDataForTask({ leadId: selectedLead.id }); setCreateTaskModalOpen(true); }}
+                    onSaveDraft={(data) => {
+                        const newDraft: EmailDraft = { ...data, id: `draft-${Date.now()}`, createdAt: new Date().toISOString() };
+                        setEmailDrafts(curr => [...curr, newDraft]);
+                        showNotification('Rascunho salvo!', 'success');
+                    }}
+                    onDeleteDraft={(id) => { setEmailDrafts(curr => curr.filter(d => d.id !== id)); showNotification('Rascunho deletado.', 'info'); }}
+                    showNotification={showNotification}
+                    onUpdateTaskStatus={handleUpdateTaskStatus}
+                    onDeactivatePlaybook={() => handleDeactivatePlaybook(selectedLead.id)}
+                />
+            )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+            {isCreateLeadModalOpen && (
+                <CreateEditLeadModal
+                    lead={editingLead}
+                    columns={columns}
+                    allTags={tags}
+                    groups={groups}
+                    onClose={() => { setCreateLeadModalOpen(false); setEditingLead(null); }}
+                    onSubmit={handleCreateOrUpdateLead}
+                />
+            )}
+        </AnimatePresence>
+        
+         <AnimatePresence>
+            {isCreateTaskModalOpen && (
+                <CreateEditTaskModal
+                    task={editingTask}
+                    leads={leads}
+                    preselectedLeadId={preselectedDataForTask?.leadId}
+                    preselectedDate={preselectedDataForTask?.date}
+                    onClose={() => { setCreateTaskModalOpen(false); setEditingTask(null); setPreselectedDataForTask(null); }}
+                    onSubmit={handleCreateOrUpdateTask}
+                />
+            )}
+        </AnimatePresence>
+        
+         <AnimatePresence>
+            {isGroupModalOpen && (
+                <CreateEditGroupModal
+                    group={editingGroup}
+                    onClose={() => { setGroupModalOpen(false); setEditingGroup(null); }}
+                    onSubmit={handleCreateOrUpdateGroup}
+                />
+            )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+            {isPlaybookModalOpen && selectedLeadForPlaybook && (
+                <PlaybookModal 
+                    lead={selectedLeadForPlaybook}
+                    playbooks={playbooks}
+                    onClose={() => setPlaybookModalOpen(false)}
+                    onApply={handleApplyPlaybook}
+                />
+            )}
+        </AnimatePresence>
+        
+        <AnimatePresence>
+            {lostLeadInfo && (
+                <LostLeadModal
+                    lead={lostLeadInfo.lead}
+                    onClose={() => setLostLeadInfo(null)}
+                    onSubmit={handleProcessLostLead}
+                />
+            )}
+        </AnimatePresence>
+        
+        <AnimatePresence>
+            {qualificationInfo && (
+                <QualificationModal
+                    leadName={qualificationInfo.lead.name}
+                    onClose={() => setQualificationInfo(null)}
+                    onConfirm={(status, reason) => handleProcessQualification(qualificationInfo.lead.id, qualificationInfo.targetColumnId, status, reason)}
+                />
+            )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+            {notification && (
+                <Notification
+                    message={notification.message}
+                    type={notification.type}
+                    onClose={() => setNotification(null)}
+                />
+            )}
+        </AnimatePresence>
+      </div>
     );
 };
 
