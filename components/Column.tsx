@@ -5,13 +5,14 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from './Card';
-import type { ColumnData, Lead, User, CardDisplaySettings, Id } from '../types';
+import type { ColumnData, Lead, User, CardDisplaySettings, Id, Task } from '../types';
 import { PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ColumnProps {
     column: ColumnData;
     leads: Lead[];
     users: User[];
+    tasks: Task[];
     cardDisplaySettings: CardDisplaySettings;
     onSelectLead: (lead: Lead) => void;
     selectedLeadId: Id | null;
@@ -27,7 +28,7 @@ const contentVariants = {
     visible: { opacity: 1, transition: { duration: 0.2, delay: 0.1 } },
 };
 
-const Column: React.FC<ColumnProps> = ({ column, leads, users, cardDisplaySettings, onSelectLead, selectedLeadId, onAddLead, minimizedLeads, onToggleLeadMinimize, minimizedColumns, onToggleColumnMinimize }) => {
+const Column: React.FC<ColumnProps> = ({ column, leads, users, tasks, cardDisplaySettings, onSelectLead, selectedLeadId, onAddLead, minimizedLeads, onToggleLeadMinimize, minimizedColumns, onToggleColumnMinimize }) => {
     const { setNodeRef, isOver } = useDroppable({ id: column.id, data: { type: 'Column', column } });
     
     const leadsInColumn = leads.filter(lead => lead.columnId === column.id && !lead.reactivationDate);
@@ -110,6 +111,7 @@ const Column: React.FC<ColumnProps> = ({ column, leads, users, cardDisplaySettin
                                             lead={lead} 
                                             displaySettings={cardDisplaySettings} 
                                             users={users} 
+                                            tasks={tasks}
                                             onSelect={() => onSelectLead(lead)} 
                                             isSelected={selectedLeadId === lead.id}
                                             minimizedLeads={minimizedLeads}

@@ -27,7 +27,6 @@ import PlaybookSettings from './components/PlaybookSettings';
 import PrintableLeadsReport from './components/PrintableLeadsReport';
 import LostLeadModal from './components/LostLeadModal';
 import RecoveryView from './components/RecoveryView';
-import QualificationModal from './components/QualificationModal';
 
 
 // Types
@@ -96,7 +95,6 @@ const App: React.FC = () => {
     const [isGroupModalOpen, setGroupModalOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
     const [lostLeadInfo, setLostLeadInfo] = useState<{lead: Lead, columnId: Id} | null>(null);
-    const [qualificationInfo, setQualificationInfo] = useState<{ lead: Lead, targetColumnId: Id } | null>(null);
 
 
     // Notification State
@@ -314,12 +312,6 @@ const App: React.FC = () => {
         
         if (!leadToMove || !newColumn) return;
 
-        // --- QUALIFICATION GATE ---
-        if (oldColumn?.type === 'qualification' && newColumn.id !== oldColumn.id && leadToMove.qualificationStatus === 'pending') {
-            setQualificationInfo({ lead: leadToMove, targetColumnId: newColumnId });
-            return; 
-        }
-
         // --- LOST LEAD MODAL ---
         if (newColumn.type === 'lost' && leadToMove.columnId !== newColumn.id) {
             setLostLeadInfo({ lead: leadToMove, columnId: newColumnId });
@@ -428,31 +420,6 @@ const App: React.FC = () => {
         setLeads(current => current.map(l => (l.id === leadId ? updatedLead : l)));
         showNotification(`Lead "${lead.name}" foi reativado!`, 'success');
         createActivityLog(leadId, 'status_change', `Lead reativado da lista de recuperação.`);
-    };
-
-    const handleProcessQualification = (leadId: Id, targetColumnId: Id, status: 'qualified' | 'disqualified', reason?: string) => {
-        const lead = leads.find(l => l.id === leadId);
-        if (!lead) return;
-
-        const updatedLead = {
-            ...lead,
-            qualificationStatus: status,
-            disqualificationReason: status === 'disqualified' ? reason : undefined,
-        };
-        
-        setLeads(current => current.map(l => l.id === leadId ? updatedLead : l));
-        
-        if (status === 'qualified') {
-            handleUpdateLeadColumn(leadId, targetColumnId);
-        } else {
-            // If disqualified, open the "Lost Lead" modal to decide what to do next
-            const lostColumn = columns.find(c => c.type === 'lost');
-            if (lostColumn) {
-                setLostLeadInfo({ lead: updatedLead, columnId: lostColumn.id });
-            }
-        }
-        
-        setQualificationInfo(null);
     };
 
 
@@ -671,6 +638,7 @@ const App: React.FC = () => {
                     columns={columns}
                     leads={filteredLeads}
                     users={users}
+                    tasks={tasks}
                     cardDisplaySettings={cardDisplaySettings}
                     onUpdateLeadColumn={handleUpdateLeadColumn}
                     onSelectLead={handleCardClick}
@@ -937,16 +905,6 @@ const App: React.FC = () => {
                     lead={lostLeadInfo.lead}
                     onClose={() => setLostLeadInfo(null)}
                     onSubmit={handleProcessLostLead}
-                />
-            )}
-        </AnimatePresence>
-        
-        <AnimatePresence>
-            {qualificationInfo && (
-                <QualificationModal
-                    leadName={qualificationInfo.lead.name}
-                    onClose={() => setQualificationInfo(null)}
-                    onConfirm={(status, reason) => handleProcessQualification(qualificationInfo.lead.id, qualificationInfo.targetColumnId, status, reason)}
                 />
             )}
         </AnimatePresence>

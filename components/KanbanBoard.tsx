@@ -15,12 +15,13 @@ import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortabl
 import Column from './Column';
 import Card from './Card';
 import PipelineHeader from './PipelineHeader';
-import type { ColumnData, Lead, Id, User, CardDisplaySettings } from '../types';
+import type { ColumnData, Lead, Id, User, CardDisplaySettings, Task } from '../types';
 
 interface KanbanBoardProps {
     columns: ColumnData[];
     leads: Lead[];
     users: User[];
+    tasks: Task[];
     cardDisplaySettings: CardDisplaySettings;
     onUpdateLeadColumn: (leadId: Id, newColumnId: Id) => void;
     onSelectLead: (lead: Lead) => void;
@@ -38,7 +39,8 @@ interface KanbanBoardProps {
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ 
     columns, 
     leads, 
-    users, 
+    users,
+    tasks,
     cardDisplaySettings,
     onUpdateLeadColumn, 
     onSelectLead,
@@ -112,6 +114,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                 column={col}
                                 leads={leads}
                                 users={users}
+                                tasks={tasks}
                                 cardDisplaySettings={cardDisplaySettings}
                                 onSelectLead={onSelectLead}
                                 selectedLeadId={selectedLeadId}
@@ -129,6 +132,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                 lead={activeLead} 
                                 displaySettings={cardDisplaySettings}
                                 users={users}
+                                tasks={tasks}
                                 onSelect={() => {}}
                                 isSelected={false}
                                 minimizedLeads={minimizedLeads}

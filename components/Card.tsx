@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 // FIX: Added Variants to the import to fix typing issue with cardContentVariants.
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { DollarSign, Tag, Clock, Building, TrendingUp, Calendar, Mail, Phone, ChevronDown, ChevronUp, MessageCircle, BookOpen, Briefcase, ShieldCheck, ShieldX } from 'lucide-react';
-import type { Lead, CardDisplaySettings, User as UserType, Id } from '../types';
+import { DollarSign, Tag, Clock, Building, TrendingUp, Calendar, Mail, Phone, ChevronDown, ChevronUp, MessageCircle, BookOpen, Briefcase, ShieldCheck, ShieldX, AlertCircle } from 'lucide-react';
+import type { Lead, CardDisplaySettings, User as UserType, Id, Task } from '../types';
 
 interface CardProps {
     lead: Lead;
     displaySettings: CardDisplaySettings;
     users: UserType[];
+    tasks: Task[];
     onSelect: () => void;
     isSelected: boolean;
     minimizedLeads: Id[];
@@ -25,7 +26,7 @@ const TagPill: React.FC<{ tag: { name: string, color: string } }> = ({ tag }) =>
     </span>
 );
 
-const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onSelect, isSelected, minimizedLeads, onToggleLeadMinimize }) => {
+const Card: React.FC<CardProps> = ({ lead, displaySettings, users, tasks, onSelect, isSelected, minimizedLeads, onToggleLeadMinimize }) => {
     const {
         attributes,
         listeners,
@@ -48,6 +49,16 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onSelect, isS
     const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
     const formatDate = (dateString?: string) => dateString ? new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'N/A';
     
+    const overdueTasksCount = useMemo(() => {
+        if (!tasks) return 0;
+        const now = new Date();
+        return tasks.filter(t => 
+            t.leadId === lead.id && 
+            t.status === 'pending' && 
+            new Date(t.dueDate).getTime() < now.getTime()
+        ).length;
+    }, [tasks, lead.id]);
+
     // FIX: Added Variants type to ensure correct type inference for framer-motion properties like 'ease'.
     const cardContentVariants: Variants = {
         hidden: { opacity: 0, height: 0 },
@@ -99,6 +110,11 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onSelect, isS
                             <BookOpen className="w-4 h-4 text-violet-500" />
                         </div>
                     )}
+                    {isMinimized && overdueTasksCount > 0 && (
+                        <div title={`${overdueTasksCount} tarefa(s) atrasada(s)`} className="flex-shrink-0">
+                            <AlertCircle className="w-4 h-4 text-red-500" />
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-1 flex-shrink-0">
@@ -142,12 +158,20 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, onSelect, isS
                         className="overflow-hidden"
                     >
                         <div className="pt-3 space-y-3">
-                            {lead.activePlaybook && (
-                                <div className="flex items-center gap-2 text-xs font-semibold text-violet-400 bg-violet-900/40 px-2 py-1 rounded-md">
-                                    <BookOpen className="w-3.5 h-3.5" />
-                                    <span className="truncate">{lead.activePlaybook.playbookName}</span>
-                                </div>
-                            )}
+                            <div className="flex flex-wrap gap-2">
+                                {lead.activePlaybook && (
+                                    <div className="flex items-center gap-2 text-xs font-semibold text-violet-400 bg-violet-900/40 px-2 py-1 rounded-md">
+                                        <BookOpen className="w-3.5 h-3.5" />
+                                        <span className="truncate max-w-[150px]">{lead.activePlaybook.playbookName}</span>
+                                    </div>
+                                )}
+                                {overdueTasksCount > 0 && (
+                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-red-400 bg-red-900/40 px-2 py-1 rounded-md" title={`${overdueTasksCount} tarefas atrasadas`}>
+                                        <AlertCircle className="w-3.5 h-3.5" />
+                                        <span>{overdueTasksCount} Atraso{overdueTasksCount > 1 ? 's' : ''}</span>
+                                    </div>
+                                )}
+                            </div>
 
                             {displaySettings.showCompany && <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2"><Building className="w-3.5 h-3.5 flex-shrink-0" /> {lead.company}</p>}
                             
