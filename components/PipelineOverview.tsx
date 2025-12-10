@@ -30,13 +30,17 @@ const PipelineOverview: React.FC<PipelineOverviewProps> = ({ columns, leads, onN
     }, [columns, leads]);
 
     return (
-        <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 h-full flex flex-col">
+        <div 
+            onClick={() => onNavigate('Pipeline')}
+            className="bg-slate-900 p-6 rounded-xl border border-slate-800 h-full flex flex-col cursor-pointer hover:border-slate-700 hover:shadow-lg transition-all duration-200"
+        >
             <div className="flex justify-between items-center mb-6">
                 <h2 className="font-bold text-white text-lg">Funil de Vendas</h2>
+                <ChevronsRight className="w-5 h-5 text-slate-500" />
             </div>
             <div className="flex-1 space-y-4">
                 {overviewData.map(stage => (
-                    <div key={stage.id} className="group flex items-center justify-between p-3 rounded-lg hover:bg-slate-800 transition-colors cursor-default border border-transparent hover:border-slate-700/50">
+                    <div key={stage.id} className="group flex items-center justify-between p-3 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer border border-transparent hover:border-slate-700/50">
                         <div className="flex-1">
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">{stage.title}</span>

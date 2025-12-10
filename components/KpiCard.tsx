@@ -9,16 +9,20 @@ interface KpiCardProps {
     iconColor: string; // e.g., "text-blue-500"
     trend?: number; // percentage
     trendDirection?: 'up' | 'down';
+    onClick?: () => void;
 }
 
-const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon: Icon, iconColor, trend = 0, trendDirection = 'up' }) => {
+const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon: Icon, iconColor, trend = 0, trendDirection = 'up', onClick }) => {
     // Extract color name for background opacity usage (e.g., text-blue-500 -> bg-blue-500/10)
     // Simple heuristic: replace 'text-' with 'bg-' and add opacity
     const bgClass = iconColor.replace('text-', 'bg-') + '/10';
     const borderClass = iconColor.replace('text-', 'border-') + '/20';
 
     return (
-        <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 flex flex-col justify-between h-full relative overflow-hidden group">
+        <div 
+            onClick={onClick}
+            className={`bg-slate-900 p-6 rounded-xl border border-slate-800 flex flex-col justify-between h-full relative overflow-hidden group ${onClick ? 'cursor-pointer hover:border-slate-600 hover:shadow-lg hover:shadow-slate-950/50 transition-all duration-200' : ''}`}
+        >
             <div className="flex justify-between items-start mb-2 relative z-10">
                 <div>
                     <p className="text-sm font-medium text-slate-400">{title}</p>

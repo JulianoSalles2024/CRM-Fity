@@ -52,7 +52,7 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
 
     const isClientsView = viewType === 'Clientes';
     const Icon = isClientsView ? Contact : Users;
-    const title = isClientsView ? 'Clientes' : 'Clientes';
+    const title = isClientsView ? 'Clientes' : 'Leads';
     const description = isClientsView ? 'Gerencie seus clientes e relacionamentos' : 'Gerencie todos os seus leads e clientes';
 
     const handleTagToggle = (tagToToggle: TagType) => {
@@ -130,7 +130,7 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2">
-                     <div className="relative" ref={createMenuRef}>
+                     <div className="relative z-50" ref={createMenuRef}>
                         <button
                             onClick={() => setCreateMenuOpen(prev => !prev)}
                             className="flex items-center gap-2 bg-violet-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors"
@@ -164,7 +164,7 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
                         </AnimatePresence>
                     </div>
 
-                     <div className="relative">
+                     <div className="relative z-40">
                         <button 
                             onClick={() => setTagFilterOpen(p => !p)}
                             className="flex items-center gap-2 text-sm text-zinc-300 bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 rounded-md"
@@ -187,7 +187,7 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
                             )}
                         </AnimatePresence>
                     </div>
-                    <div className="relative">
+                    <div className="relative z-30">
                         <button 
                             onClick={() => setCustomizeOpen(prev => !prev)}
                             className="flex items-center gap-2 text-sm text-zinc-300 bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 rounded-md"

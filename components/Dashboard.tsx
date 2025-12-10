@@ -97,6 +97,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     icon={DollarSign}
                     iconColor="text-blue-500"
                     trend={12.5}
+                    onClick={() => onNavigate('Pipeline')}
                 />
                 <KpiCard 
                     title="Negócios Ativos" 
@@ -104,6 +105,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     icon={Users}
                     iconColor="text-purple-500"
                     trend={5.2}
+                    onClick={() => onNavigate('Pipeline')}
                 />
                 <KpiCard 
                     title="Conversão" 
@@ -111,6 +113,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     icon={Target}
                     iconColor="text-emerald-500"
                     trend={2.1}
+                    onClick={() => onNavigate('Pipeline')}
                 />
                  <KpiCard 
                     title="Receita (Ganha)" 
@@ -118,6 +121,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     icon={TrendingUp}
                     iconColor="text-orange-500"
                     trend={18}
+                    onClick={() => onNavigate('Pipeline')}
                 />
             </div>
 
