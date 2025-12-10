@@ -13,7 +13,7 @@ interface SidebarProps {
 const secondaryNavItems = [
     { icon: Calendar, label: 'Calendário' },
     { icon: Bell, label: 'Notificações' },
-    { icon: HelpCircle, label: 'Dúvidas' },
+    // { icon: HelpCircle, label: 'Dúvidas' }, // Disabled
     { icon: Settings, label: 'Configurações' },
 ];
 
@@ -37,12 +37,12 @@ const NavItem: React.FC<{
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, onToggle, isChatEnabled }) => {
   const mainNavItems = [
-    { icon: LayoutDashboard, label: 'Dashboard' },
-    { icon: Inbox, label: 'Inbox' }, // Placeholder for Inbox if needed, or mapping 'Dashboard' to Visão Geral conceptually
+    { icon: Inbox, label: 'Inbox' }, // First step
+    { icon: LayoutDashboard, label: 'Dashboard' }, // Visão Geral below Inbox
     { icon: Columns, label: 'Pipeline' },
     { icon: BookOpen, label: 'Playbooks' },
     { icon: Users, label: 'Leads' },
-    { icon: Contact, label: 'Clientes' },
+    // { icon: Contact, label: 'Clientes' }, // Disabled
     { icon: ClipboardList, label: 'Tarefas' },
     { icon: BarChart, label: 'Relatórios' },
     { icon: ArchiveRestore, label: 'Recuperação' },
