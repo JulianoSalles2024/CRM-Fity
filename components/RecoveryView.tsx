@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Lead, Id } from '../types';
 import { ArchiveRestore, RefreshCw, User, Calendar, MessageCircle, Download, Trash2 } from 'lucide-react';
@@ -89,44 +88,44 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ leads, onReactivateLead, on
                         <ArchiveRestore className="w-8 h-8 text-violet-500" />
                         <div>
                             <h1 className="text-2xl font-bold text-white">Recuperação de Leads</h1>
-                            <p className="text-zinc-400">Leads perdidos com agendamento para reativação.</p>
+                            <p className="text-slate-400">Leads perdidos com agendamento para reativação.</p>
                         </div>
                     </div>
                      <div className="flex items-center gap-2 self-start md:self-center">
                         <div className="flex items-center gap-2">
-                            <input type="date" name="start" value={dateFilter.start} onChange={handleDateChange} className="bg-zinc-800 border border-zinc-700 rounded-md px-3 py-1.5 text-sm text-white focus:ring-violet-500 h-[36px]" />
-                            <span className="text-zinc-500">-</span>
-                            <input type="date" name="end" value={dateFilter.end} onChange={handleDateChange} className="bg-zinc-800 border border-zinc-700 rounded-md px-3 py-1.5 text-sm text-white focus:ring-violet-500 h-[36px]" />
+                            <input type="date" name="start" value={dateFilter.start} onChange={handleDateChange} className="bg-slate-800 border border-slate-700 rounded-md px-3 py-1.5 text-sm text-white focus:ring-violet-500 h-[36px]" />
+                            <span className="text-slate-500">-</span>
+                            <input type="date" name="end" value={dateFilter.end} onChange={handleDateChange} className="bg-slate-800 border border-slate-700 rounded-md px-3 py-1.5 text-sm text-white focus:ring-violet-500 h-[36px]" />
                         </div>
-                        <button onClick={handleExportCSV} className="flex items-center gap-2 text-sm text-zinc-300 bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 rounded-md h-[36px]">
+                        <button onClick={handleExportCSV} className="flex items-center gap-2 text-sm text-slate-300 bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-md h-[36px]">
                             <Download className="w-4 h-4" /><span>CSV</span>
                         </button>
-                        <button onClick={() => onExportPDF(sortedLeads)} className="flex items-center gap-2 text-sm text-zinc-300 bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 rounded-md h-[36px]">
+                        <button onClick={() => onExportPDF(sortedLeads)} className="flex items-center gap-2 text-sm text-slate-300 bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-md h-[36px]">
                             <Download className="w-4 h-4" /><span>PDF</span>
                         </button>
                     </div>
                 </div>
 
-                <div className="bg-zinc-900 rounded-lg border border-zinc-800">
+                <div className="bg-slate-900 rounded-lg border border-slate-800">
                     {sortedLeads.length > 0 ? (
-                        <ul className="divide-y divide-zinc-800">
+                        <ul className="divide-y divide-slate-800">
                             {sortedLeads.map(lead => (
                                 <li 
                                     key={lead.id} 
                                     onClick={() => onLeadClick(lead)}
-                                    className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 hover:bg-zinc-800/50 cursor-pointer transition-colors"
+                                    className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 hover:bg-slate-800/50 cursor-pointer transition-colors"
                                 >
                                     <div className="flex-1">
                                         <p className="font-semibold text-white">{lead.name}</p>
-                                        <p className="text-sm text-zinc-400">{lead.company}</p>
+                                        <p className="text-sm text-slate-400">{lead.company}</p>
                                     </div>
-                                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-zinc-400">
+                                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-400">
                                         <div className="flex items-center gap-2" title="Motivo da Perda">
-                                            <MessageCircle className="w-4 h-4 text-zinc-500" />
+                                            <MessageCircle className="w-4 h-4 text-slate-500" />
                                             <span>{lead.lostReason}</span>
                                         </div>
                                         <div className="flex items-center gap-2" title="Data para Reativar">
-                                            <Calendar className="w-4 h-4 text-zinc-500" />
+                                            <Calendar className="w-4 h-4 text-slate-500" />
                                             <span>{formatDate(lead.reactivationDate)}</span>
                                         </div>
                                     </div>
@@ -146,7 +145,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ leads, onReactivateLead, on
                                                 e.stopPropagation();
                                                 setLeadToDelete(lead);
                                             }}
-                                            className="p-2 text-zinc-400 hover:text-red-500 hover:bg-zinc-700/50 rounded-md"
+                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-slate-700/50 rounded-md"
                                             title="Excluir lead permanentemente"
                                         >
                                             <Trash2 className="w-4 h-4" />
@@ -157,9 +156,9 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ leads, onReactivateLead, on
                         </ul>
                     ) : (
                         <div className="text-center py-16">
-                            <User className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
+                            <User className="w-12 h-12 text-slate-700 mx-auto mb-4" />
                             <h3 className="font-semibold text-white">Nenhum lead para reativar</h3>
-                            <p className="text-sm text-zinc-500 mt-1">Nenhum lead perdido foi agendado para reativação neste período.</p>
+                            <p className="text-sm text-slate-500 mt-1">Nenhum lead perdido foi agendado para reativação neste período.</p>
                         </div>
                     )}
                 </div>

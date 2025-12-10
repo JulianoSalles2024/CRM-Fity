@@ -18,7 +18,6 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
     const [playbookToDelete, setPlaybookToDelete] = useState<Id | null>(null);
     const [expandedPlaybookId, setExpandedPlaybookId] = useState<Id | null>(null);
 
-    // FIX: Use useMemo to memoize the columnMap and ensure correct type inference.
     const columnMap = useMemo(() => new Map(pipelineColumns.map(c => [c.id, c])), [pipelineColumns]);
 
     const handleOpenModal = (playbook: Playbook | null = null) => {
@@ -49,14 +48,14 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
 
     return (
         <>
-            <div className="bg-zinc-900 rounded-lg border border-zinc-800">
-                <div className="p-6 border-b border-zinc-700 flex justify-between items-center">
+            <div className="bg-slate-900 rounded-lg border border-slate-800">
+                <div className="p-6 border-b border-slate-700 flex justify-between items-center">
                     <div>
                         <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                             <BookOpen className="w-5 h-5 text-violet-400" />
                             Playbooks de Cadência
                         </h2>
-                        <p className="text-sm text-zinc-400 mt-1">Crie e gerencie sequências de tarefas automatizadas para seus leads.</p>
+                        <p className="text-sm text-slate-400 mt-1">Crie e gerencie sequências de tarefas automatizadas para seus leads.</p>
                     </div>
                     <button onClick={() => handleOpenModal()} className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
                         <PlusCircle className="w-4 h-4" />
@@ -66,9 +65,9 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
                 <div className="p-6 space-y-3">
                     {playbooks.length > 0 ? (
                         playbooks.map(playbook => (
-                            <div key={playbook.id} className="bg-zinc-800 rounded-lg border border-zinc-700">
+                            <div key={playbook.id} className="bg-slate-800/50 rounded-lg border border-slate-700">
                                 <div className="p-4 flex items-center gap-4">
-                                    <button onClick={() => setExpandedPlaybookId(expandedPlaybookId === playbook.id ? null : playbook.id)} className="p-1 text-zinc-400 hover:text-white">
+                                    <button onClick={() => setExpandedPlaybookId(expandedPlaybookId === playbook.id ? null : playbook.id)} className="p-1 text-slate-400 hover:text-white">
                                         <ChevronDown className={`w-5 h-5 transition-transform ${expandedPlaybookId === playbook.id ? 'rotate-180' : ''}`} />
                                     </button>
                                     <div className="flex-1">
@@ -85,8 +84,8 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <button onClick={() => handleOpenModal(playbook)} className="p-2 text-zinc-400 hover:text-white"><Edit className="w-4 h-4" /></button>
-                                        <button onClick={() => setPlaybookToDelete(playbook.id)} className="p-2 text-zinc-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                                        <button onClick={() => handleOpenModal(playbook)} className="p-2 text-slate-400 hover:text-white"><Edit className="w-4 h-4" /></button>
+                                        <button onClick={() => setPlaybookToDelete(playbook.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                                     </div>
                                 </div>
                                 <AnimatePresence>
@@ -97,13 +96,13 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
                                             exit={{ height: 0, opacity: 0 }}
                                             className="overflow-hidden"
                                         >
-                                            <div className="px-6 pb-4 border-t border-zinc-700/50">
+                                            <div className="px-6 pb-4 border-t border-slate-700/50">
                                                 <ul className="mt-4 space-y-2">
                                                     {playbook.steps.map((step, index) => (
                                                         <li key={index} className="flex items-center gap-3 text-sm">
                                                             <span className="font-bold text-violet-400 w-10">D+{step.day}</span>
-                                                            <span className="font-semibold text-zinc-300 w-20">{step.type}</span>
-                                                            <span className="text-zinc-400 flex-1">{step.instructions}</span>
+                                                            <span className="font-semibold text-slate-300 w-20">{step.type}</span>
+                                                            <span className="text-slate-400 flex-1">{step.instructions}</span>
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -114,10 +113,10 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
                             </div>
                         ))
                     ) : (
-                        <div className="text-center py-10 border-2 border-dashed border-zinc-800 rounded-lg">
-                            <FileText className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+                        <div className="text-center py-10 border-2 border-dashed border-slate-800 rounded-lg">
+                            <FileText className="w-12 h-12 text-slate-600 mx-auto mb-4" />
                             <h3 className="font-semibold text-white">Nenhum Playbook criado</h3>
-                            <p className="text-sm text-zinc-500 mt-1">Crie seu primeiro playbook para automatizar suas cadências.</p>
+                            <p className="text-sm text-slate-500 mt-1">Crie seu primeiro playbook para automatizar suas cadências.</p>
                         </div>
                     )}
                 </div>

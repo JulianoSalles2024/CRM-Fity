@@ -189,7 +189,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
         const isAscending = isActive && sortConfig?.direction === 'ascending';
 
         return (
-            <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap ${className} ${isActive ? 'text-white' : 'text-zinc-400'}`}>
+            <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap ${className} ${isActive ? 'text-white' : 'text-slate-400'}`}>
                 <button className="flex items-center gap-1 group" onClick={() => requestSort(sortKey)}>
                     {label}
                     <span className={isActive ? 'opacity-100' : 'opacity-50 group-hover:opacity-100 transition-opacity'}>
@@ -219,44 +219,44 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                 onOpenCreateLeadModal={onOpenCreateLeadModal}
                 onOpenCreateTaskModal={onOpenCreateTaskModal}
             />
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden flex-1 flex flex-col">
+            <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden flex-1 flex flex-col">
                 {sortedLeads.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-64">
-                        <h3 className="text-lg font-semibold text-zinc-300">Nenhum {viewType === 'Clientes' ? 'cliente' : 'lead'} encontrado</h3>
-                        <p className="text-zinc-500 mt-1">Tente ajustar seus filtros ou adicione um novo lead!</p>
+                        <h3 className="text-lg font-semibold text-slate-300">Nenhum {viewType === 'Clientes' ? 'cliente' : 'lead'} encontrado</h3>
+                        <p className="text-slate-500 mt-1">Tente ajustar seus filtros ou adicione um novo lead!</p>
                     </div>
                 ) : (
                     <div ref={scrollContainerRef} onScroll={onScroll} className="overflow-auto h-full">
-                        <table className="min-w-full divide-y divide-zinc-700" style={{ borderSpacing: 0 }}>
-                            <thead className="bg-zinc-900/50 sticky top-0 z-10">
+                        <table className="min-w-full divide-y divide-slate-700" style={{ borderSpacing: 0 }}>
+                            <thead className="bg-slate-900/50 sticky top-0 z-10">
                                 <tr>
                                     <TableHeader sortKey="name" label="Nome" />
                                     {listDisplaySettings.showStatus && <TableHeader sortKey="status" label="Status" />}
                                     {listDisplaySettings.showValue && <TableHeader sortKey="value" label="Valor" />}
                                     {listDisplaySettings.showEmail && <TableHeader sortKey="email" label="Email" />}
                                     {listDisplaySettings.showPhone && <TableHeader sortKey="phone" label="Telefone" />}
-                                    {listDisplaySettings.showTags && <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">Tags</th>}
+                                    {listDisplaySettings.showTags && <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Tags</th>}
                                     {listDisplaySettings.showCreatedAt && <TableHeader sortKey="createdAt" label="Criação" />}
                                     {listDisplaySettings.showLastActivity && <TableHeader sortKey="lastActivity" label="Última Atividade" />}
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-zinc-700 relative">
+                            <tbody className="divide-y divide-slate-700 relative">
                                 {topPaddingHeight > 0 && (
                                     <tr style={{ height: topPaddingHeight }}>
                                         <td colSpan={numberOfColumns} />
                                     </tr>
                                 )}
                                 {virtualLeads.map(lead => (
-                                    <tr key={lead.id} onClick={() => onLeadClick(lead)} className="hover:bg-zinc-800/50 cursor-pointer transition-colors duration-150">
+                                    <tr key={lead.id} onClick={() => onLeadClick(lead)} className="hover:bg-slate-800/50 cursor-pointer transition-colors duration-150">
                                         <td className="px-4 py-3 whitespace-nowrap">
                                             <div>
                                                 <div className="text-sm font-medium text-white">{lead.name}</div>
-                                                <div className="text-sm text-zinc-400">{lead.company}</div>
+                                                <div className="text-sm text-slate-400">{lead.company}</div>
                                             </div>
                                         </td>
                                         {listDisplaySettings.showStatus && (
                                             <td className="px-4 py-3 whitespace-nowrap">
-                                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-zinc-700 text-zinc-300">
+                                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-700 text-slate-300">
                                                     {columnMap[lead.columnId] || 'N/A'}
                                                 </span>
                                             </td>
@@ -265,10 +265,10 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                             <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">{currencyFormatter.format(lead.value)}</td>
                                         )}
                                         {listDisplaySettings.showEmail && (
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-zinc-400 truncate max-w-xs">{lead.email || '—'}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400 truncate max-w-xs">{lead.email || '—'}</td>
                                         )}
                                         {listDisplaySettings.showPhone && (
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-zinc-400">{lead.phone || '—'}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">{lead.phone || '—'}</td>
                                         )}
                                         {listDisplaySettings.showTags && (
                                             <td className="px-4 py-3 whitespace-nowrap">
@@ -278,10 +278,10 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                             </td>
                                         )}
                                         {listDisplaySettings.showCreatedAt && (
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-zinc-400">{formatDate(lead.createdAt)}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">{formatDate(lead.createdAt)}</td>
                                         )}
                                         {listDisplaySettings.showLastActivity && (
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-zinc-400">{lead.lastActivity}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">{lead.lastActivity}</td>
                                         )}
                                     </tr>
                                 ))}

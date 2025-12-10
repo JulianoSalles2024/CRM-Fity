@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-// FIX: Added Variants to the import to fix typing issue with cardContentVariants.
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { DollarSign, Tag, Clock, Building, TrendingUp, Calendar, Mail, Phone, ChevronDown, ChevronUp, MessageCircle, BookOpen, Briefcase, ShieldCheck, ShieldX, AlertCircle } from 'lucide-react';
 import type { Lead, CardDisplaySettings, User as UserType, Id, Task } from '../types';
@@ -59,7 +58,6 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, tasks, onSele
         ).length;
     }, [tasks, lead.id]);
 
-    // FIX: Added Variants type to ensure correct type inference for framer-motion properties like 'ease'.
     const cardContentVariants: Variants = {
         hidden: { opacity: 0, height: 0 },
         visible: { opacity: 1, height: 'auto', transition: { duration: 0.2, ease: "easeInOut" } },
@@ -69,10 +67,8 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, tasks, onSele
         e.stopPropagation();
         if (!lead.phone) return;
 
-        // Sanitize phone number: remove non-numeric characters
         let sanitizedPhone = lead.phone.replace(/\D/g, '').slice(0, 11);
 
-        // Add country code for Brazil (55) if not present.
         if (sanitizedPhone.length >= 10 && !sanitizedPhone.startsWith('55')) {
             sanitizedPhone = '55' + sanitizedPhone;
         }
@@ -82,16 +78,14 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, tasks, onSele
     };
 
     const qualificationIcon = lead.qualificationStatus === 'qualified' 
-// FIX: The `title` prop is not recognized on Lucide icons. Wrapped the icon in a `span` with a `title` attribute to provide a tooltip and resolve the type error.
         ? <span title="Qualificado"><ShieldCheck className="w-4 h-4 text-green-500 flex-shrink-0" /></span> 
         : lead.qualificationStatus === 'disqualified' 
-// FIX: The `title` prop is not recognized on Lucide icons. Wrapped the icon in a `span` with a `title` attribute to provide a tooltip and resolve the type error.
-        ? <span title="Não Qualificado"><ShieldX className="w-4 h-4 text-zinc-500 flex-shrink-0" /></span> 
+        ? <span title="Não Qualificado"><ShieldX className="w-4 h-4 text-slate-500 flex-shrink-0" /></span> 
         : null;
 
     return (
         <motion.div
-            layout // Animate layout changes (e.g., height)
+            layout
             ref={setNodeRef}
             style={style}
             {...attributes}
@@ -99,12 +93,12 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, tasks, onSele
             onClick={onSelect}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className={`bg-white dark:bg-zinc-900 rounded-lg border shadow-sm cursor-grab active:cursor-grabbing hover:bg-gray-50 dark:hover:bg-zinc-800/50 hover:shadow-lg hover:shadow-violet-500/10 dark:hover:shadow-violet-500/20 transition-all duration-150 touch-none ${isMinimized ? 'p-3' : 'p-4'} ${isSelected ? 'border-violet-500 ring-2 ring-violet-500/50' : 'border-zinc-200 dark:border-zinc-800 hover:border-violet-500'}`}
+            className={`bg-white dark:bg-slate-900 rounded-lg border shadow-sm cursor-grab active:cursor-grabbing hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:shadow-lg hover:shadow-violet-500/10 dark:hover:shadow-violet-500/20 transition-all duration-150 touch-none ${isMinimized ? 'p-3' : 'p-4'} ${isSelected ? 'border-violet-500 ring-2 ring-violet-500/50' : 'border-slate-200 dark:border-slate-800 hover:border-violet-500'}`}
         >
             <div className="flex justify-between items-center gap-2">
                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
                     {qualificationIcon}
-                    <h3 className="font-bold text-zinc-900 dark:text-white text-md leading-tight truncate">{lead.name}</h3>
+                    <h3 className="font-bold text-slate-900 dark:text-white text-md leading-tight truncate">{lead.name}</h3>
                     {isMinimized && lead.activePlaybook && (
                         <div title={lead.activePlaybook.playbookName} className="flex-shrink-0">
                             <BookOpen className="w-4 h-4 text-violet-500" />
@@ -121,7 +115,7 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, tasks, onSele
                     {isHovered && !isMinimized && lead.phone && (
                         <button
                             onClick={handleWhatsAppClick}
-                            className="p-1 rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-green-500/10 dark:hover:bg-green-500/20 hover:text-green-500 dark:hover:text-green-400 transition-colors"
+                            className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-green-500/10 dark:hover:bg-green-500/20 hover:text-green-500 dark:hover:text-green-400 transition-colors"
                             title="Abrir conversa no WhatsApp"
                         >
                             <MessageCircle className="w-4 h-4" />
@@ -133,14 +127,14 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, tasks, onSele
                                 e.stopPropagation();
                                 onToggleLeadMinimize(lead.id);
                             }}
-                            className="p-1 rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                            className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
                             title={isMinimized ? "Expandir card" : "Minimizar card"}
                         >
                             {isMinimized ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                         </button>
                     )}
                     {displaySettings.showAssignedTo && assignedUser && (
-                        <div title={assignedUser.name} className="w-7 h-7 rounded-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center font-bold text-xs text-zinc-600 dark:text-white ring-1 ring-white dark:ring-zinc-900">
+                        <div title={assignedUser.name} className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-xs text-slate-600 dark:text-white ring-1 ring-white dark:ring-slate-900">
                              {assignedUser.name.split(' ').map(n => n[0]).join('')}
                         </div>
                     )}
@@ -173,10 +167,10 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, tasks, onSele
                                 )}
                             </div>
 
-                            {displaySettings.showCompany && <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2"><Building className="w-3.5 h-3.5 flex-shrink-0" /> {lead.company}</p>}
+                            {displaySettings.showCompany && <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2"><Building className="w-3.5 h-3.5 flex-shrink-0" /> {lead.company}</p>}
                             
                             {displaySettings.showSegment && lead.segment && (
-                               <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
+                               <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
                                    <Briefcase className="w-3.5 h-3.5 flex-shrink-0" /> {lead.segment}
                                </p>
                            )}
@@ -188,24 +182,24 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, tasks, onSele
                                 </p>
                             )}
                             
-                            {displaySettings.showEmail && <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2 truncate"><Mail className="w-3.5 h-3.5 flex-shrink-0" /> {lead.email || 'N/A'}</p>}
-                            {displaySettings.showPhone && <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2"><Phone className="w-3.5 h-3.5 flex-shrink-0" /> {lead.phone || 'N/A'}</p>}
+                            {displaySettings.showEmail && <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 truncate"><Mail className="w-3.5 h-3.5 flex-shrink-0" /> {lead.email || 'N/A'}</p>}
+                            {displaySettings.showPhone && <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2"><Phone className="w-3.5 h-3.5 flex-shrink-0" /> {lead.phone || 'N/A'}</p>}
 
                             {displaySettings.showTags && lead.tags.length > 0 && (
                                  <div className="flex flex-wrap gap-1.5 items-center">
-                                    <Tag className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 flex-shrink-0" />
+                                    <Tag className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
                                     {lead.tags.map(tag => <TagPill key={tag.id} tag={tag} />)}
                                 </div>
                             )}
                             
                             {typeof lead.probability === 'number' && (
-                                 <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+                                 <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                                     <TrendingUp className="w-3.5 h-3.5 flex-shrink-0" />
                                     <span>Probabilidade: {lead.probability}%</span>
                                 </div>
                             )}
 
-                            <div className="border-t border-zinc-200/80 dark:border-zinc-700/50 pt-2 text-xs text-zinc-400 dark:text-zinc-500 space-y-1.5">
+                            <div className="border-t border-slate-200/80 dark:border-slate-700/50 pt-2 text-xs text-slate-400 dark:text-slate-500 space-y-1.5">
                                 {displaySettings.showDueDate && lead.dueDate && (
                                     <div className="flex items-center gap-2">
                                         <Calendar className="w-3 h-3 flex-shrink-0" />

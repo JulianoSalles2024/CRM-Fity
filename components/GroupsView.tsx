@@ -22,19 +22,19 @@ const CheckboxCell: React.FC<{ checked: boolean; onChange: (checked: boolean) =>
             type="checkbox"
             checked={checked}
             onChange={(e) => onChange(e.target.checked)}
-            className="h-5 w-5 rounded bg-zinc-700 border-zinc-600 text-violet-600 focus:ring-violet-500 focus:ring-offset-zinc-800"
+            className="h-5 w-5 rounded bg-slate-700 border-slate-600 text-violet-600 focus:ring-violet-500 focus:ring-offset-slate-800"
         />
     </div>
 );
 
 const KpiCard: React.FC<{ icon: React.ElementType; title: string; value: string; colorClass: string; }> = ({ icon: Icon, title, value, colorClass }) => (
-    <div className="bg-zinc-800 p-4 rounded-lg border border-zinc-700 flex items-center gap-4 transition-all duration-200 ease-in-out hover:bg-zinc-700/50 hover:-translate-y-1">
+    <div className="bg-slate-900 p-4 rounded-lg border border-slate-800 flex items-center gap-4 transition-all duration-200 ease-in-out hover:bg-slate-700/50 hover:-translate-y-1">
         <div className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center ${colorClass.replace('text-', 'bg-')}/20`}>
             <Icon className={`w-5 h-5 ${colorClass}`} />
         </div>
         <div>
             <p className="text-2xl font-bold text-white">{value}</p>
-            <p className="text-sm text-zinc-400">{title}</p>
+            <p className="text-sm text-slate-400">{title}</p>
         </div>
     </div>
 );
@@ -257,18 +257,18 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
             <div className="flex flex-col gap-6 h-full">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <button onClick={onBack} className="p-2 rounded-full text-zinc-400 hover:bg-zinc-800 transition-colors">
+                        <button onClick={onBack} className="p-2 rounded-full text-slate-400 hover:bg-slate-800 transition-colors">
                             <ChevronLeft className="w-6 h-6 text-violet-500/70 hover:text-violet-500" />
                         </button>
                         <div>
                             <h1 className="text-2xl font-bold text-white">Membros do Grupo: {group.name}</h1>
-                            <p className="text-zinc-400">{group.description || 'Gerencie os membros deste grupo.'}</p>
+                            <p className="text-slate-400">{group.description || 'Gerencie os membros deste grupo.'}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <button 
                             onClick={handleExportCSV}
-                            className="flex items-center gap-2 bg-zinc-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-zinc-600 transition-colors"
+                            className="flex items-center gap-2 bg-slate-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-slate-600 transition-colors"
                         >
                             <Download className="w-4 h-4" />
                             <span>Exportar CSV</span>
@@ -295,12 +295,12 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                     {group.memberGoal ? (
                         <KpiCard icon={Goal} title="Meta" value={`${groupMetrics.currentMembers} / ${group.memberGoal}`} colorClass="text-blue-400" />
                     ) : (
-                        <div className="bg-zinc-800 p-4 rounded-lg border border-zinc-700 flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center bg-zinc-700/50">
-                                <Goal className="w-5 h-5 text-zinc-500" />
+                        <div className="bg-slate-800 p-4 rounded-lg border border-slate-700 flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center bg-slate-700/50">
+                                <Goal className="w-5 h-5 text-slate-500" />
                             </div>
                             <div>
-                                <p className="text-sm text-zinc-400">Nenhuma meta definida</p>
+                                <p className="text-sm text-slate-400">Nenhuma meta definida</p>
                             </div>
                         </div>
                     )}
@@ -312,7 +312,7 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                             initial={{ opacity: 0, y: -20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
-                            className="bg-zinc-800/50 rounded-lg border border-zinc-700 p-6"
+                            className="bg-slate-800/50 rounded-lg border border-slate-700 p-6"
                         >
                             <div className="flex justify-between items-center">
                                 <h2 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -320,17 +320,17 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                                     <span>
                                         Análise da IA
                                         {currentAnalysis && currentAnalysis.status !== 'new' && (
-                                            <span className="text-xs font-normal text-zinc-400 ml-2 capitalize">({currentAnalysis.status === 'draft' ? 'Rascunho' : 'Salvo'})</span>
+                                            <span className="text-xs font-normal text-slate-400 ml-2 capitalize">({currentAnalysis.status === 'draft' ? 'Rascunho' : 'Salvo'})</span>
                                         )}
                                     </span>
                                 </h2>
                                 {currentAnalysis && !isLoadingAnalysis && (
                                     <div className="flex items-center gap-1">
-                                        <button onClick={() => handleSaveAnalysis('saved')} title="Salvar" className="p-2 text-zinc-400 hover:text-white rounded-md hover:bg-zinc-700/50"><Save className="w-4 h-4" /></button>
-                                        <button onClick={() => handleSaveAnalysis('draft')} title="Salvar como Rascunho" className="p-2 text-zinc-400 hover:text-white rounded-md hover:bg-zinc-700/50"><FileText className="w-4 h-4" /></button>
-                                        <button onClick={handleDiscardAnalysis} title="Descartar" className="p-2 text-zinc-400 hover:text-red-500 rounded-md hover:bg-zinc-700/50"><Trash2 className="w-4 h-4" /></button>
-                                        <div className="w-px h-5 bg-zinc-700 mx-1" />
-                                        <button onClick={() => setIsAnalysisMinimized(p => !p)} title={isAnalysisMinimized ? 'Expandir' : 'Minimizar'} className="p-2 text-zinc-400 hover:text-white rounded-md hover:bg-zinc-700/50">
+                                        <button onClick={() => handleSaveAnalysis('saved')} title="Salvar" className="p-2 text-slate-400 hover:text-white rounded-md hover:bg-slate-700/50"><Save className="w-4 h-4" /></button>
+                                        <button onClick={() => handleSaveAnalysis('draft')} title="Salvar como Rascunho" className="p-2 text-slate-400 hover:text-white rounded-md hover:bg-slate-700/50"><FileText className="w-4 h-4" /></button>
+                                        <button onClick={handleDiscardAnalysis} title="Descartar" className="p-2 text-slate-400 hover:text-red-500 rounded-md hover:bg-slate-700/50"><Trash2 className="w-4 h-4" /></button>
+                                        <div className="w-px h-5 bg-slate-700 mx-1" />
+                                        <button onClick={() => setIsAnalysisMinimized(p => !p)} title={isAnalysisMinimized ? 'Expandir' : 'Minimizar'} className="p-2 text-slate-400 hover:text-white rounded-md hover:bg-slate-700/50">
                                             {isAnalysisMinimized ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
                                         </button>
                                     </div>
@@ -352,7 +352,7 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                                                     <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
                                                 </div>
                                             ) : (
-                                                <div className="prose prose-invert prose-sm max-w-none text-zinc-300 whitespace-pre-wrap"
+                                                <div className="prose prose-invert prose-sm max-w-none text-slate-300 whitespace-pre-wrap"
                                                     dangerouslySetInnerHTML={{ __html: sanitizeHTML(currentAnalysis ? currentAnalysis.content.replace(/## (.*?)\n/g, '<h3 class="text-white font-semibold mt-4 mb-2">$1</h3>').replace(/\* (.*?)\n/g, '<li class="ml-4">$1</li>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') : '') }}
                                                 />
                                             )}
@@ -364,22 +364,22 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                     )}
                 </AnimatePresence>
                 
-                <div className="bg-zinc-800 rounded-lg border border-zinc-700 overflow-hidden flex-1 flex flex-col">
+                <div className="bg-slate-900 rounded-lg border border-slate-800 overflow-hidden flex-1 flex flex-col">
                     <div className="overflow-auto h-full">
-                        <table className="min-w-full divide-y divide-zinc-700">
-                            <thead className="bg-zinc-900/50 sticky top-0 z-10">
+                        <table className="min-w-full divide-y divide-slate-700">
+                            <thead className="bg-slate-900/50 sticky top-0 z-10">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider w-1/5">Lead</th>
-                                    <th className="px-4 py-3 text-center text-xs font-medium text-zinc-400 uppercase tracking-wider">Entrou</th>
-                                    <th className="px-4 py-3 text-center text-xs font-medium text-zinc-400 uppercase tracking-wider">Permanece</th>
-                                    <th className="px-4 py-3 text-center text-xs font-medium text-zinc-400 uppercase tracking-wider">Onboarding</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">Data Call</th>
-                                    <th className="px-4 py-3 text-center text-xs font-medium text-zinc-400 uppercase tracking-wider">Churn</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">Data de Saída</th>
-                                    <th className="px-4 py-3 text-center text-xs font-medium text-zinc-400 uppercase tracking-wider">Ações</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider w-1/5">Lead</th>
+                                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Entrou</th>
+                                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Permanece</th>
+                                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Onboarding</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Data Call</th>
+                                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Churn</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Data de Saída</th>
+                                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-zinc-700">
+                            <tbody className="divide-y divide-slate-700">
                                 {leads.length > 0 ? leads.map(lead => {
                                     const groupInfo = lead.groupInfo || {
                                         hasJoined: false,
@@ -389,30 +389,30 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                                         groupId: group.id
                                     };
                                     return (
-                                    <tr key={lead.id} className="hover:bg-zinc-700/50 transition-colors duration-150">
+                                    <tr key={lead.id} className="hover:bg-slate-700/50 transition-colors duration-150">
                                         <td className="px-4 py-3 whitespace-nowrap">
                                             <div className="text-sm font-medium text-white">{lead.name}</div>
-                                            <div className="text-sm text-zinc-400">{lead.company}</div>
+                                            <div className="text-sm text-slate-400">{lead.company}</div>
                                         </td>
                                         <td className="px-4 py-3 text-center"><CheckboxCell checked={!!groupInfo.hasJoined} onChange={val => handleGroupInfoChange(lead.id, 'hasJoined', val)} /></td>
                                         <td className="px-4 py-3 text-center"><CheckboxCell checked={!!groupInfo.isStillInGroup} onChange={val => handleGroupInfoChange(lead.id, 'isStillInGroup', val)} /></td>
                                         <td className="px-4 py-3 text-center"><CheckboxCell checked={!!groupInfo.hasOnboarded} onChange={val => handleGroupInfoChange(lead.id, 'hasOnboarded', val)} /></td>
                                         <td className="px-4 py-3">
-                                            <input type="date" value={formatDateForInput(groupInfo.onboardingCallDate)} onChange={e => handleGroupInfoChange(lead.id, 'onboardingCallDate', e.target.valueAsDate?.toISOString())} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-1.5 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-violet-500" />
+                                            <input type="date" value={formatDateForInput(groupInfo.onboardingCallDate)} onChange={e => handleGroupInfoChange(lead.id, 'onboardingCallDate', e.target.valueAsDate?.toISOString())} className="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-violet-500" />
                                         </td>
                                         <td className="px-4 py-3 text-center"><CheckboxCell checked={!!groupInfo.churned} onChange={val => handleGroupInfoChange(lead.id, 'churned', val)} /></td>
                                         <td className="px-4 py-3">
-                                            <input type="date" value={formatDateForInput(groupInfo.exitDate)} onChange={e => handleGroupInfoChange(lead.id, 'exitDate', e.target.valueAsDate?.toISOString())} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-1.5 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-violet-500" />
+                                            <input type="date" value={formatDateForInput(groupInfo.exitDate)} onChange={e => handleGroupInfoChange(lead.id, 'exitDate', e.target.valueAsDate?.toISOString())} className="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-violet-500" />
                                         </td>
                                         <td className="px-4 py-3 text-center">
-                                            <button onClick={() => setLeadToRemove(lead)} className="p-2 text-zinc-400 hover:text-red-500 rounded-md hover:bg-zinc-700/50" title={`Remover ${lead.name} do grupo`}>
+                                            <button onClick={() => setLeadToRemove(lead)} className="p-2 text-slate-400 hover:text-red-500 rounded-md hover:bg-slate-700/50" title={`Remover ${lead.name} do grupo`}>
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </td>
                                     </tr>
                                 )}) : (
                                     <tr>
-                                        <td colSpan={8} className="text-center py-10 text-zinc-500">
+                                        <td colSpan={8} className="text-center py-10 text-slate-500">
                                             Nenhum membro encontrado neste grupo.
                                         </td>
                                     </tr>

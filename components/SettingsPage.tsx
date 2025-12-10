@@ -10,6 +10,7 @@ import CreateStageModal from './CreateStageModal';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 import NotificationSettings from './NotificationSettings';
 import PlaybookSettings from './PlaybookSettings';
+import IntegrationsPage from './IntegrationsPage';
 
 // --- Subcomponente de Perfil ---
 interface ProfileSettingsProps {
@@ -41,47 +42,47 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ currentUser, onUpdate
     };
 
     return (
-        <div className="bg-zinc-900 rounded-lg border border-zinc-800">
-            <div className="p-6 border-b border-zinc-700">
+        <div className="bg-slate-900 rounded-lg border border-slate-800">
+            <div className="p-6 border-b border-slate-700">
                 <h2 className="text-lg font-semibold text-white">Informações do Perfil</h2>
-                <p className="text-sm text-zinc-400 mt-1">Atualize suas informações pessoais e foto de perfil</p>
+                <p className="text-sm text-slate-400 mt-1">Atualize suas informações pessoais e foto de perfil</p>
             </div>
             <div className="p-6 space-y-8">
                 <div className="flex items-center gap-5">
-                    <img src={avatarPreview} alt="Avatar" className="w-20 h-20 rounded-full object-cover ring-2 ring-violet-500 ring-offset-2 ring-offset-zinc-900" />
+                    <img src={avatarPreview} alt="Avatar" className="w-20 h-20 rounded-full object-cover ring-2 ring-violet-500 ring-offset-2 ring-offset-slate-900" />
                     <div>
                         <input type="file" ref={fileInputRef} hidden accept="image/jpeg, image/png, image/webp" onChange={handleAvatarChange} />
                         <button 
                             onClick={() => fileInputRef.current?.click()}
-                            className="flex items-center gap-2 bg-zinc-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-zinc-600 transition-colors"
+                            className="flex items-center gap-2 bg-slate-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-slate-600 transition-colors"
                         >
                             <Upload className="w-4 h-4" />
                             <span>Alterar foto</span>
                         </button>
-                        <p className="text-xs text-zinc-500 mt-2">JPG, PNG ou WebP. Máximo 2MB.</p>
+                        <p className="text-xs text-slate-500 mt-2">JPG, PNG ou WebP. Máximo 2MB.</p>
                     </div>
                 </div>
                 
                 <div className="space-y-4">
                      <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-zinc-300 mb-2">Nome Completo</label>
+                        <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-2">Nome Completo</label>
                         <input
                             type="text" id="name" value={name} onChange={(e) => setName(e.target.value)}
-                            className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
                         />
                     </div>
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-2">Email</label>
+                        <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">Email</label>
                         <input
                             type="email" id="email" value={currentUser.email} disabled
-                            className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-400 cursor-not-allowed"
+                            className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-400 cursor-not-allowed"
                         />
-                         <p className="text-xs text-zinc-500 mt-2">O email não pode ser alterado</p>
+                         <p className="text-xs text-slate-500 mt-2">O email não pode ser alterado</p>
                     </div>
                 </div>
 
             </div>
-             <div className="p-4 bg-zinc-800/50 border-t border-zinc-700 rounded-b-lg flex justify-end">
+             <div className="p-4 bg-slate-800/50 border-t border-slate-700 rounded-b-lg flex justify-end">
                 <button
                     onClick={handleSave}
                     className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700 transition-colors"
@@ -99,7 +100,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ currentUser, onUpdate
 const StageItem: React.FC<{ column: ColumnData; index: number; onEdit?: (column: ColumnData) => void; onDelete?: (id: Id) => void; listeners?: any }> = ({ column, index, onEdit, onDelete, listeners }) => {
     // FIX: Add missing 'qualification' property to satisfy the Record type.
     const typeStyles: Record<ColumnData['type'], string> = {
-        open: 'bg-zinc-700 text-zinc-300',
+        open: 'bg-slate-700 text-slate-300',
         qualification: 'bg-purple-900/50 text-purple-400',
         'follow-up': 'bg-blue-900/50 text-blue-400',
         scheduling: 'bg-teal-900/50 text-teal-400',
@@ -117,23 +118,23 @@ const StageItem: React.FC<{ column: ColumnData; index: number; onEdit?: (column:
     };
 
     return (
-        <div className="flex items-center gap-3 p-2 bg-zinc-800 rounded-lg border border-zinc-700 touch-none">
+        <div className="flex items-center gap-3 p-2 bg-slate-800 rounded-lg border border-slate-700 touch-none">
             <button {...listeners} className="cursor-grab p-1 touch-none">
-                <GripVertical className="w-5 h-5 text-zinc-500 flex-shrink-0" />
+                <GripVertical className="w-5 h-5 text-slate-500 flex-shrink-0" />
             </button>
             <div className={`w-4 h-4 rounded-sm flex-shrink-0`} style={{ backgroundColor: column.color }}></div>
             <div className="flex-1 flex items-center gap-4">
                 <span className="font-medium text-white">{column.title}</span>
-                <span className="text-sm text-zinc-500">Posição: {index + 1}</span>
+                <span className="text-sm text-slate-500">Posição: {index + 1}</span>
             </div>
             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${typeStyles[column.type]}`}>{typeLabels[column.type]}</span>
             {onEdit && (
-                <button onClick={() => onEdit(column)} className="p-2 text-zinc-400 hover:text-white rounded-md">
+                <button onClick={() => onEdit(column)} className="p-2 text-slate-400 hover:text-white rounded-md">
                     <Edit className="w-4 h-4" />
                 </button>
             )}
             {onDelete && (
-                <button onClick={() => onDelete(column.id)} className="p-2 text-zinc-400 hover:text-red-500 rounded-md">
+                <button onClick={() => onDelete(column.id)} className="p-2 text-slate-400 hover:text-red-500 rounded-md">
                     <Trash2 className="w-4 h-4" />
                 </button>
             )}
@@ -157,7 +158,7 @@ const SortableStageItem: React.FC<{ column: ColumnData; index: number; onEdit: (
     };
 
     if (isDragging) {
-        return <div ref={setNodeRef} style={style} className="h-[52px] w-full bg-zinc-800 rounded-lg opacity-50 border-2 border-dashed border-zinc-600" />
+        return <div ref={setNodeRef} style={style} className="h-[52px] w-full bg-slate-800 rounded-lg opacity-50 border-2 border-dashed border-slate-600" />
     }
 
     return (
@@ -246,11 +247,11 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
 
     return (
         <>
-            <div className="bg-zinc-900 rounded-lg border border-zinc-800">
-                 <div className="p-6 border-b border-zinc-700 flex justify-between items-center">
+            <div className="bg-slate-900 rounded-lg border border-slate-800">
+                 <div className="p-6 border-b border-slate-700 flex justify-between items-center">
                     <div>
                         <h2 className="text-lg font-semibold text-white">Estágios do Pipeline: <span className="text-violet-400">Vendas Padrão</span></h2>
-                        <p className="text-sm text-zinc-400 mt-1">Configure os estágios do seu funil de vendas. Arraste para reordenar.</p>
+                        <p className="text-sm text-slate-400 mt-1">Configure os estágios do seu funil de vendas. Arraste para reordenar.</p>
                     </div>
                     <button onClick={() => { setEditingStage(null); setCreateStageModalOpen(true); }} className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
                         <PlusCircle className="w-4 h-4" /><span>Novo Estágio</span>
@@ -283,7 +284,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
             <AnimatePresence>
                 {stageToDelete && (
                     <ConfirmDeleteModal onClose={() => setStageToDelete(null)} onConfirm={confirmDeleteStage} title="Confirmar Exclusão de Estágio"
-                        message={<><p>Tem certeza que deseja deletar este estágio?</p><p className="mt-2 text-sm text-zinc-500">Esta ação não pode ser desfeita. Leads neste estágio não serão excluídos, mas precisarão ser movidos.</p></>}
+                        message={<><p>Tem certeza que deseja deletar este estágio?</p><p className="mt-2 text-sm text-slate-500">Esta ação não pode ser desfeita. Leads neste estágio não serão excluídos, mas precisarão ser movidos.</p></>}
                     />
                 )}
             </AnimatePresence>
@@ -291,105 +292,11 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
     );
 };
 
-// --- WhatsApp Integration Tab ---
-const WhatsAppChannelSettings: React.FC = () => {
-    type Status = 'disconnected' | 'loading' | 'qr' | 'connected';
-    const [status, setStatus] = useState<Status>(() => {
-        return (localStorage.getItem('whatsapp_status') as Status) || 'disconnected';
-    });
-
-    useEffect(() => {
-        localStorage.setItem('whatsapp_status', status);
-    }, [status]);
-
-    const handleConnect = () => {
-        setStatus('loading');
-        // Simulate fetching QR code
-        setTimeout(() => {
-            setStatus('qr');
-            // Simulate user scanning the QR code and successful connection
-            setTimeout(() => {
-                setStatus('connected');
-            }, 10000); // 10 seconds to "scan"
-        }, 2000); // 2 seconds to "generate" QR
-    };
-
-    const handleDisconnect = () => {
-        setStatus('disconnected');
-    };
-
-    const StatusIndicator = () => {
-        switch(status) {
-            case 'connected': return <div className="flex items-center gap-2 text-sm text-green-400"><div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>Conectado</div>;
-            case 'loading': return <div className="flex items-center gap-2 text-sm text-yellow-400">Carregando...</div>;
-            case 'qr': return <div className="flex items-center gap-2 text-sm text-yellow-400">Aguardando leitura</div>;
-            default: return <div className="flex items-center gap-2 text-sm text-red-400"><div className="w-2 h-2 rounded-full bg-red-500"></div>Desconectado</div>;
-        }
-    };
-
-    return (
-        <div className="bg-zinc-900 rounded-lg border border-zinc-800">
-            <div className="p-6 border-b border-zinc-700 flex justify-between items-center">
-                <div>
-                    <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                        <MessageSquare className="w-5 h-5 text-green-500" />
-                        <span>WhatsApp Web</span>
-                    </h2>
-                    <p className="text-sm text-zinc-400 mt-1">Conecte sua conta do WhatsApp para gerenciar conversas.</p>
-                </div>
-                <StatusIndicator />
-            </div>
-            <div className="p-6">
-                {status === 'disconnected' && (
-                    <div className="text-center">
-                        <p className="text-zinc-400 mb-4">Clique no botão abaixo para gerar um QR Code e conectar sua conta do WhatsApp Web.</p>
-                        <button onClick={handleConnect} className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-md transition-colors">
-                            Conectar ao WhatsApp
-                        </button>
-                    </div>
-                )}
-                {status === 'loading' && (
-                     <div className="flex flex-col items-center justify-center text-center py-10">
-                        <Loader2 className="w-8 h-8 text-violet-400 animate-spin mb-4" />
-                        <p className="text-zinc-300">Gerando QR Code...</p>
-                    </div>
-                )}
-                {status === 'qr' && (
-                    <div className="flex flex-col md:flex-row items-center gap-6">
-                        <div className="bg-white p-4 rounded-lg">
-                             <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=ExampleQRCodeForFityCRM" alt="QR Code" />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-white text-lg">Leia o QR Code para conectar</h3>
-                            <ol className="list-decimal list-inside text-zinc-400 mt-2 space-y-1 text-sm">
-                                <li>Abra o WhatsApp no seu celular.</li>
-                                <li>Toque em Menu ou Configurações e selecione <strong>Aparelhos conectados</strong>.</li>
-                                <li>Toque em <strong>Conectar um aparelho</strong>.</li>
-                                <li>Aponte seu celular para esta tela para capturar o código.</li>
-                            </ol>
-                            <p className="text-xs text-zinc-500 mt-4">Este QR Code irá expirar em breve.</p>
-                        </div>
-                    </div>
-                )}
-                 {status === 'connected' && (
-                    <div className="text-center">
-                        <p className="text-zinc-300 mb-4">Sua conta do WhatsApp está conectada.</p>
-                         <button onClick={handleDisconnect} className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-md transition-colors">
-                            Desconectar
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-
 // --- Placeholder ---
 const PlaceholderTab: React.FC<{ title: string }> = ({ title }) => (
-    <div className="text-center p-10 bg-zinc-900 rounded-lg border-2 border-dashed border-zinc-800">
+    <div className="text-center p-10 bg-slate-900 rounded-lg border-2 border-dashed border-slate-800">
         <h2 className="text-lg font-semibold text-white">WIP: {title}</h2>
-        <p className="text-zinc-400 mt-2">Esta seção estará disponível em breve!</p>
+        <p className="text-slate-400 mt-2">Esta seção estará disponível em breve!</p>
     </div>
 );
 
@@ -420,17 +327,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpd
                 <Settings className="w-8 h-8 text-violet-500" />
                 <div>
                     <h1 className="text-2xl font-bold text-white">Configurações</h1>
-                    <p className="text-zinc-400">Gerencie suas preferências e configurações da conta</p>
+                    <p className="text-slate-400">Gerencie suas preferências e configurações da conta</p>
                 </div>
             </div>
             <div>
-                <div className="border-b border-zinc-700 mb-6">
+                <div className="border-b border-slate-700 mb-6">
                     <nav className="flex -mb-px space-x-6" aria-label="Tabs">
                         {tabs.map(tab => (
                             <button
                                 key={tab.name}
                                 onClick={() => setActiveTab(tab.name)}
-                                className={`whitespace-nowrap flex items-center gap-2 py-3 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.name ? 'border-violet-500 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
+                                className={`whitespace-nowrap flex items-center gap-2 py-3 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.name ? 'border-violet-500 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
                             >
                                 {tab.name}
                             </button>
@@ -442,20 +349,20 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpd
                 {activeTab === 'Perfil' && <ProfileSettings currentUser={currentUser} onUpdateProfile={onUpdateProfile} />}
                 {activeTab === 'Pipeline' && <PipelineSettings columns={columns} onUpdatePipeline={onUpdatePipeline} />}
                 {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />}
-                {activeTab === 'Integrações' && <WhatsAppChannelSettings />}
+                {activeTab === 'Integrações' && <IntegrationsPage showNotification={() => {}} />}
                 {activeTab === 'Notificações' && <NotificationSettings />}
             </div>
 
             {/* Danger Zone */}
-            <div className="bg-zinc-900 rounded-lg border border-red-500/30 mt-4">
+            <div className="bg-slate-900 rounded-lg border border-red-500/30 mt-4">
                 <div className="p-6 border-b border-red-500/20">
                     <h2 className="text-lg font-semibold text-red-400">Zona de Perigo</h2>
-                    <p className="text-sm text-zinc-400 mt-1">Ações destrutivas que não podem ser desfeitas.</p>
+                    <p className="text-sm text-slate-400 mt-1">Ações destrutivas que não podem ser desfeitas.</p>
                 </div>
                 <div className="p-6 flex justify-between items-center">
                     <div>
                         <h3 className="font-medium text-white">Resetar Aplicação</h3>
-                        <p className="text-sm text-zinc-500">Isso irá apagar todos os dados do local storage e recarregar a aplicação.</p>
+                        <p className="text-sm text-slate-500">Isso irá apagar todos os dados do local storage e recarregar a aplicação.</p>
                     </div>
                     <button onClick={onResetApplication} className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-md transition-colors">
                         Resetar Dados

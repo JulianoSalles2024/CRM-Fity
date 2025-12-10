@@ -23,29 +23,29 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, metrics, onSelect, onEdit,
     const statusStyles = {
         'Ativo': 'bg-green-500/20 text-green-400',
         'Lotado': 'bg-yellow-500/20 text-yellow-400',
-        'Arquivado': 'bg-zinc-500/20 text-zinc-400'
+        'Arquivado': 'bg-slate-500/20 text-slate-400'
     };
 
     return (
-        <div className="bg-zinc-800 rounded-lg border border-zinc-700 flex flex-col transition-all duration-200 ease-in-out hover:border-violet-500/80 hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-900/30">
+        <div className="bg-slate-900 rounded-lg border border-slate-800 flex flex-col transition-all duration-200 ease-in-out hover:border-violet-500/80 hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-900/30">
             {/* Header */}
-            <div className="p-5 border-b border-zinc-700">
+            <div className="p-5 border-b border-slate-800">
                 <div className="flex justify-between items-start">
                     <div>
                         <h3 className="font-bold text-white text-lg">{group.name}</h3>
-                        <p className="text-sm text-zinc-400 mt-1 line-clamp-2 h-10">{group.description}</p>
+                        <p className="text-sm text-slate-400 mt-1 line-clamp-2 h-10">{group.description}</p>
                     </div>
                     <div className="relative">
-                        <button onClick={() => setMenuOpen(p => !p)} className="p-2 rounded-full text-zinc-400 hover:bg-zinc-700"><MoreVertical className="w-5 h-5"/></button>
+                        <button onClick={() => setMenuOpen(p => !p)} className="p-2 rounded-full text-slate-400 hover:bg-slate-700"><MoreVertical className="w-5 h-5"/></button>
                          <AnimatePresence>
                             {isMenuOpen && (
                                 <motion.div
                                     initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                                    className="absolute top-full right-0 mt-1 w-40 bg-zinc-900 rounded-md border border-zinc-700 shadow-lg z-10 py-1"
+                                    className="absolute top-full right-0 mt-1 w-40 bg-slate-900 rounded-md border border-slate-700 shadow-lg z-10 py-1"
                                     onMouseLeave={() => setMenuOpen(false)}
                                 >
-                                    <button onClick={() => { onEdit(group); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-700/50"><Edit className="w-4 h-4"/>Editar</button>
-                                    <button onClick={() => { onDelete(group.id); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-zinc-700/50"><Trash2 className="w-4 h-4"/>Deletar</button>
+                                    <button onClick={() => { onEdit(group); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700/50"><Edit className="w-4 h-4"/>Editar</button>
+                                    <button onClick={() => { onDelete(group.id); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-slate-700/50"><Trash2 className="w-4 h-4"/>Deletar</button>
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -65,15 +65,15 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, metrics, onSelect, onEdit,
             <div className="p-5 grid grid-cols-3 gap-4 text-center">
                 <div>
                     <p className="text-2xl font-bold text-white">{metrics.currentMembers}</p>
-                    <p className="text-xs text-zinc-400">Membros Atuais</p>
+                    <p className="text-xs text-slate-400">Membros Atuais</p>
                 </div>
                 <div>
                     <p className="text-2xl font-bold text-white">+{metrics.newMembers}</p>
-                    <p className="text-xs text-zinc-400">Novos (30d)</p>
+                    <p className="text-xs text-slate-400">Novos (30d)</p>
                 </div>
                  <div>
                     <p className="text-2xl font-bold text-white">{metrics.churnRate.toFixed(1)}%</p>
-                    <p className="text-xs text-zinc-400">Churn</p>
+                    <p className="text-xs text-slate-400">Churn</p>
                 </div>
             </div>
             
@@ -82,15 +82,15 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, metrics, onSelect, onEdit,
                  {group.memberGoal && (
                     <div className="mb-4">
                         <div className="flex justify-between items-center text-xs mb-1">
-                            <p className="text-zinc-300 font-medium">Meta de Membros</p>
-                            <p className="text-zinc-400">{metrics.currentMembers} / {group.memberGoal}</p>
+                            <p className="text-slate-300 font-medium">Meta de Membros</p>
+                            <p className="text-slate-400">{metrics.currentMembers} / {group.memberGoal}</p>
                         </div>
-                         <div className="w-full bg-zinc-700 rounded-full h-2">
+                         <div className="w-full bg-slate-700 rounded-full h-2">
                             <div className="bg-violet-600 h-2 rounded-full" style={{ width: `${progress}%` }}></div>
                         </div>
                     </div>
                 )}
-                <button onClick={() => onSelect(group.id)} className="w-full bg-zinc-700 text-white font-semibold py-2 rounded-md hover:bg-zinc-600 transition-colors text-sm">Ver Membros</button>
+                <button onClick={() => onSelect(group.id)} className="w-full bg-slate-700 text-white font-semibold py-2 rounded-md hover:bg-slate-600 transition-colors text-sm">Ver Membros</button>
             </div>
         </div>
     );
@@ -144,7 +144,7 @@ const GroupsDashboard: React.FC<GroupsDashboardProps> = ({ groups, leads, onSele
                     <Users className="w-8 h-8 text-violet-500" />
                     <div>
                         <h1 className="text-2xl font-bold text-white">Dashboard de Grupos</h1>
-                        <p className="text-zinc-400">Visão geral da saúde e performance de suas comunidades</p>
+                        <p className="text-slate-400">Visão geral da saúde e performance de suas comunidades</p>
                     </div>
                 </div>
                  <button onClick={onAddGroup} className="flex items-center justify-center md:justify-start gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
@@ -167,10 +167,10 @@ const GroupsDashboard: React.FC<GroupsDashboardProps> = ({ groups, leads, onSele
                     ))}
                 </div>
              ) : (
-                <div className="flex flex-col items-center justify-center flex-1 text-center bg-zinc-800/50 rounded-lg border-2 border-dashed border-zinc-700 py-16">
+                <div className="flex flex-col items-center justify-center flex-1 text-center bg-slate-800/50 rounded-lg border-2 border-dashed border-slate-700 py-16">
                      <h3 className="text-lg font-semibold text-white">Nenhum grupo encontrado</h3>
-                    <p className="text-zinc-500 mt-1 mb-4">Comece criando seu primeiro grupo para gerenciar seus membros.</p>
-                    <button onClick={onAddGroup} className="flex items-center gap-2 bg-zinc-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-zinc-600 transition-colors">
+                    <p className="text-slate-500 mt-1 mb-4">Comece criando seu primeiro grupo para gerenciar seus membros.</p>
+                    <button onClick={onAddGroup} className="flex items-center gap-2 bg-slate-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-slate-600 transition-colors">
                         <PlusCircle className="w-5 h-5" />
                         <span>Criar Grupo</span>
                     </button>

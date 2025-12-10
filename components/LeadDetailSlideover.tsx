@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, User, Building, DollarSign, Tag as TagIcon, Clock, Trash2, MessageSquare, ArrowRight, TrendingUp, Sparkles, FileText, Mail, BookOpen, Circle, CheckCircle2 } from 'lucide-react';
@@ -40,8 +36,8 @@ const DetailItem: React.FC<{ icon: React.ElementType; label: string; children: R
     <div className="flex items-start gap-3">
         <Icon className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
         <div className="flex flex-col">
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">{label}</span>
-            <span className="text-md font-medium text-zinc-800 dark:text-gray-200">{children}</span>
+            <span className="text-sm text-slate-500 dark:text-slate-400">{label}</span>
+            <span className="text-md font-medium text-slate-800 dark:text-gray-200">{children}</span>
         </div>
     </div>
 );
@@ -100,8 +96,6 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
     return playbooks.find(p => p.id === lead.activePlaybook?.playbookId);
   }, [lead.activePlaybook, playbooks]);
   
-  // FIX: Removed the problematic type intersection `Activity & { type: 'playbook_completed' }`
-  // which was reducing to `never`. Let TypeScript infer the correct union type.
   const combinedActivities = useMemo(() => {
     const historyAsActivities = (lead.playbookHistory || []).map(entry => ({
       id: `playbook-${entry.playbookId}-${entry.completedAt}`,
@@ -122,7 +116,7 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
       case 'AI Composer':
         return <Sparkles className="w-4 h-4 mr-2 text-violet-400" />;
       case 'Rascunhos':
-        return <FileText className="w-4 h-4 mr-2 text-zinc-500 dark:text-zinc-400" />;
+        return <FileText className="w-4 h-4 mr-2 text-slate-500 dark:text-slate-400" />;
       default:
         return null;
     }
@@ -135,34 +129,34 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
       animate={{ x: '0%' }}
       exit={{ x: '100%' }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="fixed top-0 right-0 h-full w-full max-w-lg bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl z-50 flex flex-col"
+      className="fixed top-0 right-0 h-full w-full max-w-lg bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl z-50 flex flex-col"
     >
       {/* Header */}
-      <div className="flex-shrink-0 p-6 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="flex-shrink-0 p-6 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-start justify-between">
           <motion.div layoutId={`lead-card-${lead.id}`} className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center text-2xl font-bold text-zinc-700 dark:text-white">
+            <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-2xl font-bold text-slate-700 dark:text-white">
                 {lead.name.charAt(0)}
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">{lead.name}</h2>
-              <p className="text-zinc-500 dark:text-zinc-400">{lead.company}</p>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{lead.name}</h2>
+              <p className="text-slate-500 dark:text-slate-400">{lead.company}</p>
             </div>
           </motion.div>
-          <button onClick={onClose} className="p-2 rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
+          <button onClick={onClose} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <X className="w-6 h-6 text-violet-500/70 hover:text-violet-500" />
           </button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex-shrink-0 px-6 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="flex-shrink-0 px-6 border-b border-slate-200 dark:border-slate-800">
           <nav className="flex -mb-px space-x-6">
               {tabs.map(tab => (
                   <button 
                       key={tab}
                       onClick={() => setActiveTab(tab)}
-                      className={`flex items-center py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-violet-500 text-zinc-900 dark:text-white' : 'border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'}`}>
+                      className={`flex items-center py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-violet-500 text-slate-900 dark:text-white' : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}>
                       {getTabIcon(tab)}
                       {tab}
                   </button>
@@ -183,10 +177,10 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
                     <TrendingUp className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
                     <div className="flex flex-col w-full">
                         <div className="flex justify-between items-center">
-                            <span className="text-sm text-zinc-500 dark:text-zinc-400">Probabilidade</span>
-                            <span className="text-md font-medium text-zinc-800 dark:text-gray-200">{lead.probability}%</span>
+                            <span className="text-sm text-slate-500 dark:text-slate-400">Probabilidade</span>
+                            <span className="text-md font-medium text-slate-800 dark:text-gray-200">{lead.probability}%</span>
                         </div>
-                        <div className="w-full bg-gray-200 dark:bg-zinc-700/80 rounded-full h-2 mt-2">
+                        <div className="w-full bg-slate-200 dark:bg-slate-700/80 rounded-full h-2 mt-2">
                             <div className="bg-teal-400 h-2 rounded-full" style={{ width: `${lead.probability}%` }}></div>
                         </div>
                     </div>
@@ -195,17 +189,17 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
 
             <DetailItem icon={TagIcon} label="Tags">
                 <div className="flex flex-wrap gap-2">
-                    {lead.tags.length > 0 ? lead.tags.map(tag => <TagPill key={tag.id} tag={tag} />) : <span className="text-zinc-400 dark:text-zinc-500">Sem tags</span>}
+                    {lead.tags.length > 0 ? lead.tags.map(tag => <TagPill key={tag.id} tag={tag} />) : <span className="text-slate-400 dark:text-slate-500">Sem tags</span>}
                 </div>
             </DetailItem>
             <DetailItem icon={Clock} label="Última Atividade">{lead.lastActivity}</DetailItem>
             
             {activePlaybookDetails && (
-                <div className="border-t border-zinc-700 pt-6">
+                <div className="border-t border-slate-700 pt-6">
                     <div className="flex items-start gap-3">
                         <BookOpen className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
                         <div className="flex flex-col w-full">
-                            <span className="text-sm text-zinc-500 dark:text-zinc-400">Cadência Ativa</span>
+                            <span className="text-sm text-slate-500 dark:text-slate-400">Cadência Ativa</span>
                         </div>
                     </div>
                     <div className="pl-8 mt-2">
@@ -223,10 +217,10 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
                                 return (
                                     <li key={index} className="flex items-center gap-3 text-sm">
                                         <button onClick={handleToggle} className="flex-shrink-0" disabled={!associatedTask}>
-                                            {isCompleted ? <CheckCircle2 className="w-5 h-5 text-green-400" /> : <Circle className="w-5 h-5 text-zinc-600 hover:text-zinc-400" />}
+                                            {isCompleted ? <CheckCircle2 className="w-5 h-5 text-green-400" /> : <Circle className="w-5 h-5 text-slate-600 hover:text-slate-400" />}
                                         </button>
-                                        <span className={`font-semibold ${isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-300'}`}>D+{step.day}:</span>
-                                        <span className={`${isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-400'}`}>{step.instructions}</span>
+                                        <span className={`font-semibold ${isCompleted ? 'text-slate-500 line-through' : 'text-slate-300'}`}>D+{step.day}:</span>
+                                        <span className={`${isCompleted ? 'text-slate-500 line-through' : 'text-slate-400'}`}>{step.instructions}</span>
                                     </li>
                                 );
                             })}
@@ -253,7 +247,7 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
                     value={newNote}
                     onChange={(e) => setNewNote(e.target.value)}
                     placeholder="Adicionar uma nota..."
-                    className="w-full bg-gray-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
                     rows={3}
                 />
                 <div className="flex justify-end mt-2">
@@ -268,21 +262,21 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
             <ul className="space-y-4">
               {combinedActivities.length > 0 ? combinedActivities.map(activity => (
                  <li key={activity.id} className="flex gap-3 items-start">
-                    <div className="flex-shrink-0 bg-gray-100 dark:bg-zinc-800 h-8 w-8 rounded-full flex items-center justify-center mt-1">
+                    <div className="flex-shrink-0 bg-slate-100 dark:bg-slate-800 h-8 w-8 rounded-full flex items-center justify-center mt-1">
                         {activity.type === 'note' ? <MessageSquare className="w-4 h-4 text-violet-400" /> : 
                          activity.type === 'email_sent' ? <Mail className="w-4 h-4 text-violet-400" /> :
                          activity.type === 'playbook_completed' ? <BookOpen className="w-4 h-4 text-violet-400" /> :
                          <ArrowRight className="w-4 h-4 text-violet-400" />}
                     </div>
                     <div>
-                        <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
                           {activity.authorName} • {formatTimestamp(activity.timestamp)}
                         </p>
-                        <p className="text-sm mt-1 text-zinc-700 dark:text-zinc-300">{activity.text}</p>
+                        <p className="text-sm mt-1 text-slate-700 dark:text-slate-300">{activity.text}</p>
                     </div>
                 </li>
               )) : (
-                <p className="text-center text-zinc-400 dark:text-zinc-500 py-8">Nenhuma atividade ou cadência concluída registrada.</p>
+                <p className="text-center text-slate-400 dark:text-slate-500 py-8">Nenhuma atividade ou cadência concluída registrada.</p>
               )}
             </ul>
           </div>
@@ -291,17 +285,17 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
             <div className="space-y-4">
                 {sortedDrafts.length > 0 ? (
                     sortedDrafts.map(draft => (
-                        <div key={draft.id} className="bg-gray-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 transition-colors hover:border-zinc-300 dark:hover:border-zinc-600">
-                            <p className="font-semibold text-zinc-900 dark:text-white truncate">{draft.subject}</p>
-                            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">{draft.body}</p>
-                            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-3">
+                        <div key={draft.id} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 transition-colors hover:border-slate-300 dark:hover:border-slate-600">
+                            <p className="font-semibold text-slate-900 dark:text-white truncate">{draft.subject}</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{draft.body}</p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">
                                 Salvo em {formatTimestamp(draft.createdAt)}
                             </p>
-                            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-700/50">
+                            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/50">
                                 <button onClick={() => handleLoadDraft(draft)} className="text-sm font-medium text-violet-500 dark:text-violet-400 hover:text-violet-600 dark:hover:text-violet-300">
                                     Carregar
                                 </button>
-                                <span className="text-zinc-300 dark:text-zinc-600">|</span>
+                                <span className="text-slate-300 dark:text-slate-600">|</span>
                                 <button onClick={() => onDeleteDraft(draft.id)} className="text-sm font-medium text-red-500 hover:text-red-600 dark:hover:text-red-400">
                                     Deletar
                                 </button>
@@ -309,25 +303,25 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
                         </div>
                     ))
                 ) : (
-                    <p className="text-center text-zinc-400 dark:text-zinc-500 py-8">Nenhum rascunho salvo para este lead.</p>
+                    <p className="text-center text-slate-400 dark:text-slate-500 py-8">Nenhum rascunho salvo para este lead.</p>
                 )}
             </div>
         )}
       </div>
 
        {/* Actions */}
-      <div className="flex-shrink-0 p-6 border-t border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-sm">
+      <div className="flex-shrink-0 p-6 border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/50 backdrop-blur-sm">
           <div className="flex items-center justify-between">
               <button
                   onClick={onDelete}
-                  className="p-2 rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                  className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                   aria-label="Deletar Lead"
               >
                   <Trash2 className="w-5 h-5 text-violet-500/70 hover:text-violet-500" />
               </button>
               <div className="flex items-center gap-3">
                   <button 
-                    className="px-4 py-2 text-sm font-semibold text-zinc-800 dark:text-zinc-300 bg-gray-200 dark:bg-zinc-700 rounded-md hover:bg-gray-300 dark:hover:bg-zinc-600 transition-colors"
+                    className="px-4 py-2 text-sm font-semibold text-slate-800 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 rounded-md hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
                     onClick={onEdit}
                   >
                       Editar Lead

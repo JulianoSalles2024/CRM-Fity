@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -45,7 +43,7 @@ const Column: React.FC<ColumnProps> = ({ column, leads, users, tasks, cardDispla
             layout
             animate={{ width: isMinimized ? 72 : 320 }}
             transition={{ type: "spring", stiffness: 350, damping: 35 }}
-            className={`flex-shrink-0 h-full flex flex-col bg-gray-100 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800/80 transition-colors ${isOver ? 'bg-violet-100 dark:bg-zinc-800/50' : ''}`}
+            className={`flex-shrink-0 h-full flex flex-col bg-slate-100 dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-slate-800/80 transition-colors ${isOver ? 'bg-violet-100 dark:bg-slate-800/80' : ''}`}
         >
             <AnimatePresence initial={false}>
                 {isMinimized ? (
@@ -58,19 +56,19 @@ const Column: React.FC<ColumnProps> = ({ column, leads, users, tasks, cardDispla
                         className="flex flex-col items-center justify-between h-full p-2 overflow-hidden border-b-4"
                         style={{ borderBottomColor: column.color }}
                     >
-                        <button onClick={() => onToggleColumnMinimize(column.id)} className="p-1 text-zinc-400 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-white" title="Expandir coluna">
+                        <button onClick={() => onToggleColumnMinimize(column.id)} className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-white" title="Expandir coluna">
                             <ChevronRight className="w-5 h-5" />
                         </button>
                         <div className="flex-1 flex flex-col items-center justify-center gap-4 py-4 cursor-default">
-                            <h2 className="font-bold text-zinc-900 dark:text-white text-lg [writing-mode:vertical-rl] transform-gpu rotate-180 whitespace-nowrap">
+                            <h2 className="font-bold text-slate-900 dark:text-white text-lg [writing-mode:vertical-rl] transform-gpu rotate-180 whitespace-nowrap">
                                 {column.title}
                             </h2>
                             <div className="text-center">
-                                <p className="font-bold text-zinc-900 dark:text-white">{leadsInColumn.length}</p>
-                                <p className="text-xs text-zinc-500 dark:text-zinc-400">leads</p>
+                                <p className="font-bold text-slate-900 dark:text-white">{leadsInColumn.length}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">leads</p>
                             </div>
                         </div>
-                        <button onClick={() => onAddLead(column.id)} className="p-1 text-zinc-400 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-white" title="Adicionar lead">
+                        <button onClick={() => onAddLead(column.id)} className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-white" title="Adicionar lead">
                             <PlusCircle className="w-5 h-5" />
                         </button>
                     </motion.div>
@@ -86,16 +84,16 @@ const Column: React.FC<ColumnProps> = ({ column, leads, users, tasks, cardDispla
                         {/* Expanded Column Header */}
                         <div className="p-4 flex justify-between items-center flex-shrink-0 border-b-4" style={{ borderBottomColor: column.color }}>
                             <div>
-                                <h2 className="font-bold text-zinc-900 dark:text-white text-lg">{column.title}</h2>
-                                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                                <h2 className="font-bold text-slate-900 dark:text-white text-lg">{column.title}</h2>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                                     {leadsInColumn.length} {leadsInColumn.length === 1 ? 'lead' : 'leads'} • {currencyFormatter.format(totalValue)}
                                 </p>
                             </div>
                             <div className="flex items-center gap-1">
-                                <button onClick={() => onAddLead(column.id)} className="text-zinc-400 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-white transition-colors" title="Adicionar lead a este estágio">
+                                <button onClick={() => onAddLead(column.id)} className="text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors" title="Adicionar lead a este estágio">
                                     <PlusCircle className="w-5 h-5" />
                                 </button>
-                                <button onClick={() => onToggleColumnMinimize(column.id)} className="text-zinc-400 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-white transition-colors" title="Minimizar coluna">
+                                <button onClick={() => onToggleColumnMinimize(column.id)} className="text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors" title="Minimizar coluna">
                                     <ChevronLeft className="w-5 h-5" />
                                 </button>
                             </div>
