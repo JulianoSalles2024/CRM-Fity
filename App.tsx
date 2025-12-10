@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -28,6 +27,7 @@ import PrintableLeadsReport from './components/PrintableLeadsReport';
 import LostLeadModal from './components/LostLeadModal';
 import RecoveryView from './components/RecoveryView';
 import InboxView from './components/InboxView';
+import SdrBotModal from './components/SdrBotModal';
 
 
 // Types
@@ -97,6 +97,7 @@ const App: React.FC = () => {
     const [isGroupModalOpen, setGroupModalOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
     const [lostLeadInfo, setLostLeadInfo] = useState<{lead: Lead, columnId: Id} | null>(null);
+    const [isSdrBotOpen, setSdrBotOpen] = useState(false);
 
 
     // Notification State
@@ -851,6 +852,7 @@ const App: React.FC = () => {
                 theme={theme}
                 onThemeToggle={() => setTheme(p => p === 'dark' ? 'light' : 'dark')}
                 unreadCount={unreadCount}
+                onOpenSdrBot={() => setSdrBotOpen(true)}
             />
             <main className="flex-1 overflow-auto p-6">
                 {renderView()}
@@ -937,6 +939,18 @@ const App: React.FC = () => {
                     lead={lostLeadInfo.lead}
                     onClose={() => setLostLeadInfo(null)}
                     onSubmit={handleProcessLostLead}
+                />
+            )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+            {isSdrBotOpen && (
+                <SdrBotModal 
+                    onClose={() => setSdrBotOpen(false)} 
+                    onGoToSettings={() => {
+                        setSdrBotOpen(false);
+                        setActiveView('Configurações');
+                    }}
                 />
             )}
         </AnimatePresence>

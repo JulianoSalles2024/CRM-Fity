@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Bell, LogOut, Sun, Moon } from 'lucide-react';
+import { Search, Bell, LogOut, Sun, Moon, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { User } from '../types';
 
@@ -12,6 +11,7 @@ interface HeaderProps {
     theme: 'dark' | 'light';
     onThemeToggle: () => void;
     unreadCount: number;
+    onOpenSdrBot: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -21,7 +21,8 @@ const Header: React.FC<HeaderProps> = ({
     onSearchChange, 
     theme,
     onThemeToggle,
-    unreadCount
+    unreadCount,
+    onOpenSdrBot
 }) => {
     const [isUserMenuOpen, setUserMenuOpen] = useState(false);
     const userMenuRef = useRef<HTMLDivElement>(null);
@@ -53,6 +54,16 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Right Side - Actions */}
             <div className="flex items-center gap-3">
+                
+                {/* SDR Bot Button */}
+                <button 
+                    onClick={onOpenSdrBot}
+                    className="p-2.5 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-900/20 hover:shadow-violet-600/30 hover:scale-105 transition-all duration-200 group"
+                    title="SDR Bot (IA)"
+                >
+                    <Bot className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                </button>
+
                 {/* Theme Toggle Button */}
                 <button onClick={onThemeToggle} className="p-2.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors border border-transparent hover:border-slate-700">
                     <AnimatePresence mode="wait" initial={false}>
