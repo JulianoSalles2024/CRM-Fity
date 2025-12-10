@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { User, ColumnData, Id, Playbook } from '../types';
-import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit, Bell, Webhook, MessageSquare, Loader2, BookOpen } from 'lucide-react';
+import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit, Bell, Webhook, MessageSquare, Loader2, BookOpen, Bot } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { DndContext, closestCenter, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -11,6 +11,7 @@ import ConfirmDeleteModal from './ConfirmDeleteModal';
 import NotificationSettings from './NotificationSettings';
 import PlaybookSettings from './PlaybookSettings';
 import IntegrationsPage from './IntegrationsPage';
+import AISettings from './AISettings';
 
 // --- Subcomponente de Perfil ---
 interface ProfileSettingsProps {
@@ -98,7 +99,6 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ currentUser, onUpdate
 // --- Componentes para Drag-and-Drop de Estágios ---
 
 const StageItem: React.FC<{ column: ColumnData; index: number; onEdit?: (column: ColumnData) => void; onDelete?: (id: Id) => void; listeners?: any }> = ({ column, index, onEdit, onDelete, listeners }) => {
-    // FIX: Add missing 'qualification' property to satisfy the Record type.
     const typeStyles: Record<ColumnData['type'], string> = {
         open: 'bg-slate-700 text-slate-300',
         qualification: 'bg-purple-900/50 text-purple-400',
@@ -107,7 +107,6 @@ const StageItem: React.FC<{ column: ColumnData; index: number; onEdit?: (column:
         won: 'bg-green-900/50 text-green-400',
         lost: 'bg-red-900/50 text-red-400',
     };
-    // FIX: Add missing 'qualification' property to satisfy the Record type.
     const typeLabels: Record<ColumnData['type'], string> = {
         open: 'Abertura',
         qualification: 'Qualificação',
@@ -316,6 +315,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpd
     const tabs = [
         { name: 'Perfil', icon: UserIcon },
         { name: 'Pipeline', icon: Settings },
+        { name: 'Inteligência Artificial', icon: Bot }, // Changed label for clarity
         { name: 'Preferências', icon: SlidersHorizontal },
         { name: 'Integrações', icon: Webhook },
         { name: 'Notificações', icon: Bell },
@@ -332,13 +332,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpd
             </div>
             <div>
                 <div className="border-b border-slate-700 mb-6">
-                    <nav className="flex -mb-px space-x-6" aria-label="Tabs">
+                    <nav className="flex -mb-px space-x-6 overflow-x-auto" aria-label="Tabs">
                         {tabs.map(tab => (
                             <button
                                 key={tab.name}
                                 onClick={() => setActiveTab(tab.name)}
                                 className={`whitespace-nowrap flex items-center gap-2 py-3 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.name ? 'border-violet-500 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
                             >
+                                <tab.icon className="w-4 h-4" />
                                 {tab.name}
                             </button>
                         ))}
@@ -348,6 +349,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpd
             <div className="space-y-6">
                 {activeTab === 'Perfil' && <ProfileSettings currentUser={currentUser} onUpdateProfile={onUpdateProfile} />}
                 {activeTab === 'Pipeline' && <PipelineSettings columns={columns} onUpdatePipeline={onUpdatePipeline} />}
+                {activeTab === 'Inteligência Artificial' && <AISettings />}
                 {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />}
                 {activeTab === 'Integrações' && <IntegrationsPage showNotification={() => {}} />}
                 {activeTab === 'Notificações' && <NotificationSettings />}
