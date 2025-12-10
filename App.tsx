@@ -675,14 +675,14 @@ const App: React.FC = () => {
                 />;
             case 'Dashboard':
                 return <Dashboard 
-                            leads={filteredLeads} 
+                            leads={leads} // Changed from filteredLeads to leads to disable filtering
                             columns={columns} 
                             activities={activities} 
                             tasks={tasks} 
                             onNavigate={setActiveView} 
                             onAnalyzePortfolio={handleStartAnalysis} 
                             showNotification={showNotification} 
-                            onExportReport={() => handleExportPDF(filteredLeads)}
+                            onExportReport={() => handleExportPDF(leads)}
                        />;
             case 'Pipeline':
                 return <KanbanBoard
@@ -871,7 +871,8 @@ const App: React.FC = () => {
                 theme={theme}
                 onThemeToggle={() => setTheme(p => p === 'dark' ? 'light' : 'dark')}
                 unreadCount={unreadCount}
-                onOpenSdrBot={handleOpenSdrBot} // Usando o handler
+                onOpenSdrBot={handleOpenSdrBot}
+                activeView={activeView} // Pass activeView to Header
             />
             <main className="flex-1 overflow-auto p-6">
                 {renderView()}
