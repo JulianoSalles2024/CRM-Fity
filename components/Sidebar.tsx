@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { LayoutDashboard, Columns, Users, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap, Bell, HelpCircle, MessageSquare, ToyBrick, BookOpen, ArchiveRestore } from 'lucide-react';
 
@@ -24,8 +25,12 @@ const NavItem: React.FC<{
 }> = ({ item, isActive, isCollapsed, onClick }) => (
     <a href="#" onClick={(e) => { e.preventDefault(); onClick(); }}
         title={isCollapsed ? item.label : undefined}
-        className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors leading-5 ${isActive ? 'bg-gray-100 dark:bg-zinc-800 text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white'} ${isCollapsed ? 'justify-center' : ''}`}>
-        <item.icon className={`w-5 h-5 flex-shrink-0 text-violet-500 ${isActive ? 'opacity-100' : 'opacity-70'}`} />
+        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group border ${isActive 
+            ? 'bg-blue-950/30 border-blue-900/50 text-blue-400 shadow-sm shadow-blue-900/20' 
+            : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-900'
+        } ${isCollapsed ? 'justify-center' : ''}`}
+    >
+        <item.icon className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
         {!isCollapsed && <span>{item.label}</span>}
     </a>
 );
@@ -33,6 +38,7 @@ const NavItem: React.FC<{
 const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, onToggle, isChatEnabled }) => {
   const mainNavItems = [
     { icon: LayoutDashboard, label: 'Dashboard' },
+    { icon: Inbox, label: 'Inbox' }, // Placeholder for Inbox if needed, or mapping 'Dashboard' to Visão Geral conceptually
     { icon: Columns, label: 'Pipeline' },
     { icon: BookOpen, label: 'Playbooks' },
     { icon: Users, label: 'Leads' },
@@ -45,42 +51,83 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, 
     { icon: ToyBrick, label: 'Integrações' },
   ].filter(item => isChatEnabled || item.label !== 'Chat');
 
+  // Adjusting label for Dashboard to match "Visão Geral" from image if strictly desired, 
+  // but keeping 'Dashboard' as key for internal logic consistency or mapping it here.
+  // For visual match with image:
+  const renderNavItems = mainNavItems.map(item => {
+      if (item.label === 'Dashboard') return { ...item, label: 'Visão Geral', originalKey: 'Dashboard' };
+      return { ...item, originalKey: item.label };
+  });
+
   return (
-    <aside className={`hidden md:flex flex-col bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800/80 p-4 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-60'}`}>
-      <div className={`flex items-center gap-3 mb-8 px-2 h-8 ${isCollapsed ? 'justify-center' : ''}`}>
+    <aside className={`hidden md:flex flex-col bg-slate-950 border-r border-slate-800/60 p-4 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
+      <div className={`flex items-center gap-3 mb-10 px-2 h-8 ${isCollapsed ? 'justify-center' : ''}`}>
          {!isCollapsed && (
-             <h1 className="text-xl font-bold text-zinc-900 dark:text-white whitespace-nowrap flex items-center gap-2">
-                <Zap className="w-6 h-6 text-violet-500" />
+             <h1 className="text-xl font-bold text-white whitespace-nowrap flex items-center gap-2 tracking-tight">
+                <Zap className="w-6 h-6 text-blue-500 fill-blue-500/20" />
                 <span>CRM</span>
              </h1>
          )}
-         <button onClick={onToggle} className={`p-1 rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-zinc-600 ${!isCollapsed ? 'ml-auto' : ''}`}>
-            <PanelLeft className="w-6 h-6" />
+         <button onClick={onToggle} className={`p-1.5 rounded-md text-slate-500 hover:bg-slate-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-slate-700 ${!isCollapsed ? 'ml-auto' : ''}`}>
+            <PanelLeft className="w-5 h-5" />
          </button>
       </div>
 
-      <nav className="flex-1">
+      <nav className="flex-1 overflow-y-auto no-scrollbar space-y-6">
         <ul className="space-y-1">
-            {mainNavItems.map((item) => (
-                <li key={item.label}>
-                    <NavItem item={item} isActive={activeView === item.label} onClick={() => onNavigate(item.label)} isCollapsed={isCollapsed} />
+            {renderNavItems.map((item) => (
+                <li key={item.originalKey}>
+                    <NavItem 
+                        item={item} 
+                        isActive={activeView === item.originalKey} 
+                        onClick={() => onNavigate(item.originalKey)} 
+                        isCollapsed={isCollapsed} 
+                    />
                 </li>
             ))}
         </ul>
-      </nav>
 
-      <nav>
+        {/* Separator if needed, or just spacing */}
+        {!isCollapsed && <div className="h-px bg-slate-800/50 mx-2 my-2"></div>}
+
         <ul className="space-y-1">
             {secondaryNavItems.map((item) => (
                  <li key={item.label}>
-                    <NavItem item={item} isActive={activeView === item.label} onClick={() => onNavigate(item.label)} isCollapsed={isCollapsed} />
+                    <NavItem 
+                        item={item} 
+                        isActive={activeView === item.label} 
+                        onClick={() => onNavigate(item.label)} 
+                        isCollapsed={isCollapsed} 
+                    />
                 </li>
             ))}
         </ul>
       </nav>
-
+      
+      {/* Optional: User profile snippet at bottom could go here */}
     </aside>
   );
 };
+
+// Helper component for Inbox icon which was missing in imports but shown in image example
+function Inbox(props: any) {
+    return (
+      <svg
+        {...props}
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+        <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+      </svg>
+    )
+}
 
 export default Sidebar;

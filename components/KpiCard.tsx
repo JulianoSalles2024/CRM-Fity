@@ -1,26 +1,44 @@
+
 import React from 'react';
-import { LucideProps } from 'lucide-react';
+import { LucideProps, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface KpiCardProps {
     title: string;
     value: string;
-    icon: React.FC<LucideProps>;
-    iconColor: string; // e.g., "text-violet-400"
+    icon: React.ElementType;
+    iconColor: string; // e.g., "text-blue-500"
+    trend?: number; // percentage
+    trendDirection?: 'up' | 'down';
 }
 
-const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon: Icon, iconColor }) => {
-    // Dynamically create border color class from text color class
-    const borderColorClass = iconColor.replace('text-', 'border-');
+const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon: Icon, iconColor, trend = 0, trendDirection = 'up' }) => {
+    // Extract color name for background opacity usage (e.g., text-blue-500 -> bg-blue-500/10)
+    // Simple heuristic: replace 'text-' with 'bg-' and add opacity
+    const bgClass = iconColor.replace('text-', 'bg-') + '/10';
+    const borderClass = iconColor.replace('text-', 'border-') + '/20';
 
     return (
-        <div className={`bg-white dark:bg-zinc-900 p-6 rounded-lg border-2 flex items-center gap-5 transition-all duration-200 ease-in-out hover:bg-gray-50 dark:hover:bg-zinc-800/50 hover:-translate-y-1 hover:shadow-lg ${borderColorClass}`}>
-            <div className={`w-12 h-12 rounded-lg bg-violet-100 dark:bg-violet-900/50 flex-shrink-0 flex items-center justify-center`}>
-                <Icon className={`w-6 h-6 ${iconColor}`} />
+        <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 flex flex-col justify-between h-full relative overflow-hidden group">
+            <div className="flex justify-between items-start mb-2 relative z-10">
+                <div>
+                    <p className="text-sm font-medium text-slate-400">{title}</p>
+                    <h3 className="text-3xl font-bold text-white mt-3 tracking-tight">{value}</h3>
+                </div>
+                <div className={`p-3 rounded-lg ${bgClass} border ${borderClass} flex-shrink-0`}>
+                    <Icon className={`w-6 h-6 ${iconColor}`} />
+                </div>
             </div>
-            <div>
-                 <p className="text-3xl font-bold text-zinc-900 dark:text-white">{value}</p>
-                 <p className="text-base text-zinc-500 dark:text-zinc-400">{title}</p>
+            
+            <div className="flex items-center gap-2 mt-4 relative z-10">
+                <div className={`flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-md ${trendDirection === 'up' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                    {trendDirection === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                    <span>{trend > 0 ? '+' : ''}{trend}%</span>
+                </div>
+                <span className="text-xs text-slate-500 font-medium">vs mês anterior</span>
             </div>
+            
+            {/* Subtle gradient glow effect on hover */}
+            <div className={`absolute -right-10 -bottom-10 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-20 transition-opacity duration-500 ${bgClass.replace('/10', '')}`}></div>
         </div>
     );
 };

@@ -802,7 +802,7 @@ const App: React.FC = () => {
     };
 
     return (
-      <div className="flex h-screen bg-gray-50 dark:bg-zinc-800 text-zinc-800 dark:text-gray-300">
+      <div className="flex h-screen text-zinc-800 dark:text-gray-300">
         <Sidebar
             activeView={activeView}
             onNavigate={setActiveView}

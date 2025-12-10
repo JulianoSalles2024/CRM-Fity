@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -11,6 +12,9 @@
     <style>
       body {
         font-family: 'Inter', sans-serif;
+        background-color: #020617; /* slate-950 */
+        background-image: radial-gradient(#1e293b 1px, transparent 1px);
+        background-size: 32px 32px;
       }
       /* Light mode scrollbar */
       ::-webkit-scrollbar {
@@ -30,13 +34,13 @@
       
       /* Dark mode scrollbar */
       .dark ::-webkit-scrollbar-track {
-        background: #18181b; /* zinc-900 */
+        background: #020617; /* slate-950 */
       }
       .dark ::-webkit-scrollbar-thumb {
-        background: #3f3f46; /* zinc-700 */
+        background: #1e293b; /* slate-800 */
       }
       .dark ::-webkit-scrollbar-thumb:hover {
-        background: #52525b; /* zinc-600 */
+        background: #334155; /* slate-700 */
       }
     </style>
   <script type="importmap">
@@ -64,7 +68,7 @@
   }
 </script>
 </head>
-  <body class="bg-gray-50 text-zinc-800 dark:bg-zinc-900 dark:text-gray-300">
+  <body class="bg-gray-50 text-zinc-800 dark:bg-slate-950 dark:text-gray-300">
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
   </body>

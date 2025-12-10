@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { ColumnData, Lead } from '../types';
 import { ChevronsRight } from 'lucide-react';
@@ -10,9 +11,10 @@ interface PipelineOverviewProps {
 
 const PipelineOverview: React.FC<PipelineOverviewProps> = ({ columns, leads, onNavigate }) => {
     
-    const currencyFormatter = new Intl.NumberFormat('pt-BR', {
+    const currencyFormatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: 'BRL',
+        currency: 'USD',
+        maximumFractionDigits: 0,
     });
 
     const overviewData = useMemo(() => {
@@ -28,22 +30,25 @@ const PipelineOverview: React.FC<PipelineOverviewProps> = ({ columns, leads, onN
     }, [columns, leads]);
 
     return (
-        <div className="bg-white dark:bg-zinc-900 p-5 rounded-lg border border-zinc-200 dark:border-zinc-800 h-full flex flex-col transition-all duration-200 ease-in-out hover:bg-gray-50 dark:hover:bg-zinc-800/50 hover:-translate-y-1 hover:shadow-lg">
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="font-semibold text-zinc-900 dark:text-white">Visão Geral do Pipeline</h2>
-                <button onClick={() => onNavigate('Pipeline')} className="flex items-center gap-1 text-sm text-violet-500 dark:text-violet-400 hover:text-violet-600 dark:hover:text-violet-300">
-                    <span>Ver tudo</span>
-                    <ChevronsRight className="w-4 h-4" />
-                </button>
+        <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 h-full flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="font-bold text-white text-lg">Funil de Vendas</h2>
             </div>
-            <div className="flex-1 space-y-2">
+            <div className="flex-1 space-y-4">
                 {overviewData.map(stage => (
-                    <div key={stage.id} className="p-3 bg-gray-100 dark:bg-zinc-800 rounded-md flex justify-between items-center transition-colors hover:bg-gray-200 dark:hover:bg-zinc-700">
-                        <div>
-                            <p className="font-medium text-zinc-900 dark:text-white">{stage.title}</p>
-                            <p className="text-xs text-zinc-500 dark:text-zinc-400">{stage.leadCount} leads</p>
+                    <div key={stage.id} className="group flex items-center justify-between p-3 rounded-lg hover:bg-slate-800 transition-colors cursor-default border border-transparent hover:border-slate-700/50">
+                        <div className="flex-1">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">{stage.title}</span>
+                                <span className="text-xs text-slate-500 font-mono">{stage.leadCount}</span>
+                            </div>
+                            <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800/50">
+                                <div 
+                                    className="h-full rounded-full opacity-80" 
+                                    style={{ width: `${Math.min(stage.leadCount * 10, 100)}%`, backgroundColor: stage.color }}
+                                />
+                            </div>
                         </div>
-                        <p className="font-semibold text-teal-700 dark:text-teal-400">{currencyFormatter.format(stage.value)}</p>
                     </div>
                 ))}
             </div>

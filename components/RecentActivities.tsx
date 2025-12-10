@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Activity as ActivityIcon, MessageSquare, ArrowRight, ChevronsRight, Mail } from 'lucide-react';
+import { Activity as ActivityIcon, MessageSquare, ArrowRight, ChevronsRight, Mail, MoreVertical } from 'lucide-react';
 import { Activity, Lead } from '../types';
 
 const formatTimestamp = (timestamp: string) => {
@@ -34,62 +35,62 @@ const RecentActivities: React.FC<RecentActivitiesProps> = ({ activities, leads, 
     
     const getActivityIcon = (type: Activity['type']) => {
         switch (type) {
-            case 'note': return <MessageSquare className="w-4 h-4 text-violet-400" />;
-            case 'email_sent': return <Mail className="w-4 h-4 text-violet-400" />;
-            case 'status_change': return <ArrowRight className="w-4 h-4 text-violet-400" />;
-            default: return <ActivityIcon className="w-4 h-4 text-violet-400" />;
-        }
-    };
-
-    const getActivityText = (type: Activity['type']) => {
-        switch (type) {
-            case 'note': return 'adicionou uma nota em';
-            case 'email_sent': return 'enviou um email para';
-            case 'status_change': return 'atualizou';
-            default: return 'realizou uma ação em';
+            case 'note': return <MessageSquare className="w-4 h-4 text-purple-400" />;
+            case 'email_sent': return <Mail className="w-4 h-4 text-blue-400" />;
+            case 'status_change': return <ArrowRight className="w-4 h-4 text-emerald-400" />;
+            default: return <ActivityIcon className="w-4 h-4 text-slate-400" />;
         }
     };
 
     return (
-         <div className="bg-white dark:bg-zinc-900 p-5 rounded-lg border border-zinc-200 dark:border-zinc-800 h-full flex flex-col transition-all duration-200 ease-in-out hover:bg-gray-50 dark:hover:bg-zinc-800/50 hover:-translate-y-1 hover:shadow-lg">
-            <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-2">
-                    <ActivityIcon className="w-5 h-5 text-violet-400" />
-                    <h2 className="font-semibold text-zinc-900 dark:text-white">Atividades Recentes</h2>
-                </div>
-                 <button onClick={() => onNavigate('Tarefas')} className="flex items-center gap-1 text-sm text-violet-500 dark:text-violet-400 hover:text-violet-600 dark:hover:text-violet-300">
-                    <span>Ver tudo</span>
-                    <ChevronsRight className="w-4 h-4" />
+         <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 h-full flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="font-bold text-white text-lg">Atividades Recentes</h2>
+                <button className="text-slate-500 hover:text-white transition-colors">
+                    <MoreVertical className="w-5 h-5" />
                 </button>
             </div>
             {sortedActivities.length > 0 ? (
-                <ul className="space-y-4 flex-1 overflow-y-auto -mr-2 pr-2">
-                    {sortedActivities.map(activity => (
-                         <li key={activity.id} className="flex gap-3 items-start">
-                            <div className="flex-shrink-0 bg-gray-100 dark:bg-zinc-800 h-8 w-8 rounded-full flex items-center justify-center mt-1">
+                <ul className="space-y-0 flex-1 overflow-y-auto">
+                    {sortedActivities.map((activity, index) => (
+                         <li key={activity.id} className={`flex gap-4 items-start py-4 ${index !== sortedActivities.length - 1 ? 'border-b border-slate-800/50' : ''}`}>
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-950 flex items-center justify-center border border-slate-800">
                                 {getActivityIcon(activity.type)}
                             </div>
-                            <div className="flex-1">
-                                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-snug">
-                                    <span className="font-semibold text-zinc-900 dark:text-white">{activity.authorName}</span>
-                                    {` ${getActivityText(activity.type)} `}
-                                    <a href="#" className="font-semibold text-zinc-900 dark:text-white hover:underline">{getLeadName(activity.leadId)}</a>.
-                                    <span className="text-xs text-zinc-400 dark:text-zinc-500 ml-2">{formatTimestamp(activity.timestamp)}</span>
+                            <div className="flex-1 min-w-0 pt-0.5">
+                                <p className="text-sm text-slate-300 truncate">
+                                    <span className="font-semibold text-white">{activity.authorName}</span>
+                                    {' '}
+                                    <span className="text-slate-500">
+                                        {activity.type === 'note' ? 'adicionou nota em' : 
+                                         activity.type === 'email_sent' ? 'enviou email para' :
+                                         activity.type === 'status_change' ? 'atualizou status de' : 'interagiu com'}
+                                    </span>
+                                    {' '}
+                                    <button onClick={() => {}} className="font-medium text-blue-400 hover:underline truncate align-bottom">
+                                        {getLeadName(activity.leadId)}
+                                    </button>
                                 </p>
-                                {activity.type === 'note' ? (
-                                    <p className="text-sm mt-1 text-zinc-500 dark:text-zinc-400 italic border-l-2 border-zinc-200 dark:border-zinc-700 pl-2">"{activity.text}"</p>
-                                ) : (
-                                    <p className="text-sm mt-1 text-zinc-500 dark:text-zinc-400">{activity.text}</p>
+                                <p className="text-xs text-slate-600 mt-1">{formatTimestamp(activity.timestamp)}</p>
+                                {activity.type === 'note' && (
+                                    <div className="mt-2 p-3 bg-slate-950/50 rounded-lg border border-slate-800 text-sm text-slate-400 italic">
+                                        "{activity.text}"
+                                    </div>
                                 )}
                             </div>
                         </li>
                     ))}
                 </ul>
             ) : (
-                <div className="flex items-center justify-center flex-1 min-h-[150px] border-2 border-dashed border-zinc-200 dark:border-zinc-700/50 rounded-md">
-                    <p className="text-sm text-zinc-400 dark:text-zinc-500">Nenhuma atividade registrada ainda</p>
+                <div className="flex flex-col items-center justify-center flex-1 text-center py-10">
+                    <p className="text-slate-500">Nenhuma atividade recente.</p>
                 </div>
             )}
+            <div className="mt-4 pt-4 border-t border-slate-800">
+                <button onClick={() => onNavigate('Tarefas')} className="w-full py-2 text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors text-center border border-slate-800 rounded-lg hover:bg-slate-800">
+                    Ver todas as atividades
+                </button>
+            </div>
         </div>
     );
 };
