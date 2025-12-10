@@ -14,9 +14,10 @@ interface DashboardProps {
     onNavigate: (view: string) => void;
     onAnalyzePortfolio?: () => void;
     showNotification: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
+    onExportReport?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks, onNavigate, onAnalyzePortfolio, showNotification }) => {
+const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks, onNavigate, onAnalyzePortfolio, showNotification, onExportReport }) => {
 
     const kpiData = useMemo(() => {
         const wonColumnIds = columns.filter(c => c.type === 'won').map(c => c.id);
@@ -106,7 +107,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     >
                         Análise de Carteira
                     </button>
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors text-sm font-medium shadow-lg shadow-blue-900/20 border border-blue-500/50">
+                    <button 
+                        onClick={onExportReport}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors text-sm font-medium shadow-lg shadow-blue-900/20 border border-blue-500/50"
+                    >
                         Baixar Relatório
                     </button>
                 </div>

@@ -655,7 +655,16 @@ const App: React.FC = () => {
                     onMarkNotificationRead={(id) => setNotifications(curr => curr.map(n => n.id === id ? { ...n, isRead: true } : n))}
                 />;
             case 'Dashboard':
-                return <Dashboard leads={filteredLeads} columns={columns} activities={activities} tasks={tasks} onNavigate={setActiveView} onAnalyzePortfolio={handleStartAnalysis} showNotification={showNotification} />;
+                return <Dashboard 
+                            leads={filteredLeads} 
+                            columns={columns} 
+                            activities={activities} 
+                            tasks={tasks} 
+                            onNavigate={setActiveView} 
+                            onAnalyzePortfolio={handleStartAnalysis} 
+                            showNotification={showNotification} 
+                            onExportReport={() => handleExportPDF(filteredLeads)}
+                       />;
             case 'Pipeline':
                 return <KanbanBoard
                     columns={columns}
