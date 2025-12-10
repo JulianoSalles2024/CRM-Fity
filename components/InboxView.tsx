@@ -1,8 +1,8 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Task, Notification, Lead, Id } from '../types';
-import { CheckCircle2, Bell, Clock, Calendar, ArrowRight, UserPlus, AlertCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { CheckCircle2, Bell, Clock, Calendar, ArrowRight, UserPlus, AlertCircle, List, ScanLine, Circle, Play, Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface InboxViewProps {
     tasks: Task[];
@@ -10,10 +10,12 @@ interface InboxViewProps {
     leads: Lead[];
     onNavigate: (view: string, itemId?: Id) => void;
     onMarkNotificationRead: (id: Id) => void;
+    mode?: 'standard' | 'analysis';
 }
 
-const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNavigate, onMarkNotificationRead }) => {
+const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNavigate, onMarkNotificationRead, mode = 'standard' }) => {
     
+    // --- Standard Inbox Logic ---
     const today = new Date();
     today.setHours(0,0,0,0);
 
@@ -42,11 +44,203 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
     const handleNotificationClick = (notification: Notification) => {
         onMarkNotificationRead(notification.id);
         if (notification.link) {
-            // Logic to handle navigation would go here in a real routing setup
-            // For now we just mark read
+            // Logic to handle navigation could go here
         }
     };
 
+    // --- Analysis Mode Logic ---
+    const [viewMode, setViewMode] = useState<'list' | 'focus'>('focus');
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isFinished, setIsFinished] = useState(false);
+
+    // Mock logic for "Churn Risk" items: Leads active but haven't been updated in 30 days
+    const analysisItems = useMemo(() => {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        // Filter: Active status AND (lastActivity > 30 days ago OR created > 30 days ago if no activity)
+        // For demonstration purposes, if list is empty, we might include some defaults or show empty state.
+        const riskyLeads = leads.filter(l => {
+            const lastDate = l.lastActivityTimestamp ? new Date(l.lastActivityTimestamp) : new Date(l.createdAt || Date.now());
+            return l.status === 'Ativo' && lastDate < thirtyDaysAgo;
+        });
+        
+        // If empty for demo, let's just take the first 3 leads to show the UI
+        return riskyLeads.length > 0 ? riskyLeads : leads.slice(0, 3);
+    }, [leads]);
+
+    const currentItem = analysisItems[currentIndex];
+
+    const handleNext = () => {
+        if (currentIndex < analysisItems.length - 1) {
+            setCurrentIndex(prev => prev + 1);
+        } else {
+            setIsFinished(true);
+        }
+    };
+
+    const handlePrev = () => {
+        if (currentIndex > 0) {
+            setCurrentIndex(prev => prev - 1);
+        }
+    };
+
+    // --- Render: Analysis Mode ---
+    if (mode === 'analysis') {
+        return (
+            <div className="flex flex-col gap-6 h-full max-w-5xl mx-auto w-full relative">
+                
+                {/* Header - Hidden in Focus Mode for cleaner look, but Toggle remains */}
+                <div className={`flex items-center justify-between ${viewMode === 'focus' && !isFinished ? 'absolute top-0 right-0 z-10 w-full pointer-events-none' : ''}`}>
+                    {viewMode === 'list' || isFinished ? (
+                        <div>
+                            <h1 className="text-3xl font-bold text-white">Inbox</h1>
+                            <p className="text-slate-400 mt-1">Sua mesa de trabalho.</p>
+                        </div>
+                    ) : (
+                        <div /> /* Spacer */
+                    )}
+                    
+                    {!isFinished && (
+                        <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-1 pointer-events-auto shadow-lg">
+                            <button 
+                                onClick={() => setViewMode('list')}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                <List className="w-4 h-4" />
+                                Lista
+                            </button>
+                            <button 
+                                onClick={() => setViewMode('focus')}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'focus' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                <ScanLine className="w-4 h-4" />
+                                Foco
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex-1 flex flex-col items-center justify-center">
+                    {isFinished || analysisItems.length === 0 ? (
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="text-center"
+                        >
+                            <div className="relative inline-block">
+                                <motion.div 
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: 'spring', delay: 0.2 }}
+                                    className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-emerald-500/20"
+                                >
+                                    <Check className="w-12 h-12 text-white" strokeWidth={3} />
+                                </motion.div>
+                                <div className="absolute -top-2 -right-4 text-3xl">🎉</div>
+                            </div>
+                            <h3 className="text-3xl font-bold text-white mb-2">Inbox Zero!</h3>
+                            <p className="text-slate-400 text-lg">Você zerou tudo. Aproveite o momento ou planeje o futuro.</p>
+                        </motion.div>
+                    ) : viewMode === 'focus' && currentItem ? (
+                        <div className="w-full max-w-2xl flex flex-col items-center justify-center min-h-[60vh]">
+                            {/* Icon */}
+                            <motion.div 
+                                initial={{ y: -20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                className="mb-8 p-4 bg-slate-900/30 rounded-2xl border border-slate-800/50 backdrop-blur-sm shadow-xl"
+                            >
+                                <CheckCircle2 className="w-6 h-6 text-slate-400" />
+                            </motion.div>
+
+                            {/* Title */}
+                            <motion.h2 
+                                key={`title-${currentItem.id}`}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="text-3xl font-bold text-white mb-6 text-center tracking-tight"
+                            >
+                                Análise de Carteira: Risco de Churn
+                            </motion.h2>
+
+                            {/* Description */}
+                            <motion.div 
+                                key={`desc-${currentItem.id}`}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="text-slate-400 text-center text-lg mb-16 max-w-xl leading-relaxed"
+                            >
+                                "O cliente <span className="text-slate-200 font-medium">{currentItem.name}</span> (Empresa: {currentItem.company}) não compra há mais de 30 dias."
+                            </motion.div>
+
+                            {/* Buttons */}
+                            <div className="flex items-center justify-center gap-6 mb-16">
+                                <button onClick={handleNext} className="flex items-center gap-2 px-6 py-3.5 text-slate-300 hover:text-white rounded-xl font-medium transition-all bg-slate-950 border border-slate-800 hover:border-slate-700 group">
+                                    <Clock className="w-5 h-5 text-slate-500 group-hover:text-white transition-colors" /> Adiar
+                                </button>
+                                
+                                <button onClick={handleNext} className="flex items-center gap-2 px-10 py-4 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl font-bold transition-all shadow-[0_0_30px_-10px_rgba(16,185,129,0.5)] hover:shadow-[0_0_40px_-5px_rgba(16,185,129,0.6)] transform hover:-translate-y-1 hover:scale-105">
+                                    <Check className="w-6 h-6" /> Feito
+                                </button>
+                                
+                                <button onClick={handleNext} className="flex items-center gap-2 px-6 py-3.5 text-slate-300 hover:text-white rounded-xl font-medium transition-all bg-slate-950 border border-slate-800 hover:border-slate-700 group">
+                                    Pular <Play className="w-4 h-4 ml-1 text-slate-500 group-hover:text-white transition-colors" />
+                                </button>
+                            </div>
+
+                            {/* Navigation / Pagination */}
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="flex items-center gap-6 text-slate-600">
+                                    <button onClick={handlePrev} disabled={currentIndex === 0} className="hover:text-slate-400 disabled:opacity-20 transition-colors p-2">
+                                        <ChevronLeft className="w-6 h-6" />
+                                    </button>
+                                    
+                                    {/* Progress Bar / Indicator */}
+                                    <div className="h-1.5 w-16 bg-slate-800 rounded-full overflow-hidden">
+                                         <motion.div 
+                                            className="h-full bg-blue-500" 
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${((currentIndex + 1) / analysisItems.length) * 100}%` }}
+                                         />
+                                    </div>
+
+                                    <button onClick={handleNext} className="hover:text-slate-400 transition-colors p-2">
+                                        <ChevronRight className="w-6 h-6" />
+                                    </button>
+                                </div>
+                                <span className="text-xs font-medium text-slate-500 uppercase tracking-widest">{currentIndex + 1} de {analysisItems.length} pendências</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="w-full max-w-3xl space-y-3">
+                            <div className="flex items-center gap-2 mb-4 text-sm font-semibold text-slate-500 uppercase tracking-wider">
+                                <ChevronDown className="w-4 h-4" /> Tarefas Hoje <span className="bg-slate-800 text-slate-300 px-1.5 rounded-full text-xs ml-1">{analysisItems.length}</span>
+                            </div>
+                            {analysisItems.map(lead => (
+                                <motion.div 
+                                    key={lead.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-slate-900 border border-slate-800 rounded-lg p-4 flex items-center gap-4 hover:border-slate-700 transition-colors group cursor-pointer"
+                                >
+                                    <div className="w-6 h-6 rounded-full border-2 border-slate-600 group-hover:border-slate-500 flex-shrink-0" />
+                                    <div className="flex-1">
+                                        <h3 className="text-white font-medium">Análise de Carteira: Risco de Churn</h3>
+                                        <p className="text-sm text-slate-400 truncate">O cliente {lead.name} (Empresa: {lead.company}) não...</p>
+                                    </div>
+                                    <div className="text-xs text-slate-500 font-mono">
+                                        Hoje
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // --- Render: Standard Inbox ---
     return (
         <div className="flex flex-col gap-6 h-full">
             <div className="flex items-center gap-4 mb-2">

@@ -81,6 +81,7 @@ const App: React.FC = () => {
 
 
     const [activeView, setActiveView] = useState('Inbox');
+    const [inboxMode, setInboxMode] = useState<'standard' | 'analysis'>('standard');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('crm-theme') as 'dark' | 'light') || 'dark');
@@ -99,7 +100,7 @@ const App: React.FC = () => {
 
 
     // Notification State
-    const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+    const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
     
     // Playbook states
     const [selectedLeadForPlaybookId, setSelectedLeadForPlaybookId] = useState<Id | null>(null);
@@ -123,7 +124,7 @@ const App: React.FC = () => {
     const [listStatusFilter, setListStatusFilter] = useState<'all' | 'Ativo' | 'Inativo'>('all');
     const [selectedGroupForView, setSelectedGroupForView] = useState<Id | null>(null);
 
-    const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => setNotification({ message, type }), []);
+    const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => setNotification({ message, type }), []);
     
     // Theme effect
     useEffect(() => {
@@ -136,6 +137,13 @@ const App: React.FC = () => {
         }
     }, [theme]);
     
+    // Switch to standard inbox mode when leaving Inbox view
+    useEffect(() => {
+        if (activeView !== 'Inbox') {
+            setInboxMode('standard');
+        }
+    }, [activeView]);
+
     // Reactivation Task/Notification Effect
     useEffect(() => {
         const today = new Date();
@@ -620,6 +628,11 @@ const App: React.FC = () => {
         setSelectedLeadForPlaybookId(lead.id);
     };
 
+    const handleStartAnalysis = () => {
+        setActiveView('Inbox');
+        setInboxMode('analysis');
+    };
+
 
     // --- RENDER LOGIC ---
     const renderView = () => {
@@ -634,6 +647,7 @@ const App: React.FC = () => {
         switch (activeView) {
             case 'Inbox':
                 return <InboxView
+                    mode={inboxMode}
                     tasks={tasks}
                     notifications={notifications}
                     leads={leads}
@@ -641,7 +655,7 @@ const App: React.FC = () => {
                     onMarkNotificationRead={(id) => setNotifications(curr => curr.map(n => n.id === id ? { ...n, isRead: true } : n))}
                 />;
             case 'Dashboard':
-                return <Dashboard leads={filteredLeads} columns={columns} activities={activities} tasks={tasks} onNavigate={setActiveView} />;
+                return <Dashboard leads={filteredLeads} columns={columns} activities={activities} tasks={tasks} onNavigate={setActiveView} onAnalyzePortfolio={handleStartAnalysis} showNotification={showNotification} />;
             case 'Pipeline':
                 return <KanbanBoard
                     columns={columns}

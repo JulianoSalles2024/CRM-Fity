@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Lead, ColumnData, Activity, Task } from '../types';
 import { Users, Target, TrendingUp, DollarSign, ChevronDown, UserCheck, AlertTriangle, Wallet } from 'lucide-react';
 import KpiCard from './KpiCard';
@@ -12,9 +12,11 @@ interface DashboardProps {
     activities: Activity[];
     tasks: Task[];
     onNavigate: (view: string) => void;
+    onAnalyzePortfolio?: () => void;
+    showNotification: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks, onNavigate }) => {
+const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks, onNavigate, onAnalyzePortfolio, showNotification }) => {
 
     const kpiData = useMemo(() => {
         const wonColumnIds = columns.filter(c => c.type === 'won').map(c => c.id);
@@ -68,6 +70,24 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         maximumFractionDigits: 0,
     }); 
 
+    // Risk Detection Logic
+    useEffect(() => {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        // Filter: Active status AND (lastActivity > 30 days ago OR created > 30 days ago if no activity)
+        const riskLeads = leads.filter(l => {
+            const lastDate = l.lastActivityTimestamp ? new Date(l.lastActivityTimestamp) : new Date(l.createdAt || Date.now());
+            return l.status === 'Ativo' && lastDate < thirtyDaysAgo;
+        });
+
+        if (riskLeads.length > 0) {
+            showNotification(`${riskLeads.length} alertas de risco gerados na lista de atividades!`, 'warning');
+        } else {
+            showNotification('Nenhum novo risco detectado. Carteira saudável!', 'success');
+        }
+    }, [leads, showNotification]);
+
     return (
         <div className="flex flex-col gap-8 pb-10">
             {/* Header Section */}
@@ -80,7 +100,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     <button className="flex items-center gap-2 bg-slate-900 text-slate-300 px-4 py-2 rounded-lg border border-slate-800 hover:bg-slate-800 hover:text-white transition-colors text-sm font-medium">
                         Este Mês <ChevronDown className="w-4 h-4" />
                     </button>
-                    <button className="bg-slate-900 text-slate-300 px-4 py-2 rounded-lg border border-slate-800 hover:bg-slate-800 hover:text-white transition-colors text-sm font-medium">
+                    <button 
+                        onClick={onAnalyzePortfolio}
+                        className="bg-slate-900 text-slate-300 px-4 py-2 rounded-lg border border-slate-800 hover:bg-slate-800 hover:text-white transition-colors text-sm font-medium"
+                    >
                         Análise de Carteira
                     </button>
                     <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors text-sm font-medium shadow-lg shadow-blue-900/20 border border-blue-500/50">
@@ -173,7 +196,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                                 <span className="text-red-400 text-[10px] font-bold uppercase bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded tracking-wide">Alertas</span>
                             </div>
                             <p className="text-xs text-slate-500 mb-5 leading-relaxed">Clientes ativos sem compra há {'>'} 30 dias.</p>
-                            <button className="text-sm text-blue-400 font-medium hover:text-blue-300 self-start transition-colors flex items-center gap-1">
+                            <button 
+                                onClick={onAnalyzePortfolio}
+                                className="text-sm text-blue-400 font-medium hover:text-blue-300 self-start transition-colors flex items-center gap-1"
+                            >
                                 Rodar verificação agora
                             </button>
                         </div>
