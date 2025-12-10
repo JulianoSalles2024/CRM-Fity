@@ -37,8 +37,8 @@ const NavItem: React.FC<{
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, onToggle, isChatEnabled }) => {
   const mainNavItems = [
-    { icon: Inbox, label: 'Inbox' }, // First step
-    { icon: LayoutDashboard, label: 'Dashboard' }, // Visão Geral below Inbox
+    { icon: Inbox, label: 'Inbox' },
+    { icon: LayoutDashboard, label: 'Dashboard' },
     { icon: Columns, label: 'Pipeline' },
     { icon: BookOpen, label: 'Playbooks' },
     { icon: Users, label: 'Leads' },
@@ -48,12 +48,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, 
     { icon: ArchiveRestore, label: 'Recuperação' },
     { icon: MessageSquare, label: 'Chat' },
     { icon: Users, label: 'Grupos' },
-    { icon: ToyBrick, label: 'Integrações' },
+    // { icon: ToyBrick, label: 'Integrações' }, // Removed: moved to Settings
   ].filter(item => isChatEnabled || item.label !== 'Chat');
 
-  // Adjusting label for Dashboard to match "Visão Geral" from image if strictly desired, 
-  // but keeping 'Dashboard' as key for internal logic consistency or mapping it here.
-  // For visual match with image:
   const renderNavItems = mainNavItems.map(item => {
       if (item.label === 'Dashboard') return { ...item, label: 'Visão Geral', originalKey: 'Dashboard' };
       return { ...item, originalKey: item.label };
@@ -73,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, 
          </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto no-scrollbar space-y-6">
+      <nav className="flex-1 overflow-y-auto no-scrollbar">
         <ul className="space-y-1">
             {renderNavItems.map((item) => (
                 <li key={item.originalKey}>
@@ -86,10 +83,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, 
                 </li>
             ))}
         </ul>
+      </nav>
 
-        {/* Separator if needed, or just spacing */}
-        {!isCollapsed && <div className="h-px bg-slate-800/50 mx-2 my-2"></div>}
-
+      <div className="mt-auto pt-4 border-t border-slate-800/50">
         <ul className="space-y-1">
             {secondaryNavItems.map((item) => (
                  <li key={item.label}>
@@ -102,14 +98,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, 
                 </li>
             ))}
         </ul>
-      </nav>
+      </div>
       
-      {/* Optional: User profile snippet at bottom could go here */}
     </aside>
   );
 };
 
-// Helper component for Inbox icon which was missing in imports but shown in image example
+// Helper component for Inbox icon
 function Inbox(props: any) {
     return (
       <svg
