@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -53,17 +54,17 @@ const MiniCalendar: React.FC<MiniCalendarProps> = ({ selectedDate, onDateSelect 
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
-                <button onClick={handlePrevMonth} className="p-1 text-zinc-400 hover:text-white rounded-full hover:bg-zinc-700">
+                <button onClick={handlePrevMonth} className="p-1 text-slate-400 hover:text-white rounded-full hover:bg-slate-800">
                     <ChevronLeft className="w-5 h-5" />
                 </button>
                 <h3 className="font-semibold text-white">
                     {displayDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
                 </h3>
-                <button onClick={handleNextMonth} className="p-1 text-zinc-400 hover:text-white rounded-full hover:bg-zinc-700">
+                <button onClick={handleNextMonth} className="p-1 text-slate-400 hover:text-white rounded-full hover:bg-slate-800">
                     <ChevronRight className="w-5 h-5" />
                 </button>
             </div>
-            <div className="grid grid-cols-7 gap-y-2 text-center text-xs text-zinc-400">
+            <div className="grid grid-cols-7 gap-y-2 text-center text-xs text-slate-500">
                 {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => <div key={day}>{day}</div>)}
             </div>
             <div className="mt-2 grid grid-cols-7 gap-y-1">
@@ -79,9 +80,9 @@ const MiniCalendar: React.FC<MiniCalendarProps> = ({ selectedDate, onDateSelect 
                             if (isSelected) {
                                 buttonClass += 'bg-violet-600 text-white font-semibold';
                             } else if (isToday) {
-                                buttonClass += 'bg-zinc-700 text-white';
+                                buttonClass += 'bg-slate-700 text-white';
                             } else {
-                                buttonClass += 'text-zinc-300 hover:bg-zinc-700/50';
+                                buttonClass += 'text-slate-300 hover:bg-slate-800';
                             }
 
                             return (

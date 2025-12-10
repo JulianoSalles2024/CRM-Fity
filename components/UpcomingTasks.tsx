@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Task, Lead } from '../types';
 import { CheckCircle2, ChevronsRight, Calendar } from 'lucide-react';
@@ -30,7 +31,7 @@ const UpcomingTasks: React.FC<UpcomingTasksProps> = ({ tasks, leads }) => {
         .slice(0, 4);
 
     return (
-        <div className="bg-zinc-800 p-5 rounded-lg border border-zinc-700 h-full flex flex-col">
+        <div className="bg-slate-900 p-5 rounded-lg border border-slate-800 h-full flex flex-col">
             <div className="flex justify-between items-center mb-4">
                  <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-5 h-5 text-violet-400" />
@@ -44,12 +45,12 @@ const UpcomingTasks: React.FC<UpcomingTasksProps> = ({ tasks, leads }) => {
             {upcomingTasks.length > 0 ? (
                 <div className="flex-1 space-y-3">
                     {upcomingTasks.map(task => (
-                        <div key={task.id} className="p-3 bg-zinc-900/50 rounded-md flex justify-between items-center">
+                        <div key={task.id} className="p-3 bg-slate-800/50 rounded-md flex justify-between items-center">
                             <div>
                                 <p className="font-medium text-white">{task.title}</p>
-                                <p className="text-xs text-zinc-400">Para: {leadsMap.get(task.leadId) || 'Lead desconhecido'}</p>
+                                <p className="text-xs text-slate-400">Para: {leadsMap.get(task.leadId) || 'Lead desconhecido'}</p>
                             </div>
-                            <div className="flex items-center gap-2 text-xs font-semibold px-2 py-1 rounded-md bg-zinc-700 text-zinc-300">
+                            <div className="flex items-center gap-2 text-xs font-semibold px-2 py-1 rounded-md bg-slate-800 text-slate-300">
                                 <Calendar className="w-3 h-3"/>
                                 <span>{formatDate(task.dueDate)}</span>
                             </div>
@@ -57,8 +58,8 @@ const UpcomingTasks: React.FC<UpcomingTasksProps> = ({ tasks, leads }) => {
                     ))}
                 </div>
             ) : (
-                 <div className="flex items-center justify-center flex-1 min-h-[150px] border-2 border-dashed border-zinc-700/50 rounded-md">
-                    <p className="text-sm text-zinc-500">Nenhuma tarefa pendente</p>
+                 <div className="flex items-center justify-center flex-1 min-h-[150px] border-2 border-dashed border-slate-800/50 rounded-md">
+                    <p className="text-sm text-slate-500">Nenhuma tarefa pendente</p>
                 </div>
             )}
         </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef } from 'react';
 import { Lead, ColumnData, Task, Activity } from '../types';
 import { BarChart, RefreshCw, Download, Users, Target, DollarSign, CheckCircle } from 'lucide-react';
@@ -19,12 +20,12 @@ interface ReportKpiCardProps {
 }
 
 const ReportKpiCard: React.FC<ReportKpiCardProps> = ({ title, value, icon: Icon, color }) => (
-    <div className="bg-zinc-800 p-5 rounded-lg border border-zinc-700 flex justify-between items-center transition-all duration-200 ease-in-out hover:bg-zinc-700/50 hover:-translate-y-1 hover:shadow-lg">
+    <div className="bg-slate-900 p-5 rounded-lg border border-slate-800 flex justify-between items-center transition-all duration-200 ease-in-out hover:bg-slate-800/50 hover:-translate-y-1 hover:shadow-lg">
         <div>
-            <p className="text-sm text-zinc-400">{title}</p>
+            <p className="text-sm text-slate-400">{title}</p>
             <p className="text-2xl font-bold text-white mt-1">{value}</p>
         </div>
-        <div className="w-12 h-12 rounded-full flex items-center justify-center animate-pulse" style={{ backgroundColor: '#8b5cf620' }}>
+        <div className="w-12 h-12 rounded-full flex items-center justify-center animate-pulse" style={{ backgroundColor: `${color}20` }}>
             <Icon className="w-6 h-6" style={{ color }} />
         </div>
     </div>
@@ -256,15 +257,15 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                         <g transform={`translate(${padding.left}, ${padding.top})`}>
                             {[...Array(5)].map((_, i) => (
                                 <g key={i}>
-                                    <line x1={0} y1={i * chartHeight / 4} x2={chartWidth} y2={i * chartHeight / 4} stroke="#404040" strokeWidth="1" strokeDasharray="3 3"/>
-                                    <text x={-10} y={i * chartHeight / 4 + 5} fill="#a1a1aa" textAnchor="end" fontSize="12">{currencyFormatter.format(maxRevenue * (1-i/4)).replace(/\,00$/, '')}</text>
+                                    <line x1={0} y1={i * chartHeight / 4} x2={chartWidth} y2={i * chartHeight / 4} stroke="#334155" strokeWidth="1" strokeDasharray="3 3"/>
+                                    <text x={-10} y={i * chartHeight / 4 + 5} fill="#94a3b8" textAnchor="end" fontSize="12">{currencyFormatter.format(maxRevenue * (1-i/4)).replace(/\,00$/, '')}</text>
                                 </g>
                             ))}
                             {[...Array(6)].map((_, i) => (
-                                <text key={i} x={chartWidth + 10} y={i * chartHeight / 5 + 5} fill="#a1a1aa" textAnchor="start" fontSize="12">{Math.round(maxCount * (1-i/5))}</text>
+                                <text key={i} x={chartWidth + 10} y={i * chartHeight / 5 + 5} fill="#94a3b8" textAnchor="start" fontSize="12">{Math.round(maxCount * (1-i/5))}</text>
                             ))}
                             {data.labels.map((label, i) => (
-                                <text key={label} x={points[i].x} y={chartHeight + 20} fill="#a1a1aa" textAnchor="middle" fontSize="12">{label}</text>
+                                <text key={label} x={points[i].x} y={chartHeight + 20} fill="#94a3b8" textAnchor="middle" fontSize="12">{label}</text>
                             ))}
     
                             <path d={`${revenuePath} L ${points[points.length-1].x},${chartHeight} L ${points[0].x},${chartHeight} Z`} fill={`url(#gradient-${data.datasets[0].label})`} />
@@ -278,10 +279,10 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                             <AnimatePresence>
                             {hoveredIndex !== null && (
                                 <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                                    <line x1={points[hoveredIndex].x} y1={0} x2={points[hoveredIndex].x} y2={chartHeight} stroke="#a1a1aa" strokeWidth="1" strokeDasharray="3 3" />
-                                    <circle cx={points[hoveredIndex].x} cy={points[hoveredIndex].revenue} r="5" fill={data.datasets[0].color} stroke="#18181b" strokeWidth="2" />
-                                    <circle cx={points[hoveredIndex].x} cy={points[hoveredIndex].newLeads} r="5" fill={data.datasets[1].color} stroke="#18181b" strokeWidth="2" />
-                                    <circle cx={points[hoveredIndex].x} cy={points[hoveredIndex].churn} r="5" fill={data.datasets[2].color} stroke="#18181b" strokeWidth="2" />
+                                    <line x1={points[hoveredIndex].x} y1={0} x2={points[hoveredIndex].x} y2={chartHeight} stroke="#94a3b8" strokeWidth="1" strokeDasharray="3 3" />
+                                    <circle cx={points[hoveredIndex].x} cy={points[hoveredIndex].revenue} r="5" fill={data.datasets[0].color} stroke="#1e293b" strokeWidth="2" />
+                                    <circle cx={points[hoveredIndex].x} cy={points[hoveredIndex].newLeads} r="5" fill={data.datasets[1].color} stroke="#1e293b" strokeWidth="2" />
+                                    <circle cx={points[hoveredIndex].x} cy={points[hoveredIndex].churn} r="5" fill={data.datasets[2].color} stroke="#1e293b" strokeWidth="2" />
                                 </motion.g>
                             )}
                             </AnimatePresence>
@@ -295,7 +296,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                                     left: tooltipPos.x, top: tooltipPos.y,
                                     transform: `translate(-50%, -110%)`
                                 }}
-                                className="absolute p-3 bg-zinc-900/80 backdrop-blur-sm border border-zinc-700 rounded-lg shadow-xl pointer-events-none"
+                                className="absolute p-3 bg-slate-900/90 backdrop-blur-sm border border-slate-700 rounded-lg shadow-xl pointer-events-none"
                             >
                                 <p className="font-bold text-white text-center mb-2">{data.labels[hoveredIndex]}</p>
                                 <div className="space-y-1 text-sm">
@@ -303,7 +304,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                                         <div key={ds.label} className="flex justify-between items-center gap-4">
                                             <div className="flex items-center gap-2">
                                                 <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ds.color }}/>
-                                                <span className="text-zinc-400">{ds.label}:</span>
+                                                <span className="text-slate-400">{ds.label}:</span>
                                             </div>
                                             <span className="font-semibold text-white">{ds.label === 'Receita' ? currencyFormatter.format(ds.data[hoveredIndex]) : ds.data[hoveredIndex]}</span>
                                         </div>
@@ -317,7 +318,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                     {data.datasets.map(ds => (
                         <div key={ds.label} className="flex items-center gap-2 text-sm">
                             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ds.color }} />
-                            <span className="text-zinc-300">{ds.label}</span>
+                            <span className="text-slate-300">{ds.label}</span>
                         </div>
                     ))}
                 </div>
@@ -332,14 +333,14 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                     <BarChart className="w-8 h-8 text-violet-500" />
                     <div>
                         <h1 className="text-2xl font-bold text-white">Relatórios</h1>
-                        <p className="text-zinc-400">Análise detalhada de desempenho e métricas</p>
+                        <p className="text-slate-400">Análise detalhada de desempenho e métricas</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button className="p-2.5 text-zinc-300 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 rounded-lg" title="Atualizar dados">
+                    <button className="p-2.5 text-slate-300 bg-slate-800 border border-slate-700 hover:bg-slate-700/80 rounded-lg" title="Atualizar dados">
                         <RefreshCw className="w-4 h-4" />
                     </button>
-                     <button className="p-2.5 text-zinc-300 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 rounded-lg" title="Baixar relatório">
+                     <button className="p-2.5 text-slate-300 bg-slate-800 border border-slate-700 hover:bg-slate-700/80 rounded-lg" title="Baixar relatório">
                         <Download className="w-4 h-4" />
                     </button>
                 </div>
@@ -353,7 +354,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-zinc-800 p-5 rounded-lg border border-zinc-700">
+                <div className="bg-slate-900 p-5 rounded-lg border border-slate-800">
                     <h3 className="font-semibold text-white mb-4">Funil de Conversão</h3>
                     <div className="space-y-3">
                         {reportData.funnelData.map(stage => {
@@ -361,8 +362,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                              const percentage = (stage.count / maxCount) * 100;
                              return (
                                 <div key={stage.id} className="flex items-center gap-3">
-                                    <p className="text-sm text-zinc-400 w-28 truncate" title={stage.title}>{stage.title}</p>
-                                    <div className="flex-1 bg-zinc-700 rounded-full h-4 relative">
+                                    <p className="text-sm text-slate-400 w-28 truncate" title={stage.title}>{stage.title}</p>
+                                    <div className="flex-1 bg-slate-800 rounded-full h-4 relative">
                                         <motion.div 
                                             initial={{ width: 0 }}
                                             animate={{ width: `${percentage}%` }}
@@ -381,15 +382,15 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                         })}
                     </div>
                 </div>
-                <div className="bg-zinc-800 p-5 rounded-lg border border-zinc-700 flex flex-col">
+                <div className="bg-slate-900 p-5 rounded-lg border border-slate-800 flex flex-col">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="font-semibold text-white">Desempenho ao Longo do Tempo</h3>
-                        <div className="flex items-center gap-1 p-1 bg-zinc-900/50 border border-zinc-700 rounded-lg">
+                        <div className="flex items-center gap-1 p-1 bg-slate-800 border border-slate-700 rounded-lg">
                             {(['day', 'week', 'month'] as const).map(view => (
                                 <button
                                     key={view}
                                     onClick={() => setChartViewMode(view)}
-                                    className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors duration-200 ${chartViewMode === view ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-400 hover:bg-zinc-700/50 hover:text-white'}`}
+                                    className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors duration-200 ${chartViewMode === view ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-700/50 hover:text-white'}`}
                                 >
                                     {view === 'day' ? 'Dia' : view === 'week' ? 'Semana' : 'Mês'}
                                 </button>
@@ -400,7 +401,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                         {timeSeriesData.labels.length > 1 ? (
                            <PerformanceChart data={timeSeriesData} />
                         ) : (
-                           <div className="h-full flex items-center justify-center text-zinc-500 text-sm">
+                           <div className="h-full flex items-center justify-center text-slate-500 text-sm">
                                 <p>Não há dados suficientes para o período selecionado.</p>
                            </div>
                         )}
@@ -408,24 +409,24 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                 </div>
             </div>
 
-            <div className="bg-zinc-800 rounded-lg border border-zinc-700 overflow-hidden">
+            <div className="bg-slate-900 rounded-lg border border-slate-800 overflow-hidden">
                 <h3 className="font-semibold text-white p-5">Top 10 Leads por Valor</h3>
                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-zinc-700">
-                        <thead className="bg-zinc-900/50">
+                    <table className="min-w-full divide-y divide-slate-800">
+                        <thead className="bg-slate-950/50">
                             <tr>
-                                <th className="px-5 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">Lead</th>
-                                <th className="px-5 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">Valor</th>
-                                <th className="px-5 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">Estágio</th>
-                                <th className="px-5 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">Probabilidade</th>
-                                <th className="px-5 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">Fechamento Esperado</th>
+                                <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Lead</th>
+                                <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Valor</th>
+                                <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Estágio</th>
+                                <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Probabilidade</th>
+                                <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Fechamento Esperado</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-zinc-700">
+                        <tbody className="divide-y divide-slate-800">
                             {reportData.topLeads.map(lead => (
-                                <tr key={lead.id} className="hover:bg-zinc-700/50 transition-colors">
+                                <tr key={lead.id} className="hover:bg-slate-800/50 transition-colors">
                                     <td className="px-5 py-4 whitespace-nowrap text-sm font-medium text-white">{lead.name}</td>
-                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-zinc-300">{currencyFormatter.format(lead.value)}</td>
+                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-300">{currencyFormatter.format(lead.value)}</td>
                                     <td className="px-5 py-4 whitespace-nowrap text-sm">
                                         {columnMap[lead.columnId] ? 
                                             <span className="px-2 py-0.5 text-xs font-semibold rounded-full" style={{ color: columnMap[lead.columnId].color, backgroundColor: `${columnMap[lead.columnId].color}20`}}>
@@ -434,20 +435,20 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                                             : '-'
                                         }
                                     </td>
-                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-zinc-300">
+                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-300">
                                         <div className="flex items-center gap-2">
-                                            <div className="w-20 bg-zinc-700 rounded-full h-1.5">
+                                            <div className="w-20 bg-slate-700 rounded-full h-1.5">
                                                 <div className="h-1.5 rounded-full" style={{ width: `${lead.probability || 0}%`, backgroundColor: '#8b5cf6' }}></div>
                                             </div>
                                             <span>{lead.probability || 0}%</span>
                                         </div>
                                     </td>
-                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-zinc-400">{lead.dueDate ? new Date(lead.dueDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—'}</td>
+                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-400">{lead.dueDate ? new Date(lead.dueDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—'}</td>
                                 </tr>
                             ))}
                              {reportData.topLeads.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="text-center py-10 text-zinc-500">
+                                    <td colSpan={5} className="text-center py-10 text-slate-500">
                                         Nenhum lead encontrado para este período.
                                     </td>
                                 </tr>

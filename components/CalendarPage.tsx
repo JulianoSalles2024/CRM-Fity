@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Task, Lead, Id } from '../types';
 import { Calendar as CalendarIcon, Plus, Mail, Phone, Users, FileText, CheckSquare } from 'lucide-react';
@@ -67,28 +68,28 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ tasks, leads, onNewActivity
                 <CalendarIcon className="w-8 h-8 text-violet-400" />
                 <div>
                     <h1 className="text-2xl font-bold text-white">Calendário</h1>
-                    <p className="text-zinc-400">Visualize seus compromissos e eventos agendados</p>
+                    <p className="text-slate-400">Visualize seus compromissos e eventos agendados</p>
                 </div>
             </div>
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
                 {/* Left Column */}
                 <div className="lg:col-span-1 flex flex-col gap-6">
-                    <div className="bg-zinc-900 p-4 rounded-lg border border-zinc-800">
+                    <div className="bg-slate-900 p-4 rounded-lg border border-slate-800">
                         <MiniCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} />
                     </div>
-                     <div className="bg-zinc-900 p-4 rounded-lg border border-zinc-800">
+                     <div className="bg-slate-900 p-4 rounded-lg border border-slate-800">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-semibold text-white">Filtros</h3>
                             <button onClick={() => setActiveFilters([])} className="text-xs text-violet-400 hover:text-violet-300">Limpar</button>
                         </div>
                         <div className="space-y-3">
-                            <p className="text-sm text-zinc-400">Tipos de Atividade</p>
+                            <p className="text-sm text-slate-400">Tipos de Atividade</p>
                              <div className="flex flex-wrap gap-2">
                                 {Object.entries(activityTypeConfig).map(([key, { label, icon: Icon }]) => (
                                     <button 
                                         key={key}
                                         onClick={() => handleFilterToggle(key as ActivityType)}
-                                        className={`flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-full border transition-colors ${activeFilters.includes(key as ActivityType) ? 'bg-violet-600 border-violet-500 text-white' : 'bg-zinc-700 border-zinc-600 text-zinc-300 hover:bg-zinc-600'}`}
+                                        className={`flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-full border transition-colors ${activeFilters.includes(key as ActivityType) ? 'bg-violet-600 border-violet-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}`}
                                     >
                                         <Icon className="w-3 h-3"/>
                                         <span>{label}</span>
@@ -96,8 +97,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ tasks, leads, onNewActivity
                                 ))}
                             </div>
                             <div className="pt-2 flex justify-between items-center">
-                                <span className="text-sm text-zinc-300">Mostrar concluídas</span>
-                                <button onClick={() => setShowCompleted(!showCompleted)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showCompleted ? 'bg-violet-600' : 'bg-zinc-600'}`}>
+                                <span className="text-sm text-slate-300">Mostrar concluídas</span>
+                                <button onClick={() => setShowCompleted(!showCompleted)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showCompleted ? 'bg-violet-600' : 'bg-slate-700'}`}>
                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showCompleted ? 'translate-x-6' : 'translate-x-1'}`}/>
                                 </button>
                             </div>
@@ -105,8 +106,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ tasks, leads, onNewActivity
                     </div>
                 </div>
                 {/* Right Column */}
-                <div className="lg:col-span-2 bg-zinc-900 rounded-lg border border-zinc-800 flex flex-col overflow-hidden">
-                     <div className="flex-shrink-0 p-4 flex justify-between items-center border-b border-zinc-700">
+                <div className="lg:col-span-2 bg-slate-900 rounded-lg border border-slate-800 flex flex-col overflow-hidden">
+                     <div className="flex-shrink-0 p-4 flex justify-between items-center border-b border-slate-800">
                         <h2 className="font-semibold text-white capitalize">{selectedDateString}</h2>
                         <button onClick={() => onNewActivity(selectedDate.toISOString().split('T')[0])} className="flex items-center gap-2 bg-violet-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
                             <Plus className="w-4 h-4" />
@@ -153,8 +154,8 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ tasks, leads, onNewActivity
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full text-center">
-                                <p className="font-semibold text-zinc-300">Nenhuma atividade agendada</p>
-                                <p className="text-sm text-zinc-500 mb-4">Nenhuma atividade agendada para este dia</p>
+                                <p className="font-semibold text-slate-300">Nenhuma atividade agendada</p>
+                                <p className="text-sm text-slate-500 mb-4">Nenhuma atividade agendada para este dia</p>
                             </div>
                         )}
                      </div>
