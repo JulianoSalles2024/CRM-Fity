@@ -307,15 +307,22 @@ interface SettingsPageProps {
     onUpdateProfile: (name: string, avatarFile?: File) => void;
     onUpdatePipeline: (columns: ColumnData[]) => void;
     onResetApplication: () => void;
+    initialTab?: string;
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpdateProfile, onUpdatePipeline, onResetApplication }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpdateProfile, onUpdatePipeline, onResetApplication, initialTab }) => {
     const [activeTab, setActiveTab] = useState('Pipeline');
+
+    useEffect(() => {
+        if (initialTab) {
+            setActiveTab(initialTab);
+        }
+    }, [initialTab]);
 
     const tabs = [
         { name: 'Perfil', icon: UserIcon },
         { name: 'Pipeline', icon: Settings },
-        { name: 'Inteligência Artificial', icon: Bot }, // Changed label for clarity
+        { name: 'Inteligência Artificial', icon: Bot },
         { name: 'Preferências', icon: SlidersHorizontal },
         { name: 'Integrações', icon: Webhook },
         { name: 'Notificações', icon: Bell },

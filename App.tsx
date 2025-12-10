@@ -28,6 +28,7 @@ import LostLeadModal from './components/LostLeadModal';
 import RecoveryView from './components/RecoveryView';
 import InboxView from './components/InboxView';
 import SdrBotModal from './components/SdrBotModal';
+import SdrAssistantChat from './components/SdrAssistantChat';
 
 
 // Types
@@ -98,6 +99,7 @@ const App: React.FC = () => {
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
     const [lostLeadInfo, setLostLeadInfo] = useState<{lead: Lead, columnId: Id} | null>(null);
     const [isSdrBotOpen, setSdrBotOpen] = useState(false);
+    const [settingsTab, setSettingsTab] = useState<string | undefined>(undefined);
 
 
     // Notification State
@@ -144,6 +146,22 @@ const App: React.FC = () => {
             setInboxMode('standard');
         }
     }, [activeView]);
+
+    // Helper for AI check
+    const checkAiConfiguration = () => {
+        const config = localStorage.getItem('crm-ai-config');
+        if (config) {
+            const parsed = JSON.parse(config);
+            return !!parsed.apiKey;
+        }
+        return false;
+    };
+
+    const handleOpenSdrBot = () => {
+        setSdrBotOpen(true);
+    };
+
+    const isAiConfigured = checkAiConfiguration();
 
     // Reactivation Task/Notification Effect
     useEffect(() => {
@@ -828,6 +846,7 @@ const App: React.FC = () => {
                         showNotification("Pipeline salvo!", 'success');
                     }}
                     onResetApplication={handleResetApplication}
+                    initialTab={settingsTab} // Passando a aba inicial
                 />;
             default:
                 return <div>View not found</div>;
@@ -852,7 +871,7 @@ const App: React.FC = () => {
                 theme={theme}
                 onThemeToggle={() => setTheme(p => p === 'dark' ? 'light' : 'dark')}
                 unreadCount={unreadCount}
-                onOpenSdrBot={() => setSdrBotOpen(true)}
+                onOpenSdrBot={handleOpenSdrBot} // Usando o handler
             />
             <main className="flex-1 overflow-auto p-6">
                 {renderView()}
@@ -945,13 +964,24 @@ const App: React.FC = () => {
 
         <AnimatePresence>
             {isSdrBotOpen && (
-                <SdrBotModal 
-                    onClose={() => setSdrBotOpen(false)} 
-                    onGoToSettings={() => {
-                        setSdrBotOpen(false);
-                        setActiveView('Configurações');
-                    }}
-                />
+                isAiConfigured ? (
+                    <SdrAssistantChat 
+                        onClose={() => setSdrBotOpen(false)}
+                        leads={leads}
+                        tasks={tasks}
+                        columns={columns}
+                        activities={activities}
+                    />
+                ) : (
+                    <SdrBotModal 
+                        onClose={() => setSdrBotOpen(false)} 
+                        onGoToSettings={() => {
+                            setSdrBotOpen(false);
+                            setSettingsTab('Inteligência Artificial'); // Define a aba correta
+                            setActiveView('Configurações');
+                        }}
+                    />
+                )
             )}
         </AnimatePresence>
 
