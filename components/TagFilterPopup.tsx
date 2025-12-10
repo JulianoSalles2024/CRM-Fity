@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
@@ -35,12 +36,12 @@ const TagFilterPopup: React.FC<TagFilterPopupProps> = ({ allTags, selectedTags, 
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full right-0 mt-2 w-72 bg-zinc-800 rounded-lg border border-zinc-700 shadow-lg z-20"
+            className="absolute top-full right-0 mt-2 w-72 bg-slate-900 rounded-lg border border-slate-800 shadow-lg z-20"
         >
-            <div className="p-4 border-b border-zinc-700 flex justify-between items-center">
+            <div className="p-4 border-b border-slate-800 flex justify-between items-center">
                 <div>
                     <h3 className="font-semibold text-white">Filtrar por Tags</h3>
-                    <p className="text-sm text-zinc-400">Selecione uma ou mais tags.</p>
+                    <p className="text-sm text-slate-400">Selecione uma ou mais tags.</p>
                 </div>
                 <button onClick={() => { onClear(); onClose(); }} className="text-xs text-violet-400 hover:text-violet-300">Limpar</button>
             </div>
@@ -49,7 +50,7 @@ const TagFilterPopup: React.FC<TagFilterPopupProps> = ({ allTags, selectedTags, 
                     <button
                         key={tag.id}
                         onClick={() => onTagToggle(tag)}
-                        className="w-full flex items-center justify-between p-2 rounded-md hover:bg-zinc-700/50 text-left"
+                        className="w-full flex items-center justify-between p-2 rounded-md hover:bg-slate-800/50 text-left"
                     >
                         <div className="flex items-center gap-2">
                             <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }}></span>
@@ -58,7 +59,7 @@ const TagFilterPopup: React.FC<TagFilterPopupProps> = ({ allTags, selectedTags, 
                         {isSelected(tag) && <Check className="w-4 h-4 text-violet-400" />}
                     </button>
                 )) : (
-                    <p className="p-4 text-center text-sm text-zinc-500">Nenhuma tag cadastrada.</p>
+                    <p className="p-4 text-center text-sm text-slate-500">Nenhuma tag cadastrada.</p>
                 )}
             </div>
         </motion.div>

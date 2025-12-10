@@ -1,3 +1,4 @@
+
 import React, { useState, FormEvent, useEffect, ChangeEvent, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -46,15 +47,15 @@ const leadSources = [
 const InputField: React.FC<{ label: string; name: keyof FormData; value: string; onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void; required?: boolean; placeholder?: string; type?: string; className?: string; maxLength?: number; }> = 
 ({ label, name, value, onChange, required = false, placeholder, type = 'text', className = 'md:col-span-6', maxLength }) => (
     <div className={className}>
-        <label htmlFor={name} className="block text-sm font-medium text-zinc-300 mb-2">
+        <label htmlFor={name} className="block text-sm font-medium text-slate-300 mb-2">
             {label} {required && <span className="text-red-500">*</span>}
         </label>
         {type === 'textarea' ? (
              <textarea id={name} name={name} value={value} onChange={onChange} placeholder={placeholder} rows={3}
-             className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500" />
+             className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500" />
         ) : (
             <input type={type} id={name} name={name} value={value} onChange={onChange} required={required} placeholder={placeholder} maxLength={maxLength}
-            className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500" />
+            className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500" />
         )}
        
     </div>
@@ -63,13 +64,13 @@ const InputField: React.FC<{ label: string; name: keyof FormData; value: string;
 const SelectField: React.FC<{ label: string; name: keyof FormData; value: Id; onChange: (e: ChangeEvent<HTMLSelectElement>) => void; children: React.ReactNode; required?: boolean; className?: string; customElement?: React.ReactNode }> =
 ({ label, name, value, onChange, children, required = false, className = 'md:col-span-3', customElement }) => (
     <div className={className}>
-         <label htmlFor={name} className="block text-sm font-medium text-zinc-300 mb-2">
+         <label htmlFor={name} className="block text-sm font-medium text-slate-300 mb-2">
             {label} {required && <span className="text-red-500">*</span>}
         </label>
         <div className="relative">
             {customElement}
             <select id={name} name={name} value={value} onChange={onChange} required={required}
-            className={`w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500 appearance-none ${customElement ? 'pl-8' : ''}`}>
+            className={`w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500 appearance-none ${customElement ? 'pl-8' : ''}`}>
                 {children}
             </select>
         </div>
@@ -263,16 +264,16 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.2 }}
-          className="bg-zinc-800 rounded-lg shadow-xl w-full max-w-2xl border border-zinc-700 flex flex-col max-h-[90vh]"
+          className="bg-slate-900 rounded-lg shadow-xl w-full max-w-2xl border border-slate-800 flex flex-col max-h-[90vh]"
           onClick={e => e.stopPropagation()}
         >
-          <div className="flex-shrink-0 p-6 border-b border-zinc-700">
+          <div className="flex-shrink-0 p-6 border-b border-slate-800">
             <div className="flex items-start justify-between">
               <div>
                   <h2 className="text-xl font-bold text-white">{isEditMode ? 'Editar Lead' : 'Novo Lead'}</h2>
-                  <p className="text-sm text-zinc-400 mt-1">Preencha os dados para {isEditMode ? 'editar o lead' : 'criar um novo lead'}</p>
+                  <p className="text-sm text-slate-400 mt-1">Preencha os dados para {isEditMode ? 'editar o lead' : 'criar um novo lead'}</p>
               </div>
-              <button onClick={handleClose} className="p-1 rounded-full text-zinc-400 hover:bg-zinc-700 transition-colors">
+              <button onClick={handleClose} className="p-1 rounded-full text-slate-400 hover:bg-slate-800 transition-colors">
                 <X className="w-5 h-5 text-violet-500/70 hover:text-violet-500" />
               </button>
             </div>
@@ -283,8 +284,8 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                   <InputField label="Descrição" name="description" value={formData.description} onChange={handleChange} placeholder="Detalhes sobre o lead..." type="textarea" className="md:col-span-6" />
                   
                   <div className="md:col-span-6">
-                      <label className="block text-sm font-medium text-zinc-300 mb-2">Tags</label>
-                      <div className="flex flex-wrap gap-2 items-center p-2 bg-zinc-900 border border-zinc-700 rounded-md min-h-[42px]">
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Tags</label>
+                      <div className="flex flex-wrap gap-2 items-center p-2 bg-slate-950 border border-slate-800 rounded-md min-h-[42px]">
                           {formData.tags.map(tag => (
                               <span key={tag.id} className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full text-white/90" style={{ backgroundColor: tag.color }}>
                                   {tag.name}
@@ -294,23 +295,23 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                               </span>
                           ))}
                           <div className="relative">
-                              <button type="button" onClick={() => setTagDropdownOpen(p => !p)} className="text-sm text-zinc-300 hover:text-white bg-zinc-700 hover:bg-zinc-600 px-3 py-1 rounded-md">
+                              <button type="button" onClick={() => setTagDropdownOpen(p => !p)} className="text-sm text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-md">
                                   + Adicionar
                               </button>
                               {isTagDropdownOpen && (
-                                  <div className="absolute top-full left-0 mt-2 w-48 bg-zinc-700 border border-zinc-600 rounded-md shadow-lg z-10 max-h-48 overflow-y-auto">
+                                  <div className="absolute top-full left-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-md shadow-lg z-10 max-h-48 overflow-y-auto">
                                       {availableTags.length > 0 ? availableTags.map(tag => (
                                           <button
                                               key={tag.id}
                                               type="button"
                                               onClick={() => handleAddTag(tag)}
-                                              className="w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-600 flex items-center gap-2"
+                                              className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-700 flex items-center gap-2"
                                           >
                                             <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }}></span>
                                             <span>{tag.name}</span>
                                           </button>
                                       )) : (
-                                        <div className="px-3 py-2 text-sm text-zinc-400">Nenhuma tag disponível</div>
+                                        <div className="px-3 py-2 text-sm text-slate-400">Nenhuma tag disponível</div>
                                       )}
                                   </div>
                               )}
@@ -327,7 +328,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                    </SelectField>
 
                   <div className="md:col-span-6">
-                      <label htmlFor="segment" className="block text-sm font-medium text-zinc-300 mb-2">
+                      <label htmlFor="segment" className="block text-sm font-medium text-slate-300 mb-2">
                           Segmento
                       </label>
                       <input
@@ -338,7 +339,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                           value={formData.segment}
                           onChange={handleChange}
                           placeholder="Ex: Personal Trainer, Coach..."
-                          className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                          className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
                       />
                       <datalist id="segment-options">
                           <option value="Personal Trainer" />
@@ -366,7 +367,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                   </SelectField>
 
                   <div className="md:col-span-6">
-                      <label htmlFor="source" className="block text-sm font-medium text-zinc-300 mb-2">
+                      <label htmlFor="source" className="block text-sm font-medium text-slate-300 mb-2">
                           Origem
                       </label>
                       <input
@@ -377,7 +378,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                           value={formData.source}
                           onChange={handleChange}
                           placeholder="Ex: LinkedIn, Website, Indicação..."
-                          className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                          className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
                       />
                       <datalist id="source-options">
                           {leadSources.map(source => (
@@ -386,8 +387,8 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                       </datalist>
                   </div>
               </div>
-              <div className="flex-shrink-0 p-4 bg-zinc-800/50 border-t border-zinc-700 flex justify-end gap-3">
-                   <button type="button" onClick={handleClose} className="px-4 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700 rounded-md hover:bg-zinc-600 transition-colors">
+              <div className="flex-shrink-0 p-4 bg-slate-800/50 border-t border-slate-800 flex justify-end gap-3">
+                   <button type="button" onClick={handleClose} className="px-4 py-2 text-sm font-semibold text-slate-300 bg-slate-800 rounded-md hover:bg-slate-700 transition-colors">
                       Cancelar
                   </button>
                   <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700 transition-colors">

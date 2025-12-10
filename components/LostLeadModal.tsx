@@ -43,21 +43,21 @@ const LostLeadModal: React.FC<LostLeadModalProps> = ({ lead, onClose, onSubmit }
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-zinc-800 rounded-lg shadow-xl w-full max-w-lg border border-zinc-700 flex flex-col"
+        className="bg-slate-900 rounded-lg shadow-xl w-full max-w-lg border border-slate-800 flex flex-col"
         onClick={e => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-zinc-700">
+        <div className="p-6 border-b border-slate-800">
           <div className="flex justify-between items-start">
             <h2 className="text-xl font-bold text-white">Processar Lead Perdido</h2>
-            <button onClick={onClose} className="p-1 rounded-full text-zinc-400 hover:bg-zinc-700"><X className="w-5 h-5" /></button>
+            <button onClick={onClose} className="p-1 rounded-full text-slate-400 hover:bg-slate-800"><X className="w-5 h-5" /></button>
           </div>
-          <p className="text-sm text-zinc-400 mt-1">{lead.name} - {lead.company}</p>
+          <p className="text-sm text-slate-400 mt-1">{lead.name} - {lead.company}</p>
         </div>
         <form onSubmit={handleSubmit}>
             <div className="p-6 space-y-6">
                 <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">Motivo da Perda <span className="text-red-500">*</span></label>
-                    <select value={reason} onChange={e => setReason(e.target.value)} className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white focus:ring-violet-500">
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Motivo da Perda <span className="text-red-500">*</span></label>
+                    <select value={reason} onChange={e => setReason(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white focus:ring-violet-500">
                         {lossReasons.map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
                     {reason === 'Outro' && (
@@ -66,18 +66,18 @@ const LostLeadModal: React.FC<LostLeadModalProps> = ({ lead, onClose, onSubmit }
                             value={customReason}
                             onChange={e => setCustomReason(e.target.value)}
                             placeholder="Especifique o motivo..."
-                            className="mt-2 w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white focus:ring-violet-500"
+                            className="mt-2 w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white focus:ring-violet-500"
                         />
                     )}
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-3">Próximo Passo</label>
+                    <label className="block text-sm font-medium text-slate-300 mb-3">Próximo Passo</label>
                     <div className="grid grid-cols-2 gap-4">
                         <button
                             type="button"
                             onClick={() => setActionType('archive')}
-                            className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${actionType === 'archive' ? 'border-zinc-500 bg-zinc-700/50 text-white' : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/30'}`}
+                            className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${actionType === 'archive' ? 'border-slate-500 bg-slate-700/50 text-white' : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:bg-slate-700/30'}`}
                         >
                             <Archive className="w-6 h-6 mb-2" />
                             <span className="text-sm font-semibold">Encerrar</span>
@@ -87,7 +87,7 @@ const LostLeadModal: React.FC<LostLeadModalProps> = ({ lead, onClose, onSubmit }
                         <button
                             type="button"
                             onClick={() => setActionType('recovery')}
-                            className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${actionType === 'recovery' ? 'border-violet-500 bg-violet-500/10 text-violet-100' : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/30'}`}
+                            className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${actionType === 'recovery' ? 'border-violet-500 bg-violet-500/10 text-violet-100' : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:bg-slate-700/30'}`}
                         >
                             <RefreshCw className="w-6 h-6 mb-2" />
                             <span className="text-sm font-semibold">Recuperação</span>
@@ -113,7 +113,7 @@ const LostLeadModal: React.FC<LostLeadModalProps> = ({ lead, onClose, onSubmit }
                             onChange={e => setReactivationDate(e.target.value)}
                             required
                             min={new Date().toISOString().split('T')[0]}
-                            className="w-full bg-zinc-900 border border-zinc-600 rounded-md px-3 py-2 text-sm text-white focus:ring-violet-500 focus:border-violet-500"
+                            className="w-full bg-slate-950 border border-slate-600 rounded-md px-3 py-2 text-sm text-white focus:ring-violet-500 focus:border-violet-500"
                         />
                         <p className="text-xs text-violet-300/70 mt-2">
                             O lead aparecerá na aba "Recuperação" nesta data.
@@ -121,11 +121,11 @@ const LostLeadModal: React.FC<LostLeadModalProps> = ({ lead, onClose, onSubmit }
                     </motion.div>
                 )}
             </div>
-            <div className="p-4 bg-zinc-800/50 border-t border-zinc-700 flex justify-end gap-3">
-                <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700 rounded-md hover:bg-zinc-600">Cancelar</button>
+            <div className="p-4 bg-slate-800/50 border-t border-slate-800 flex justify-end gap-3">
+                <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-slate-300 bg-slate-800 rounded-md hover:bg-slate-700">Cancelar</button>
                 <button 
                     type="submit" 
-                    className={`px-4 py-2 text-sm font-semibold text-white rounded-md transition-colors ${actionType === 'recovery' ? 'bg-violet-600 hover:bg-violet-700' : 'bg-zinc-600 hover:bg-zinc-500'}`}
+                    className={`px-4 py-2 text-sm font-semibold text-white rounded-md transition-colors ${actionType === 'recovery' ? 'bg-violet-600 hover:bg-violet-700' : 'bg-slate-600 hover:bg-slate-500'}`}
                 >
                     {actionType === 'recovery' ? 'Salvar na Recuperação' : 'Confirmar Encerramento'}
                 </button>

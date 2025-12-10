@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Trash2 } from 'lucide-react';
@@ -30,7 +31,6 @@ const CreateEditPlaybookModal: React.FC<CreateEditPlaybookModalProps> = ({ playb
         setStages(prev => prev.includes(stageId) ? prev.filter(id => id !== stageId) : [...prev, stageId]);
     };
 
-    // FIX: Correctly handle type assignments for different fields within a PlaybookStep.
     const handleStepChange = (index: number, field: keyof PlaybookStep, value: string | number) => {
         const newSteps = [...steps];
         const stepToUpdate = { ...newSteps[index] };
@@ -78,27 +78,27 @@ const CreateEditPlaybookModal: React.FC<CreateEditPlaybookModalProps> = ({ playb
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-zinc-800 rounded-lg shadow-xl w-full max-w-2xl border border-zinc-700 flex flex-col max-h-[90vh]"
+                className="bg-slate-900 rounded-lg shadow-xl w-full max-w-2xl border border-slate-800 flex flex-col max-h-[90vh]"
                 onClick={e => e.stopPropagation()}
             >
-                <div className="p-6 border-b border-zinc-700">
+                <div className="p-6 border-b border-slate-800">
                     <div className="flex justify-between items-start">
                         <h2 className="text-xl font-bold text-white">{isEditMode ? 'Editar Playbook' : 'Novo Playbook'}</h2>
-                        <button onClick={onClose} className="p-1 rounded-full text-zinc-400 hover:bg-zinc-700"><X className="w-5 h-5" /></button>
+                        <button onClick={onClose} className="p-1 rounded-full text-slate-400 hover:bg-slate-800"><X className="w-5 h-5" /></button>
                     </div>
                 </div>
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
                     <div className="p-6 space-y-6 overflow-y-auto">
                         <div>
-                            <label className="block text-sm font-medium text-zinc-300 mb-2">Nome do Playbook</label>
-                            <input type="text" value={name} onChange={e => setName(e.target.value)} required className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white focus:ring-violet-500" />
+                            <label className="block text-sm font-medium text-slate-300 mb-2">Nome do Playbook</label>
+                            <input type="text" value={name} onChange={e => setName(e.target.value)} required className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white focus:ring-violet-500" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-zinc-300 mb-2">Estágios do Pipeline</label>
+                            <label className="block text-sm font-medium text-slate-300 mb-2">Estágios do Pipeline</label>
                             <div className="flex flex-wrap gap-2">
                                 {pipelineColumns.map(col => (
                                     <button type="button" key={col.id} onClick={() => handleStageToggle(col.id)}
-                                        className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${stages.includes(col.id) ? 'text-white border-violet-500' : 'text-zinc-300 border-zinc-600 hover:border-zinc-500'}`}
+                                        className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${stages.includes(col.id) ? 'text-white border-violet-500' : 'text-slate-300 border-slate-600 hover:border-slate-500'}`}
                                         style={stages.includes(col.id) ? { backgroundColor: `${col.color}40`, borderColor: col.color } : {}}>
                                         {col.title}
                                     </button>
@@ -106,19 +106,19 @@ const CreateEditPlaybookModal: React.FC<CreateEditPlaybookModalProps> = ({ playb
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-zinc-300 mb-2">Etapas da Cadência</label>
+                            <label className="block text-sm font-medium text-slate-300 mb-2">Etapas da Cadência</label>
                             <div className="space-y-3">
                                 {steps.map((step, index) => (
-                                    <div key={index} className="flex items-center gap-2 p-2 bg-zinc-900/50 rounded-md border border-zinc-700/50">
+                                    <div key={index} className="flex items-center gap-2 p-2 bg-slate-950/50 rounded-md border border-slate-800/50">
                                         <div className="flex items-center gap-1">
-                                            <span className="text-sm text-zinc-400">D+</span>
-                                            <input type="number" value={step.day} onChange={e => handleStepChange(index, 'day', e.target.value)} className="w-16 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-sm text-white" min="1" />
+                                            <span className="text-sm text-slate-400">D+</span>
+                                            <input type="number" value={step.day} onChange={e => handleStepChange(index, 'day', e.target.value)} className="w-16 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white" min="1" />
                                         </div>
-                                        <select value={step.type} onChange={e => handleStepChange(index, 'type', e.target.value)} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-sm text-white">
+                                        <select value={step.type} onChange={e => handleStepChange(index, 'type', e.target.value)} className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white">
                                             {taskTypes.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
                                         </select>
-                                        <input type="text" value={step.instructions} onChange={e => handleStepChange(index, 'instructions', e.target.value)} placeholder="Instruções da tarefa..." className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-sm text-white" />
-                                        <button type="button" onClick={() => removeStep(index)} disabled={steps.length <= 1} className="p-2 text-zinc-500 hover:text-red-500 disabled:opacity-50"><Trash2 className="w-4 h-4" /></button>
+                                        <input type="text" value={step.instructions} onChange={e => handleStepChange(index, 'instructions', e.target.value)} placeholder="Instruções da tarefa..." className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white" />
+                                        <button type="button" onClick={() => removeStep(index)} disabled={steps.length <= 1} className="p-2 text-slate-500 hover:text-red-500 disabled:opacity-50"><Trash2 className="w-4 h-4" /></button>
                                     </div>
                                 ))}
                             </div>
@@ -127,8 +127,8 @@ const CreateEditPlaybookModal: React.FC<CreateEditPlaybookModalProps> = ({ playb
                             </button>
                         </div>
                     </div>
-                    <div className="p-4 bg-zinc-800/50 border-t border-zinc-700 flex justify-end gap-3">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700 rounded-md hover:bg-zinc-600">Cancelar</button>
+                    <div className="p-4 bg-slate-800/50 border-t border-slate-800 flex justify-end gap-3">
+                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-slate-300 bg-slate-800 rounded-md hover:bg-slate-700">Cancelar</button>
                         <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700">{isEditMode ? 'Salvar' : 'Criar'}</button>
                     </div>
                 </form>

@@ -32,20 +32,20 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.2 }}
-        className="bg-zinc-800 rounded-lg shadow-xl w-full max-w-md border border-zinc-700 flex flex-col"
+        className="bg-slate-900 rounded-lg shadow-xl w-full max-w-md border border-slate-800 flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         <div className="p-6">
           <h2 className="text-xl font-bold text-white mb-4">{title}</h2>
-          <div className="text-sm text-zinc-300">
+          <div className="text-sm text-slate-300">
             {message}
           </div>
         </div>
-        <div className="p-4 bg-zinc-900/30 border-t border-zinc-700 flex justify-end gap-3">
+        <div className="p-4 bg-slate-950/30 border-t border-slate-800 flex justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700 rounded-md hover:bg-zinc-600 transition-colors"
+            className="px-4 py-2 text-sm font-semibold text-slate-300 bg-slate-800 rounded-md hover:bg-slate-700 transition-colors"
           >
             Cancelar
           </button>

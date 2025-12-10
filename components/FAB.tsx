@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Plus, X, TrendingUp, User, ClipboardList } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -63,10 +64,10 @@ const FAB: React.FC<FABProps> = ({ onOpenCreateLeadModal, onOpenCreateTaskModal 
                                     onClick={() => { item.action(); setIsOpen(false); }}
                                     variants={itemVariants}
                                 >
-                                    <span className="bg-zinc-800 text-white text-sm px-3 py-2 rounded-md shadow-lg border border-zinc-700 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                    <span className="bg-slate-900 text-white text-sm px-3 py-2 rounded-md shadow-lg border border-slate-800 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                                         {item.label}
                                     </span>
-                                    <div className="w-12 h-12 bg-zinc-700 rounded-full flex items-center justify-center text-white hover:bg-zinc-600 transition-colors shadow-md">
+                                    <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center text-white hover:bg-slate-700 transition-colors shadow-md">
                                         <item.icon className="w-6 h-6" />
                                     </div>
                                 </motion.div>
