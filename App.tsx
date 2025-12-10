@@ -27,6 +27,7 @@ import PlaybookSettings from './components/PlaybookSettings';
 import PrintableLeadsReport from './components/PrintableLeadsReport';
 import LostLeadModal from './components/LostLeadModal';
 import RecoveryView from './components/RecoveryView';
+import InboxView from './components/InboxView';
 
 
 // Types
@@ -79,7 +80,7 @@ const App: React.FC = () => {
     const [playbooks, setPlaybooks] = useLocalStorage<Playbook[]>('crm-playbooks', initialPlaybooks);
 
 
-    const [activeView, setActiveView] = useState('Dashboard');
+    const [activeView, setActiveView] = useState('Inbox');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('crm-theme') as 'dark' | 'light') || 'dark');
@@ -631,6 +632,14 @@ const App: React.FC = () => {
         let listViewFilteredLeads: Lead[];
 
         switch (activeView) {
+            case 'Inbox':
+                return <InboxView
+                    tasks={tasks}
+                    notifications={notifications}
+                    leads={leads}
+                    onNavigate={(view, itemId) => setActiveView(view)}
+                    onMarkNotificationRead={(id) => setNotifications(curr => curr.map(n => n.id === id ? { ...n, isRead: true } : n))}
+                />;
             case 'Dashboard':
                 return <Dashboard leads={filteredLeads} columns={columns} activities={activities} tasks={tasks} onNavigate={setActiveView} />;
             case 'Pipeline':

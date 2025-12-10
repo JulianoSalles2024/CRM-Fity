@@ -25,8 +25,8 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         // const totalLost = leads.filter(l => lostColumnIds.includes(l.columnId)).length;
         const activeLeads = leads.filter(l => !wonColumnIds.includes(l.columnId) && !lostColumnIds.includes(l.columnId));
         
-        const totalValue = activeLeads.reduce((sum, lead) => sum + lead.value, 0);
-        const wonValue = leads.filter(l => wonColumnIds.includes(l.columnId)).reduce((sum, lead) => sum + lead.value, 0);
+        const totalValue = activeLeads.reduce((sum, lead) => sum + Number(lead.value || 0), 0);
+        const wonValue = leads.filter(l => wonColumnIds.includes(l.columnId)).reduce((sum, lead) => sum + Number(lead.value || 0), 0);
         
         const conversionRate = totalDeals > 0 ? ((totalWon / totalDeals) * 100).toFixed(1) : '0.0';
 
@@ -52,7 +52,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         // Simple LTV calculation (Average value of won deals)
         const wonLeads = leads.filter(l => columns.find(c => c.id === l.columnId)?.type === 'won');
         const ltv = wonLeads.length > 0 
-            ? wonLeads.reduce((acc, curr) => acc + curr.value, 0) / wonLeads.length 
+            ? wonLeads.reduce((acc, curr) => acc + Number(curr.value || 0), 0) / wonLeads.length 
             : 0;
 
         return {
