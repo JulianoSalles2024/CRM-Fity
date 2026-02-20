@@ -1,4 +1,4 @@
-import { ColumnData, Lead, Activity, User, Task, Tag, EmailDraft, ChatConversation, ChatMessage, Group, Notification, Playbook } from './types';
+import { ColumnData, Lead, Activity, User, Task, Tag, EmailDraft, ChatConversation, ChatMessage, Group, Notification, Playbook, Board } from './types';
 
 export const initialUsers: User[] = [
   { id: 'user1', name: 'John Doe', email: 'john.doe@example.com' },
@@ -55,9 +55,22 @@ export const initialGroups: Group[] = [
 ];
 
 
+export const initialBoards: Board[] = [
+  {
+    id: 'board-sales',
+    name: 'Pipeline de Vendas',
+    slug: 'sales-pipeline',
+    description: 'Pipeline padrão de vendas',
+    type: 'sales',
+    columns: initialColumns,
+    isDefault: true
+  }
+];
+
 export const initialLeads: Lead[] = [
     {
         id: 'lead-1',
+        boardId: 'board-sales',
         columnId: 'prospect',
         name: 'Juliano',
         company: 'Zenius IA',
@@ -88,6 +101,7 @@ export const initialLeads: Lead[] = [
     },
     {
         id: 'lead-2',
+        boardId: 'board-sales',
         columnId: 'qualify',
         name: 'Beatriz',
         company: 'InovaTech',
@@ -105,6 +119,7 @@ export const initialLeads: Lead[] = [
     },
     {
         id: 'lead-3',
+        boardId: 'board-sales',
         columnId: 'closed',
         name: 'Carlos',
         company: 'Soluções Digitais',
@@ -130,6 +145,7 @@ export const initialLeads: Lead[] = [
     },
     {
         id: 'lead-4',
+        boardId: 'board-sales',
         columnId: 'lost',
         name: 'Daniel',
         company: 'DataCorp',
@@ -159,6 +175,7 @@ export const initialLeads: Lead[] = [
     },
     {
         id: 'lead-5',
+        boardId: 'board-sales',
         columnId: 'prospect',
         name: 'Fernanda',
         company: 'Agile Solutions',

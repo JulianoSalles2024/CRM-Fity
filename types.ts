@@ -76,6 +76,17 @@ export interface Lead {
   reactivationDate?: string; // ISO String
   qualificationStatus?: 'pending' | 'qualified' | 'disqualified';
   disqualificationReason?: string;
+  boardId?: Id;
+}
+
+export interface Board {
+  id: Id;
+  name: string;
+  slug: string;
+  description?: string;
+  type: 'sdr' | 'sales' | 'onboarding' | 'cs' | 'upsell' | 'custom';
+  columns: ColumnData[];
+  isDefault?: boolean;
 }
 
 export interface ColumnData {

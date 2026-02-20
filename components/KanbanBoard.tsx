@@ -15,7 +15,7 @@ import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortabl
 import Column from './Column';
 import Card from './Card';
 import PipelineHeader from './PipelineHeader';
-import type { ColumnData, Lead, Id, User, CardDisplaySettings, Task } from '../types';
+import type { ColumnData, Lead, Id, User, CardDisplaySettings, Task, Board } from '../types';
 
 interface KanbanBoardProps {
     columns: ColumnData[];
@@ -34,6 +34,10 @@ interface KanbanBoardProps {
     onToggleColumnMinimize: (columnId: Id) => void;
     isPlaybookActionEnabled: boolean;
     onApplyPlaybookClick: () => void;
+    boards: Board[];
+    activeBoardId: Id;
+    onSelectBoard: (boardId: Id) => void;
+    onCreateBoardClick: () => void;
 }
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ 
@@ -52,7 +56,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     minimizedColumns,
     onToggleColumnMinimize,
     isPlaybookActionEnabled,
-    onApplyPlaybookClick
+    onApplyPlaybookClick,
+    boards,
+    activeBoardId,
+    onSelectBoard,
+    onCreateBoardClick
 }) => {
     const [activeLead, setActiveLead] = useState<Lead | null>(null);
     const columnIds = useMemo(() => columns.map(c => c.id), [columns]);
@@ -97,6 +105,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     onUpdateCardSettings={onUpdateCardSettings}
                     isPlaybookActionEnabled={isPlaybookActionEnabled}
                     onApplyPlaybookClick={onApplyPlaybookClick}
+                    boards={boards}
+                    activeBoardId={activeBoardId}
+                    onSelectBoard={onSelectBoard}
+                    onCreateBoardClick={onCreateBoardClick}
                 />
             </div>
             <div className="flex-1 overflow-x-auto overflow-y-hidden">

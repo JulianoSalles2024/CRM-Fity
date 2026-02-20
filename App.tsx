@@ -19,6 +19,7 @@ import ChatView from './components/ChatView';
 import GroupsView from './components/GroupsView';
 import GroupsDashboard from './components/GroupsDashboard';
 import CreateEditGroupModal from './components/CreateEditGroupModal';
+import CreateBoardModal from './components/CreateBoardModal';
 import IntegrationsPage from './components/IntegrationsPage';
 import NotificationsView from './components/NotificationsView';
 import PlaybookModal from './components/PlaybookModal';
@@ -32,10 +33,10 @@ import SdrAssistantChat from './components/SdrAssistantChat';
 
 
 // Types
-import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, Notification as NotificationType, Playbook, PlaybookHistoryEntry } from './types';
+import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, Notification as NotificationType, Playbook, PlaybookHistoryEntry, Board } from './types';
 
 // Data
-import { initialColumns, initialTags, initialLeads, initialTasks, initialActivities, initialUsers, initialGroups, initialConversations, initialMessages, initialNotifications, initialPlaybooks } from './data';
+import { initialColumns, initialTags, initialLeads, initialTasks, initialActivities, initialUsers, initialGroups, initialConversations, initialMessages, initialNotifications, initialPlaybooks, initialBoards } from './data';
 
 const localUser: User = { id: 'local-user', name: 'Usuário Local', email: 'user@local.com' };
 
@@ -67,7 +68,27 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<Re
 const App: React.FC = () => {
     // --- STATE MANAGEMENT (LOCAL STORAGE) ---
     const [users, setUsers] = useLocalStorage<User[]>('crm-users', initialUsers);
-    const [columns, setColumns] = useLocalStorage<ColumnData[]>('crm-columns', initialColumns);
+    const [boards, setBoards] = useLocalStorage<Board[]>('crm-boards', initialBoards);
+    const [activeBoardId, setActiveBoardId] = useLocalStorage<Id>('crm-active-board', initialBoards[0].id);
+
+    // Derived columns state to maintain compatibility with existing code
+    const activeBoard = useMemo(() => boards.find(b => b.id === activeBoardId) || boards[0], [boards, activeBoardId]);
+    const columns = activeBoard.columns;
+
+    const setColumns = useCallback((newColumnsOrUpdater: ColumnData[] | ((prev: ColumnData[]) => ColumnData[])) => {
+        setBoards(currentBoards => {
+            return currentBoards.map(board => {
+                if (board.id === activeBoardId) {
+                    const newColumns = typeof newColumnsOrUpdater === 'function' 
+                        ? newColumnsOrUpdater(board.columns)
+                        : newColumnsOrUpdater;
+                    return { ...board, columns: newColumns };
+                }
+                return board;
+            });
+        });
+    }, [activeBoardId, setBoards]);
+
     const [leads, setLeads] = useLocalStorage<Lead[]>('crm-leads', initialLeads);
     const [activities, setActivities] = useLocalStorage<Activity[]>('crm-activities', initialActivities);
     const [tasks, setTasks] = useLocalStorage<Task[]>('crm-tasks', initialTasks);
@@ -99,6 +120,7 @@ const App: React.FC = () => {
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
     const [lostLeadInfo, setLostLeadInfo] = useState<{lead: Lead, columnId: Id} | null>(null);
     const [isSdrBotOpen, setSdrBotOpen] = useState(false);
+    const [isCreateBoardModalOpen, setCreateBoardModalOpen] = useState(false);
     const [settingsTab, setSettingsTab] = useState<string | undefined>(undefined);
 
 
@@ -257,9 +279,10 @@ const App: React.FC = () => {
 
     const searchedLeads = useMemo(() => {
       const searchLower = searchQuery.toLowerCase();
-      const baseLeads = leads;
-
-      const filtered = baseLeads.filter(lead => 
+      // Filter leads by active board
+      const boardLeads = leads.filter(l => l.boardId === activeBoardId || (!l.boardId && activeBoardId === 'board-sales')); // Fallback for legacy leads
+      
+      const filtered = boardLeads.filter(lead => 
           lead.name.toLowerCase().includes(searchLower) || 
           lead.company.toLowerCase().includes(searchLower) || 
           (lead.email && lead.email.toLowerCase().includes(searchLower))
@@ -308,6 +331,7 @@ const App: React.FC = () => {
             const newLead: Lead = {
                 id: `lead-${Date.now()}`,
                 ...data,
+                boardId: activeBoardId,
                 columnId: data.columnId || columns[0].id,
                 name: data.name || 'Novo Lead',
                 company: data.company || '',
@@ -631,6 +655,17 @@ const App: React.FC = () => {
         setLeadsToPrint(leadsToExport);
     };
 
+    const handleCreateBoard = (newBoardData: Omit<Board, 'id'>) => {
+        const newBoard: Board = {
+            id: `board-${Date.now()}`,
+            ...newBoardData,
+            isDefault: false
+        };
+        setBoards(prev => [...prev, newBoard]);
+        setActiveBoardId(newBoard.id);
+        showNotification(`Board "${newBoard.name}" criado com sucesso!`, 'success');
+    };
+
     const handleResetApplication = () => {
         // Clear all relevant local storage keys
         Object.keys(localStorage).forEach(key => {
@@ -702,6 +737,10 @@ const App: React.FC = () => {
                     onToggleColumnMinimize={(colId: Id) => setMinimizedColumns(p => (p || []).includes(colId) ? (p || []).filter(id => id !== colId) : [...(p || []), colId])}
                     isPlaybookActionEnabled={!!selectedLeadForPlaybook}
                     onApplyPlaybookClick={() => setPlaybookModalOpen(true)}
+                    boards={boards}
+                    activeBoardId={activeBoardId}
+                    onSelectBoard={setActiveBoardId}
+                    onCreateBoardClick={() => setCreateBoardModalOpen(true)}
                 />;
             case 'Playbooks':
                 return <PlaybookSettings initialPlaybooks={playbooks} pipelineColumns={columns} onSave={setPlaybooks} />;
@@ -985,6 +1024,12 @@ const App: React.FC = () => {
                 )
             )}
         </AnimatePresence>
+
+        <CreateBoardModal
+            isOpen={isCreateBoardModalOpen}
+            onClose={() => setCreateBoardModalOpen(false)}
+            onCreateBoard={handleCreateBoard}
+        />
 
         <AnimatePresence>
             {notification && (
