@@ -1,34 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Bot, Save, Check, AlertTriangle, Eye, EyeOff, Sparkles, Globe, BrainCircuit } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-const providers = [
-    { id: 'google', name: 'Google Gemini' },
-    { id: 'openai', name: 'OpenAI' },
-    { id: 'anthropic', name: 'Anthropic' },
-];
-
-const models = {
-    google: [
-        { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash - Recomendado - Best value ($0.15 / $0.60)' },
-        { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro - High reasoning' },
-        { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro - Legacy' },
-    ],
-    openai: [
-        { id: 'gpt-4o', name: 'GPT-4o - Flagship' },
-        { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
-        { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
-    ],
-    anthropic: [
-        { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet' },
-        { id: 'claude-3-opus', name: 'Claude 3 Opus' },
-    ],
-};
+import { aiConfig, AIConfig } from '../services/ai';
 
 const AISettings: React.FC = () => {
-    const [config, setConfig] = useState({
+    const [config, setConfig] = useState<AIConfig>({
         provider: 'google',
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         thinkingMode: true,
         searchGrounding: true,
         apiKey: '',
@@ -36,12 +14,19 @@ const AISettings: React.FC = () => {
     
     const [showApiKey, setShowApiKey] = useState(false);
     const [status, setStatus] = useState<'pending' | 'saved'>('pending');
+    
+    const models = aiConfig.getModels();
+    const providers = [
+        { id: 'google', name: 'Google Gemini' },
+        { id: 'openai', name: 'OpenAI' },
+        { id: 'anthropic', name: 'Anthropic' },
+    ];
 
     useEffect(() => {
-        const savedConfig = localStorage.getItem('crm-ai-config');
+        const savedConfig = aiConfig.load();
         if (savedConfig) {
-            setConfig(JSON.parse(savedConfig));
-            if (JSON.parse(savedConfig).apiKey) {
+            setConfig(savedConfig);
+            if (savedConfig.apiKey) {
                 setStatus('saved');
             }
         }
@@ -50,18 +35,21 @@ const AISettings: React.FC = () => {
     const handleSave = () => {
         if (!config.apiKey.trim()) return;
         
-        localStorage.setItem('crm-ai-config', JSON.stringify(config));
+        aiConfig.save(config);
         setStatus('saved');
         
         // Simulating a save toast/notification could be done here if the prop was passed
     };
 
-    const handleChange = (field: string, value: any) => {
+    const handleChange = (field: keyof AIConfig, value: any) => {
         setConfig(prev => {
             const newConfig = { ...prev, [field]: value };
             // Reset model if provider changes
             if (field === 'provider') {
-                newConfig.model = models[value as keyof typeof models][0].id;
+                const providerModels = models[value as keyof typeof models];
+                if (providerModels && providerModels.length > 0) {
+                    newConfig.model = providerModels[0].id;
+                }
             }
             return newConfig;
         });

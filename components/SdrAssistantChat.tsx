@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Send, Bot, User, Loader2 } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
+import { aiConfig, aiGenerator } from '../services/ai';
 import type { Lead, Task, ColumnData, Activity } from '../types';
 
 interface SdrAssistantChatProps {
@@ -76,32 +76,23 @@ const SdrAssistantChat: React.FC<SdrAssistantChatProps> = ({ onClose, leads, tas
         setIsLoading(true);
 
         try {
-            const storedConfig = localStorage.getItem('crm-ai-config');
-            const apiKey = storedConfig ? JSON.parse(storedConfig).apiKey : null;
+            const config = aiConfig.load();
 
-            if (!apiKey) {
+            if (!config.apiKey) {
                 setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', text: 'Erro: Chave de API não encontrada. Por favor, reconfigure a IA nas configurações.' }]);
                 return;
             }
 
-            const ai = new GoogleGenAI({ apiKey });
-            const model = ai.models;
-
             // Prepare history for prompt (simplified)
             const prompt = `${getSystemContext()}\n\nHistórico da conversa:\n${messages.map(m => `${m.role === 'user' ? 'Usuário' : 'Assistente'}: ${m.text}`).join('\n')}\nUsuário: ${userMessage.text}\nAssistente:`;
 
-            const result = await model.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-            });
-
-            const responseText = result.text;
+            const responseText = await aiGenerator.generate(prompt, config);
             
             setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', text: responseText }]);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', text: 'Desculpe, tive um problema ao processar sua solicitação. Verifique sua conexão ou chave de API.' }]);
+            setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', text: `Desculpe, tive um problema ao processar sua solicitação. Erro: ${error.message || 'Desconhecido'}` }]);
         } finally {
             setIsLoading(false);
         }
