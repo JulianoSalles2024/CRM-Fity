@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, ChatConversation, ChatMessage, Group, CreateGroupData, UpdateGroupData, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, Notification as NotificationType, Playbook, PlaybookHistoryEntry, Board } from '@/shared/types';
 import { initialTags, initialLeads, initialTasks, initialActivities, initialUsers, initialGroups, initialConversations, initialMessages, initialNotifications, initialPlaybooks, initialBoards } from '@/data';
 
-// --- Local Storage Hook ---
+// --- Local Storage Hook (Optimized with Debounce) ---
 function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
     const [storedValue, setStoredValue] = useState<T>(() => {
         try {
@@ -14,12 +14,20 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<Re
         }
     });
 
+    // Use a ref to track the latest value for the effect without triggering it
+    const valueRef = useRef(storedValue);
+    valueRef.current = storedValue;
+
     useEffect(() => {
-        try {
-            window.localStorage.setItem(key, JSON.stringify(storedValue));
-        } catch (error) {
-            console.error(error);
-        }
+        const handler = setTimeout(() => {
+            try {
+                window.localStorage.setItem(key, JSON.stringify(valueRef.current));
+            } catch (error) {
+                console.error('Error saving to localStorage:', error);
+            }
+        }, 500); // 500ms debounce
+
+        return () => clearTimeout(handler);
     }, [key, storedValue]);
 
     return [storedValue, setStoredValue];
