@@ -7,11 +7,24 @@ export interface Tag {
   color: string;
 }
 
+export type UserRole = 'Admin' | 'Vendedor';
+
 export interface User {
   id: string;
   name: string;
   email: string;
   avatarUrl?: string;
+  role?: UserRole;
+  joinedAt?: string;
+}
+
+export interface InviteLink {
+    id: string;
+    role: UserRole;
+    expiration: '7 days' | '30 days' | 'never';
+    expiresAt?: string | null;
+    token: string;
+    createdAt: string;
 }
 
 export type GroupStatus = 'Ativo' | 'Lotado' | 'Arquivado';

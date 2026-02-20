@@ -1,9 +1,9 @@
 import { ColumnData, Lead, Activity, User, Task, Tag, EmailDraft, ChatConversation, ChatMessage, Group, Notification, Playbook, Board } from './types';
 
 export const initialUsers: User[] = [
-  { id: 'user1', name: 'John Doe', email: 'john.doe@example.com' },
-  { id: 'user2', name: 'Jane Smith', email: 'jane.smith@example.com' },
-  { id: 'user3', name: 'Peter Jones', email: 'peter.jones@example.com' },
+  { id: 'user1', name: 'John Doe', email: 'john.doe@example.com', role: 'Admin', joinedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 365).toISOString() },
+  { id: 'user2', name: 'Jane Smith', email: 'jane.smith@example.com', role: 'Vendedor', joinedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 180).toISOString() },
+  { id: 'user3', name: 'Peter Jones', email: 'peter.jones@example.com', role: 'Vendedor', joinedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 90).toISOString() },
 ];
 
 export const initialColumns: ColumnData[] = [

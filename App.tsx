@@ -38,7 +38,13 @@ import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, Update
 // Data
 import { initialColumns, initialTags, initialLeads, initialTasks, initialActivities, initialUsers, initialGroups, initialConversations, initialMessages, initialNotifications, initialPlaybooks, initialBoards } from './data';
 
-const localUser: User = { id: 'local-user', name: 'Usuário Local', email: 'user@local.com' };
+const localUser: User = { 
+    id: 'local-user', 
+    name: 'Usuário Local', 
+    email: 'user@local.com',
+    role: 'Admin',
+    joinedAt: new Date().toISOString()
+};
 
 // --- Local Storage Hook ---
 function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -873,6 +879,7 @@ const App: React.FC = () => {
             case 'Configurações':
                 return <SettingsPage
                     currentUser={localUser}
+                    users={users}
                     columns={columns}
                     onUpdateProfile={(name) => showNotification("Perfil atualizado!", 'success')}
                     onUpdatePipeline={(newColumns) => {
@@ -884,6 +891,7 @@ const App: React.FC = () => {
                         })));
                         showNotification("Pipeline salvo!", 'success');
                     }}
+                    onUpdateUsers={setUsers}
                     onResetApplication={handleResetApplication}
                     initialTab={settingsTab} // Passando a aba inicial
                 />;

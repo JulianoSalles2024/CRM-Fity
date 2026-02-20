@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { User, ColumnData, Id, Playbook } from '../types';
-import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit, Bell, Webhook, MessageSquare, Loader2, BookOpen, Bot } from 'lucide-react';
+import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit, Bell, Webhook, MessageSquare, Loader2, BookOpen, Bot, Users } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { DndContext, closestCenter, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -12,6 +12,7 @@ import NotificationSettings from './NotificationSettings';
 import PlaybookSettings from './PlaybookSettings';
 import IntegrationsPage from './IntegrationsPage';
 import AISettings from './AISettings';
+import TeamSettings from './TeamSettings';
 
 // --- Subcomponente de Perfil ---
 interface ProfileSettingsProps {
@@ -303,14 +304,16 @@ const PlaceholderTab: React.FC<{ title: string }> = ({ title }) => (
 // --- Componente Principal ---
 interface SettingsPageProps {
     currentUser: User;
+    users: User[];
     columns: ColumnData[];
     onUpdateProfile: (name: string, avatarFile?: File) => void;
     onUpdatePipeline: (columns: ColumnData[]) => void;
+    onUpdateUsers: (users: User[]) => void;
     onResetApplication: () => void;
     initialTab?: string;
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpdateProfile, onUpdatePipeline, onResetApplication, initialTab }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, users, columns, onUpdateProfile, onUpdatePipeline, onUpdateUsers, onResetApplication, initialTab }) => {
     const [activeTab, setActiveTab] = useState('Pipeline');
 
     useEffect(() => {
@@ -322,6 +325,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpd
     const tabs = [
         { name: 'Perfil', icon: UserIcon },
         { name: 'Pipeline', icon: Settings },
+        { name: 'Equipe', icon: Users },
         { name: 'Inteligência Artificial', icon: Bot },
         { name: 'Preferências', icon: SlidersHorizontal },
         { name: 'Integrações', icon: Webhook },
@@ -356,6 +360,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, columns, onUpd
             <div className="space-y-6">
                 {activeTab === 'Perfil' && <ProfileSettings currentUser={currentUser} onUpdateProfile={onUpdateProfile} />}
                 {activeTab === 'Pipeline' && <PipelineSettings columns={columns} onUpdatePipeline={onUpdatePipeline} />}
+                {activeTab === 'Equipe' && <TeamSettings users={users} currentUser={currentUser} onUpdateUsers={onUpdateUsers} />}
                 {activeTab === 'Inteligência Artificial' && <AISettings />}
                 {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />}
                 {activeTab === 'Integrações' && <IntegrationsPage showNotification={() => {}} />}
