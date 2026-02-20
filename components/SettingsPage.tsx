@@ -11,8 +11,8 @@ import ConfirmDeleteModal from './ConfirmDeleteModal';
 import NotificationSettings from './NotificationSettings';
 import PlaybookSettings from './PlaybookSettings';
 import IntegrationsPage from './IntegrationsPage';
-import AISettings from './AISettings';
 import TeamSettings from './TeamSettings';
+import { AIHubView } from '@/src/features/ai/AIHubView';
 
 // --- Componentes para Drag-and-Drop de Estágios ---
 
@@ -275,7 +275,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, users, columns
             <div className="space-y-6">
                 {activeTab === 'Pipeline' && <PipelineSettings columns={columns} onUpdatePipeline={onUpdatePipeline} />}
                 {activeTab === 'Equipe' && <TeamSettings users={users} currentUser={currentUser} onUpdateUsers={onUpdateUsers} />}
-                {activeTab === 'Inteligência Artificial' && <AISettings />}
+                {activeTab === 'Inteligência Artificial' && <AIHubView />}
                 {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />}
                 {activeTab === 'Integrações' && <IntegrationsPage showNotification={() => {}} />}
                 {activeTab === 'Notificações' && <NotificationSettings />}

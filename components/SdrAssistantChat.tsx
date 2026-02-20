@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Send, Bot, User, Loader2 } from 'lucide-react';
-import { aiConfig, aiGenerator } from '../services/ai';
+import { createAIService } from '@/src/services/ai';
+import { useAIState } from '@/src/features/ai/hooks/useAIState';
 import type { Lead, Task, ColumnData, Activity } from '../types';
 
 interface SdrAssistantChatProps {
@@ -19,8 +20,9 @@ interface Message {
 }
 
 const SdrAssistantChat: React.FC<SdrAssistantChatProps> = ({ onClose, leads, tasks, columns, activities }) => {
+    const { state } = useAIState();
     const [messages, setMessages] = useState<Message[]>([
-        { id: '1', role: 'assistant', text: 'Olá! Sou seu assistente de vendas SDR. Como posso ajudar com seus leads hoje?' }
+        { id: '1', role: 'assistant', text: 'Olá! Sou seu assistente de vendas Pilot. Como posso ajudar com seus leads hoje?' }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -34,8 +36,7 @@ const SdrAssistantChat: React.FC<SdrAssistantChatProps> = ({ onClose, leads, tas
         scrollToBottom();
     }, [messages]);
 
-    const getSystemContext = () => {
-        // Create a summary context of the CRM data
+    const getCRMContext = () => {
         const leadsSummary = leads.slice(0, 50).map(l => ({
             name: l.name,
             company: l.company,
@@ -47,22 +48,15 @@ const SdrAssistantChat: React.FC<SdrAssistantChatProps> = ({ onClose, leads, tas
         const tasksPending = tasks.filter(t => t.status === 'pending').length;
         const totalValue = leads.reduce((acc, curr) => acc + curr.value, 0);
 
-        return `Você é um Assistente SDR (Sales Development Representative) inteligente integrado a um CRM.
-        
+        return `
         CONTEXTO ATUAL DO CRM:
         - Total de Leads: ${leads.length}
         - Valor Total em Pipeline: R$ ${totalValue.toFixed(2)}
         - Tarefas Pendentes: ${tasksPending}
         - Estágios do Pipeline: ${columns.map(c => c.title).join(', ')}
         
-        AMOSTRA DE LEADS (Use isso para responder perguntas específicas):
+        AMOSTRA DE LEADS:
         ${JSON.stringify(leadsSummary)}
-
-        INSTRUÇÕES:
-        1. Responda perguntas sobre os leads, valores e status.
-        2. Seja conciso, profissional e prestativo.
-        3. Se não souber algo que não está nos dados, diga que não tem essa informação.
-        4. Sempre responda em Português do Brasil.
         `;
     };
 
@@ -76,17 +70,24 @@ const SdrAssistantChat: React.FC<SdrAssistantChatProps> = ({ onClose, leads, tas
         setIsLoading(true);
 
         try {
-            const config = aiConfig.load();
-
-            if (!config.apiKey) {
-                setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', text: 'Erro: Chave de API não encontrada. Por favor, reconfigure a IA nas configurações.' }]);
+            if (!state.apiKey) {
+                setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', text: 'Erro: Chave de API não encontrada. Por favor, configure a IA nas configurações.' }]);
                 return;
             }
 
-            // Prepare history for prompt (simplified)
-            const prompt = `${getSystemContext()}\n\nHistórico da conversa:\n${messages.map(m => `${m.role === 'user' ? 'Usuário' : 'Assistente'}: ${m.text}`).join('\n')}\nUsuário: ${userMessage.text}\nAssistente:`;
+            const service = createAIService(state.apiKey, state.model);
+            const pilotTool = state.tools.pilot;
 
-            const responseText = await aiGenerator.generate(prompt, config);
+            if (!pilotTool.enabled) {
+                setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', text: 'O assistente Pilot está desativado nas configurações.' }]);
+                return;
+            }
+
+            const systemInstruction = `${pilotTool.basePrompt}\n\n${getCRMContext()}`;
+            const history = messages.map(m => `${m.role === 'user' ? 'Usuário' : 'Assistente'}: ${m.text}`).join('\n');
+            const prompt = `Histórico da conversa:\n${history}\nUsuário: ${userMessage.text}\nAssistente:`;
+
+            const responseText = await service.generate(prompt, systemInstruction);
             
             setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', text: responseText }]);
 
