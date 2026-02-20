@@ -1,5 +1,5 @@
 import React from 'react';
-import { ProfilePage } from '@/src/features/profile';
+import { ProfileView } from '@/src/features/profile';
 import KanbanBoard from '@/components/KanbanBoard';
 import Dashboard from '@/components/Dashboard';
 import SettingsPage from '@/components/SettingsPage';
@@ -108,7 +108,7 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
 
   switch (activeView) {
     case 'Meu Perfil':
-      return <ProfilePage />;
+      return <ProfileView />;
     case 'Inbox':
       return <InboxView
           mode={inboxMode}
