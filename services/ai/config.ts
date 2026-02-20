@@ -44,14 +44,16 @@ export const aiConfig = {
             { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash - Cost Effective' },
         ],
         openai: [
-            { id: 'gpt-4o', name: 'GPT-4o - Flagship' },
+            { id: 'o1', name: 'OpenAI o1 - Advanced Reasoning' },
+            { id: 'o1-mini', name: 'OpenAI o1-mini - Fast Reasoning' },
+            { id: 'gpt-4o', name: 'GPT-4o - Flagship Multimodal' },
+            { id: 'gpt-4o-mini', name: 'GPT-4o Mini - Cost Effective' },
             { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
-            { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
         ],
         anthropic: [
-            { id: 'claude-3-5-sonnet-20240620', name: 'Claude 3.5 Sonnet' },
-            { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus' },
-            { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku' },
+            { id: 'claude-3-5-sonnet-latest', name: 'Claude 3.5 Sonnet (Latest)' },
+            { id: 'claude-3-5-haiku-latest', name: 'Claude 3.5 Haiku (Latest)' },
+            { id: 'claude-3-opus-latest', name: 'Claude 3 Opus (Latest)' },
         ],
     })
 };

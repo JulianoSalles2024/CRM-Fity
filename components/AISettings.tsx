@@ -13,7 +13,7 @@ const AISettings: React.FC = () => {
     });
     
     const [showApiKey, setShowApiKey] = useState(false);
-    const [status, setStatus] = useState<'pending' | 'saved'>('pending');
+    const [status, setStatus] = useState<'pending' | 'saved' | 'testing' | 'success' | 'error'>('pending');
     
     const models = aiConfig.getModels();
     const providers = [
@@ -37,8 +37,21 @@ const AISettings: React.FC = () => {
         
         aiConfig.save(config);
         setStatus('saved');
+    };
+
+    const handleTestConnection = async () => {
+        if (!config.apiKey.trim()) return;
         
-        // Simulating a save toast/notification could be done here if the prop was passed
+        setStatus('testing');
+        try {
+            await aiGenerator.generate('Hello, are you online?', config);
+            setStatus('success');
+            // Save after successful test
+            aiConfig.save(config);
+        } catch (error) {
+            console.error(error);
+            setStatus('error');
+        }
     };
 
     const handleChange = (field: keyof AIConfig, value: any) => {
@@ -170,6 +183,14 @@ const AISettings: React.FC = () => {
                             </button>
                         </div>
                         <button
+                            onClick={handleTestConnection}
+                            disabled={!config.apiKey.trim() || status === 'testing'}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${status === 'testing' ? 'bg-slate-700 text-slate-400 cursor-wait' : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'}`}
+                        >
+                            {status === 'testing' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                            Testar
+                        </button>
+                        <button
                             onClick={handleSave}
                             className={`flex items-center gap-2 px-6 py-2 rounded-lg font-semibold text-sm transition-all ${config.apiKey.trim() ? 'bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-900/20' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
                             disabled={!config.apiKey.trim()}
@@ -183,15 +204,34 @@ const AISettings: React.FC = () => {
 
                 {/* Status Message */}
                 <div className="mt-6">
-                    {status === 'saved' ? (
+                    {status === 'success' && (
                         <div className="flex items-start gap-3 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
                             <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
                             <div>
-                                <h4 className="text-sm font-semibold text-emerald-300">Configuração Ativa</h4>
-                                <p className="text-xs text-emerald-400/70 mt-1">O assistente de IA está pronto para uso com o modelo {config.model}.</p>
+                                <h4 className="text-sm font-semibold text-emerald-300">Conexão Estabelecida!</h4>
+                                <p className="text-xs text-emerald-400/70 mt-1">A chave de API é válida e o modelo {config.model} está respondendo.</p>
                             </div>
                         </div>
-                    ) : (
+                    )}
+                    {status === 'error' && (
+                        <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                            <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                            <div>
+                                <h4 className="text-sm font-semibold text-red-300">Erro na Conexão</h4>
+                                <p className="text-xs text-red-400/70 mt-1">Não foi possível conectar com a API. Verifique sua chave e tente novamente.</p>
+                            </div>
+                        </div>
+                    )}
+                    {status === 'saved' && (
+                        <div className="flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                            <Check className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                            <div>
+                                <h4 className="text-sm font-semibold text-blue-300">Configuração Salva</h4>
+                                <p className="text-xs text-blue-400/70 mt-1">As configurações foram salvas localmente.</p>
+                            </div>
+                        </div>
+                    )}
+                    {status === 'pending' && (
                         <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                             <AlertTriangle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
                             <div>
