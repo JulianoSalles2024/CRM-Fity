@@ -1,22 +1,31 @@
-import React, { useState } from 'react';
-import { Bot, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Bot, Sparkles, AlertCircle, Loader2, Key } from 'lucide-react';
 import { useAIState } from './hooks/useAIState';
 import { AIToolCard } from './components/AIToolCard';
 import { PromptEditorModal } from './components/PromptEditorModal';
 import { AIToolId } from './types';
 import { createAIService } from '@/src/services/ai';
+import { useAIProviders } from '../ai-credentials/useAIProviders';
 
 export const AIHubView: React.FC = () => {
-  const { state, updateTool, setApiKey } = useAIState();
+  const { state, updateTool } = useAIState();
+  const { credentials } = useAIProviders();
   const [editingToolId, setEditingToolId] = useState<AIToolId | null>(null);
   const [isTesting, setIsTesting] = useState<AIToolId | null>(null);
   const [testResult, setTestResult] = useState<string | null>(null);
 
   const toolsList = Object.values(state.tools);
 
+  const activeCredential = useMemo(() => {
+    if (credentials.gemini.status === 'connected') return credentials.gemini;
+    if (credentials.openai.status === 'connected') return credentials.openai;
+    if (credentials.anthropic.status === 'connected') return credentials.anthropic;
+    return null;
+  }, [credentials]);
+
   const handleTest = async (toolId: AIToolId) => {
-    if (!state.apiKey) {
-      alert('Por favor, insira uma API Key antes de testar.');
+    if (!activeCredential) {
+      alert('Nenhum provedor de IA conectado. Configure suas credenciais na aba "Credenciais de IA".');
       return;
     }
 
@@ -24,7 +33,9 @@ export const AIHubView: React.FC = () => {
     setTestResult(null);
 
     try {
-      const service = createAIService(state.apiKey, state.model);
+      // Note: In a real app, the service would handle different providers.
+      // For this demo, we'll assume it uses the active credential.
+      const service = createAIService(activeCredential.apiKey, activeCredential.model);
       const tool = state.tools[toolId];
       
       // Mock variables for testing
@@ -65,41 +76,41 @@ export const AIHubView: React.FC = () => {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-white">Inteligência Artificial</h1>
-          <p className="text-slate-400">Configure e gerencie as ferramentas de IA do seu CRM</p>
+          <p className="text-slate-400">Personalize os prompts e comportamentos das funções de IA</p>
         </div>
       </div>
 
-      {/* API Key Configuration */}
-      <div 
-        className="p-6 rounded-2xl border border-white/10"
-        style={{
-          background: 'rgba(255, 255, 255, 0.04)',
-          backdropFilter: 'blur(12px)',
-        }}
-      >
-        <div className="flex items-start gap-4 mb-6">
+      {/* Connection Status Info */}
+      {!activeCredential ? (
+        <div className="p-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 flex items-start gap-4">
           <div className="p-2 rounded-lg bg-amber-500/10">
             <AlertCircle className="w-5 h-5 text-amber-500" />
           </div>
-          <div>
-            <h3 className="text-lg font-bold text-white mb-1">Configuração da API</h3>
-            <p className="text-sm text-slate-400">Insira sua chave da Gemini API para ativar as funções.</p>
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-white mb-1">IA Desativada</h3>
+            <p className="text-sm text-slate-400 mb-4">Você precisa configurar ao menos uma API Key para ativar as funções de inteligência artificial.</p>
+            <button 
+              onClick={() => {
+                // This is a bit hacky since we don't have direct access to setActiveTab here
+                // but in a real app we would use a context or routing
+                const event = new CustomEvent('changeSettingsTab', { detail: 'Credenciais de IA' });
+                window.dispatchEvent(event);
+              }}
+              className="flex items-center gap-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+            >
+              <Key className="w-4 h-4" />
+              Configurar Credenciais
+            </button>
           </div>
         </div>
-
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Gemini API Key</label>
-            <input 
-              type="password"
-              value={state.apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Digite sua chave aqui..."
-              className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all"
-            />
-          </div>
+      ) : (
+        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <p className="text-sm text-emerald-400 font-medium">
+            Sistema ativo usando <span className="font-bold">{activeCredential.provider === 'gemini' ? 'Google Gemini' : activeCredential.provider === 'openai' ? 'OpenAI' : 'Anthropic'}</span> ({activeCredential.model})
+          </p>
         </div>
-      </div>
+      )}
 
       {/* Tools Grid */}
       <div 

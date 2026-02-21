@@ -13,6 +13,8 @@ import PlaybookSettings from './PlaybookSettings';
 import IntegrationsPage from './IntegrationsPage';
 import TeamSettings from './TeamSettings';
 import { AIHubView } from '@/src/features/ai/AIHubView';
+import { AIProvidersPage } from '@/src/features/ai-credentials/AIProvidersPage';
+import { Key } from 'lucide-react';
 
 // --- Componentes para Drag-and-Drop de Estágios ---
 
@@ -236,12 +238,22 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, users, columns
         if (initialTab) {
             setActiveTab(initialTab);
         }
+
+        const handleTabChange = (e: any) => {
+            if (e.detail) {
+                setActiveTab(e.detail);
+            }
+        };
+
+        window.addEventListener('changeSettingsTab', handleTabChange);
+        return () => window.removeEventListener('changeSettingsTab', handleTabChange);
     }, [initialTab]);
 
     const tabs = [
         { name: 'Pipeline', icon: Settings },
         { name: 'Equipe', icon: Users },
         { name: 'Inteligência Artificial', icon: Bot },
+        { name: 'Credenciais de IA', icon: Key },
         { name: 'Preferências', icon: SlidersHorizontal },
         { name: 'Integrações', icon: Webhook },
         { name: 'Notificações', icon: Bell },
@@ -276,6 +288,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, users, columns
                 {activeTab === 'Pipeline' && <PipelineSettings columns={columns} onUpdatePipeline={onUpdatePipeline} />}
                 {activeTab === 'Equipe' && <TeamSettings users={users} currentUser={currentUser} onUpdateUsers={onUpdateUsers} />}
                 {activeTab === 'Inteligência Artificial' && <AIHubView />}
+                {activeTab === 'Credenciais de IA' && <AIProvidersPage />}
                 {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />}
                 {activeTab === 'Integrações' && <IntegrationsPage showNotification={() => {}} />}
                 {activeTab === 'Notificações' && <NotificationSettings />}

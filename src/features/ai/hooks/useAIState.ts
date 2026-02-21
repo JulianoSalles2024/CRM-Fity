@@ -15,9 +15,7 @@ export const useAIState = () => {
       }
     }
     return {
-      tools: DEFAULT_AI_TOOLS,
-      apiKey: '',
-      model: 'gemini-3-flash-preview'
+      tools: DEFAULT_AI_TOOLS
     };
   });
 
@@ -35,18 +33,8 @@ export const useAIState = () => {
     }));
   };
 
-  const setApiKey = (apiKey: string) => {
-    setState(prev => ({ ...prev, apiKey }));
-  };
-
-  const setModel = (model: string) => {
-    setState(prev => ({ ...prev, model }));
-  };
-
   return {
     state,
-    updateTool,
-    setApiKey,
-    setModel
+    updateTool
   };
 };

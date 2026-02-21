@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { createAIService } from '@/src/services/ai';
 import { useAIState } from '@/src/features/ai/hooks/useAIState';
+import { useAIProviders } from '@/src/features/ai-credentials/useAIProviders';
 import type { Lead, Task, ColumnData, Activity } from '../types';
 
 interface SdrAssistantChatProps {
@@ -21,6 +22,15 @@ interface Message {
 
 const SdrAssistantChat: React.FC<SdrAssistantChatProps> = ({ onClose, leads, tasks, columns, activities }) => {
     const { state } = useAIState();
+    const { credentials } = useAIProviders();
+
+    const activeCredential = useMemo(() => {
+        if (credentials.gemini.status === 'connected') return credentials.gemini;
+        if (credentials.openai.status === 'connected') return credentials.openai;
+        if (credentials.anthropic.status === 'connected') return credentials.anthropic;
+        return null;
+    }, [credentials]);
+
     const [messages, setMessages] = useState<Message[]>([
         { id: '1', role: 'assistant', text: 'Olá! Sou seu assistente de vendas Pilot. Como posso ajudar com seus leads hoje?' }
     ]);
@@ -70,12 +80,12 @@ const SdrAssistantChat: React.FC<SdrAssistantChatProps> = ({ onClose, leads, tas
         setIsLoading(true);
 
         try {
-            if (!state.apiKey) {
-                setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', text: 'Erro: Chave de API não encontrada. Por favor, configure a IA nas configurações.' }]);
+            if (!activeCredential) {
+                setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', text: 'Erro: Nenhum provedor de IA conectado. Por favor, configure suas credenciais nas configurações.' }]);
                 return;
             }
 
-            const service = createAIService(state.apiKey, state.model);
+            const service = createAIService(activeCredential.apiKey, activeCredential.model);
             const pilotTool = state.tools.pilot;
 
             if (!pilotTool.enabled) {

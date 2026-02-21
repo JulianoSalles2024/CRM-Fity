@@ -68,6 +68,7 @@ export const getLeads = async (): Promise<Lead[]> => {
     return data.map(d => ({
         id: d.id, columnId: d.column_id, name: d.name, company: d.company, value: d.value,
         avatarUrl: d.avatar_url, tags: d.tags || [], lastActivity: d.last_activity,
+        lastActivityTimestamp: d.last_activity_timestamp || d.created_at,
         dueDate: d.due_date, assignedTo: d.assigned_to, description: d.description,
         email: d.email, phone: d.phone, probability: d.probability, status: d.status,
         clientId: d.client_id, source: d.source, createdAt: d.created_at, groupInfo: d.group_info

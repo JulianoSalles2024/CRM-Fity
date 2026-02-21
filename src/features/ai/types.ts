@@ -21,8 +21,6 @@ export interface AIToolConfig {
 
 export interface AIState {
   tools: Record<AIToolId, AIToolConfig>;
-  apiKey: string;
-  model: string;
 }
 
 export interface DealCoachResult {

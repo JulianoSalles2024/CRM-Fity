@@ -1,25 +1,60 @@
 import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 import { AIToolId, AIToolConfig, DealCoachResult } from "../../features/ai/types";
 
 export class AIService {
-  private ai: GoogleGenAI;
+  private provider: 'gemini' | 'openai' | 'anthropic';
   private model: string;
+  private apiKey: string;
 
   constructor(apiKey: string, model: string = "gemini-3-flash-preview") {
-    this.ai = new GoogleGenAI({ apiKey });
+    this.apiKey = apiKey;
     this.model = model;
+    
+    if (model.includes('gpt') || model.includes('o1')) {
+      this.provider = 'openai';
+    } else if (model.includes('claude')) {
+      this.provider = 'anthropic';
+    } else {
+      this.provider = 'gemini';
+    }
   }
 
   public async generate(prompt: string, systemInstruction?: string): Promise<string> {
     try {
-      const response = await this.ai.models.generateContent({
-        model: this.model,
-        contents: prompt,
-        config: {
-          systemInstruction,
-        },
-      });
-      return response.text || "";
+      if (this.provider === 'gemini') {
+        const genAI = new GoogleGenAI({ apiKey: this.apiKey });
+        const response = await genAI.models.generateContent({
+          model: this.model,
+          contents: prompt,
+          config: {
+            systemInstruction,
+          },
+        });
+        return response.text || "";
+      } else if (this.provider === 'openai') {
+        const openai = new OpenAI({ apiKey: this.apiKey, dangerouslyAllowBrowser: true });
+        const response = await openai.chat.completions.create({
+          model: this.model,
+          messages: [
+            ...(systemInstruction ? [{ role: 'system', content: systemInstruction } as const] : []),
+            { role: 'user', content: prompt }
+          ],
+        });
+        return response.choices[0].message.content || "";
+      } else if (this.provider === 'anthropic') {
+        const anthropic = new Anthropic({ apiKey: this.apiKey, dangerouslyAllowBrowser: true });
+        const response = await anthropic.messages.create({
+          model: this.model,
+          max_tokens: 4096,
+          system: systemInstruction,
+          messages: [{ role: 'user', content: prompt }],
+        });
+        const textPart = response.content.find(p => p.type === 'text');
+        return textPart?.type === 'text' ? textPart.text : "";
+      }
+      return "";
     } catch (error) {
       console.error("AI Generation Error:", error);
       throw error;
@@ -55,16 +90,10 @@ export class AIService {
       prompt = prompt.replace(new RegExp(placeholder, 'g'), String(value));
     });
 
-    const response = await this.ai.models.generateContent({
-      model: this.model,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-      }
-    });
+    const responseText = await this.generate(prompt, "You are a sales coach. Respond ONLY with a JSON object.");
 
     try {
-      return JSON.parse(response.text || "{}");
+      return JSON.parse(responseText || "{}");
     } catch (e) {
       console.error("Failed to parse deal analysis JSON", e);
       throw new Error("Invalid AI response format");
