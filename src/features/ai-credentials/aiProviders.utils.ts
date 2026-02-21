@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -36,16 +35,28 @@ export function decrypt(text: string) {
 export async function testProviderConnection(provider: string, model: string, apiKey: string) {
   if (!apiKey) throw new Error("API Key is empty");
 
-  if (provider === "gemini") {
-    const genAI = new GoogleGenAI({ apiKey });
-    await genAI.models.generateContent({
-      model: model,
-      contents: "hi",
+  // normalize: frontend sends "google", filesystem stores "gemini"
+  const normalized = provider === "google" ? "gemini" : provider;
+
+  if (normalized === "gemini") {
+    // Direct REST call — avoids @google/genai SDK which breaks Vercel serverless bundling
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: "hi" }] }],
+        generationConfig: { maxOutputTokens: 1 },
+      }),
     });
-  } else if (provider === "openai") {
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error((err as any)?.error?.message || `HTTP ${response.status}`);
+    }
+  } else if (normalized === "openai") {
     const openai = new OpenAI({ apiKey });
     await openai.models.list();
-  } else if (provider === "anthropic") {
+  } else if (normalized === "anthropic") {
     const anthropic = new Anthropic({ apiKey });
     await anthropic.messages.create({
       model: model,
