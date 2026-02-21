@@ -97,30 +97,100 @@ app.post("/api/ai/credentials", (req, res) => {
 
 app.post("/api/ai/test-connection", async (req, res) => {
   const { provider, model, apiKey } = req.body;
+  console.log(`Testing connection for ${provider} with model ${model}`);
   
   try {
     if (provider === "gemini") {
       const genAI = new GoogleGenAI({ apiKey });
-      const aiModel = genAI.models.generateContent({
+      // Use a simpler check for Gemini
+      const modelInfo = await genAI.models.generateContent({
         model: model,
-        contents: "test",
+        contents: "hi",
       });
-      await aiModel; // Just check if it doesn't throw
+      console.log("Gemini test success");
     } else if (provider === "openai") {
       const openai = new OpenAI({ apiKey });
       await openai.models.list();
+      console.log("OpenAI test success");
     } else if (provider === "anthropic") {
       const anthropic = new Anthropic({ apiKey });
       await anthropic.messages.create({
         model: model,
         max_tokens: 1,
-        messages: [{ role: "user", content: "test" }],
+        messages: [{ role: "user", content: "hi" }],
       });
+      console.log("Anthropic test success");
     }
 
     res.json({ success: true, message: "Conexão estabelecida com sucesso!" });
   } catch (error: any) {
+    console.error(`Test connection failed for ${provider}:`, error.message);
     res.status(400).json({ success: false, message: error.message || "Falha na conexão" });
+  }
+});
+
+// AI Proxy Route to use stored credentials
+app.post("/api/ai/generate", async (req, res) => {
+  const { organizationId, prompt, systemInstruction } = req.body;
+  
+  try {
+    // Priority: Gemini > OpenAI > Anthropic
+    const providers: any[] = ["gemini", "openai", "anthropic"];
+    let activeCred = null;
+    let providerId = "";
+
+    for (const p of providers) {
+      const filePath = path.join(CREDENTIALS_DIR, organizationId, `${p}.json`);
+      if (fs.existsSync(filePath)) {
+        activeCred = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+        providerId = p;
+        break;
+      }
+    }
+
+    if (!activeCred) {
+      return res.status(400).json({ error: "Nenhuma credencial de IA configurada para esta organização." });
+    }
+
+    const apiKey = decrypt(activeCred.encryptedKey);
+    const model = activeCred.model;
+
+    let result = "";
+
+    if (providerId === "gemini") {
+      const genAI = new GoogleGenAI({ apiKey });
+      const response = await genAI.models.generateContent({
+        model,
+        contents: prompt,
+        config: { systemInstruction }
+      });
+      result = response.text || "";
+    } else if (providerId === "openai") {
+      const openai = new OpenAI({ apiKey });
+      const response = await openai.chat.completions.create({
+        model,
+        messages: [
+          ...(systemInstruction ? [{ role: "system", content: systemInstruction } as const] : []),
+          { role: "user", content: prompt }
+        ]
+      });
+      result = response.choices[0].message.content || "";
+    } else if (providerId === "anthropic") {
+      const anthropic = new Anthropic({ apiKey });
+      const response = await anthropic.messages.create({
+        model,
+        max_tokens: 4096,
+        system: systemInstruction,
+        messages: [{ role: "user", content: prompt }]
+      });
+      const textPart = response.content.find(p => p.type === "text");
+      result = textPart?.type === "text" ? textPart.text : "";
+    }
+
+    res.json({ text: result });
+  } catch (error: any) {
+    console.error("AI Proxy Error:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 

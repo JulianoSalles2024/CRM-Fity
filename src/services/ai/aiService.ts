@@ -23,38 +23,57 @@ export class AIService {
 
   public async generate(prompt: string, systemInstruction?: string): Promise<string> {
     try {
-      if (this.provider === 'gemini') {
-        const genAI = new GoogleGenAI({ apiKey: this.apiKey });
-        const response = await genAI.models.generateContent({
-          model: this.model,
-          contents: prompt,
-          config: {
-            systemInstruction,
-          },
-        });
-        return response.text || "";
-      } else if (this.provider === 'openai') {
-        const openai = new OpenAI({ apiKey: this.apiKey, dangerouslyAllowBrowser: true });
-        const response = await openai.chat.completions.create({
-          model: this.model,
-          messages: [
-            ...(systemInstruction ? [{ role: 'system', content: systemInstruction } as const] : []),
-            { role: 'user', content: prompt }
-          ],
-        });
-        return response.choices[0].message.content || "";
-      } else if (this.provider === 'anthropic') {
-        const anthropic = new Anthropic({ apiKey: this.apiKey, dangerouslyAllowBrowser: true });
-        const response = await anthropic.messages.create({
-          model: this.model,
-          max_tokens: 4096,
-          system: systemInstruction,
-          messages: [{ role: 'user', content: prompt }],
-        });
-        const textPart = response.content.find(p => p.type === 'text');
-        return textPart?.type === 'text' ? textPart.text : "";
+      // If we have a real API key (from the test screen), use it directly
+      if (this.apiKey && this.apiKey !== "********") {
+        if (this.provider === 'gemini') {
+          const genAI = new GoogleGenAI({ apiKey: this.apiKey });
+          const response = await genAI.models.generateContent({
+            model: this.model,
+            contents: prompt,
+            config: { systemInstruction },
+          });
+          return response.text || "";
+        } else if (this.provider === 'openai') {
+          const openai = new OpenAI({ apiKey: this.apiKey, dangerouslyAllowBrowser: true });
+          const response = await openai.chat.completions.create({
+            model: this.model,
+            messages: [
+              ...(systemInstruction ? [{ role: 'system', content: systemInstruction } as const] : []),
+              { role: 'user', content: prompt }
+            ],
+          });
+          return response.choices[0].message.content || "";
+        } else if (this.provider === 'anthropic') {
+          const anthropic = new Anthropic({ apiKey: this.apiKey, dangerouslyAllowBrowser: true });
+          const response = await anthropic.messages.create({
+            model: this.model,
+            max_tokens: 4096,
+            system: systemInstruction,
+            messages: [{ role: 'user', content: prompt }],
+          });
+          const textPart = response.content.find(p => p.type === 'text');
+          return textPart?.type === 'text' ? textPart.text : "";
+        }
       }
-      return "";
+
+      // Otherwise, use the backend proxy with stored credentials
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          organizationId: 'default-org',
+          prompt,
+          systemInstruction
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Falha ao gerar resposta via proxy');
+      }
+
+      const data = await response.json();
+      return data.text || "";
     } catch (error) {
       console.error("AI Generation Error:", error);
       throw error;

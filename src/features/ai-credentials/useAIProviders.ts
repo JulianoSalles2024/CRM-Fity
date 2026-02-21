@@ -43,16 +43,20 @@ export const useAIProviders = (organizationId: string = 'default-org') => {
     try {
       const credential = credentials[provider];
       await aiProvidersService.saveCredential(organizationId, credential);
-      // Refresh status or just assume success if no error
+      alert('Configurações salvas com sucesso!');
     } catch (error) {
       console.error('Error saving credential:', error);
+      alert('Erro ao salvar configurações.');
       throw error;
     }
   };
 
   const testConnection = async (provider: AIProviderId) => {
     const credential = credentials[provider];
-    if (!credential.apiKey) return;
+    if (!credential.apiKey) {
+      alert('Por favor, insira uma API Key antes de testar.');
+      return;
+    }
 
     updateCredential(provider, { status: 'testing' });
 
@@ -67,9 +71,16 @@ export const useAIProviders = (organizationId: string = 'default-org') => {
         status: result.success ? 'connected' : 'invalid'
       });
       
+      if (result.success) {
+        alert(result.message);
+      } else {
+        alert(`Falha no teste: ${result.message}`);
+      }
+      
       return result;
-    } catch (error) {
+    } catch (error: any) {
       updateCredential(provider, { status: 'invalid' });
+      alert('Erro técnico ao tentar conectar com o servidor.');
       return { success: false, message: 'Erro ao testar conexão' };
     }
   };
