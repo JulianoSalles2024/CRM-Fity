@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { generateGroupAnalysis } from '../api';
 import type { Lead, Id, GroupInfo, UpdateLeadData, Group, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData } from '../types';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
+import { GlassCard } from '@/src/shared/components/GlassCard';
+import { GlassSection } from '@/src/shared/components/GlassSection';
 
 interface GroupsViewProps {
     group: Group;
@@ -28,7 +30,7 @@ const CheckboxCell: React.FC<{ checked: boolean; onChange: (checked: boolean) =>
 );
 
 const KpiCard: React.FC<{ icon: React.ElementType; title: string; value: string; colorClass: string; }> = ({ icon: Icon, title, value, colorClass }) => (
-    <div className="bg-slate-900 p-4 rounded-lg border border-slate-800 flex items-center gap-4 transition-all duration-200 ease-in-out hover:bg-slate-700/50 hover:-translate-y-1">
+    <GlassSection className="flex items-center gap-4 transition-all duration-200 ease-in-out hover:bg-slate-700/50 hover:-translate-y-1">
         <div className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center ${colorClass.replace('text-', 'bg-')}/20`}>
             <Icon className={`w-5 h-5 ${colorClass}`} />
         </div>
@@ -36,7 +38,7 @@ const KpiCard: React.FC<{ icon: React.ElementType; title: string; value: string;
             <p className="text-2xl font-bold text-white">{value}</p>
             <p className="text-sm text-slate-400">{title}</p>
         </div>
-    </div>
+    </GlassSection>
 );
 
 // A simple sanitizer to prevent XSS. For production, a robust library like DOMPurify is recommended.
@@ -295,14 +297,14 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                     {group.memberGoal ? (
                         <KpiCard icon={Goal} title="Meta" value={`${groupMetrics.currentMembers} / ${group.memberGoal}`} colorClass="text-blue-400" />
                     ) : (
-                        <div className="bg-slate-800 p-4 rounded-lg border border-slate-700 flex items-center gap-4">
+                        <GlassSection className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center bg-slate-700/50">
                                 <Goal className="w-5 h-5 text-slate-500" />
                             </div>
                             <div>
                                 <p className="text-sm text-slate-400">Nenhuma meta definida</p>
                             </div>
-                        </div>
+                        </GlassSection>
                     )}
                 </div>
                 
@@ -312,59 +314,60 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                             initial={{ opacity: 0, y: -20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
-                            className="bg-slate-800/50 rounded-lg border border-slate-700 p-6"
                         >
-                            <div className="flex justify-between items-center">
-                                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                                    <Sparkles className="w-5 h-5 text-violet-400" />
-                                    <span>
-                                        Análise da IA
-                                        {currentAnalysis && currentAnalysis.status !== 'new' && (
-                                            <span className="text-xs font-normal text-slate-400 ml-2 capitalize">({currentAnalysis.status === 'draft' ? 'Rascunho' : 'Salvo'})</span>
-                                        )}
-                                    </span>
-                                </h2>
-                                {currentAnalysis && !isLoadingAnalysis && (
-                                    <div className="flex items-center gap-1">
-                                        <button onClick={() => handleSaveAnalysis('saved')} title="Salvar" className="p-2 text-slate-400 hover:text-white rounded-md hover:bg-slate-700/50"><Save className="w-4 h-4" /></button>
-                                        <button onClick={() => handleSaveAnalysis('draft')} title="Salvar como Rascunho" className="p-2 text-slate-400 hover:text-white rounded-md hover:bg-slate-700/50"><FileText className="w-4 h-4" /></button>
-                                        <button onClick={handleDiscardAnalysis} title="Descartar" className="p-2 text-slate-400 hover:text-red-500 rounded-md hover:bg-slate-700/50"><Trash2 className="w-4 h-4" /></button>
-                                        <div className="w-px h-5 bg-slate-700 mx-1" />
-                                        <button onClick={() => setIsAnalysisMinimized(p => !p)} title={isAnalysisMinimized ? 'Expandir' : 'Minimizar'} className="p-2 text-slate-400 hover:text-white rounded-md hover:bg-slate-700/50">
-                                            {isAnalysisMinimized ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                            <AnimatePresence>
-                                {!isAnalysisMinimized && (
-                                    <motion.div
-                                        key="analysis-content"
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: 'auto', opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.3 }}
-                                        className="overflow-hidden"
-                                    >
-                                        <div className="pt-4">
-                                            {isLoadingAnalysis ? (
-                                                <div className="flex items-center justify-center py-10">
-                                                    <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
-                                                </div>
-                                            ) : (
-                                                <div className="prose prose-invert prose-sm max-w-none text-slate-300 whitespace-pre-wrap"
-                                                    dangerouslySetInnerHTML={{ __html: sanitizeHTML(currentAnalysis ? currentAnalysis.content.replace(/## (.*?)\n/g, '<h3 class="text-white font-semibold mt-4 mb-2">$1</h3>').replace(/\* (.*?)\n/g, '<li class="ml-4">$1</li>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') : '') }}
-                                                />
+                            <GlassCard className="p-6">
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                                        <Sparkles className="w-5 h-5 text-violet-400" />
+                                        <span>
+                                            Análise da IA
+                                            {currentAnalysis && currentAnalysis.status !== 'new' && (
+                                                <span className="text-xs font-normal text-slate-400 ml-2 capitalize">({currentAnalysis.status === 'draft' ? 'Rascunho' : 'Salvo'})</span>
                                             )}
+                                        </span>
+                                    </h2>
+                                    {currentAnalysis && !isLoadingAnalysis && (
+                                        <div className="flex items-center gap-1">
+                                            <button onClick={() => handleSaveAnalysis('saved')} title="Salvar" className="p-2 text-slate-400 hover:text-white rounded-md hover:bg-slate-700/50"><Save className="w-4 h-4" /></button>
+                                            <button onClick={() => handleSaveAnalysis('draft')} title="Salvar como Rascunho" className="p-2 text-slate-400 hover:text-white rounded-md hover:bg-slate-700/50"><FileText className="w-4 h-4" /></button>
+                                            <button onClick={handleDiscardAnalysis} title="Descartar" className="p-2 text-slate-400 hover:text-red-500 rounded-md hover:bg-slate-700/50"><Trash2 className="w-4 h-4" /></button>
+                                            <div className="w-px h-5 bg-slate-700 mx-1" />
+                                            <button onClick={() => setIsAnalysisMinimized(p => !p)} title={isAnalysisMinimized ? 'Expandir' : 'Minimizar'} className="p-2 text-slate-400 hover:text-white rounded-md hover:bg-slate-700/50">
+                                                {isAnalysisMinimized ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+                                            </button>
                                         </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                                    )}
+                                </div>
+                                <AnimatePresence>
+                                    {!isAnalysisMinimized && (
+                                        <motion.div
+                                            key="analysis-content"
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="pt-4">
+                                                {isLoadingAnalysis ? (
+                                                    <div className="flex items-center justify-center py-10">
+                                                        <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="prose prose-invert prose-sm max-w-none text-slate-300 whitespace-pre-wrap"
+                                                        dangerouslySetInnerHTML={{ __html: sanitizeHTML(currentAnalysis ? currentAnalysis.content.replace(/## (.*?)\n/g, '<h3 class="text-white font-semibold mt-4 mb-2">$1</h3>').replace(/\* (.*?)\n/g, '<li class="ml-4">$1</li>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') : '') }}
+                                                    />
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </GlassCard>
                         </motion.div>
                     )}
                 </AnimatePresence>
                 
-                <div className="bg-slate-900 rounded-lg border border-slate-800 overflow-hidden flex-1 flex flex-col">
+                <GlassCard className="overflow-hidden flex-1 flex flex-col p-0">
                     <div className="overflow-auto h-full">
                         <table className="min-w-full divide-y divide-slate-700">
                             <thead className="bg-slate-900/50 sticky top-0 z-10">
@@ -420,7 +423,7 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                             </tbody>
                         </table>
                     </div>
-                </div>
+                </GlassCard>
             </div>
             <AnimatePresence>
                 {leadToRemove && (

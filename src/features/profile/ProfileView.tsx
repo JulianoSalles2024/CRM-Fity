@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Phone, Shield } from 'lucide-react';
 import { ProfileAvatar } from './components/ProfileAvatar';
+import { GlassCard } from '@/src/shared/components/GlassCard';
+import { GlassSection } from '@/src/shared/components/GlassSection';
 
 export const ProfileView: React.FC = () => {
   // Initial state from localStorage or defaults
@@ -48,13 +50,7 @@ export const ProfileView: React.FC = () => {
 
       <div className="space-y-8">
         {/* Main Card with Glassmorphism */}
-        <div className="relative overflow-hidden rounded-2xl p-8 shadow-[0_8px_32px_rgba(0,149,255,0.1)] border border-white/10"
-             style={{
-               background: 'rgba(255, 255, 255, 0.04)',
-               backdropFilter: 'blur(12px)',
-               WebkitBackdropFilter: 'blur(12px)',
-             }}>
-          
+        <GlassCard className="p-8 shadow-[0_8px_32px_rgba(0,149,255,0.1)]">
           <div className="flex items-center gap-6 mb-10">
             <ProfileAvatar 
               avatarUrl={previewUrl} 
@@ -129,15 +125,10 @@ export const ProfileView: React.FC = () => {
               Salvar
             </button>
           </div>
-        </div>
+        </GlassCard>
 
         {/* Security Section (Styled like the screenshot) */}
-        <div className="relative overflow-hidden rounded-2xl p-8 shadow-[0_8px_32px_rgba(0,149,255,0.05)] border border-white/10"
-             style={{
-               background: 'rgba(255, 255, 255, 0.04)',
-               backdropFilter: 'blur(12px)',
-               WebkitBackdropFilter: 'blur(12px)',
-             }}>
+        <GlassCard className="p-8 shadow-[0_8px_32px_rgba(0,149,255,0.05)]">
           <div className="flex items-start gap-4 mb-8">
             <div className="p-2 rounded-lg bg-white/5">
               <Shield className="w-5 h-5 text-slate-400" />
@@ -166,7 +157,7 @@ export const ProfileView: React.FC = () => {
               />
             </div>
           </div>
-        </div>
+        </GlassCard>
       </div>
     </div>
   );

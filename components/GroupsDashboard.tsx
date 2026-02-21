@@ -3,6 +3,8 @@ import { Group, Lead, Id } from '../types';
 import { Users, PlusCircle, MoreVertical, Edit, Trash2, Link as LinkIcon, Users as MembersIcon, UserPlus, TrendingDown, CheckCircle, Target, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
+import { GlassCard } from '@/src/shared/components/GlassCard';
+import { GlassSection } from '@/src/shared/components/GlassSection';
 
 interface GroupCardProps {
     group: Group;
@@ -27,9 +29,9 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, metrics, onSelect, onEdit,
     };
 
     return (
-        <div className="bg-slate-900 rounded-lg border border-slate-800 flex flex-col transition-all duration-200 ease-in-out hover:border-violet-500/80 hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-900/30">
+        <GlassCard className="flex flex-col transition-all duration-200 ease-in-out hover:border-violet-500/80 hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-900/30 p-0 overflow-hidden">
             {/* Header */}
-            <div className="p-5 border-b border-slate-800">
+            <div className="p-5 border-b border-white/10">
                 <div className="flex justify-between items-start">
                     <div>
                         <h3 className="font-bold text-white text-lg">{group.name}</h3>
@@ -92,7 +94,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, metrics, onSelect, onEdit,
                 )}
                 <button onClick={() => onSelect(group.id)} className="w-full bg-slate-700 text-white font-semibold py-2 rounded-md hover:bg-slate-600 transition-colors text-sm">Ver Membros</button>
             </div>
-        </div>
+        </GlassCard>
     );
 };
 

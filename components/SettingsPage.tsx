@@ -15,6 +15,8 @@ import TeamSettings from './TeamSettings';
 import { AIHubView } from '@/src/features/ai/AIHubView';
 import { AIProvidersPage } from '@/src/features/ai-credentials/AIProvidersPage';
 import { Key } from 'lucide-react';
+import { GlassCard } from '@/src/shared/components/GlassCard';
+import { GlassSection } from '@/src/shared/components/GlassSection';
 
 // --- Componentes para Drag-and-Drop de Estágios ---
 
@@ -37,7 +39,7 @@ const StageItem: React.FC<{ column: ColumnData; index: number; onEdit?: (column:
     };
 
     return (
-        <div className="flex items-center gap-3 p-2 bg-slate-800 rounded-lg border border-slate-700 touch-none">
+        <GlassSection className="flex items-center gap-3 p-2 touch-none">
             <button {...listeners} className="cursor-grab p-1 touch-none">
                 <GripVertical className="w-5 h-5 text-slate-500 flex-shrink-0" />
             </button>
@@ -57,7 +59,7 @@ const StageItem: React.FC<{ column: ColumnData; index: number; onEdit?: (column:
                     <Trash2 className="w-4 h-4" />
                 </button>
             )}
-        </div>
+        </GlassSection>
     )
 }
 
@@ -166,8 +168,8 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
 
     return (
         <>
-            <div className="bg-slate-900 rounded-lg border border-slate-800">
-                 <div className="p-6 border-b border-slate-700 flex justify-between items-center">
+            <GlassCard className="p-0">
+                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
                     <div>
                         <h2 className="text-lg font-semibold text-white">Estágios do Pipeline: <span className="text-violet-400">Vendas Padrão</span></h2>
                         <p className="text-sm text-slate-400 mt-1">Configure os estágios do seu funil de vendas. Arraste para reordenar.</p>
@@ -186,7 +188,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
                     </div>
                     <DragOverlay>{activeColumn ? <StageItem column={activeColumn} index={columns.findIndex(c => c.id === activeColumn.id)} /> : null}</DragOverlay>
                 </DndContext>
-            </div>
+            </GlassCard>
             
             <AnimatePresence>
                 {isCreateStageModalOpen && (
@@ -213,10 +215,10 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
 
 // --- Placeholder ---
 const PlaceholderTab: React.FC<{ title: string }> = ({ title }) => (
-    <div className="text-center p-10 bg-slate-900 rounded-lg border-2 border-dashed border-slate-800">
+    <GlassCard className="text-center p-10 border-2 border-dashed border-white/10">
         <h2 className="text-lg font-semibold text-white">WIP: {title}</h2>
         <p className="text-slate-400 mt-2">Esta seção estará disponível em breve!</p>
-    </div>
+    </GlassCard>
 );
 
 

@@ -4,6 +4,8 @@ import { Task, Lead, Id } from '../types';
 import { Calendar as CalendarIcon, Plus, Mail, Phone, Users, FileText, CheckSquare } from 'lucide-react';
 import MiniCalendar from './MiniCalendar';
 import TaskItem from './TaskItem';
+import { GlassCard } from '@/src/shared/components/GlassCard';
+import { GlassSection } from '@/src/shared/components/GlassSection';
 
 interface CalendarPageProps {
     tasks: Task[];
@@ -74,10 +76,10 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ tasks, leads, onNewActivity
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
                 {/* Left Column */}
                 <div className="lg:col-span-1 flex flex-col gap-6">
-                    <div className="bg-slate-900 p-4 rounded-lg border border-slate-800">
+                    <GlassCard className="p-4">
                         <MiniCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} />
-                    </div>
-                     <div className="bg-slate-900 p-4 rounded-lg border border-slate-800">
+                    </GlassCard>
+                     <GlassCard className="p-4">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-semibold text-white">Filtros</h3>
                             <button onClick={() => setActiveFilters([])} className="text-xs text-violet-400 hover:text-violet-300">Limpar</button>
@@ -103,11 +105,11 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ tasks, leads, onNewActivity
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </GlassCard>
                 </div>
                 {/* Right Column */}
-                <div className="lg:col-span-2 bg-slate-900 rounded-lg border border-slate-800 flex flex-col overflow-hidden">
-                     <div className="flex-shrink-0 p-4 flex justify-between items-center border-b border-slate-800">
+                <GlassCard className="lg:col-span-2 flex flex-col overflow-hidden p-0">
+                     <div className="flex-shrink-0 p-4 flex justify-between items-center border-b border-white/10">
                         <h2 className="font-semibold text-white capitalize">{selectedDateString}</h2>
                         <button onClick={() => onNewActivity(selectedDate.toISOString().split('T')[0])} className="flex items-center gap-2 bg-violet-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
                             <Plus className="w-4 h-4" />
@@ -159,7 +161,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ tasks, leads, onNewActivity
                             </div>
                         )}
                      </div>
-                </div>
+                </GlassCard>
             </div>
         </div>
     );

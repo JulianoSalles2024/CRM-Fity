@@ -3,6 +3,8 @@ import React, { useMemo, useState } from 'react';
 import { Task, Notification, Lead, Id } from '../types';
 import { CheckCircle2, Bell, Clock, Calendar, ArrowRight, UserPlus, AlertCircle, List, ScanLine, Circle, Play, Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { GlassCard } from '@/src/shared/components/GlassCard';
+import { GlassSection } from '@/src/shared/components/GlassSection';
 
 interface InboxViewProps {
     tasks: Task[];
@@ -102,7 +104,7 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
                     )}
                     
                     {!isFinished && (
-                        <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-1 pointer-events-auto shadow-lg">
+                        <GlassSection className="flex p-1 pointer-events-auto shadow-lg">
                             <button 
                                 onClick={() => setViewMode('list')}
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
@@ -117,7 +119,7 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
                                 <ScanLine className="w-4 h-4" />
                                 Foco
                             </button>
-                        </div>
+                        </GlassSection>
                     )}
                 </div>
 
@@ -221,16 +223,17 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
                                     key={lead.id}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="bg-slate-900 border border-slate-800 rounded-lg p-4 flex items-center gap-4 hover:border-slate-700 transition-colors group cursor-pointer"
                                 >
-                                    <div className="w-6 h-6 rounded-full border-2 border-slate-600 group-hover:border-slate-500 flex-shrink-0" />
-                                    <div className="flex-1">
-                                        <h3 className="text-white font-medium">Análise de Carteira: Risco de Churn</h3>
-                                        <p className="text-sm text-slate-400 truncate">O cliente {lead.name} (Empresa: {lead.company}) não...</p>
-                                    </div>
-                                    <div className="text-xs text-slate-500 font-mono">
-                                        Hoje
-                                    </div>
+                                    <GlassSection className="flex items-center gap-4 hover:border-slate-700 transition-colors group cursor-pointer">
+                                        <div className="w-6 h-6 rounded-full border-2 border-slate-600 group-hover:border-slate-500 flex-shrink-0" />
+                                        <div className="flex-1">
+                                            <h3 className="text-white font-medium">Análise de Carteira: Risco de Churn</h3>
+                                            <p className="text-sm text-slate-400 truncate">O cliente {lead.name} (Empresa: {lead.company}) não...</p>
+                                        </div>
+                                        <div className="text-xs text-slate-500 font-mono">
+                                            Hoje
+                                        </div>
+                                    </GlassSection>
                                 </motion.div>
                             ))}
                         </div>
@@ -282,57 +285,66 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
                     )}
 
                     {/* Today's Tasks */}
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl flex-1 flex flex-col overflow-hidden">
-                        <div className="p-5 border-b border-slate-800 flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                                <h3 className="font-bold text-white">Tarefas de Hoje</h3>
+                    <GlassCard 
+                        className="flex-1 flex flex-col overflow-hidden p-0"
+                        header={
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                                    <h3 className="font-bold text-white">Tarefas de Hoje</h3>
+                                </div>
+                                <span className="bg-slate-800 text-slate-400 text-xs px-2 py-1 rounded-full">{todayTasks.length}</span>
                             </div>
-                            <span className="bg-slate-800 text-slate-400 text-xs px-2 py-1 rounded-full">{todayTasks.length}</span>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                        }
+                    >
+                        <div className="flex-1 overflow-y-auto space-y-3">
                             {todayTasks.length > 0 ? todayTasks.map(task => (
                                 <motion.div 
                                     key={task.id}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="p-4 bg-slate-800/50 border border-slate-700/50 rounded-lg hover:border-violet-500/50 transition-colors group cursor-pointer"
                                     onClick={() => onNavigate('Tarefas')}
                                 >
-                                    <div className="flex justify-between items-start">
-                                        <p className="font-medium text-slate-200 group-hover:text-white transition-colors">{task.title}</p>
-                                        <div className="bg-slate-800 p-1.5 rounded text-slate-500 group-hover:text-violet-400 transition-colors">
-                                            <ArrowRight className="w-4 h-4" />
+                                    <GlassSection className="p-4 hover:border-violet-500/50 transition-colors group cursor-pointer">
+                                        <div className="flex justify-between items-start">
+                                            <p className="font-medium text-slate-200 group-hover:text-white transition-colors">{task.title}</p>
+                                            <div className="bg-slate-800 p-1.5 rounded text-slate-500 group-hover:text-violet-400 transition-colors">
+                                                <ArrowRight className="w-4 h-4" />
+                                            </div>
                                         </div>
-                                    </div>
-                                    {task.description && <p className="text-sm text-slate-500 mt-1 line-clamp-1">{task.description}</p>}
-                                    <div className="flex items-center gap-2 mt-3 text-xs text-slate-400">
-                                        <Clock className="w-3.5 h-3.5" />
-                                        <span>Até {new Date(task.dueDate).toLocaleDateString('pt-BR')}</span>
-                                    </div>
+                                        {task.description && <p className="text-sm text-slate-500 mt-1 line-clamp-1">{task.description}</p>}
+                                        <div className="flex items-center gap-2 mt-3 text-xs text-slate-400">
+                                            <Clock className="w-3.5 h-3.5" />
+                                            <span>Até {new Date(task.dueDate).toLocaleDateString('pt-BR')}</span>
+                                        </div>
+                                    </GlassSection>
                                 </motion.div>
                             )) : (
-                                <div className="h-full flex flex-col items-center justify-center text-slate-500">
+                                <div className="h-full flex flex-col items-center justify-center text-slate-500 py-10">
                                     <Calendar className="w-12 h-12 mb-3 opacity-20" />
                                     <p>Nenhuma tarefa agendada para hoje.</p>
                                     <button onClick={() => onNavigate('Tarefas')} className="mt-2 text-sm text-violet-400 hover:text-violet-300">Ver todas as tarefas</button>
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </GlassCard>
                 </div>
 
                 {/* Right Column: Notifications & Recent Leads */}
                 <div className="flex flex-col gap-6 overflow-hidden">
                     {/* Unread Notifications */}
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl flex-1 flex flex-col overflow-hidden min-h-[300px]">
-                        <div className="p-5 border-b border-slate-800 flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                                <Bell className="w-5 h-5 text-amber-500" />
-                                <h3 className="font-bold text-white">Notificações</h3>
+                    <GlassCard 
+                        className="flex-1 flex flex-col overflow-hidden min-h-[300px] p-0"
+                        header={
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                    <Bell className="w-5 h-5 text-amber-500" />
+                                    <h3 className="font-bold text-white">Notificações</h3>
+                                </div>
+                                {unreadNotifications.length > 0 && <span className="bg-amber-500/20 text-amber-400 text-xs px-2 py-1 rounded-full">{unreadNotifications.length} novas</span>}
                             </div>
-                            {unreadNotifications.length > 0 && <span className="bg-amber-500/20 text-amber-400 text-xs px-2 py-1 rounded-full">{unreadNotifications.length} novas</span>}
-                        </div>
+                        }
+                    >
                         <div className="flex-1 overflow-y-auto">
                             {unreadNotifications.length > 0 ? (
                                 <div className="divide-y divide-slate-800">
@@ -363,14 +375,17 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
                                 </button>
                             </div>
                         )}
-                    </div>
+                    </GlassCard>
 
                     {/* Quick Stats / Recent Leads */}
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-                        <div className="flex items-center gap-2 mb-4">
-                            <UserPlus className="w-5 h-5 text-blue-500" />
-                            <h3 className="font-bold text-white">Leads Recentes</h3>
-                        </div>
+                    <GlassCard 
+                        header={
+                            <div className="flex items-center gap-2">
+                                <UserPlus className="w-5 h-5 text-blue-500" />
+                                <h3 className="font-bold text-white">Leads Recentes</h3>
+                            </div>
+                        }
+                    >
                         <div className="space-y-3">
                             {recentLeads.map(lead => (
                                 <div key={lead.id} className="flex items-center justify-between text-sm">
@@ -392,7 +407,7 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
                         <button onClick={() => onNavigate('Pipeline')} className="w-full mt-4 py-2 text-xs font-medium text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded transition-colors">
                             Ir para Pipeline
                         </button>
-                    </div>
+                    </GlassCard>
                 </div>
             </div>
         </div>

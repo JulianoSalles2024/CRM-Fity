@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { Lead, ColumnData, Tag, ListDisplaySettings } from '../types';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import LeadListHeader from './LeadListHeader';
+import { GlassCard } from '@/src/shared/components/GlassCard';
 
 const TagPill: React.FC<{ tag: Tag }> = ({ tag }) => (
     <span 
@@ -219,7 +220,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                 onOpenCreateLeadModal={onOpenCreateLeadModal}
                 onOpenCreateTaskModal={onOpenCreateTaskModal}
             />
-            <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden flex-1 flex flex-col">
+            <GlassCard className="overflow-hidden flex-1 flex flex-col p-0">
                 {sortedLeads.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-64">
                         <h3 className="text-lg font-semibold text-slate-300">Nenhum {viewType === 'Clientes' ? 'cliente' : 'lead'} encontrado</h3>
@@ -294,7 +295,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                         </table>
                     </div>
                  )}
-            </div>
+            </GlassCard>
         </div>
     );
 };
