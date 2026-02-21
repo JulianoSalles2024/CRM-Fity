@@ -3,6 +3,10 @@ import { createServer as createViteServer } from "vite";
 import fs from "fs";
 import path from "path";
 
+import credentialsHandler from "./api/ai/credentials";
+import testConnectionHandler from "./api/ai/test-connection";
+import generateHandler from "./api/ai/generate";
+
 const app = express();
 const PORT = 3000;
 
@@ -23,6 +27,10 @@ if (!fs.existsSync(CREDENTIALS_DIR)) {
 }
 
 // --- API ROUTES ---
+
+app.all("/api/ai/credentials", (req, res) => credentialsHandler(req, res));
+app.all("/api/ai/test-connection", (req, res) => testConnectionHandler(req, res));
+app.all("/api/ai/generate", (req, res) => generateHandler(req, res));
 
 // Health check
 app.get("/api/health", (req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
