@@ -141,7 +141,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     icon={Target}
                     iconColor="text-emerald-500"
                     trend={2.1}
-                    onClick={() => onNavigate('Pipeline')}
+                    onClick={() => onNavigate('Relatórios')}
                 />
                  <KpiCard 
                     title="Receita (Ganha)" 
