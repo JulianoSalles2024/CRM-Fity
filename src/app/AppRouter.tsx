@@ -289,6 +289,8 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
             currentUser={localUser}
             users={users}
             columns={columns}
+            boards={boards}
+            activeBoardId={activeBoardId}
             onUpdateProfile={() => showNotification("Perfil atualizado!", 'success')}
             onUpdatePipeline={(newColumns: any[]) => {
                 setColumns(newColumns);
@@ -299,6 +301,9 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                 showNotification("Pipeline salvo!", 'success');
             }}
             onUpdateUsers={onUpdateUsers}
+            onSelectBoard={setActiveBoardId}
+            onDeleteBoard={handleDeleteBoard}
+            onCreateBoard={() => setCreateBoardModalOpen(true)}
             onResetApplication={handleResetApplication}
             initialTab={settingsTab}
         />;

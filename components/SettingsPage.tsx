@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { User, ColumnData, Id, Playbook } from '../types';
-import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit, Bell, Webhook, MessageSquare, Loader2, BookOpen, Bot, Users } from 'lucide-react';
+import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit, Bell, Webhook, MessageSquare, Loader2, BookOpen, Bot, Users, Columns } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { DndContext, closestCenter, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -17,6 +17,7 @@ import { AIProvidersPage } from '@/src/features/ai-credentials/AIProvidersPage';
 import { Key } from 'lucide-react';
 import { GlassCard } from '@/src/shared/components/GlassCard';
 import { GlassSection } from '@/src/shared/components/GlassSection';
+import type { Board } from '../types';
 
 // --- Componentes para Drag-and-Drop de Estágios ---
 
@@ -86,6 +87,80 @@ const SortableStageItem: React.FC<{ column: ColumnData; index: number; onEdit: (
         <div ref={setNodeRef} style={style} {...attributes}>
             <StageItem column={column} index={index} onEdit={onEdit} onDelete={onDelete} listeners={listeners} />
         </div>
+    );
+};
+
+// --- Subcomponente de Gerenciamento de Boards ---
+interface BoardsSettingsProps {
+    boards: Board[];
+    activeBoardId: Id;
+    onSelectBoard: (id: Id) => void;
+    onDeleteBoard: (id: Id) => void;
+    onCreateBoard: () => void;
+}
+
+const BoardsSettings: React.FC<BoardsSettingsProps> = ({ boards, activeBoardId, onSelectBoard, onDeleteBoard, onCreateBoard }) => {
+    const [boardToDelete, setBoardToDelete] = useState<Board | null>(null);
+
+    return (
+        <>
+            <GlassCard className="p-0">
+                <div className="p-6 border-b border-white/10 flex justify-between items-center">
+                    <div>
+                        <h2 className="text-lg font-semibold text-white">Seus Pipelines (Boards)</h2>
+                        <p className="text-sm text-slate-400 mt-1">Gerencie seus diferentes fluxos de trabalho.</p>
+                    </div>
+                    <button onClick={onCreateBoard} className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
+                        <PlusCircle className="w-4 h-4" /><span>Novo Pipeline</span>
+                    </button>
+                </div>
+                <div className="p-6 space-y-4">
+                    {boards.map(board => (
+                        <GlassSection key={board.id} className="flex items-center justify-between p-4">
+                            <div className="flex items-center gap-4">
+                                <div className={`w-3 h-3 rounded-full ${board.id === activeBoardId ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-slate-600'}`}></div>
+                                <div>
+                                    <h3 className="font-medium text-white">{board.name}</h3>
+                                    <p className="text-xs text-slate-500">{board.columns.length} estágios • {board.id === activeBoardId ? 'Ativo no momento' : 'Inativo'}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {board.id !== activeBoardId && (
+                                    <button 
+                                        onClick={() => onSelectBoard(board.id)}
+                                        className="text-xs font-semibold text-blue-400 hover:text-blue-300 px-3 py-1.5 rounded-md hover:bg-blue-500/10 transition-colors"
+                                    >
+                                        Ativar
+                                    </button>
+                                )}
+                                <button 
+                                    onClick={() => setBoardToDelete(board)}
+                                    disabled={boards.length <= 1}
+                                    className={`p-2 rounded-md transition-colors ${boards.length <= 1 ? 'text-slate-700 cursor-not-allowed' : 'text-slate-400 hover:text-red-500 hover:bg-red-500/10'}`}
+                                    title={boards.length <= 1 ? "Não é possível excluir o único board" : "Excluir pipeline"}
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </GlassSection>
+                    ))}
+                </div>
+            </GlassCard>
+
+            <AnimatePresence>
+                {boardToDelete && (
+                    <ConfirmDeleteModal 
+                        onClose={() => setBoardToDelete(null)} 
+                        onConfirm={() => {
+                            onDeleteBoard(boardToDelete.id);
+                            setBoardToDelete(null);
+                        }} 
+                        title="Confirmar Exclusão de Pipeline"
+                        message={<><p>Tem certeza que deseja deletar o pipeline <strong>{boardToDelete.name}</strong>?</p><p className="mt-2 text-sm text-slate-500">Esta ação não pode ser desfeita. Todos os leads vinculados a este pipeline serão afetados.</p></>}
+                    />
+                )}
+            </AnimatePresence>
+        </>
     );
 };
 
@@ -227,14 +302,32 @@ interface SettingsPageProps {
     currentUser: User;
     users: User[];
     columns: ColumnData[];
+    boards: Board[];
+    activeBoardId: Id;
     onUpdatePipeline: (columns: ColumnData[]) => void;
     onUpdateUsers: (users: User[]) => void;
+    onSelectBoard: (id: Id) => void;
+    onDeleteBoard: (id: Id) => void;
+    onCreateBoard: () => void;
     onResetApplication: () => void;
     initialTab?: string;
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, users, columns, onUpdatePipeline, onUpdateUsers, onResetApplication, initialTab }) => {
-    const [activeTab, setActiveTab] = useState('Pipeline');
+const SettingsPage: React.FC<SettingsPageProps> = ({ 
+    currentUser, 
+    users, 
+    columns, 
+    boards,
+    activeBoardId,
+    onUpdatePipeline, 
+    onUpdateUsers, 
+    onSelectBoard,
+    onDeleteBoard,
+    onCreateBoard,
+    onResetApplication, 
+    initialTab 
+}) => {
+    const [activeTab, setActiveTab] = useState('Pipelines');
 
     useEffect(() => {
         if (initialTab) {
@@ -252,7 +345,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, users, columns
     }, [initialTab]);
 
     const tabs = [
-        { name: 'Pipeline', icon: Settings },
+        { name: 'Pipelines', icon: Columns },
+        { name: 'Estágios', icon: Settings },
         { name: 'Equipe', icon: Users },
         { name: 'Inteligência Artificial', icon: Bot },
         { name: 'Credenciais de IA', icon: Key },
@@ -287,7 +381,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentUser, users, columns
                 </div>
             </div>
             <div className="space-y-6">
-                {activeTab === 'Pipeline' && <PipelineSettings columns={columns} onUpdatePipeline={onUpdatePipeline} />}
+                {activeTab === 'Pipelines' && (
+                    <BoardsSettings 
+                        boards={boards} 
+                        activeBoardId={activeBoardId} 
+                        onSelectBoard={onSelectBoard} 
+                        onDeleteBoard={onDeleteBoard} 
+                        onCreateBoard={onCreateBoard} 
+                    />
+                )}
+                {activeTab === 'Estágios' && <PipelineSettings columns={columns} onUpdatePipeline={onUpdatePipeline} />}
                 {activeTab === 'Equipe' && <TeamSettings users={users} currentUser={currentUser} onUpdateUsers={onUpdateUsers} />}
                 {activeTab === 'Inteligência Artificial' && <AIHubView />}
                 {activeTab === 'Credenciais de IA' && <AIProvidersPage />}

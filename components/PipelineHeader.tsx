@@ -83,18 +83,23 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
                                                     </div>
                                                     {board.id === activeBoardId && <Check className="w-4 h-4 text-blue-500" />}
                                                 </button>
-                                                {boards.length > 1 && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (boards.length > 1) {
                                                             setBoardToDelete(board);
-                                                        }}
-                                                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-slate-800 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                                                        title="Excluir board"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                )}
+                                                        }
+                                                    }}
+                                                    disabled={boards.length <= 1}
+                                                    className={`p-2 transition-all rounded-lg ${
+                                                        boards.length <= 1 
+                                                        ? 'text-slate-700 cursor-not-allowed opacity-20' 
+                                                        : 'text-slate-500 hover:text-red-400 hover:bg-slate-800'
+                                                    }`}
+                                                    title={boards.length <= 1 ? "Não é possível excluir o único board" : "Excluir board"}
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
                                             </div>
                                         ))}
                                     </div>
