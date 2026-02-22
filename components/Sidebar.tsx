@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, Columns, Users, User as UserIcon, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap, Bell, HelpCircle, MessageSquare, ToyBrick, BookOpen, ArchiveRestore } from 'lucide-react';
+import { LayoutDashboard, Columns, Users, User as UserIcon, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap, Bell, HelpCircle, MessageSquare, ToyBrick, BookOpen, ArchiveRestore, ScanEye } from 'lucide-react';
 
 interface SidebarProps {
     activeView: string;
@@ -49,11 +49,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, 
     { icon: ArchiveRestore, label: 'Recuperação' },
     { icon: MessageSquare, label: 'Chat' },
     { icon: Users, label: 'Grupos' },
+    { icon: ScanEye, label: 'Painel360' },
     // { icon: ToyBrick, label: 'Integrações' }, // Removed: moved to Settings
   ].filter(item => isChatEnabled || item.label !== 'Chat');
 
   const renderNavItems = mainNavItems.map(item => {
       if (item.label === 'Dashboard') return { ...item, label: 'Visão Geral', originalKey: 'Dashboard' };
+      if (item.label === 'Painel360') return { ...item, label: 'Painel 360', originalKey: 'Painel360' };
       return { ...item, originalKey: item.label };
   });
 

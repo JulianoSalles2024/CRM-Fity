@@ -164,6 +164,7 @@ const App: React.FC = () => {
     const [listSelectedTags, setListSelectedTags] = useState<Tag[]>([]);
     const [listStatusFilter, setListStatusFilter] = useState<'all' | 'Ativo' | 'Inativo'>('all');
     const [selectedGroupForView, setSelectedGroupForView] = useState<Id | null>(null);
+    const [selectedSellerId, setSelectedSellerId] = useState<string | null>(null);
 
     const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => setNotification({ message, type }), []);
     
@@ -777,7 +778,9 @@ const App: React.FC = () => {
         settingsTab,
         setColumns,
         calculateProbabilityForStage,
-        onUpdateUsers: setUsers
+        onUpdateUsers: setUsers,
+        selectedSellerId,
+        setSelectedSellerId,
     };
 
     return (

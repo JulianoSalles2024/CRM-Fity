@@ -16,6 +16,7 @@ export interface User {
   avatarUrl?: string;
   role?: UserRole;
   joinedAt?: string;
+  isActive?: boolean;
 }
 
 export interface InviteLink {

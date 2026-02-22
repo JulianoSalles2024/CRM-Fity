@@ -16,6 +16,8 @@ import PlaybookSettings from '@/components/PlaybookSettings';
 import PrintableLeadsReport from '@/components/PrintableLeadsReport';
 import RecoveryView from '@/components/RecoveryView';
 import InboxView from '@/components/InboxView';
+import Painel360Layout from '@/components/Painel360/Painel360Layout';
+import Perfil360Page from '@/components/Painel360/Perfil360Page';
 
 interface AppRouterProps {
   activeView: string;
@@ -96,7 +98,9 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
     settingsTab,
     setColumns,
     calculateProbabilityForStage,
-    onUpdateUsers
+    onUpdateUsers,
+    selectedSellerId,
+    setSelectedSellerId,
   } = props;
 
   if (leadsToPrint) {
@@ -280,6 +284,24 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                 }
             }}
         />
+    case 'Painel360': {
+        if (selectedSellerId) {
+            const seller = users.find((u: any) => u.id === selectedSellerId) ?? null;
+            return (
+                <Perfil360Page
+                    seller={seller}
+                    sellerId={selectedSellerId}
+                    onBack={() => setSelectedSellerId(null)}
+                />
+            );
+        }
+        return (
+            <Painel360Layout
+                users={users}
+                onSelectSeller={(seller: any) => setSelectedSellerId(seller.id)}
+            />
+        );
+    }
     case 'Configurações':
         return <SettingsPage
             currentUser={localUser}
