@@ -38,6 +38,7 @@ interface KanbanBoardProps {
     activeBoardId: Id;
     onSelectBoard: (boardId: Id) => void;
     onCreateBoardClick: () => void;
+    onDeleteBoard: (boardId: Id) => void;
 }
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ 
@@ -60,7 +61,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     boards,
     activeBoardId,
     onSelectBoard,
-    onCreateBoardClick
+    onCreateBoardClick,
+    onDeleteBoard
 }) => {
     const [activeLead, setActiveLead] = useState<Lead | null>(null);
     const columnIds = useMemo(() => columns.map(c => c.id), [columns]);
@@ -109,6 +111,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     activeBoardId={activeBoardId}
                     onSelectBoard={onSelectBoard}
                     onCreateBoardClick={onCreateBoardClick}
+                    onDeleteBoard={onDeleteBoard}
                 />
             </div>
             <div className="flex-1 overflow-x-auto overflow-y-hidden">

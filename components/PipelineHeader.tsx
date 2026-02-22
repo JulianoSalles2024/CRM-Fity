@@ -1,9 +1,10 @@
 
 
 import React, { useState } from 'react';
-import { SlidersHorizontal, Columns, BookOpen, ChevronDown, Plus, Check } from 'lucide-react';
+import { SlidersHorizontal, Columns, BookOpen, ChevronDown, Plus, Check, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import CardCustomizationPopup from './CardCustomizationPopup';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 import type { CardDisplaySettings, Board, Id } from '../types';
 
 interface PipelineHeaderProps {
@@ -15,6 +16,7 @@ interface PipelineHeaderProps {
     activeBoardId: Id;
     onSelectBoard: (boardId: Id) => void;
     onCreateBoardClick: () => void;
+    onDeleteBoard: (boardId: Id) => void;
 }
 
 const PipelineHeader: React.FC<PipelineHeaderProps> = ({ 
@@ -25,10 +27,12 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
     boards,
     activeBoardId,
     onSelectBoard,
-    onCreateBoardClick
+    onCreateBoardClick,
+    onDeleteBoard
 }) => {
     const [isCustomizeOpen, setCustomizeOpen] = useState(false);
     const [isBoardMenuOpen, setBoardMenuOpen] = useState(false);
+    const [boardToDelete, setBoardToDelete] = useState<Board | null>(null);
 
     const activeBoard = boards.find(b => b.id === activeBoardId) || boards[0];
 
@@ -60,25 +64,38 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
                                 >
                                     <div className="p-2 space-y-1">
                                         {boards.map(board => (
-                                            <button
-                                                key={board.id}
-                                                onClick={() => {
-                                                    onSelectBoard(board.id);
-                                                    setBoardMenuOpen(false);
-                                                }}
-                                                className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-colors group"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`w-2 h-2 rounded-full ${board.id === activeBoardId ? 'bg-blue-500' : 'bg-slate-600 group-hover:bg-slate-500'}`}></span>
-                                                    <div className="text-left">
-                                                        <span className={`block text-sm font-medium ${board.id === activeBoardId ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>
-                                                            {board.name}
-                                                        </span>
-                                                        <span className="block text-xs text-slate-500">Parte da jornada: Sim</span>
+                                            <div key={board.id} className="flex items-center gap-1 group">
+                                                <button
+                                                    onClick={() => {
+                                                        onSelectBoard(board.id);
+                                                        setBoardMenuOpen(false);
+                                                    }}
+                                                    className="flex-1 flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-colors"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <span className={`w-2 h-2 rounded-full ${board.id === activeBoardId ? 'bg-blue-500' : 'bg-slate-600 group-hover:bg-slate-500'}`}></span>
+                                                        <div className="text-left">
+                                                            <span className={`block text-sm font-medium ${board.id === activeBoardId ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                                                                {board.name}
+                                                            </span>
+                                                            <span className="block text-xs text-slate-500">Parte da jornada: Sim</span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                {board.id === activeBoardId && <Check className="w-4 h-4 text-blue-500" />}
-                                            </button>
+                                                    {board.id === activeBoardId && <Check className="w-4 h-4 text-blue-500" />}
+                                                </button>
+                                                {boards.length > 1 && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setBoardToDelete(board);
+                                                        }}
+                                                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-slate-800 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                                        title="Excluir board"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
                                         ))}
                                     </div>
                                     <div className="p-2 border-t border-slate-800">
@@ -128,6 +145,18 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
                     </AnimatePresence>
                 </div>
             </div>
+
+            {boardToDelete && (
+                <ConfirmDeleteModal
+                    onClose={() => setBoardToDelete(null)}
+                    onConfirm={() => {
+                        onDeleteBoard(boardToDelete.id);
+                        setBoardToDelete(null);
+                    }}
+                    title="Excluir Board"
+                    message={`Tem certeza que deseja excluir o board "${boardToDelete.name}"? Esta ação não pode ser desfeita.`}
+                />
+            )}
         </div>
     );
 };

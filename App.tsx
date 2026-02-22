@@ -682,6 +682,20 @@ const App: React.FC = () => {
         showNotification(`Board "${newBoard.name}" criado com sucesso!`, 'success');
     };
 
+    const handleDeleteBoard = (boardId: Id) => {
+        if (boards.length <= 1) {
+            showNotification('Não é possível excluir o único board existente.', 'warning');
+            return;
+        }
+        
+        setBoards(prev => prev.filter(b => b.id !== boardId));
+        if (activeBoardId === boardId) {
+            const remainingBoards = boards.filter(b => b.id !== boardId);
+            setActiveBoardId(remainingBoards[0].id);
+        }
+        showNotification('Board excluído com sucesso.', 'success');
+    };
+
     const handleResetApplication = () => {
         // Clear all relevant local storage keys
         Object.keys(localStorage).forEach(key => {
@@ -739,6 +753,7 @@ const App: React.FC = () => {
         activeBoardId,
         setActiveBoardId,
         setCreateBoardModalOpen,
+        handleDeleteBoard,
         playbooks,
         setPlaybooks,
         listDisplaySettings,

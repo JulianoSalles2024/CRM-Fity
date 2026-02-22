@@ -58,6 +58,7 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
     activeBoardId,
     setActiveBoardId,
     setCreateBoardModalOpen,
+    handleDeleteBoard,
     playbooks,
     setPlaybooks,
     listDisplaySettings,
@@ -151,6 +152,7 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
           activeBoardId={activeBoardId}
           onSelectBoard={setActiveBoardId}
           onCreateBoardClick={() => setCreateBoardModalOpen(true)}
+          onDeleteBoard={handleDeleteBoard}
       />;
     case 'Playbooks':
       return <PlaybookSettings initialPlaybooks={playbooks} pipelineColumns={columns} onSave={setPlaybooks} />;
