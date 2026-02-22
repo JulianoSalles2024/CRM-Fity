@@ -1,7 +1,7 @@
 
 
 import React, { useState } from 'react';
-import { SlidersHorizontal, Columns, BookOpen, ChevronDown, Plus, Check, Trash2 } from 'lucide-react';
+import { SlidersHorizontal, Columns, BookOpen, ChevronDown, Plus, Check, Trash2, Settings, Download, LayoutGrid, List } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import CardCustomizationPopup from './CardCustomizationPopup';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
@@ -17,6 +17,10 @@ interface PipelineHeaderProps {
     onSelectBoard: (boardId: Id) => void;
     onCreateBoardClick: () => void;
     onDeleteBoard: (boardId: Id) => void;
+    onEditBoardClick: () => void;
+    onExportBoardClick: () => void;
+    viewMode: 'kanban' | 'list';
+    onViewModeChange: (mode: 'kanban' | 'list') => void;
 }
 
 const PipelineHeader: React.FC<PipelineHeaderProps> = ({ 
@@ -28,7 +32,11 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
     activeBoardId,
     onSelectBoard,
     onCreateBoardClick,
-    onDeleteBoard
+    onDeleteBoard,
+    onEditBoardClick,
+    onExportBoardClick,
+    viewMode,
+    onViewModeChange
 }) => {
     const [isCustomizeOpen, setCustomizeOpen] = useState(false);
     const [isBoardMenuOpen, setBoardMenuOpen] = useState(false);
@@ -120,10 +128,44 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
                         )}
                     </AnimatePresence>
                 </div>
+
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={onEditBoardClick}
+                        className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                        title="Configurações do Board"
+                    >
+                        <Settings className="w-5 h-5" />
+                    </button>
+                    <button 
+                        onClick={onExportBoardClick}
+                        className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                        title="Exportar/Importar Template"
+                    >
+                        <Download className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <div className="flex bg-slate-900 border border-slate-800 p-1 rounded-lg ml-2">
+                    <button 
+                        onClick={() => onViewModeChange('kanban')}
+                        className={`p-1.5 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                        title="Visualização Kanban"
+                    >
+                        <LayoutGrid className="w-4 h-4" />
+                    </button>
+                    <button 
+                        onClick={() => onViewModeChange('list')}
+                        className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                        title="Visualização em Lista"
+                    >
+                        <List className="w-4 h-4" />
+                    </button>
+                </div>
             </div>
 
             <div className="flex items-center gap-2">
-                 <button
+                <button
                     onClick={onApplyPlaybookClick}
                     disabled={!isPlaybookActionEnabled}
                     className="flex items-center gap-2 text-sm text-white bg-violet-600 px-3 py-1.5 rounded-md font-semibold transition-colors hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed"

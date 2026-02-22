@@ -696,6 +696,20 @@ const App: React.FC = () => {
         showNotification('Board excluído com sucesso.', 'success');
     };
 
+    const handleUpdateBoard = (boardId: Id, updates: Partial<Board>) => {
+        setBoards(prev => prev.map(b => b.id === boardId ? { ...b, ...updates } : b));
+        showNotification('Board atualizado com sucesso.', 'success');
+    };
+
+    const handleImportBoards = (importedBoards: Board[]) => {
+        setBoards(prev => {
+            const existingIds = new Set(prev.map(b => b.id));
+            const newBoards = importedBoards.filter(b => !existingIds.has(b.id));
+            return [...prev, ...newBoards];
+        });
+        showNotification(`${importedBoards.length} board(s) importado(s) com sucesso!`, 'success');
+    };
+
     const handleResetApplication = () => {
         // Clear all relevant local storage keys
         Object.keys(localStorage).forEach(key => {
@@ -792,6 +806,8 @@ const App: React.FC = () => {
         settingsTab,
         setColumns,
         calculateProbabilityForStage,
+        handleUpdateBoard,
+        handleImportBoards,
         onUpdateUsers: setUsers
     };
 
