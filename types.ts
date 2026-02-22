@@ -100,6 +100,10 @@ export interface Board {
   type: 'sdr' | 'sales' | 'onboarding' | 'cs' | 'upsell' | 'custom';
   columns: ColumnData[];
   isDefault?: boolean;
+  suggestedProductId?: Id;
+  onWinBoardId?: Id;
+  wonStageId?: Id;
+  lostStageId?: Id;
 }
 
 export interface ColumnData {
@@ -107,6 +111,7 @@ export interface ColumnData {
   title: string;
   color: string;
   type: 'open' | 'qualification' | 'follow-up' | 'scheduling' | 'won' | 'lost';
+  promoteTo?: string;
 }
 
 export interface Activity {
