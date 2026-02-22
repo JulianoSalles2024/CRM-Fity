@@ -1,8 +1,9 @@
 
 import React, { useState, useMemo, useRef } from 'react';
-import { Lead, ColumnData, Task, Activity } from '../types';
+import { Lead, ColumnData, Task, Activity, User } from '../types';
 import { BarChart, RefreshCw, Download, Users, Target, DollarSign, CheckCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import TopSellers from './TopSellers';
 
 
 interface ReportsPageProps {
@@ -10,6 +11,7 @@ interface ReportsPageProps {
     columns: ColumnData[];
     tasks: Task[];
     activities: Activity[];
+    users: User[];
 }
 
 interface ReportKpiCardProps {
@@ -32,7 +34,7 @@ const ReportKpiCard: React.FC<ReportKpiCardProps> = ({ title, value, icon: Icon,
 );
 
 
-const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activities }) => {
+const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activities, users }) => {
     const [timeRange, setTimeRange] = useState<'30d' | '365d'>('30d');
     const [chartViewMode, setChartViewMode] = useState<'day' | 'week' | 'month'>('week');
 
@@ -355,12 +357,11 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-slate-900 p-5 rounded-lg border border-slate-800">
-                    <h3 className="font-semibold text-white mb-4">Funil de Conversão</h3>
-                    <div className="space-y-3">
+                    <TopSellers leads={filteredLeads} users={users} columns={columns} />
                         {reportData.funnelData.map(stage => {
-                             const maxCount = Math.max(...reportData.funnelData.map(s => s.count), 1);
-                             const percentage = (stage.count / maxCount) * 100;
-                             return (
+                             const maxCount = 100;
+                             const percentage = 100;
+                             return null;
                                 <div key={stage.id} className="flex items-center gap-3">
                                     <p className="text-sm text-slate-400 w-28 truncate" title={stage.title}>{stage.title}</p>
                                     <div className="flex-1 bg-slate-800 rounded-full h-4 relative">

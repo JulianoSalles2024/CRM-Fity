@@ -1,8 +1,28 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { X, User, Building, DollarSign, Tag as TagIcon, Clock, Trash2, MessageSquare, ArrowRight, TrendingUp, Sparkles, FileText, Mail, BookOpen, Circle, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+    X, 
+    User, 
+    Building, 
+    DollarSign, 
+    Tag as TagIcon, 
+    Clock, 
+    Trash2, 
+    MessageSquare, 
+    ArrowRight, 
+    TrendingUp, 
+    Sparkles, 
+    FileText, 
+    Mail, 
+    BookOpen, 
+    Circle, 
+    CheckCircle2,
+    RotateCcw,
+    Plus,
+    Send,
+    MoreVertical
+} from 'lucide-react';
 import type { Lead, Tag, Activity, EmailDraft, Id, CreateEmailDraftData, Tone, Playbook, Task, PlaybookHistoryEntry } from '../types';
-import AIComposer from './AIComposer';
 
 interface LeadDetailSlideoverProps {
   lead: Lead;
@@ -23,39 +43,15 @@ interface LeadDetailSlideoverProps {
   onDeactivatePlaybook: () => void;
 }
 
-const TagPill: React.FC<{ tag: Tag }> = ({ tag }) => (
-  <span 
-    className="px-2 py-1 text-xs font-medium rounded-full text-white/90"
-    style={{ backgroundColor: tag.color }}
-  >
-    {tag.name}
-  </span>
-);
-
-const DetailItem: React.FC<{ icon: React.ElementType; label: string; children: React.ReactNode }> = ({ icon: Icon, label, children }) => (
-    <div className="flex items-start gap-3">
-        <Icon className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
-        <div className="flex flex-col">
-            <span className="text-sm text-slate-500 dark:text-slate-400">{label}</span>
-            <span className="text-md font-medium text-slate-800 dark:text-gray-200">{children}</span>
-        </div>
-    </div>
-);
-
-const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-};
-
 const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activities, emailDrafts, tasks, playbooks, onClose, onEdit, onDelete, onAddNote, onSendEmailActivity, onAddTask, onSaveDraft, onDeleteDraft, showNotification, onUpdateTaskStatus, onDeactivatePlaybook }) => {
-  const [activeTab, setActiveTab] = useState('Visão Geral');
-  const tabs = ['Visão Geral', 'AI Composer', 'Atividades', 'Rascunhos'];
+  const [activeTab, setActiveTab] = useState('Timeline');
+  const tabs = ['Timeline', 'Produtos', 'IA Insights'];
   const [newNote, setNewNote] = useState('');
-  const [composerInitialState, setComposerInitialState] = useState<Partial<EmailDraft> | null>(null);
   
   const currencyFormatter = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
+    maximumFractionDigits: 0
   });
 
   const handleAddNoteClick = () => {
@@ -64,278 +60,186 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({ lead, activit
     setNewNote('');
   };
 
-  const sortedActivities = [...activities].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  
-  const sortedDrafts = [...emailDrafts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-  const handleLoadDraft = (draft: EmailDraft) => {
-    setComposerInitialState(draft);
-    setActiveTab('AI Composer');
-  };
-
-  const handleSaveDraft = (draftData: { objective: string; tones: Tone[]; subject: string; body: string; }) => {
-    onSaveDraft({
-        leadId: lead.id,
-        ...draftData
-    });
-  };
-
-  const handleSendEmail = (email: { subject: string; body: string; }) => {
-    if (!lead.email) {
-        showNotification('Este lead não possui um endereço de e-mail cadastrado.', 'error');
-        return;
-    }
-    const mailtoLink = `mailto:${lead.email}?subject=${encodeURIComponent(email.subject)}&body=${encodeURIComponent(email.body)}`;
-    window.location.href = mailtoLink;
-    onSendEmailActivity(email.subject);
-    showNotification('Seu cliente de e-mail foi aberto para envio.', 'success');
-  };
-
-  const activePlaybookDetails = useMemo(() => {
-    if (!lead.activePlaybook) return null;
-    return playbooks.find(p => p.id === lead.activePlaybook?.playbookId);
-  }, [lead.activePlaybook, playbooks]);
-  
-  const combinedActivities = useMemo(() => {
-    const historyAsActivities = (lead.playbookHistory || []).map(entry => ({
-      id: `playbook-${entry.playbookId}-${entry.completedAt}`,
-      leadId: lead.id,
-      type: 'playbook_completed' as const, // custom type
-      text: `Cadência "${entry.playbookName}" concluída.`,
-      authorName: 'Sistema',
-      timestamp: entry.completedAt,
-    }));
-
-    const allItems = [...sortedActivities, ...historyAsActivities];
-    return allItems.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [sortedActivities, lead.playbookHistory, lead.id]);
-
-
-  const getTabIcon = (tabName: string) => {
-    switch (tabName) {
-      case 'AI Composer':
-        return <Sparkles className="w-4 h-4 mr-2 text-violet-400" />;
-      case 'Rascunhos':
-        return <FileText className="w-4 h-4 mr-2 text-slate-500 dark:text-slate-400" />;
-      default:
-        return null;
-    }
-  };
-
+  const stages = ['Novos Leads', 'Contatado', 'Qualificando', 'Qualificado (MQL)'];
+  const currentStageIndex = 0; // Mocked for design
 
   return (
-    <motion.div
-      initial={{ x: '100%' }}
-      animate={{ x: '0%' }}
-      exit={{ x: '100%' }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="fixed top-0 right-0 h-full w-full max-w-lg bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl z-50 flex flex-col"
-    >
-      {/* Header */}
-      <div className="flex-shrink-0 p-6 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-start justify-between">
-          <motion.div layoutId={`lead-card-${lead.id}`} className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-2xl font-bold text-slate-700 dark:text-white">
-                {lead.name.charAt(0)}
-            </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="bg-[#0B0E14] border border-slate-800 w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+      >
+        {/* Header */}
+        <div className="p-8 pb-4">
+          <div className="flex items-start justify-between mb-2">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{lead.name}</h2>
-              <p className="text-slate-500 dark:text-slate-400">{lead.company}</p>
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                {lead.name}
+              </h2>
+              <p className="text-sky-400 text-xl font-bold mt-1">{currencyFormatter.format(lead.value)}</p>
             </div>
-          </motion.div>
-          <button onClick={onClose} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-            <X className="w-6 h-6 text-violet-500/70 hover:text-violet-500" />
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex-shrink-0 px-6 border-b border-slate-200 dark:border-slate-800">
-          <nav className="flex -mb-px space-x-6">
-              {tabs.map(tab => (
-                  <button 
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`flex items-center py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-violet-500 text-slate-900 dark:text-white' : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}>
-                      {getTabIcon(tab)}
-                      {tab}
-                  </button>
-              ))}
-          </nav>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
-        {activeTab === 'Visão Geral' && (
-          <div className="space-y-6">
-            <DetailItem icon={User} label="Nome do Contato">{lead.name}</DetailItem>
-            <DetailItem icon={Building} label="Empresa">{lead.company}</DetailItem>
-            <DetailItem icon={DollarSign} label="Valor">{currencyFormatter.format(lead.value)}</DetailItem>
-            
-            {typeof lead.probability === 'number' && (
-                <div className="flex items-start gap-3">
-                    <TrendingUp className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
-                    <div className="flex flex-col w-full">
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-slate-500 dark:text-slate-400">Probabilidade</span>
-                            <span className="text-md font-medium text-slate-800 dark:text-gray-200">{lead.probability}%</span>
-                        </div>
-                        <div className="w-full bg-slate-200 dark:bg-slate-700/80 rounded-full h-2 mt-2">
-                            <div className="bg-teal-400 h-2 rounded-full" style={{ width: `${lead.probability}%` }}></div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <DetailItem icon={TagIcon} label="Tags">
-                <div className="flex flex-wrap gap-2">
-                    {lead.tags.length > 0 ? lead.tags.map(tag => <TagPill key={tag.id} tag={tag} />) : <span className="text-slate-400 dark:text-slate-500">Sem tags</span>}
-                </div>
-            </DetailItem>
-            <DetailItem icon={Clock} label="Última Atividade">{lead.lastActivity}</DetailItem>
-            
-            {activePlaybookDetails && (
-                <div className="border-t border-slate-700 pt-6">
-                    <div className="flex items-start gap-3">
-                        <BookOpen className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
-                        <div className="flex flex-col w-full">
-                            <span className="text-sm text-slate-500 dark:text-slate-400">Cadência Ativa</span>
-                        </div>
-                    </div>
-                    <div className="pl-8 mt-2">
-                         <div className="flex justify-between items-center">
-                            <p className="font-semibold text-white">{activePlaybookDetails.name}</p>
-                            <button onClick={onDeactivatePlaybook} className="text-xs font-medium text-red-500 hover:text-red-400">Desativar</button>
-                         </div>
-                         <ul className="mt-2 space-y-2">
-                            {activePlaybookDetails.steps.map((step, index) => {
-                                const associatedTask = tasks.find(t => t.leadId === lead.id && t.playbookId === activePlaybookDetails.id && t.playbookStepIndex === index);
-                                const isCompleted = associatedTask?.status === 'completed';
-                                const handleToggle = () => {
-                                    if (associatedTask) onUpdateTaskStatus(associatedTask.id, isCompleted ? 'pending' : 'completed');
-                                };
-                                return (
-                                    <li key={index} className="flex items-center gap-3 text-sm">
-                                        <button onClick={handleToggle} className="flex-shrink-0" disabled={!associatedTask}>
-                                            {isCompleted ? <CheckCircle2 className="w-5 h-5 text-green-400" /> : <Circle className="w-5 h-5 text-slate-600 hover:text-slate-400" />}
-                                        </button>
-                                        <span className={`font-semibold ${isCompleted ? 'text-slate-500 line-through' : 'text-slate-300'}`}>D+{step.day}:</span>
-                                        <span className={`${isCompleted ? 'text-slate-500 line-through' : 'text-slate-400'}`}>{step.instructions}</span>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    </div>
-                </div>
-            )}
-          </div>
-        )}
-        {activeTab === 'AI Composer' && (
-            <AIComposer
-                lead={lead}
-                showNotification={showNotification}
-                onSaveDraft={handleSaveDraft}
-                onSendEmail={handleSendEmail}
-                initialState={composerInitialState}
-                onStateReset={() => setComposerInitialState(null)}
-            />
-        )}
-        {activeTab === 'Atividades' && (
-          <div className="space-y-6">
-             <div>
-                <textarea 
-                    value={newNote}
-                    onChange={(e) => setNewNote(e.target.value)}
-                    placeholder="Adicionar uma nota..."
-                    className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    rows={3}
-                />
-                <div className="flex justify-end mt-2">
-                    <button 
-                        onClick={handleAddNoteClick}
-                        disabled={!newNote.trim()}
-                        className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                        Salvar Nota
-                    </button>
-                </div>
-            </div>
-            <ul className="space-y-4">
-              {combinedActivities.length > 0 ? combinedActivities.map(activity => (
-                 <li key={activity.id} className="flex gap-3 items-start">
-                    <div className="flex-shrink-0 bg-slate-100 dark:bg-slate-800 h-8 w-8 rounded-full flex items-center justify-center mt-1">
-                        {activity.type === 'note' ? <MessageSquare className="w-4 h-4 text-violet-400" /> : 
-                         activity.type === 'email_sent' ? <Mail className="w-4 h-4 text-violet-400" /> :
-                         activity.type === 'playbook_completed' ? <BookOpen className="w-4 h-4 text-violet-400" /> :
-                         <ArrowRight className="w-4 h-4 text-violet-400" />}
-                    </div>
-                    <div>
-                        <p className="text-xs text-slate-400 dark:text-slate-500">
-                          {activity.authorName} • {formatTimestamp(activity.timestamp)}
-                        </p>
-                        <p className="text-sm mt-1 text-slate-700 dark:text-slate-300">{activity.text}</p>
-                    </div>
-                </li>
-              )) : (
-                <p className="text-center text-slate-400 dark:text-slate-500 py-8">Nenhuma atividade ou cadência concluída registrada.</p>
-              )}
-            </ul>
-          </div>
-        )}
-         {activeTab === 'Rascunhos' && (
-            <div className="space-y-4">
-                {sortedDrafts.length > 0 ? (
-                    sortedDrafts.map(draft => (
-                        <div key={draft.id} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 transition-colors hover:border-slate-300 dark:hover:border-slate-600">
-                            <p className="font-semibold text-slate-900 dark:text-white truncate">{draft.subject}</p>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{draft.body}</p>
-                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">
-                                Salvo em {formatTimestamp(draft.createdAt)}
-                            </p>
-                            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/50">
-                                <button onClick={() => handleLoadDraft(draft)} className="text-sm font-medium text-violet-500 dark:text-violet-400 hover:text-violet-600 dark:hover:text-violet-300">
-                                    Carregar
-                                </button>
-                                <span className="text-slate-300 dark:text-slate-600">|</span>
-                                <button onClick={() => onDeleteDraft(draft.id)} className="text-sm font-medium text-red-500 hover:text-red-600 dark:hover:text-red-400">
-                                    Deletar
-                                </button>
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    <p className="text-center text-slate-400 dark:text-slate-500 py-8">Nenhum rascunho salvo para este lead.</p>
-                )}
-            </div>
-        )}
-      </div>
-
-       {/* Actions */}
-      <div className="flex-shrink-0 p-6 border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/50 backdrop-blur-sm">
-          <div className="flex items-center justify-between">
-              <button
-                  onClick={onDelete}
-                  className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                  aria-label="Deletar Lead"
-              >
-                  <Trash2 className="w-5 h-5 text-violet-500/70 hover:text-violet-500" />
+            <div className="flex items-center gap-3">
+              <span className="bg-emerald-500/20 text-emerald-500 text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
+                <Check className="w-3 h-3" /> {lead.columnId === 'closed' ? 'GANHO' : 'ABERTO'}
+              </span>
+              <button className="bg-slate-800/50 hover:bg-slate-800 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-700/50 flex items-center gap-2 transition-colors">
+                <RotateCcw className="w-3.5 h-3.5" /> Reabrir
               </button>
-              <div className="flex items-center gap-3">
-                  <button 
-                    className="px-4 py-2 text-sm font-semibold text-slate-800 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 rounded-md hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
-                    onClick={onEdit}
-                  >
-                      Editar Lead
-                  </button>
-                  <button 
-                    onClick={onAddTask}
-                    className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700 transition-colors">
-                      Criar Tarefa
-                  </button>
-              </div>
+              <button onClick={onDelete} className="p-2 text-slate-500 hover:text-red-400 transition-colors">
+                <Trash2 className="w-5 h-5" />
+              </button>
+              <button onClick={onClose} className="p-2 text-slate-500 hover:text-white transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
           </div>
-      </div>
-    </motion.div>
+
+          {/* Pipeline Progress */}
+          <div className="mt-8 flex items-center gap-4">
+            {stages.map((stage, i) => (
+                <React.Fragment key={stage}>
+                    <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${i <= currentStageIndex ? 'bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.5)]' : 'bg-slate-700'}`} />
+                        <span className={`text-xs font-bold tracking-tight ${i <= currentStageIndex ? 'text-white' : 'text-slate-500'}`}>{stage}</span>
+                    </div>
+                    {i < stages.length - 1 && <div className="h-[1px] w-8 bg-slate-800" />}
+                </React.Fragment>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 flex overflow-hidden border-t border-slate-800/50">
+          {/* Sidebar */}
+          <div className="w-72 border-r border-slate-800/50 p-8 space-y-8 overflow-y-auto custom-scrollbar">
+            <section>
+              <h3 className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-4 flex items-center gap-2">
+                <Building className="w-3 h-3" /> EMPRESA (CONTA)
+              </h3>
+              <p className="text-sm font-bold text-white">{lead.company || 'Sem empresa'}</p>
+            </section>
+
+            <section>
+              <h3 className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-4 flex items-center gap-2">
+                <User className="w-3 h-3" /> CONTATO PRINCIPAL
+              </h3>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold">
+                  {lead.name.charAt(0)}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-white">{lead.name}</span>
+                    <span className="bg-emerald-500 text-[8px] font-bold px-1.5 py-0.5 rounded text-white">CLIENTE</span>
+                  </div>
+                  <p className="text-xs text-slate-500">{lead.email || 'Sem e-mail'}</p>
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <h3 className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-4">DETALHES</h3>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500">Prioridade</span>
+                <span className="text-white font-medium">Alta</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500">Criado em</span>
+                <span className="text-white font-medium">{new Date(lead.createdAt || Date.now()).toLocaleDateString('pt-BR')}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500">Probabilidade</span>
+                <span className="text-white font-bold">{lead.probability || 0}%</span>
+              </div>
+            </section>
+
+            <section>
+              <h3 className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-4 flex items-center gap-2">
+                <TagIcon className="w-3 h-3" /> TAGS
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {lead.tags.map(tag => (
+                  <span key={tag.id} className="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
+                    {tag.name} <X className="w-3 h-3 cursor-pointer" />
+                  </span>
+                ))}
+                {lead.tags.length === 0 && <span className="text-xs text-slate-600 italic">Sem tags</span>}
+              </div>
+            </section>
+
+            <section>
+              <h3 className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-4">ADICIONAR TAG</h3>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  placeholder="Ex: VIP, Urgente, Q4..." 
+                  className="flex-1 bg-slate-900/50 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50"
+                />
+                <button className="bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 p-2 rounded-lg transition-colors">
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </section>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex border-b border-slate-800/50 px-8">
+              {tabs.map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`py-4 px-4 text-sm font-bold transition-all relative ${activeTab === tab ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                >
+                  {tab}
+                  {activeTab === tab && (
+                    <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-500" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex-1 p-8 overflow-y-auto custom-scrollbar">
+              {activeTab === 'Timeline' && (
+                <div className="space-y-8">
+                  <div className="bg-slate-900/30 border border-slate-800 rounded-2xl p-6">
+                    <textarea 
+                      value={newNote}
+                      onChange={(e) => setNewNote(e.target.value)}
+                      placeholder="Escreva uma nota..."
+                      className="w-full bg-transparent text-sm text-white placeholder-slate-600 focus:outline-none resize-none min-h-[100px]"
+                    />
+                    <div className="flex justify-end mt-4 pt-4 border-t border-slate-800/50">
+                      <button 
+                        onClick={handleAddNoteClick}
+                        className="bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all"
+                      >
+                        <Check className="w-4 h-4" /> Enviar
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="text-center py-12">
+                    <p className="text-slate-500 text-sm italic">Nenhuma atividade registrada.</p>
+                  </div>
+                </div>
+              )}
+              {activeTab !== 'Timeline' && (
+                <div className="flex items-center justify-center h-full text-slate-500 italic">
+                  Em breve...
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </div>
   );
 };
+
+const Check = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12" /></svg>
+);
 
 export default LeadDetailSlideover;

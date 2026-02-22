@@ -1,10 +1,31 @@
 
 import React, { useMemo, useState } from 'react';
 import { Task, Notification, Lead, Id } from '../types';
-import { CheckCircle2, Bell, Clock, Calendar, ArrowRight, UserPlus, AlertCircle, List, ScanLine, Circle, Play, Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { 
+    CheckCircle2, 
+    Bell, 
+    Clock, 
+    Calendar, 
+    ArrowRight, 
+    UserPlus, 
+    AlertCircle, 
+    List, 
+    ScanLine, 
+    Circle, 
+    Play, 
+    Check, 
+    ChevronDown, 
+    ChevronLeft, 
+    ChevronRight,
+    LayoutGrid,
+    Target,
+    Zap,
+    AlertTriangle,
+    TrendingUp,
+    UserMinus,
+    ExternalLink
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GlassCard } from '@/src/shared/components/GlassCard';
-import { GlassSection } from '@/src/shared/components/GlassSection';
 
 interface InboxViewProps {
     tasks: Task[];
@@ -12,12 +33,13 @@ interface InboxViewProps {
     leads: Lead[];
     onNavigate: (view: string, itemId?: Id) => void;
     onMarkNotificationRead: (id: Id) => void;
+    onOpenLead?: (lead: Lead) => void;
     mode?: 'standard' | 'analysis';
 }
 
-const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNavigate, onMarkNotificationRead, mode = 'standard' }) => {
-    
-    // --- Standard Inbox Logic ---
+const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNavigate, onMarkNotificationRead, onOpenLead, mode = 'standard' }) => {
+    const [viewMode, setViewMode] = useState<'overview' | 'list' | 'focus'>('overview');
+
     const today = new Date();
     today.setHours(0,0,0,0);
 
@@ -40,374 +62,171 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
         return { todayTasks: todayList, overdueTasks: overdue };
     }, [tasks]);
 
-    const unreadNotifications = notifications.filter(n => !n.isRead);
-    const recentLeads = useMemo(() => leads.slice(0, 5), [leads]);
-
-    const handleNotificationClick = (notification: Notification) => {
-        onMarkNotificationRead(notification.id);
-        if (notification.link) {
-            // Logic to handle navigation could go here
-        }
-    };
-
-    // --- Analysis Mode Logic ---
-    const [viewMode, setViewMode] = useState<'list' | 'focus'>('focus');
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [isFinished, setIsFinished] = useState(false);
-
-    // Mock logic for "Churn Risk" items: Leads active but haven't been updated in 30 days
-    const analysisItems = useMemo(() => {
+    const churnRiskLeads = useMemo(() => {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-        // Filter: Active status AND (lastActivity > 30 days ago OR created > 30 days ago if no activity)
-        // For demonstration purposes, if list is empty, we might include some defaults or show empty state.
-        const riskyLeads = leads.filter(l => {
+        return leads.filter(l => {
             const lastDate = l.lastActivityTimestamp ? new Date(l.lastActivityTimestamp) : new Date(l.createdAt || Date.now());
             return l.status === 'Ativo' && lastDate < thirtyDaysAgo;
-        });
-        
-        // If empty for demo, let's just take the first 3 leads to show the UI
-        return riskyLeads.length > 0 ? riskyLeads : leads.slice(0, 3);
+        }).slice(0, 2);
     }, [leads]);
 
-    const currentItem = analysisItems[currentIndex];
+    const upsellOpportunities = useMemo(() => {
+        // Mock logic for upsell: leads in 'closed' column or with high value
+        return leads.filter(l => l.value > 10000 && l.columnId === 'closed').slice(0, 1);
+    }, [leads]);
 
-    const handleNext = () => {
-        if (currentIndex < analysisItems.length - 1) {
-            setCurrentIndex(prev => prev + 1);
-        } else {
-            setIsFinished(true);
-        }
-    };
+    const stats = [
+        { label: 'ATRASADOS', value: overdueTasks.length, subtext: overdueTasks.length === 0 ? 'Tudo em dia' : `${overdueTasks.length} pendentes`, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
+        { label: 'HOJE', value: todayTasks.length, subtext: todayTasks.length === 0 ? 'Sem tarefas para hoje' : `${todayTasks.length} tarefas`, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
+        { label: 'SUGESTÕES CRÍTICAS', value: 0, subtext: 'Sem urgências', color: 'text-slate-500', bgColor: 'bg-slate-800/50' },
+        { label: 'PENDÊNCIAS', value: 3, subtext: '1 próximos', color: 'text-slate-200', bgColor: 'bg-slate-800/50' },
+    ];
 
-    const handlePrev = () => {
-        if (currentIndex > 0) {
-            setCurrentIndex(prev => prev - 1);
-        }
-    };
-
-    // --- Render: Analysis Mode ---
-    if (mode === 'analysis') {
-        return (
-            <div className="flex flex-col gap-6 h-full max-w-5xl mx-auto w-full relative">
-                
-                {/* Header - Hidden in Focus Mode for cleaner look, but Toggle remains */}
-                <div className={`flex items-center justify-between ${viewMode === 'focus' && !isFinished ? 'absolute top-0 right-0 z-10 w-full pointer-events-none' : ''}`}>
-                    {viewMode === 'list' || isFinished ? (
-                        <div>
-                            <h1 className="text-3xl font-bold text-white">Inbox</h1>
-                            <p className="text-slate-400 mt-1">Sua mesa de trabalho.</p>
-                        </div>
-                    ) : (
-                        <div /> /* Spacer */
-                    )}
-                    
-                    {!isFinished && (
-                        <GlassSection className="flex p-1 pointer-events-auto shadow-lg">
-                            <button 
-                                onClick={() => setViewMode('list')}
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                <List className="w-4 h-4" />
-                                Lista
-                            </button>
-                            <button 
-                                onClick={() => setViewMode('focus')}
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'focus' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                <ScanLine className="w-4 h-4" />
-                                Foco
-                            </button>
-                        </GlassSection>
-                    )}
+    return (
+        <div className="flex flex-col gap-8 h-full max-w-7xl mx-auto w-full p-6">
+            {/* Header */}
+            <div className="flex items-start justify-between">
+                <div>
+                    <h1 className="text-4xl font-bold text-white tracking-tight">Inbox</h1>
+                    <p className="text-slate-400 mt-1 text-lg">Sua mesa de trabalho.</p>
+                    <button className="mt-4 flex items-center gap-2 px-3 py-1.5 bg-slate-800/50 hover:bg-slate-800 text-slate-300 rounded-lg text-sm border border-slate-700/50 transition-colors">
+                        <Zap className="w-4 h-4" />
+                        Seed Inbox
+                    </button>
                 </div>
 
-                <div className="flex-1 flex flex-col items-center justify-center">
-                    {isFinished || analysisItems.length === 0 ? (
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="text-center"
-                        >
-                            <div className="relative inline-block">
-                                <motion.div 
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ type: 'spring', delay: 0.2 }}
-                                    className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-emerald-500/20"
-                                >
-                                    <Check className="w-12 h-12 text-white" strokeWidth={3} />
-                                </motion.div>
-                                <div className="absolute -top-2 -right-4 text-3xl">🎉</div>
-                            </div>
-                            <h3 className="text-3xl font-bold text-white mb-2">Inbox Zero!</h3>
-                            <p className="text-slate-400 text-lg">Você zerou tudo. Aproveite o momento ou planeje o futuro.</p>
-                        </motion.div>
-                    ) : viewMode === 'focus' && currentItem ? (
-                        <div className="w-full max-w-2xl flex flex-col items-center justify-center min-h-[60vh]">
-                            {/* Icon */}
-                            <motion.div 
-                                initial={{ y: -20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                className="mb-8 p-4 bg-slate-900/30 rounded-2xl border border-slate-800/50 backdrop-blur-sm shadow-xl"
-                            >
-                                <CheckCircle2 className="w-6 h-6 text-slate-400" />
-                            </motion.div>
-
-                            {/* Title */}
-                            <motion.h2 
-                                key={`title-${currentItem.id}`}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-3xl font-bold text-white mb-6 text-center tracking-tight"
-                            >
-                                Análise de Carteira: Risco de Churn
-                            </motion.h2>
-
-                            {/* Description */}
-                            <motion.div 
-                                key={`desc-${currentItem.id}`}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-slate-400 text-center text-lg mb-16 max-w-xl leading-relaxed"
-                            >
-                                "O cliente <span className="text-slate-200 font-medium">{currentItem.name}</span> (Empresa: {currentItem.company}) não compra há mais de 30 dias."
-                            </motion.div>
-
-                            {/* Buttons */}
-                            <div className="flex items-center justify-center gap-6 mb-16">
-                                <button onClick={handleNext} className="flex items-center gap-2 px-6 py-3.5 text-slate-300 hover:text-white rounded-xl font-medium transition-all bg-slate-950 border border-slate-800 hover:border-slate-700 group">
-                                    <Clock className="w-5 h-5 text-slate-500 group-hover:text-white transition-colors" /> Adiar
-                                </button>
-                                
-                                <button onClick={handleNext} className="flex items-center gap-2 px-10 py-4 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl font-bold transition-all shadow-[0_0_30px_-10px_rgba(16,185,129,0.5)] hover:shadow-[0_0_40px_-5px_rgba(16,185,129,0.6)] transform hover:-translate-y-1 hover:scale-105">
-                                    <Check className="w-6 h-6" /> Feito
-                                </button>
-                                
-                                <button onClick={handleNext} className="flex items-center gap-2 px-6 py-3.5 text-slate-300 hover:text-white rounded-xl font-medium transition-all bg-slate-950 border border-slate-800 hover:border-slate-700 group">
-                                    Pular <Play className="w-4 h-4 ml-1 text-slate-500 group-hover:text-white transition-colors" />
-                                </button>
-                            </div>
-
-                            {/* Navigation / Pagination */}
-                            <div className="flex flex-col items-center gap-3">
-                                <div className="flex items-center gap-6 text-slate-600">
-                                    <button onClick={handlePrev} disabled={currentIndex === 0} className="hover:text-slate-400 disabled:opacity-20 transition-colors p-2">
-                                        <ChevronLeft className="w-6 h-6" />
-                                    </button>
-                                    
-                                    {/* Progress Bar / Indicator */}
-                                    <div className="h-1.5 w-16 bg-slate-800 rounded-full overflow-hidden">
-                                         <motion.div 
-                                            className="h-full bg-blue-500" 
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${((currentIndex + 1) / analysisItems.length) * 100}%` }}
-                                         />
-                                    </div>
-
-                                    <button onClick={handleNext} className="hover:text-slate-400 transition-colors p-2">
-                                        <ChevronRight className="w-6 h-6" />
-                                    </button>
-                                </div>
-                                <span className="text-xs font-medium text-slate-500 uppercase tracking-widest">{currentIndex + 1} de {analysisItems.length} pendências</span>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="w-full max-w-3xl space-y-3">
-                            <div className="flex items-center gap-2 mb-4 text-sm font-semibold text-slate-500 uppercase tracking-wider">
-                                <ChevronDown className="w-4 h-4" /> Tarefas Hoje <span className="bg-slate-800 text-slate-300 px-1.5 rounded-full text-xs ml-1">{analysisItems.length}</span>
-                            </div>
-                            {analysisItems.map(lead => (
-                                <motion.div 
-                                    key={lead.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                >
-                                    <GlassSection className="flex items-center gap-4 hover:border-slate-700 transition-colors group cursor-pointer">
-                                        <div className="w-6 h-6 rounded-full border-2 border-slate-600 group-hover:border-slate-500 flex-shrink-0" />
-                                        <div className="flex-1">
-                                            <h3 className="text-white font-medium">Análise de Carteira: Risco de Churn</h3>
-                                            <p className="text-sm text-slate-400 truncate">O cliente {lead.name} (Empresa: {lead.company}) não...</p>
-                                        </div>
-                                        <div className="text-xs text-slate-500 font-mono">
-                                            Hoje
-                                        </div>
-                                    </GlassSection>
-                                </motion.div>
-                            ))}
-                        </div>
-                    )}
+                <div className="flex bg-slate-900/80 p-1 rounded-xl border border-slate-800 shadow-xl">
+                    <button 
+                        onClick={() => setViewMode('overview')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'overview' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        <LayoutGrid className="w-4 h-4" />
+                        Visão Geral
+                    </button>
+                    <button 
+                        onClick={() => setViewMode('list')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        <List className="w-4 h-4" />
+                        Lista
+                    </button>
+                    <button 
+                        onClick={() => setViewMode('focus')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'focus' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        <Target className="w-4 h-4" />
+                        Foco
+                    </button>
                 </div>
             </div>
-        );
-    }
 
-    // --- Render: Standard Inbox ---
-    return (
-        <div className="flex flex-col gap-6 h-full">
-            <div className="flex items-center gap-4 mb-2">
-                <div className="p-3 bg-violet-600/20 rounded-xl">
-                    <div className="text-violet-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></svg>
+            {/* Visão Geral Section */}
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-xl font-bold text-white">Visão Geral</h2>
+                        <p className="text-slate-500 text-sm">Diagnóstico rápido do dia (sem virar outra lista de atividades).</p>
+                    </div>
+                    <div className="flex gap-3">
+                        <button className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:text-white transition-colors text-sm font-medium border border-slate-800 rounded-lg">
+                            Ver lista <ArrowRight className="w-4 h-4" />
+                        </button>
+                        <button className="flex items-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-400 text-white rounded-lg text-sm font-bold transition-all shadow-lg shadow-sky-500/20">
+                            <Circle className="w-4 h-4 fill-white" />
+                            Começar foco
+                        </button>
                     </div>
                 </div>
-                <div>
-                    <h1 className="text-2xl font-bold text-white">Inbox</h1>
-                    <p className="text-slate-400">Resumo do que precisa da sua atenção hoje.</p>
-                </div>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full overflow-hidden">
-                {/* Left Column: Tasks */}
-                <div className="flex flex-col gap-6 overflow-hidden">
-                    {/* Overdue Tasks Alert */}
-                    {overdueTasks.length > 0 && (
-                        <div className="bg-red-900/20 border border-red-900/50 rounded-lg p-4 flex flex-col gap-3">
-                            <div className="flex items-center gap-2 text-red-400 font-semibold">
-                                <AlertCircle className="w-5 h-5" />
-                                <h3>{overdueTasks.length} Tarefa{overdueTasks.length > 1 ? 's' : ''} Atrasada{overdueTasks.length > 1 ? 's' : ''}</h3>
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {stats.map((stat, i) => (
+                        <div key={i} className={`p-6 rounded-2xl border border-slate-800/50 ${stat.bgColor} backdrop-blur-sm flex flex-col justify-between h-32`}>
+                            <div className="flex justify-between items-start">
+                                <span className="text-[10px] font-bold text-slate-500 tracking-widest">{stat.label}</span>
+                                <span className={`text-3xl font-bold ${stat.color}`}>{stat.value}</span>
                             </div>
-                            <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-                                {overdueTasks.map(task => (
-                                    <div key={task.id} className="bg-slate-900/50 p-3 rounded border border-red-900/30 flex justify-between items-center group">
-                                        <div>
-                                            <p className="text-sm text-slate-200">{task.title}</p>
-                                            <p className="text-xs text-red-400/70">{new Date(task.dueDate).toLocaleDateString('pt-BR')}</p>
+                            <span className="text-sm text-slate-400">{stat.subtext}</span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Lists Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Risco Section */}
+                    <div className="bg-slate-900/40 border border-slate-800/50 rounded-2xl p-6 backdrop-blur-sm">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-2">
+                                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                                <h3 className="font-bold text-white">Risco (resgate e deals parados)</h3>
+                            </div>
+                            <button className="text-sky-400 hover:text-sky-300 text-sm font-medium">Ver tudo</button>
+                        </div>
+                        <div className="space-y-4">
+                            {churnRiskLeads.map(lead => (
+                                <div key={lead.id} className="flex items-center justify-between group">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-2 bg-red-500/10 rounded-lg">
+                                            <UserMinus className="w-5 h-5 text-red-400" />
                                         </div>
-                                        <button onClick={() => onNavigate('Tarefas')} className="text-xs bg-red-900/40 hover:bg-red-900/60 text-red-200 px-2 py-1 rounded transition-colors">
-                                            Ver
+                                        <div>
+                                            <p className="text-white font-medium">Risco de Churn</p>
+                                            <p className="text-xs text-slate-500">{lead.name} não interage há 40 dias</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg text-xs font-bold transition-colors">
+                                            Aplicar
+                                        </button>
+                                        <button 
+                                            onClick={() => onOpenLead?.(lead)}
+                                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition-colors"
+                                        >
+                                            Abrir
                                         </button>
                                     </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Today's Tasks */}
-                    <GlassCard 
-                        className="flex-1 flex flex-col overflow-hidden p-0"
-                        header={
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                                    <h3 className="font-bold text-white">Tarefas de Hoje</h3>
-                                </div>
-                                <span className="bg-slate-800 text-slate-400 text-xs px-2 py-1 rounded-full">{todayTasks.length}</span>
-                            </div>
-                        }
-                    >
-                        <div className="flex-1 overflow-y-auto space-y-3">
-                            {todayTasks.length > 0 ? todayTasks.map(task => (
-                                <motion.div 
-                                    key={task.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    onClick={() => onNavigate('Tarefas')}
-                                >
-                                    <GlassSection className="p-4 hover:border-violet-500/50 transition-colors group cursor-pointer">
-                                        <div className="flex justify-between items-start">
-                                            <p className="font-medium text-slate-200 group-hover:text-white transition-colors">{task.title}</p>
-                                            <div className="bg-slate-800 p-1.5 rounded text-slate-500 group-hover:text-violet-400 transition-colors">
-                                                <ArrowRight className="w-4 h-4" />
-                                            </div>
-                                        </div>
-                                        {task.description && <p className="text-sm text-slate-500 mt-1 line-clamp-1">{task.description}</p>}
-                                        <div className="flex items-center gap-2 mt-3 text-xs text-slate-400">
-                                            <Clock className="w-3.5 h-3.5" />
-                                            <span>Até {new Date(task.dueDate).toLocaleDateString('pt-BR')}</span>
-                                        </div>
-                                    </GlassSection>
-                                </motion.div>
-                            )) : (
-                                <div className="h-full flex flex-col items-center justify-center text-slate-500 py-10">
-                                    <Calendar className="w-12 h-12 mb-3 opacity-20" />
-                                    <p>Nenhuma tarefa agendada para hoje.</p>
-                                    <button onClick={() => onNavigate('Tarefas')} className="mt-2 text-sm text-violet-400 hover:text-violet-300">Ver todas as tarefas</button>
-                                </div>
-                            )}
-                        </div>
-                    </GlassCard>
-                </div>
-
-                {/* Right Column: Notifications & Recent Leads */}
-                <div className="flex flex-col gap-6 overflow-hidden">
-                    {/* Unread Notifications */}
-                    <GlassCard 
-                        className="flex-1 flex flex-col overflow-hidden min-h-[300px] p-0"
-                        header={
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                    <Bell className="w-5 h-5 text-amber-500" />
-                                    <h3 className="font-bold text-white">Notificações</h3>
-                                </div>
-                                {unreadNotifications.length > 0 && <span className="bg-amber-500/20 text-amber-400 text-xs px-2 py-1 rounded-full">{unreadNotifications.length} novas</span>}
-                            </div>
-                        }
-                    >
-                        <div className="flex-1 overflow-y-auto">
-                            {unreadNotifications.length > 0 ? (
-                                <div className="divide-y divide-slate-800">
-                                    {unreadNotifications.map(notif => (
-                                        <div 
-                                            key={notif.id} 
-                                            onClick={() => handleNotificationClick(notif)}
-                                            className="p-4 hover:bg-slate-800/50 transition-colors cursor-pointer flex gap-3"
-                                        >
-                                            <div className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0" />
-                                            <div>
-                                                <p className="text-sm text-slate-200">{notif.text}</p>
-                                                <p className="text-xs text-slate-500 mt-1">{new Date(notif.createdAt).toLocaleString('pt-BR')}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="h-full flex flex-col items-center justify-center text-slate-500 p-8">
-                                    <p>Você está em dia com as notificações.</p>
-                                </div>
-                            )}
-                        </div>
-                        {unreadNotifications.length > 0 && (
-                            <div className="p-3 border-t border-slate-800 text-center">
-                                <button onClick={() => onNavigate('Notificações')} className="text-xs font-medium text-slate-400 hover:text-white transition-colors">
-                                    Ver todas as notificações
-                                </button>
-                            </div>
-                        )}
-                    </GlassCard>
-
-                    {/* Quick Stats / Recent Leads */}
-                    <GlassCard 
-                        header={
-                            <div className="flex items-center gap-2">
-                                <UserPlus className="w-5 h-5 text-blue-500" />
-                                <h3 className="font-bold text-white">Leads Recentes</h3>
-                            </div>
-                        }
-                    >
-                        <div className="space-y-3">
-                            {recentLeads.map(lead => (
-                                <div key={lead.id} className="flex items-center justify-between text-sm">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300">
-                                            {lead.name.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <p className="text-slate-200">{lead.name}</p>
-                                            <p className="text-xs text-slate-500">{lead.company}</p>
-                                        </div>
-                                    </div>
-                                    <span className="text-xs text-slate-500">
-                                        {new Date(lead.createdAt || '').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}
-                                    </span>
                                 </div>
                             ))}
                         </div>
-                        <button onClick={() => onNavigate('Pipeline')} className="w-full mt-4 py-2 text-xs font-medium text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded transition-colors">
-                            Ir para Pipeline
-                        </button>
-                    </GlassCard>
+                    </div>
+
+                    {/* Oportunidades Section */}
+                    <div className="bg-slate-900/40 border border-slate-800/50 rounded-2xl p-6 backdrop-blur-sm">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-2">
+                                <TrendingUp className="w-5 h-5 text-emerald-500" />
+                                <h3 className="font-bold text-white">Oportunidades (upsell)</h3>
+                            </div>
+                            <button className="text-sky-400 hover:text-sky-300 text-sm font-medium">Ver tudo</button>
+                        </div>
+                        <div className="space-y-4">
+                            {upsellOpportunities.map(lead => (
+                                <div key={lead.id} className="flex items-center justify-between group">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-2 bg-emerald-500/10 rounded-lg">
+                                            <TrendingUp className="w-5 h-5 text-emerald-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-white font-medium">Oportunidade de Upsell</p>
+                                            <p className="text-xs text-slate-500">Sem empresa fechou há 40 dias • R$ 12.000</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg text-xs font-bold transition-colors">
+                                            Aplicar
+                                        </button>
+                                        <button 
+                                            onClick={() => onOpenLead?.(lead)}
+                                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition-colors"
+                                        >
+                                            Abrir
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -415,3 +234,4 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
 };
 
 export default InboxView;
+

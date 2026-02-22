@@ -118,6 +118,7 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
           leads={leads}
           onNavigate={(view: string) => setActiveView(view)}
           onMarkNotificationRead={(id: string) => setNotifications((curr: any[]) => curr.map(n => n.id === id ? { ...n, isRead: true } : n))}
+          onOpenLead={setSelectedLead}
       />;
     case 'Dashboard':
       return <Dashboard 
