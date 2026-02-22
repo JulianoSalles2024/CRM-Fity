@@ -1,9 +1,9 @@
 
 import React, { useMemo, useEffect } from 'react';
-import { Lead, ColumnData, Activity, Task } from '../types';
+import { Lead, ColumnData, Activity, Task, User } from '../types';
 import { Users, Target, TrendingUp, DollarSign, ChevronDown, UserCheck, AlertTriangle, Wallet } from 'lucide-react';
 import KpiCard from './KpiCard';
-import PipelineOverview from './PipelineOverview';
+import TopSellers from './TopSellers';
 import RecentActivities from './RecentActivities';
 
 interface DashboardProps {
@@ -11,13 +11,14 @@ interface DashboardProps {
     columns: ColumnData[];
     activities: Activity[];
     tasks: Task[];
+    users: User[];
     onNavigate: (view: string) => void;
     onAnalyzePortfolio?: () => void;
     showNotification: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
     onExportReport?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks, onNavigate, onAnalyzePortfolio, showNotification, onExportReport }) => {
+const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks, users, onNavigate, onAnalyzePortfolio, showNotification, onExportReport }) => {
 
     const kpiData = useMemo(() => {
         const wonColumnIds = columns.filter(c => c.type === 'won').map(c => c.id);
@@ -225,10 +226,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                 </div>
             </div>
 
-            {/* Bottom Section: Funnel & Activities */}
+            {/* Bottom Section: Top Sellers & Activities */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1">
-                    <PipelineOverview columns={columns} leads={leads} onNavigate={onNavigate} />
+                    <TopSellers columns={columns} leads={leads} users={users} />
                 </div>
                 <div className="lg:col-span-2">
                     <RecentActivities activities={activities} leads={leads} onNavigate={onNavigate} />

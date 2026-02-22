@@ -125,6 +125,7 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                   columns={columns} 
                   activities={activities} 
                   tasks={tasks} 
+                  users={users}
                   onNavigate={setActiveView} 
                   onAnalyzePortfolio={handleStartAnalysis} 
                   showNotification={showNotification} 
