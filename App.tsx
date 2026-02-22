@@ -860,6 +860,7 @@ const App: React.FC = () => {
                     showNotification={showNotification}
                     onUpdateTaskStatus={handleUpdateTaskStatus}
                     onDeactivatePlaybook={() => handleDeactivatePlaybook(selectedLead.id)}
+                    onApplyPlaybook={handleApplyPlaybook}
                 />
             )}
         </AnimatePresence>
