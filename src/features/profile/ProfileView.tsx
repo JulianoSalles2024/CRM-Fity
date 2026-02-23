@@ -206,9 +206,11 @@ export const ProfileView: React.FC = () => {
 
         {/* Expandable password form */}
         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          showPasswordForm ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
+          showPasswordForm ? 'max-h-80' : 'max-h-0'
         }`}>
-          <div className="px-8 pb-8 pt-6 border-t border-white/[0.06] space-y-4">
+          <div className={`px-8 pb-8 pt-6 border-t border-white/[0.06] space-y-4 transition-all duration-300 ease-in-out ${
+            showPasswordForm ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
+          }`}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label htmlFor="new-password" className="text-xs font-medium text-slate-500 uppercase tracking-wide">
