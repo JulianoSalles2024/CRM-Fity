@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, InviteLink, UserRole } from '../types';
 import { Users, UserPlus, Copy, Trash2, Clock, Shield, Check, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -17,6 +17,31 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
     const [inviteLinks, setInviteLinks] = useState<InviteLink[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [generateError, setGenerateError] = useState<string | null>(null);
+    const [supabaseUsers, setSupabaseUsers] = useState<User[]>([]);
+    const [isFetchingUsers, setIsFetchingUsers] = useState(true);
+
+    useEffect(() => {
+        const fetchMembers = async () => {
+            setIsFetchingUsers(true);
+            const { data } = await supabase
+                .from('profiles')
+                .select('id, email, name, role, company_id, created_at')
+                .order('created_at', { ascending: true });
+            if (data) {
+                setSupabaseUsers(data.map(p => ({
+                    id: p.id,
+                    email: p.email,
+                    name: p.name ?? p.email,
+                    role: p.role === 'admin' ? 'Admin' : 'Vendedor',
+                    joinedAt: p.created_at,
+                })));
+            }
+            setIsFetchingUsers(false);
+        };
+        fetchMembers();
+    }, []);
+
+    const displayUsers = supabaseUsers.length > 0 ? supabaseUsers : users;
 
     // Invite Modal State
     const [inviteRole, setInviteRole] = useState<UserRole>('Vendedor');
@@ -117,7 +142,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                 <div>
                     <h2 className="text-2xl font-bold text-white">Sua Equipe</h2>
                     <p className="text-slate-400 mt-1">
-                        {users.length} membro{users.length !== 1 && 's'} • {users.filter(u => u.role === 'Admin' || !u.role).length} admin, {users.filter(u => u.role === 'Vendedor').length} vendedores
+                        {displayUsers.length} membro{displayUsers.length !== 1 && 's'} • {displayUsers.filter(u => u.role === 'Admin' || !u.role).length} admin, {displayUsers.filter(u => u.role === 'Vendedor').length} vendedores
                     </p>
                 </div>
                 {currentPermissions.canManageTeam && (
@@ -134,7 +159,11 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
             {/* Members List */}
             <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
                 <div className="divide-y divide-slate-800">
-                    {(currentPermissions.canManageTeam ? users : users.filter(u => u.id === currentUser.id)).map(user => (
+                    {isFetchingUsers ? (
+                        <div className="p-6 flex justify-center">
+                            <Loader2 className="w-5 h-5 text-slate-500 animate-spin" />
+                        </div>
+                    ) : (currentPermissions.canManageTeam ? displayUsers : displayUsers.filter(u => u.id === currentUser.id)).map(user => (
                         <div key={user.id} className="p-4 flex items-center justify-between hover:bg-slate-800/50 transition-colors">
                             <div className="flex items-center gap-4">
                                 <div className="relative">
@@ -176,7 +205,8 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                             
                             {/* Actions could go here */}
                         </div>
-                    ))}
+                    ))
+                    }
                 </div>
             </div>
 
