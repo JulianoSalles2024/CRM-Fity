@@ -1,15 +1,29 @@
 import { AICredential, AIProviderId, TestConnectionResponse } from './aiProviders.types';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 const API_BASE = '/api/ai';
 
+async function getAuthenticatedUserId(): Promise<string> {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw new Error('User not authenticated');
+  return data.user.id;
+}
+
 export const aiProvidersService = {
-  async getCredentials(userId: string): Promise<Record<AIProviderId, AICredential>> {
+  async getCredentials(): Promise<Record<AIProviderId, AICredential>> {
+    const userId = await getAuthenticatedUserId();
     const response = await fetch(`${API_BASE}/credentials?userId=${userId}`);
     if (!response.ok) throw new Error('Failed to fetch credentials');
     return response.json();
   },
 
-  async saveCredential(userId: string, credential: Partial<AICredential>): Promise<void> {
+  async saveCredential(credential: Partial<AICredential>): Promise<void> {
+    const userId = await getAuthenticatedUserId();
     const response = await fetch(`${API_BASE}/credentials`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

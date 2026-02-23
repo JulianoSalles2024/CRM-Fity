@@ -3,7 +3,7 @@ import { AICredential, AIProviderId, ConnectionStatus } from './aiProviders.type
 import { aiProvidersService } from './aiProviders.service';
 import { MODELS_REGISTRY } from './models.registry';
 
-export const useAIProviders = (userId: string = 'default-user') => {
+export const useAIProviders = () => {
   const [credentials, setCredentials] = useState<Record<AIProviderId, AICredential>>({
     openai: { provider: 'openai', apiKey: '', model: 'gpt-5-mini', status: 'not_configured' },
     gemini: { provider: 'gemini', apiKey: '', model: 'gemini-2.5-flash', status: 'not_configured' },
@@ -14,8 +14,8 @@ export const useAIProviders = (userId: string = 'default-user') => {
   const loadCredentials = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await aiProvidersService.getCredentials(userId);
-      
+      const data = await aiProvidersService.getCredentials();
+
       // Merge with defaults to ensure all providers are present
       setCredentials(prev => ({
         ...prev,
@@ -26,7 +26,7 @@ export const useAIProviders = (userId: string = 'default-user') => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     loadCredentials();
@@ -42,7 +42,7 @@ export const useAIProviders = (userId: string = 'default-user') => {
   const saveCredential = async (provider: AIProviderId) => {
     try {
       const credential = credentials[provider];
-      await aiProvidersService.saveCredential(userId, credential);
+      await aiProvidersService.saveCredential(credential);
       alert('Configurações salvas com sucesso!');
     } catch (error) {
       console.error('Error saving credential:', error);
