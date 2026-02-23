@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { Save, Phone, Shield, Check } from 'lucide-react';
+import { Phone, Shield, Check, Save, User, AtSign, Calendar, Lock } from 'lucide-react';
 import { ProfileAvatar } from './components/ProfileAvatar';
-import { GlassCard } from '@/src/shared/components/GlassCard';
-import { GlassSection } from '@/src/shared/components/GlassSection';
 
 export const ProfileView: React.FC = () => {
   // Initial state from localStorage or defaults
@@ -51,129 +49,185 @@ export const ProfileView: React.FC = () => {
     setPreviewUrl(user.avatarUrl);
   };
 
-  return (
-    <div className="max-w-4xl mx-auto py-12 px-6">
-      <header className="mb-12">
-        <h1 className="text-4xl font-bold text-white mb-2">Meu Perfil</h1>
-        <p className="text-slate-400">Gerencie suas informações pessoais e segurança.</p>
-      </header>
+  const inputClass =
+    'w-full bg-slate-900/60 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500/50 transition-all';
 
-      <div className="space-y-8">
-        {/* Main Card with Glassmorphism */}
-        <GlassCard className="p-8 shadow-[0_8px_32px_rgba(0,149,255,0.1)]">
-          <div className="flex items-center gap-6 mb-10">
+  return (
+    <div className="max-w-3xl mx-auto py-10 px-6 space-y-6">
+
+      {/* ── Card 1: User Info ──────────────────────────────── */}
+      <div className="bg-slate-800/50 border border-slate-700/40 rounded-2xl shadow-xl overflow-hidden">
+
+        {/* Card header */}
+        <div className="flex items-center justify-between px-8 pt-8 pb-6 border-b border-slate-700/40">
+          <div className="flex items-center gap-5">
             <ProfileAvatar
               avatarUrl={previewUrl}
               onImageChange={handleImageChange}
               onRemove={handleRemoveAvatar}
             />
             <div>
-              <h2 className="text-2xl font-bold text-white">{editData.nickname}</h2>
-              <p className="text-slate-400">{editData.firstName} {editData.lastName}</p>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/10 text-amber-500 text-xs font-bold uppercase tracking-wider border border-amber-500/20 mt-3">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              <h2 className="text-2xl font-bold text-white leading-tight">
+                {editData.nickname || `${editData.firstName} ${editData.lastName}`}
+              </h2>
+              <p className="text-sm text-slate-400 mt-0.5">
+                {editData.firstName} {editData.lastName}
+              </p>
+              <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold uppercase tracking-wider">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                 {editData.role}
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-400">Nome</label>
-              <input 
-                type="text"
-                value={editData.firstName}
-                onChange={(e) => setEditData({ ...editData, firstName: e.target.value })}
-                className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all"
-              />
+          <button
+            onClick={handleSave}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg transition-all active:scale-[0.97] ${
+              saved
+                ? 'bg-emerald-500 shadow-emerald-500/20 text-white'
+                : 'bg-sky-600 hover:bg-sky-500 shadow-sky-500/20 text-white'
+            }`}
+          >
+            {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+            {saved ? 'Salvo!' : 'Salvar'}
+          </button>
+        </div>
+
+        {/* Form fields */}
+        <div className="px-8 py-7 space-y-5">
+
+          {/* Nome + Sobrenome */}
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-8 h-8 mt-1 rounded-lg bg-slate-700/50 flex items-center justify-center">
+              <User className="w-4 h-4 text-slate-400" />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-400">Sobrenome</label>
-              <input 
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Nome</label>
+                <input
+                  type="text"
+                  value={editData.firstName}
+                  onChange={e => setEditData({ ...editData, firstName: e.target.value })}
+                  className={inputClass}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Sobrenome</label>
+                <input
+                  type="text"
+                  value={editData.lastName}
+                  onChange={e => setEditData({ ...editData, lastName: e.target.value })}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-700/30" />
+
+          {/* Apelido */}
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-8 h-8 mt-1 rounded-lg bg-slate-700/50 flex items-center justify-center">
+              <AtSign className="w-4 h-4 text-slate-400" />
+            </div>
+            <div className="flex-1 space-y-1">
+              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Apelido</label>
+              <input
                 type="text"
-                value={editData.lastName}
-                onChange={(e) => setEditData({ ...editData, lastName: e.target.value })}
-                className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all"
+                value={editData.nickname}
+                onChange={e => setEditData({ ...editData, nickname: e.target.value })}
+                className={inputClass}
               />
             </div>
           </div>
 
-          <div className="space-y-2 mb-6">
-            <label className="text-sm font-medium text-slate-400">Apelido (como gostaria de ser chamado)</label>
-            <input 
-              type="text"
-              value={editData.nickname}
-              onChange={(e) => setEditData({ ...editData, nickname: e.target.value })}
-              className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all"
-            />
-          </div>
+          <div className="border-t border-slate-700/30" />
 
-          <div className="space-y-2 mb-10">
-            <label className="text-sm font-medium text-slate-400">Telefone</label>
-            <div className="relative">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-              <input 
+          {/* Telefone */}
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-8 h-8 mt-1 rounded-lg bg-slate-700/50 flex items-center justify-center">
+              <Phone className="w-4 h-4 text-slate-400" />
+            </div>
+            <div className="flex-1 space-y-1">
+              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Telefone</label>
+              <input
                 type="text"
                 value={editData.phone}
-                onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
-                className="w-full bg-black/20 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all"
+                onChange={e => setEditData({ ...editData, phone: e.target.value })}
+                className={inputClass}
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-6">
-            <button 
-              onClick={handleCancel}
-              className="px-8 py-3 text-slate-400 hover:text-white font-medium transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSave}
-              className={`flex-1 max-w-[300px] flex items-center justify-center gap-2 font-bold py-3 rounded-xl shadow-lg transition-all active:scale-[0.98] ${
-                saved
-                  ? 'bg-emerald-500 shadow-emerald-500/20 text-white'
-                  : 'bg-sky-500 hover:bg-sky-400 shadow-sky-500/20 text-white'
-              }`}
-            >
-              {saved ? <Check className="w-5 h-5" /> : <Save className="w-5 h-5" />}
-              {saved ? 'Salvo!' : 'Salvar'}
-            </button>
-          </div>
-        </GlassCard>
+        </div>
 
-        {/* Security Section (Styled like the screenshot) */}
-        <GlassCard className="p-8 shadow-[0_8px_32px_rgba(0,149,255,0.05)]">
-          <div className="flex items-start gap-4 mb-8">
-            <div className="p-2 rounded-lg bg-white/5">
-              <Shield className="w-5 h-5 text-slate-400" />
+        {/* Card footer */}
+        <div className="px-8 pb-7 flex justify-end">
+          <button
+            onClick={handleCancel}
+            className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
+          >
+            Cancelar alterações
+          </button>
+        </div>
+      </div>
+
+      {/* ── Card 2: Security ──────────────────────────────── */}
+      <div className="bg-slate-800/50 border border-slate-700/40 rounded-2xl shadow-xl overflow-hidden">
+
+        {/* Card header */}
+        <div className="flex items-center justify-between px-8 py-6 border-b border-slate-700/40">
+          <div className="flex items-center gap-4">
+            <div className="w-9 h-9 rounded-xl bg-slate-700/50 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-slate-400" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white mb-1">Segurança</h3>
-              <p className="text-sm text-slate-400">Gerencie sua senha de acesso.</p>
+              <h3 className="text-base font-semibold text-white">Segurança</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Gerencie sua senha de acesso.</p>
+            </div>
+          </div>
+          <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500 transition-all">
+            <Lock className="w-3.5 h-3.5" />
+            Alterar Senha
+          </button>
+        </div>
+
+        {/* Password fields */}
+        <div className="px-8 py-7 space-y-5">
+
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-8 h-8 mt-1 rounded-lg bg-slate-700/50 flex items-center justify-center">
+              <Lock className="w-4 h-4 text-slate-400" />
+            </div>
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Nova Senha</label>
+                <input
+                  type="password"
+                  placeholder="Mínimo 6 caracteres"
+                  className={inputClass}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Confirmar Senha</label>
+                <input
+                  type="password"
+                  placeholder="Digite novamente"
+                  className={inputClass}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-400">Nova Senha</label>
-              <input 
-                type="password"
-                placeholder="Mínimo 6 caracteres"
-                className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-400">Confirmar Nova Senha</label>
-              <input 
-                type="password"
-                placeholder="Digite novamente"
-                className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all"
-              />
-            </div>
-          </div>
-        </GlassCard>
+        </div>
+
+        <div className="px-8 pb-6">
+          <p className="text-xs text-slate-600">
+            Use uma senha forte com letras, números e símbolos. Nunca compartilhe sua senha com ninguém.
+          </p>
+        </div>
       </div>
+
     </div>
   );
 };
