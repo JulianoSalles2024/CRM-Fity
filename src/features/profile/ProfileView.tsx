@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Save, Phone, Shield } from 'lucide-react';
+import React, { useState } from 'react';
+import { Save, Phone, Shield, Check } from 'lucide-react';
 import { ProfileAvatar } from './components/ProfileAvatar';
 import { GlassCard } from '@/src/shared/components/GlassCard';
 import { GlassSection } from '@/src/shared/components/GlassSection';
@@ -20,20 +20,30 @@ export const ProfileView: React.FC = () => {
 
   const [editData, setEditData] = useState(user);
   const [previewUrl, setPreviewUrl] = useState(user.avatarUrl);
+  const [saved, setSaved] = useState(false);
 
   const handleImageChange = (file: File) => {
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-    // In a real app, we would upload the file here.
-    // For now, we'll just use the object URL for preview.
-    setEditData({ ...editData, avatarUrl: url });
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setPreviewUrl(base64);
+      setEditData(prev => ({ ...prev, avatarUrl: base64 }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAvatar = () => {
+    const defaultUrl = 'https://i.pravatar.cc/150?u=juka';
+    setPreviewUrl(defaultUrl);
+    setEditData(prev => ({ ...prev, avatarUrl: defaultUrl }));
   };
 
   const handleSave = () => {
     setUser(editData);
     localStorage.setItem('crm-profile-user', JSON.stringify(editData));
-    // Trigger a custom event or similar if other parts of the app need to know
     window.dispatchEvent(new CustomEvent('profile-updated', { detail: editData }));
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
   const handleCancel = () => {
@@ -52,9 +62,10 @@ export const ProfileView: React.FC = () => {
         {/* Main Card with Glassmorphism */}
         <GlassCard className="p-8 shadow-[0_8px_32px_rgba(0,149,255,0.1)]">
           <div className="flex items-center gap-6 mb-10">
-            <ProfileAvatar 
-              avatarUrl={previewUrl} 
-              onImageChange={handleImageChange} 
+            <ProfileAvatar
+              avatarUrl={previewUrl}
+              onImageChange={handleImageChange}
+              onRemove={handleRemoveAvatar}
             />
             <div>
               <h2 className="text-2xl font-bold text-white">{editData.nickname}</h2>
@@ -117,12 +128,16 @@ export const ProfileView: React.FC = () => {
             >
               Cancelar
             </button>
-            <button 
+            <button
               onClick={handleSave}
-              className="flex-1 max-w-[300px] flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 text-white font-bold py-3 rounded-xl shadow-lg shadow-sky-500/20 transition-all active:scale-[0.98]"
+              className={`flex-1 max-w-[300px] flex items-center justify-center gap-2 font-bold py-3 rounded-xl shadow-lg transition-all active:scale-[0.98] ${
+                saved
+                  ? 'bg-emerald-500 shadow-emerald-500/20 text-white'
+                  : 'bg-sky-500 hover:bg-sky-400 shadow-sky-500/20 text-white'
+              }`}
             >
-              <Save className="w-5 h-5" />
-              Salvar
+              {saved ? <Check className="w-5 h-5" /> : <Save className="w-5 h-5" />}
+              {saved ? 'Salvo!' : 'Salvar'}
             </button>
           </div>
         </GlassCard>

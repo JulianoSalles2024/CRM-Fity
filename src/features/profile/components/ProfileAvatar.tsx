@@ -4,9 +4,10 @@ import { Camera } from 'lucide-react';
 interface ProfileAvatarProps {
   avatarUrl: string;
   onImageChange: (file: File) => void;
+  onRemove: () => void;
 }
 
-export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, onImageChange }) => {
+export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, onImageChange, onRemove }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,9 +34,13 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, onImage
         <Camera className="w-6 h-6 text-white" />
       </button>
 
-      <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 border-2 border-[#0f1116] rounded-full flex items-center justify-center">
+      <button
+        onClick={onRemove}
+        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-400 border-2 border-[#0f1116] rounded-full flex items-center justify-center transition-colors"
+        title="Remover foto"
+      >
         <span className="text-[10px] text-white font-bold">×</span>
-      </div>
+      </button>
 
       <input 
         type="file" 
