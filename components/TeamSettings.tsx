@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { User, InviteLink, UserRole } from '../types';
-import { Users, UserPlus, Copy, Trash2, Clock, Shield, Check } from 'lucide-react';
+import { Users, UserPlus, Copy, Trash2, Clock, Shield, Check, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { supabase } from '@/src/lib/supabase';
 
 interface TeamSettingsProps {
     users: User[];
@@ -12,35 +13,70 @@ interface TeamSettingsProps {
 const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdateUsers }) => {
     const [isInviteModalOpen, setInviteModalOpen] = useState(false);
     const [inviteLinks, setInviteLinks] = useState<InviteLink[]>([]);
-    
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [generateError, setGenerateError] = useState<string | null>(null);
+
     // Invite Modal State
     const [inviteRole, setInviteRole] = useState<UserRole>('Vendedor');
     const [inviteExpiration, setInviteExpiration] = useState<'7 days' | '30 days' | 'never'>('7 days');
 
-    const handleGenerateInvite = () => {
-        const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        let expiresAt: string | null = null;
-        
-        if (inviteExpiration === '7 days') {
-            const date = new Date();
-            date.setDate(date.getDate() + 7);
-            expiresAt = date.toISOString();
-        } else if (inviteExpiration === '30 days') {
-            const date = new Date();
-            date.setDate(date.getDate() + 30);
-            expiresAt = date.toISOString();
+    const handleGenerateInvite = async () => {
+        setIsGenerating(true);
+        setGenerateError(null);
+
+        try {
+            // 1. Secure token
+            const token = crypto.randomUUID();
+
+            // 2. Calculate expires_at
+            let expiresAt: string | null = null;
+            if (inviteExpiration === '7 days') {
+                const d = new Date();
+                d.setDate(d.getDate() + 7);
+                expiresAt = d.toISOString();
+            } else if (inviteExpiration === '30 days') {
+                const d = new Date();
+                d.setDate(d.getDate() + 30);
+                expiresAt = d.toISOString();
+            }
+
+            // 3. Map role to profiles check constraint values
+            const roleValue = inviteRole === 'Admin' ? 'admin' : 'seller';
+
+            // 4. Get current user for company_id
+            const { data: { user } } = await supabase.auth.getUser();
+            const companyId = user?.id ?? null;
+
+            // 5. Insert into invites table
+            const { data, error } = await supabase
+                .from('invites')
+                .insert({
+                    token,
+                    role: roleValue,
+                    company_id: companyId,
+                    expires_at: expiresAt,
+                })
+                .select()
+                .single();
+
+            if (error) throw new Error(error.message);
+
+            // 6. Add to local state
+            const newInvite: InviteLink = {
+                id: data.id ?? `invite-${Date.now()}`,
+                role: inviteRole,
+                expiration: inviteExpiration,
+                expiresAt,
+                token,
+                createdAt: new Date().toISOString(),
+            };
+
+            setInviteLinks(prev => [newInvite, ...prev]);
+        } catch (err: any) {
+            setGenerateError(err.message ?? 'Erro ao gerar convite.');
+        } finally {
+            setIsGenerating(false);
         }
-
-        const newInvite: InviteLink = {
-            id: `invite-${Date.now()}`,
-            role: inviteRole,
-            expiration: inviteExpiration,
-            expiresAt,
-            token,
-            createdAt: new Date().toISOString()
-        };
-
-        setInviteLinks(prev => [newInvite, ...prev]);
     };
 
     const handleDeleteInvite = (id: string) => {
@@ -246,13 +282,22 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                 >
                                     Fechar
                                 </button>
-                                <button 
-                                    onClick={handleGenerateInvite}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-colors shadow-lg shadow-blue-500/20"
-                                >
-                                    <Copy className="w-4 h-4" />
-                                    Gerar Link
-                                </button>
+                                <div className="flex flex-col items-end gap-2">
+                                    {generateError && (
+                                        <p className="text-xs text-red-400">{generateError}</p>
+                                    )}
+                                    <button
+                                        onClick={handleGenerateInvite}
+                                        disabled={isGenerating}
+                                        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-colors shadow-lg shadow-blue-500/20"
+                                    >
+                                        {isGenerating
+                                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                                            : <Copy className="w-4 h-4" />
+                                        }
+                                        {isGenerating ? 'Gerando...' : 'Gerar Link'}
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     </div>
