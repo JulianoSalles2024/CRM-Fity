@@ -34,6 +34,9 @@ import SdrAssistantChat from './components/SdrAssistantChat';
 // Router
 import { AppRouter } from '@/src/app/AppRouter';
 
+// AI Credentials
+import { useAIProviders } from '@/src/features/ai-credentials/useAIProviders';
+
 
 // Types
 import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, Notification as NotificationType, Playbook, PlaybookHistoryEntry, Board } from './types';
@@ -185,21 +188,15 @@ const App: React.FC = () => {
         }
     }, [activeView]);
 
-    // Helper for AI check
-    const checkAiConfiguration = () => {
-        const config = localStorage.getItem('crm-ai-config');
-        if (config) {
-            const parsed = JSON.parse(config);
-            return !!parsed.apiKey;
-        }
-        return false;
-    };
+    const { credentials } = useAIProviders();
+    const isAiConfigured =
+        credentials.gemini.status === 'connected' ||
+        credentials.openai.status === 'connected' ||
+        credentials.anthropic.status === 'connected';
 
     const handleOpenSdrBot = () => {
         setSdrBotOpen(true);
     };
-
-    const isAiConfigured = checkAiConfiguration();
 
     // Reactivation Task/Notification Effect
     useEffect(() => {
