@@ -3,6 +3,7 @@ import { User, InviteLink, UserRole } from '../types';
 import { Users, UserPlus, Copy, Trash2, Clock, Shield, Check, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '@/src/lib/supabase';
+import { useAuth } from '@/src/features/auth/AuthContext';
 
 interface TeamSettingsProps {
     users: User[];
@@ -11,6 +12,7 @@ interface TeamSettingsProps {
 }
 
 const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdateUsers }) => {
+    const { currentPermissions } = useAuth();
     const [isInviteModalOpen, setInviteModalOpen] = useState(false);
     const [inviteLinks, setInviteLinks] = useState<InviteLink[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -113,19 +115,21 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                         {users.length} membro{users.length !== 1 && 's'} • {users.filter(u => u.role === 'Admin' || !u.role).length} admin, {users.filter(u => u.role === 'Vendedor').length} vendedores
                     </p>
                 </div>
-                <button 
-                    onClick={() => setInviteModalOpen(true)}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                >
-                    <UserPlus className="w-4 h-4" />
-                    Convidar
-                </button>
+                {currentPermissions.canManageTeam && (
+                    <button
+                        onClick={() => setInviteModalOpen(true)}
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                        <UserPlus className="w-4 h-4" />
+                        Convidar
+                    </button>
+                )}
             </div>
 
             {/* Members List */}
             <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
                 <div className="divide-y divide-slate-800">
-                    {users.map(user => (
+                    {(currentPermissions.canManageTeam ? users : users.filter(u => u.id === currentUser.id)).map(user => (
                         <div key={user.id} className="p-4 flex items-center justify-between hover:bg-slate-800/50 transition-colors">
                             <div className="flex items-center gap-4">
                                 <div className="relative">

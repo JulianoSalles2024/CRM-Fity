@@ -18,6 +18,7 @@ import { Key } from 'lucide-react';
 import { GlassCard } from '@/src/shared/components/GlassCard';
 import { GlassSection } from '@/src/shared/components/GlassSection';
 import type { Board } from '../types';
+import { useAuth } from '@/src/features/auth/AuthContext';
 
 // --- Componentes para Drag-and-Drop de Estágios ---
 
@@ -313,20 +314,21 @@ interface SettingsPageProps {
     initialTab?: string;
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ 
-    currentUser, 
-    users, 
-    columns, 
+const SettingsPage: React.FC<SettingsPageProps> = ({
+    currentUser,
+    users,
+    columns,
     boards,
     activeBoardId,
-    onUpdatePipeline, 
-    onUpdateUsers, 
+    onUpdatePipeline,
+    onUpdateUsers,
     onSelectBoard,
     onDeleteBoard,
     onCreateBoard,
-    onResetApplication, 
-    initialTab 
+    onResetApplication,
+    initialTab
 }) => {
+    const { currentPermissions } = useAuth();
     const [activeTab, setActiveTab] = useState('Pipelines');
 
     useEffect(() => {
@@ -347,11 +349,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     const tabs = [
         { name: 'Pipelines', icon: Columns },
         { name: 'Estágios', icon: Settings },
-        { name: 'Equipe', icon: Users },
+        ...(currentPermissions.canManageTeam ? [{ name: 'Equipe', icon: Users }] : []),
         { name: 'Inteligência Artificial', icon: Bot },
-        { name: 'Credenciais de IA', icon: Key },
-        { name: 'Preferências', icon: SlidersHorizontal },
-        { name: 'Integrações', icon: Webhook },
+        ...(currentPermissions.canManageCredentials ? [{ name: 'Credenciais de IA', icon: Key }] : []),
+        ...(currentPermissions.canManagePreferences ? [{ name: 'Preferências', icon: SlidersHorizontal }] : []),
+        ...(currentPermissions.canManageIntegrations ? [{ name: 'Integrações', icon: Webhook }] : []),
         { name: 'Notificações', icon: Bell },
     ];
 

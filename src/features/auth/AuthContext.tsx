@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/src/lib/supabase';
+import { type AppRole, type Permissions, PERMISSIONS } from '@/src/lib/permissions';
 
 interface AuthContextValue {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  currentUserRole: AppRole;
+  currentPermissions: Permissions;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -21,6 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentUserRole, setCurrentUserRole] = useState<AppRole>('admin');
   const [authError, setAuthError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -38,6 +42,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Fetch role from profiles whenever user changes
+  useEffect(() => {
+    if (!user) {
+      setCurrentUserRole('admin');
+      return;
+    }
+    supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        setCurrentUserRole((data?.role as AppRole) ?? 'admin');
+      });
+  }, [user]);
 
   const login = async (email: string, password: string) => {
     setAuthError(null);
@@ -84,9 +104,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut();
   };
 
+  const currentPermissions = PERMISSIONS[currentUserRole];
+
   return (
     <AuthContext.Provider value={{
       user, session, isLoading,
+      currentUserRole, currentPermissions,
       login, register, signInWithGoogle, forgotPassword, logout,
       authError, successMessage,
     }}>

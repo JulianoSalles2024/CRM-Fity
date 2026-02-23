@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { LayoutDashboard, Columns, Users, User as UserIcon, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap, Bell, HelpCircle, MessageSquare, ToyBrick, BookOpen, ArchiveRestore } from 'lucide-react';
+import { useAuth } from '@/src/features/auth/AuthContext';
 
 interface SidebarProps {
     activeView: string;
@@ -37,6 +38,8 @@ const NavItem: React.FC<{
 );
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, onToggle, isChatEnabled }) => {
+  const { currentPermissions } = useAuth();
+
   const mainNavItems = [
     { icon: Inbox, label: 'Inbox' },
     { icon: LayoutDashboard, label: 'Dashboard' },
@@ -50,7 +53,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, 
     { icon: MessageSquare, label: 'Chat' },
     { icon: Users, label: 'Grupos' },
     // { icon: ToyBrick, label: 'Integrações' }, // Removed: moved to Settings
-  ].filter(item => isChatEnabled || item.label !== 'Chat');
+  ].filter(item => {
+    if (!isChatEnabled && item.label === 'Chat') return false;
+    if (!currentPermissions.canViewDashboard && item.label === 'Dashboard') return false;
+    if (!currentPermissions.canViewReports && item.label === 'Relatórios') return false;
+    return true;
+  });
 
   const renderNavItems = mainNavItems.map(item => {
       if (item.label === 'Dashboard') return { ...item, label: 'Visão Geral', originalKey: 'Dashboard' };
