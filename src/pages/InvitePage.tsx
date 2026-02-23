@@ -76,28 +76,65 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
 
     setState({ status: 'submitting', invite });
 
-    // PASSO 4 — Criar usuário
-    // Profile is created automatically by the on_auth_user_created trigger.
-    // Pass invite metadata via raw_user_meta_data so the trigger can populate
-    // name, role and company_id without any frontend insert.
-    const { data: authData, error: signUpError } = await supabase.auth.signUp({
+    // PASSO 4 — Criar / recuperar usuário
+    // To avoid 429 rate limits during development, attempt signIn first.
+    // Only call signUp if the account does not exist yet.
+    let userId: string | null = null;
+
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
-      options: {
-        data: {
-          name,
-          role: invite.role ?? 'seller',
-          company_id: invite.company_id ?? null,
-        },
-      },
     });
 
-    if (signUpError || !authData.user) {
+    if (signInData?.user) {
+      // Account already exists — reuse session
+      userId = signInData.user.id;
+    } else if (signInError && signInError.message === 'Invalid login credentials') {
+      // Account does not exist — create it
+      // Profile is created automatically by the on_auth_user_created trigger.
+      // Pass invite metadata via raw_user_meta_data so the trigger can populate
+      // name, role and company_id without any frontend insert.
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            role: invite.role ?? 'seller',
+            company_id: invite.company_id ?? null,
+          },
+        },
+      });
+
+      if (signUpError) {
+        const is429 =
+          signUpError.message.includes('429') ||
+          signUpError.message.toLowerCase().includes('rate limit') ||
+          signUpError.status === 429;
+
+        setState({
+          status: 'error',
+          invite,
+          message: is429
+            ? 'Too many signup attempts. Please wait a few minutes.'
+            : signUpError.message || 'Erro ao criar conta.',
+        });
+        return;
+      }
+
+      userId = signUpData?.user?.id ?? null;
+    } else {
+      // Unexpected sign-in error (network, server, etc.)
       setState({
         status: 'error',
         invite,
-        message: signUpError?.message || 'Erro ao criar conta.',
+        message: signInError?.message || 'Erro ao autenticar.',
       });
+      return;
+    }
+
+    if (!userId) {
+      setState({ status: 'error', invite, message: 'Não foi possível obter o usuário.' });
       return;
     }
 
