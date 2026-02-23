@@ -170,7 +170,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                     {user.avatarUrl ? (
                                         <img src={user.avatarUrl} alt={user.name} className="w-12 h-12 rounded-xl object-cover" />
                                     ) : (
-                                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-lg">
+                                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center text-white font-bold text-lg ${user.role === 'Admin' || !user.role ? 'from-orange-400 to-orange-600' : 'from-blue-400 to-blue-600'}`}>
                                             {getInitials(user.name)}
                                         </div>
                                     )}
