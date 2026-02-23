@@ -178,7 +178,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                                     </div>
                                                     <div className="flex items-center gap-1">
                                                         <button 
-                                                            onClick={() => copyToClipboard(`https://app.crm.com/invite/${link.token}`)}
+                                                            onClick={() => copyToClipboard(`${window.location.origin}/invite/${link.token}`)}
                                                             className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
                                                             title="Copiar Link"
                                                         >
