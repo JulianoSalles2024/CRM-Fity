@@ -77,10 +77,19 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
     setState({ status: 'submitting', invite });
 
     // PASSO 4 — Criar usuário
+    // Profile is created automatically by the on_auth_user_created trigger.
+    // Pass invite metadata via raw_user_meta_data so the trigger can populate
+    // name, role and company_id without any frontend insert.
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name } },
+      options: {
+        data: {
+          name,
+          role: invite.role ?? 'seller',
+          company_id: invite.company_id ?? null,
+        },
+      },
     });
 
     if (signUpError || !authData.user) {
@@ -92,33 +101,13 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
       return;
     }
 
-    const userId = authData.user.id;
-
-    // PASSO 5 — Criar profile
-    const { error: profileError } = await supabase.from('profiles').upsert({
-      id: userId,
-      name,
-      email,
-      role: invite.role ?? 'seller',
-      team_id: invite.company_id ?? null,
-    });
-
-    if (profileError) {
-      setState({
-        status: 'error',
-        invite,
-        message: 'Conta criada, mas erro ao salvar perfil. Entre em contato com o suporte.',
-      });
-      return;
-    }
-
-    // PASSO 6 — Invalidar convite
+    // PASSO 5 — Invalidar convite
     await supabase
       .from('invites')
       .update({ used_at: new Date().toISOString() })
       .eq('token', token);
 
-    // PASSO 7 — Redirecionar
+    // PASSO 6 — Redirecionar
     window.location.href = '/';
   };
 
