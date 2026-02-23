@@ -45,9 +45,14 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
             // 3. Map role to profiles check constraint values
             const roleValue = inviteRole === 'Admin' ? 'admin' : 'seller';
 
-            // 4. Get current user for company_id
+            // 4. Get company_id from profiles (not user.id)
             const { data: { user } } = await supabase.auth.getUser();
-            const companyId = user?.id ?? null;
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('company_id')
+                .eq('id', user!.id)
+                .single();
+            const companyId = profile?.company_id ?? null;
 
             // 5. Insert into invites table
             const { data, error } = await supabase
