@@ -2,6 +2,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { AuthProvider } from '@/src/features/auth/AuthContext';
+import AuthGate from '@/src/features/auth/AuthGate';
+import InvitePage, { InvalidTokenPage } from '@/src/pages/InvitePage';
+
+// ── Invite route interception ──────────────────────────────
+const inviteMatch = window.location.pathname.match(/^\/invite\/(.+)$/);
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -9,8 +15,22 @@ if (!rootElement) {
 }
 
 const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+
+if (inviteMatch) {
+  const token = inviteMatch[1]?.trim();
+  root.render(
+    <React.StrictMode>
+      {token ? <InvitePage token={token} /> : <InvalidTokenPage />}
+    </React.StrictMode>
+  );
+} else {
+  root.render(
+    <React.StrictMode>
+      <AuthProvider>
+        <AuthGate>
+          <App />
+        </AuthGate>
+      </AuthProvider>
+    </React.StrictMode>
+  );
+}
