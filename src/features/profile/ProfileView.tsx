@@ -50,16 +50,18 @@ export const ProfileView: React.FC = () => {
   };
 
   const inputClass =
-    'w-full bg-slate-900/60 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500/50 transition-all';
+    'w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500/40 transition-all';
 
   return (
     <div className="max-w-3xl mx-auto py-10 px-6 space-y-6">
 
       {/* ── Card 1: User Info ──────────────────────────────── */}
-      <div className="bg-slate-800/50 border border-slate-700/40 rounded-2xl shadow-xl overflow-hidden">
+      <div className="relative bg-slate-800/40 backdrop-blur-md border border-white/[0.06] rounded-2xl shadow-xl shadow-black/30 overflow-hidden">
+        {/* top gradient highlight */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
         {/* Card header */}
-        <div className="flex items-center justify-between px-8 pt-8 pb-6 border-b border-slate-700/40">
+        <div className="flex items-center justify-between px-8 pt-8 pb-6 border-b border-white/[0.06]">
           <div className="flex items-center gap-5">
             <ProfileAvatar
               avatarUrl={previewUrl}
@@ -123,7 +125,7 @@ export const ProfileView: React.FC = () => {
             </div>
           </div>
 
-          <div className="border-t border-slate-700/30" />
+          <div className="border-t border-white/[0.04]" />
 
           {/* Apelido */}
           <div className="flex items-start gap-4">
@@ -141,7 +143,7 @@ export const ProfileView: React.FC = () => {
             </div>
           </div>
 
-          <div className="border-t border-slate-700/30" />
+          <div className="border-t border-white/[0.04]" />
 
           {/* Telefone */}
           <div className="flex items-start gap-4">
@@ -173,10 +175,12 @@ export const ProfileView: React.FC = () => {
       </div>
 
       {/* ── Card 2: Security ──────────────────────────────── */}
-      <div className="bg-slate-800/50 border border-slate-700/40 rounded-2xl shadow-xl overflow-hidden">
+      <div className="relative bg-slate-800/40 backdrop-blur-md border border-white/[0.06] rounded-2xl shadow-xl shadow-black/30 overflow-hidden">
+        {/* top gradient highlight */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
         {/* Card header */}
-        <div className="flex items-center justify-between px-8 py-6 border-b border-slate-700/40">
+        <div className="flex items-center justify-between px-8 py-6 border-b border-white/[0.06]">
           <div className="flex items-center gap-4">
             <div className="w-9 h-9 rounded-xl bg-slate-700/50 flex items-center justify-center">
               <Shield className="w-4 h-4 text-slate-400" />
