@@ -1,64 +1,113 @@
-import fs from "fs";
-import path from "path";
-import { encrypt, decrypt } from "../../src/features/ai-credentials/aiProviders.utils";
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
-const CREDENTIALS_DIR = path.resolve(process.cwd(), "credentials");
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-encryption-key-32-chars-!!';
 
-export default async function handler(req: any, res: any) {
+function encrypt(text: string): string {
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv(
+    'aes-256-cbc',
+    Buffer.from(ENCRYPTION_KEY.padEnd(32).slice(0, 32)),
+    iv
+  );
+  let encrypted = cipher.update(text);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  return iv.toString('hex') + ':' + encrypted.toString('hex');
+}
+
+function decrypt(text: string): string {
+  try {
+    const textParts = text.split(':');
+    const iv = Buffer.from(textParts.shift()!, 'hex');
+    const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+    const decipher = crypto.createDecipheriv(
+      'aes-256-cbc',
+      Buffer.from(ENCRYPTION_KEY.padEnd(32).slice(0, 32)),
+      iv
+    );
+    let decrypted = decipher.update(encryptedText);
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+    return decrypted.toString();
+  } catch {
+    return 'DECRYPTION_ERROR';
+  }
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   if (req.method === 'GET') {
     const { organizationId } = req.query;
-    if (!organizationId) return res.status(400).json({ error: "organizationId is required" });
-
-    const orgDir = path.join(CREDENTIALS_DIR, organizationId as string);
-    if (!fs.existsSync(orgDir)) return res.json({});
-
-    const credentials: any = {};
-    try {
-      const files = fs.readdirSync(orgDir);
-      files.forEach(file => {
-        if (file.endsWith(".json")) {
-          const provider = file.replace(".json", "");
-          const data = JSON.parse(fs.readFileSync(path.join(orgDir, file), "utf-8"));
-          credentials[provider] = {
-            provider,
-            model: data.model,
-            status: data.status || "connected",
-            apiKey: "********", 
-          };
-        }
-      });
-      return res.json(credentials);
-    } catch (e) {
-      return res.status(500).json({ error: "Failed to read credentials" });
+    if (!organizationId) {
+      return res.status(400).json({ error: 'organizationId is required' });
     }
+
+    const { data, error } = await supabase
+      .from('ai_credentials')
+      .select('provider, model, status')
+      .eq('organization_id', organizationId);
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to fetch credentials' });
+    }
+
+    const credentials: Record<string, unknown> = {};
+    (data || []).forEach((row) => {
+      credentials[row.provider] = {
+        provider: row.provider,
+        model: row.model,
+        status: row.status || 'connected',
+        apiKey: '********',
+      };
+    });
+
+    return res.json(credentials);
   }
 
   if (req.method === 'POST') {
-    const { organizationId, provider, apiKey, model } = req.body;
+    const body = req.body || {};
+    const { organizationId, provider, apiKey, model } = body;
+
     if (!organizationId || !provider || !apiKey || !model) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const orgDir = path.join(CREDENTIALS_DIR, organizationId);
-    if (!fs.existsSync(orgDir)) fs.mkdirSync(orgDir, { recursive: true });
-
-    const filePath = path.join(orgDir, `${provider}.json`);
-    
     let finalKey = apiKey;
-    if (apiKey === "********" && fs.existsSync(filePath)) {
-      const existing = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-      finalKey = decrypt(existing.encryptedKey);
+    if (apiKey === '********') {
+      const { data: existing } = await supabase
+        .from('ai_credentials')
+        .select('encrypted_key')
+        .eq('organization_id', organizationId)
+        .eq('provider', provider)
+        .single();
+
+      if (existing?.encrypted_key) {
+        finalKey = decrypt(existing.encrypted_key);
+      }
     }
 
-    const credentialData = {
-      provider,
-      model,
-      encryptedKey: encrypt(finalKey),
-      createdAt: new Date().toISOString(),
-      status: "connected"
-    };
+    const { error } = await supabase
+      .from('ai_credentials')
+      .upsert(
+        {
+          organization_id: organizationId,
+          provider,
+          model,
+          encrypted_key: encrypt(finalKey),
+          status: 'connected',
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'organization_id,provider' }
+      );
 
-    fs.writeFileSync(filePath, JSON.stringify(credentialData, null, 2));
+    if (error) {
+      return res.status(500).json({ error: 'Failed to save credential' });
+    }
+
     return res.json({ success: true });
   }
 
