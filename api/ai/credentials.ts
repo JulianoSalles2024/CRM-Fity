@@ -1,38 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import crypto from 'crypto';
-
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-encryption-key-32-chars-!!';
-
-function encrypt(text: string): string {
-  const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv(
-    'aes-256-cbc',
-    Buffer.from(ENCRYPTION_KEY.padEnd(32).slice(0, 32)),
-    iv
-  );
-  let encrypted = cipher.update(text);
-  encrypted = Buffer.concat([encrypted, cipher.final()]);
-  return iv.toString('hex') + ':' + encrypted.toString('hex');
-}
-
-function decrypt(text: string): string {
-  try {
-    const textParts = text.split(':');
-    const iv = Buffer.from(textParts.shift()!, 'hex');
-    const encryptedText = Buffer.from(textParts.join(':'), 'hex');
-    const decipher = crypto.createDecipheriv(
-      'aes-256-cbc',
-      Buffer.from(ENCRYPTION_KEY.padEnd(32).slice(0, 32)),
-      iv
-    );
-    let decrypted = decipher.update(encryptedText);
-    decrypted = Buffer.concat([decrypted, decipher.final()]);
-    return decrypted.toString();
-  } catch {
-    return 'DECRYPTION_ERROR';
-  }
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const supabase = createClient(
@@ -41,67 +8,75 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   );
 
   if (req.method === 'GET') {
-    const { organizationId } = req.query;
-    if (!organizationId) {
-      return res.status(400).json({ error: 'organizationId is required' });
+    const { userId } = req.query;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
     }
 
     const { data, error } = await supabase
-      .from('ai_credentials')
-      .select('provider, model, status')
-      .eq('organization_id', organizationId);
+      .from('user_settings')
+      .select('ai_provider, ai_api_key, model')
+      .eq('user_id', userId)
+      .single();
 
-    if (error) {
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 = row not found — não é erro, apenas sem credencial salva
       return res.status(500).json({ error: 'Failed to fetch credentials' });
     }
 
-    const credentials: Record<string, unknown> = {};
-    (data || []).forEach((row) => {
-      credentials[row.provider] = {
-        provider: row.provider,
-        model: row.model,
-        status: row.status || 'connected',
+    if (!data) {
+      return res.json({});
+    }
+
+    // Retorna no formato Record<provider, AICredential> esperado pelo frontend
+    const credentials: Record<string, unknown> = {
+      [data.ai_provider]: {
+        provider: data.ai_provider,
+        model: data.model,
+        status: 'connected',
         apiKey: '********',
-      };
-    });
+      },
+    };
 
     return res.json(credentials);
   }
 
   if (req.method === 'POST') {
     const body = req.body || {};
-    const { organizationId, provider, apiKey, model } = body;
+    const { userId, provider, apiKey, model } = body;
 
-    if (!organizationId || !provider || !apiKey || !model) {
+    if (!userId || !provider || !model) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
     let finalKey = apiKey;
-    if (apiKey === '********') {
+
+    // Se o frontend enviou '********', preservar a chave existente
+    if (!apiKey || apiKey === '********') {
       const { data: existing } = await supabase
-        .from('ai_credentials')
-        .select('encrypted_key')
-        .eq('organization_id', organizationId)
-        .eq('provider', provider)
+        .from('user_settings')
+        .select('ai_api_key')
+        .eq('user_id', userId)
         .single();
 
-      if (existing?.encrypted_key) {
-        finalKey = decrypt(existing.encrypted_key);
+      if (!existing?.ai_api_key) {
+        return res.status(400).json({ error: 'API key is required' });
       }
+
+      finalKey = existing.ai_api_key;
     }
 
     const { error } = await supabase
-      .from('ai_credentials')
+      .from('user_settings')
       .upsert(
         {
-          organization_id: organizationId,
-          provider,
+          user_id: userId,
+          ai_provider: provider,
+          ai_api_key: finalKey,
           model,
-          encrypted_key: encrypt(finalKey),
-          status: 'connected',
           updated_at: new Date().toISOString(),
         },
-        { onConflict: 'organization_id,provider' }
+        { onConflict: 'user_id' }
       );
 
     if (error) {
