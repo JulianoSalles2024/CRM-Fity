@@ -19,6 +19,7 @@ export const ProfileView: React.FC = () => {
   const [editData, setEditData] = useState(user);
   const [previewUrl, setPreviewUrl] = useState(user.avatarUrl);
   const [saved, setSaved] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
 
   const handleImageChange = (file: File) => {
@@ -42,16 +43,21 @@ export const ProfileView: React.FC = () => {
     localStorage.setItem('crm-profile-user', JSON.stringify(editData));
     window.dispatchEvent(new CustomEvent('profile-updated', { detail: editData }));
     setSaved(true);
+    setIsEditing(false);
     setTimeout(() => setSaved(false), 2000);
   };
 
   const handleCancel = () => {
     setEditData(user);
     setPreviewUrl(user.avatarUrl);
+    setIsEditing(false);
   };
 
-  const inputClass =
-    'w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500/40 transition-all';
+  const inputClass = `w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all duration-200 ${
+    isEditing
+      ? 'bg-white/[0.04] border border-white/[0.08] focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500/40'
+      : 'bg-transparent border border-transparent cursor-default'
+  }`;
 
   return (
     <div className="max-w-3xl mx-auto py-10 px-6 space-y-6">
@@ -64,11 +70,13 @@ export const ProfileView: React.FC = () => {
         {/* Card header */}
         <div className="flex items-center justify-between px-8 pt-8 pb-6 border-b border-white/[0.06]">
           <div className="flex items-center gap-5">
-            <ProfileAvatar
-              avatarUrl={previewUrl}
-              onImageChange={handleImageChange}
-              onRemove={handleRemoveAvatar}
-            />
+            <div className={!isEditing ? 'pointer-events-none' : ''}>
+              <ProfileAvatar
+                avatarUrl={previewUrl}
+                onImageChange={handleImageChange}
+                onRemove={handleRemoveAvatar}
+              />
+            </div>
             <div>
               <h2 className="text-2xl font-bold text-white leading-tight">
                 {editData.nickname || `${editData.firstName} ${editData.lastName}`}
@@ -83,17 +91,34 @@ export const ProfileView: React.FC = () => {
             </div>
           </div>
 
-          <button
-            onClick={handleSave}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg transition-all active:scale-[0.97] ${
-              saved
-                ? 'bg-emerald-500 shadow-emerald-500/20 text-white'
-                : 'bg-sky-600 hover:bg-sky-500 shadow-sky-500/20 text-white'
-            }`}
-          >
-            {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-            {saved ? 'Salvo!' : 'Salvar'}
-          </button>
+          {!isEditing ? (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500 transition-all"
+            >
+              Editar
+            </button>
+          ) : (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleCancel}
+                className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSave}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg transition-all active:scale-[0.97] ${
+                  saved
+                    ? 'bg-emerald-500 shadow-emerald-500/20 text-white'
+                    : 'bg-sky-600 hover:bg-sky-500 shadow-sky-500/20 text-white'
+                }`}
+              >
+                {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                {saved ? 'Salvo!' : 'Salvar'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Form fields */}
@@ -111,6 +136,7 @@ export const ProfileView: React.FC = () => {
                   type="text"
                   value={editData.firstName}
                   onChange={e => setEditData({ ...editData, firstName: e.target.value })}
+                  disabled={!isEditing}
                   className={inputClass}
                 />
               </div>
@@ -120,6 +146,7 @@ export const ProfileView: React.FC = () => {
                   type="text"
                   value={editData.lastName}
                   onChange={e => setEditData({ ...editData, lastName: e.target.value })}
+                  disabled={!isEditing}
                   className={inputClass}
                 />
               </div>
@@ -139,6 +166,7 @@ export const ProfileView: React.FC = () => {
                 type="text"
                 value={editData.nickname}
                 onChange={e => setEditData({ ...editData, nickname: e.target.value })}
+                disabled={!isEditing}
                 className={inputClass}
               />
             </div>
@@ -157,6 +185,7 @@ export const ProfileView: React.FC = () => {
                 type="text"
                 value={editData.phone}
                 onChange={e => setEditData({ ...editData, phone: e.target.value })}
+                disabled={!isEditing}
                 className={inputClass}
               />
             </div>
@@ -164,15 +193,6 @@ export const ProfileView: React.FC = () => {
 
         </div>
 
-        {/* Card footer */}
-        <div className="px-8 pb-7 flex justify-end">
-          <button
-            onClick={handleCancel}
-            className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
-          >
-            Cancelar alterações
-          </button>
-        </div>
       </div>
 
       {/* ── Card 2: Security ──────────────────────────────── */}
