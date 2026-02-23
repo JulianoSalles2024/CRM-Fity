@@ -19,6 +19,7 @@ export const ProfileView: React.FC = () => {
   const [editData, setEditData] = useState(user);
   const [previewUrl, setPreviewUrl] = useState(user.avatarUrl);
   const [saved, setSaved] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
 
   const handleImageChange = (file: File) => {
     const reader = new FileReader();
@@ -190,45 +191,67 @@ export const ProfileView: React.FC = () => {
               <p className="text-xs text-slate-500 mt-0.5">Gerencie sua senha de acesso.</p>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500 transition-all">
+          <button
+            onClick={() => setShowPasswordForm(v => !v)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
+              showPasswordForm
+                ? 'bg-slate-700/60 border-slate-500 text-white'
+                : 'border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500'
+            }`}
+          >
             <Lock className="w-3.5 h-3.5" />
             Alterar Senha
           </button>
         </div>
 
-        {/* Password fields */}
-        <div className="px-8 py-7 space-y-5">
-
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-8 h-8 mt-1 rounded-lg bg-slate-700/50 flex items-center justify-center">
-              <Lock className="w-4 h-4 text-slate-400" />
-            </div>
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Nova Senha</label>
+        {/* Expandable password form */}
+        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          showPasswordForm ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
+        }`}>
+          <div className="px-8 pb-8 pt-6 border-t border-white/[0.06] space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label htmlFor="new-password" className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                  Nova Senha
+                </label>
                 <input
+                  id="new-password"
                   type="password"
                   placeholder="Mínimo 6 caracteres"
                   className={inputClass}
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Confirmar Senha</label>
+              <div className="space-y-1.5">
+                <label htmlFor="confirm-password" className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                  Confirmar Nova Senha
+                </label>
                 <input
+                  id="confirm-password"
                   type="password"
                   placeholder="Digite novamente"
                   className={inputClass}
                 />
               </div>
             </div>
+
+            <div className="flex items-center justify-end gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowPasswordForm(false)}
+                className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPasswordForm(false)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-lg shadow-blue-500/20 transition-all active:scale-[0.97]"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                Salvar Senha
+              </button>
+            </div>
           </div>
-
-        </div>
-
-        <div className="px-8 pb-6">
-          <p className="text-xs text-slate-600">
-            Use uma senha forte com letras, números e símbolos. Nunca compartilhe sua senha com ninguém.
-          </p>
         </div>
       </div>
 
