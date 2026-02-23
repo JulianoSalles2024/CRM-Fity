@@ -100,8 +100,9 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
         options: {
           data: {
             name,
-            role: invite.role ?? 'seller',
-            company_id: invite.company_id ?? null,
+            // invite_token lets the DB trigger look up role/company_id
+            // securely from the invites table instead of trusting client data
+            invite_token: token,
           },
         },
       });
