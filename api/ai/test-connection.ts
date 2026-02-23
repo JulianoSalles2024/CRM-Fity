@@ -1,4 +1,4 @@
-import { testProviderConnection } from "../../src/features/ai-credentials/aiProviders.utils";
+import { testProviderConnection } from "../_utils";
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {

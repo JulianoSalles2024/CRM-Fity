@@ -1,5 +1,5 @@
 import React, { useState, FormEvent } from 'react';
-import { Loader2, Zap } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 type AuthMode = 'login' | 'register' | 'forgotPassword';
 
@@ -12,18 +12,24 @@ interface AuthPageProps {
   successMessage?: string | null;
 }
 
-// SVG for Google icon
 const GoogleIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 48 48">
-    <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path>
-    <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path>
-    <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.519-3.317-11.28-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path>
-    <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.022,35.021,44,30.021,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
+  <svg className="w-5 h-5" viewBox="0 0 48 48" aria-hidden="true">
+    <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+    <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+    <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.519-3.317-11.28-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+    <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.022,35.021,44,30.021,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
   </svg>
 );
 
-const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, onSignInWithGoogle, onForgotPassword, error, successMessage }) => {
-  const [mode, setMode] = useState<AuthMode>('register');
+const AuthPage: React.FC<AuthPageProps> = ({
+  onLogin,
+  onRegister,
+  onSignInWithGoogle,
+  onForgotPassword,
+  error,
+  successMessage,
+}) => {
+  const [mode, setMode] = useState<AuthMode>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,9 +44,19 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, onSignInWithGo
 
   React.useEffect(() => {
     if (successMessage) {
-        setMode('login');
+      setMode('login');
     }
   }, [successMessage]);
+
+  const handleModeChange = (newMode: AuthMode) => {
+    setMode(newMode);
+    setInternalError(null);
+    setInfoMessage(null);
+    if (newMode === 'register') {
+      setName('');
+      setPassword('');
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -53,13 +69,11 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, onSignInWithGo
     }
     setIsSubmitting(false);
   };
-  
+
   const handleGoogleLogin = async () => {
     setIsGoogleSubmitting(true);
     setInternalError(null);
     await onSignInWithGoogle();
-    // A página será redirecionada pelo Supabase, então não precisamos resetar o estado de loading no sucesso.
-    // Em caso de falha, o erro será capturado no App.tsx. Resetamos aqui por segurança.
     setIsGoogleSubmitting(false);
   };
 
@@ -69,212 +83,244 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onRegister, onSignInWithGo
     setInternalError(null);
     setInfoMessage(null);
     try {
-        await onForgotPassword(email);
-        setInfoMessage("Se uma conta com este e-mail existir, um link de redefinição foi enviado.");
-        setMode('login');
-    } catch (error) {
-        // Por segurança, não informamos ao usuário se o e-mail não foi encontrado.
-        setInfoMessage("Se uma conta com este e-mail existir, um link de redefinição foi enviado.");
-        setMode('login');
+      await onForgotPassword(email);
     } finally {
-        setIsSubmitting(false);
+      setInfoMessage('Se uma conta com este e-mail existir, um link de redefinição foi enviado.');
+      setMode('login');
+      setIsSubmitting(false);
     }
   };
 
-  const handleModeChange = (newMode: AuthMode) => {
-    setMode(newMode);
-    setInternalError(null);
-    setInfoMessage(null);
-    // Don't clear fields when switching from register error to login
-    if (newMode === 'register') {
-      setName('');
-      // Keep email if switching from forgot password
-      // setEmail(''); 
-      setPassword('');
-    }
-  }
+  // Shared input classes
+  const inputClass =
+    'w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200';
 
-  const renderContent = () => {
-    if (mode === 'forgotPassword') {
-        return (
-            <>
-                <h2 className="text-2xl font-bold text-white">Redefinir Senha</h2>
-                <p className="text-zinc-400 mt-2 mb-6">Digite seu e-mail para receber o link de redefinição.</p>
-                <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
-                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-2">Email</label>
-                        <input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)}
-                                className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"/>
-                    </div>
-                    <div>
-                        <button type="submit" disabled={isSubmitting}
-                                className="mt-2 w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin"/> : 'Enviar link'}
-                        </button>
-                    </div>
-                </form>
-                <div className="mt-4 text-center">
-                    <button onClick={() => handleModeChange('login')} className="text-sm text-zinc-400 hover:text-violet-400 transition-colors">Voltar para o login</button>
-                </div>
-            </>
-        )
-    }
+  // Shared primary button classes
+  const primaryBtnClass =
+    'w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200';
 
+  if (mode === 'forgotPassword') {
     return (
-        <>
-            {/* Form Title */}
-            <h2 className="text-2xl font-bold text-white">
-                {mode === 'login' ? 'Bem-vindo de volta' : 'Crie sua conta'}
-            </h2>
-            <p className="text-zinc-400 mt-2 mb-6">
-                {mode === 'login' ? 'Entre com sua conta para continuar' : 'Preencha os dados abaixo para começar'}
-            </p>
-            
-            {successMessage && mode === 'login' && <p className="mb-4 text-sm text-center text-green-400 bg-green-900/30 p-2 rounded-md">{successMessage}</p>}
-            {infoMessage && mode === 'login' && <p className="mb-4 text-sm text-center text-blue-400 bg-blue-900/30 p-2 rounded-md">{infoMessage}</p>}
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-                {mode === 'register' && (
-                <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-zinc-300 mb-2">
-                    Nome
-                    </label>
-                    <input id="name" name="name" type="text" required value={name} onChange={e => setName(e.target.value)}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    />
-                </div>
-                )}
-                <div>
-                <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-2">
-                    Email
-                </label>
-                <input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-                </div>
-                <div>
-                <label htmlFor="password"className="block text-sm font-medium text-zinc-300 mb-2">
-                    Senha
-                </label>
-                <input id="password" name="password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-                </div>
-
-                {internalError && (
-                <div>
-                    <p className="text-sm text-red-400">{internalError}</p>
-                    {mode === 'register' && internalError.includes("email já está em uso") && (
-                    <p className="mt-1 text-sm text-zinc-400">
-                        Já tem uma conta?{' '}
-                        <button
-                        type="button"
-                        onClick={() => handleModeChange('login')}
-                        className="font-semibold text-violet-400 hover:text-violet-300 underline focus:outline-none"
-                        >
-                        Faça o login aqui.
-                        </button>
-                    </p>
-                    )}
-                </div>
-                )}
-
-                <div>
-                <button type="submit" disabled={isSubmitting || isGoogleSubmitting}
-                    className="mt-2 w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {isSubmitting ? 'Processando...' : (mode === 'login' ? 'Entrar' : 'Cadastrar')}
-                </button>
-                </div>
-            </form>
-
-            {mode === 'login' && (
-                <div className="mt-4 text-center">
-                    <button type="button" onClick={() => handleModeChange('forgotPassword')} className="text-sm text-zinc-400 hover:text-violet-400 transition-colors">Esqueci minha senha</button>
-                </div>
-            )}
-
-            {/* Divider */}
-            <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-zinc-700"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                <span className="bg-[#1f1f23] px-2 text-zinc-500">OU</span>
-                </div>
-            </div>
-            
-            {/* Google Login */}
-            <div>
-                <button
-                type="button"
-                onClick={handleGoogleLogin}
-                disabled={isSubmitting || isGoogleSubmitting}
-                className="w-full flex justify-center items-center gap-3 py-2.5 px-4 border border-zinc-700 rounded-md shadow-sm text-sm font-medium text-white bg-zinc-800 hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                {isGoogleSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <GoogleIcon />}
-                {isGoogleSubmitting ? 'Redirecionando...' : 'Continuar com Google'}
-                </button>
-            </div>
-        </>
-    )
+      <PageWrapper>
+        <CardHeader
+          title="Redefinir senha"
+          subtitle="Digite seu e-mail para receber o link de redefinição."
+        />
+        <form onSubmit={handleForgotPasswordSubmit} className="space-y-4" noValidate>
+          <div>
+            <label htmlFor="fp-email" className="block text-sm font-medium text-slate-300 mb-1.5">
+              E-mail
+            </label>
+            <input
+              id="fp-email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="seu@email.com"
+              className={inputClass}
+            />
+          </div>
+          {internalError && <ErrorMessage message={internalError} />}
+          <button type="submit" disabled={isSubmitting} className={primaryBtnClass}>
+            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {isSubmitting ? 'Enviando...' : 'Enviar link'}
+          </button>
+        </form>
+        <p className="mt-6 text-center text-sm text-slate-400">
+          <button
+            type="button"
+            onClick={() => handleModeChange('login')}
+            className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+          >
+            Voltar para o login
+          </button>
+        </p>
+      </PageWrapper>
+    );
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-zinc-900">
-      {/* Left Panel */}
-      <div className="hidden lg:flex flex-1 flex-col items-center justify-center p-12 bg-zinc-900 border-r border-zinc-800">
-        <div className="max-w-md w-full">
-          <div className="flex items-center gap-3">
-            <Zap className="w-8 h-8 text-violet-500" />
-            <span className="text-2xl font-bold text-white">CRM</span>
+    <PageWrapper>
+      <CardHeader
+        title={mode === 'login' ? 'Bem-vindo de volta' : 'Criar conta'}
+        subtitle={
+          mode === 'login'
+            ? 'Entre na sua conta para continuar'
+            : 'Cadastre-se para acessar o CRM'
+        }
+      />
+
+      {successMessage && mode === 'login' && (
+        <div className="mb-4 rounded-xl bg-green-500/10 border border-green-500/20 px-4 py-3 text-sm text-green-400">
+          {successMessage}
+        </div>
+      )}
+      {infoMessage && mode === 'login' && (
+        <div className="mb-4 rounded-xl bg-blue-500/10 border border-blue-500/20 px-4 py-3 text-sm text-blue-400">
+          {infoMessage}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        {mode === 'register' && (
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-1.5">
+              Nome
+            </label>
+            <input
+              id="name"
+              type="text"
+              autoComplete="name"
+              required
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Seu nome"
+              className={inputClass}
+            />
           </div>
-          <h1 className="mt-8 text-4xl font-bold tracking-tight text-white">
-            Gerencie seus leads com <br />
-            <span className="text-violet-400">velocidade</span> e <span className="text-violet-400">simplicidade</span>
-          </h1>
-          <p className="mt-4 text-lg text-zinc-400">
-            CRM moderno e minimalista para empreendedores que valorizam produtividade e experiência de uso premium.
-          </p>
+        )}
+
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1.5">
+            E-mail
+          </label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="seu@email.com"
+            className={inputClass}
+          />
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label htmlFor="password" className="block text-sm font-medium text-slate-300">
+              Senha
+            </label>
+            {mode === 'login' && (
+              <button
+                type="button"
+                onClick={() => handleModeChange('forgotPassword')}
+                className="text-xs text-slate-400 hover:text-blue-400 transition-colors"
+              >
+                Esqueci minha senha
+              </button>
+            )}
+          </div>
+          <input
+            id="password"
+            type="password"
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            required
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            placeholder="••••••••"
+            className={inputClass}
+          />
+        </div>
+
+        {internalError && <ErrorMessage message={internalError} />}
+
+        <button type="submit" disabled={isSubmitting || isGoogleSubmitting} className={primaryBtnClass}>
+          {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+          {isSubmitting ? 'Processando...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
+        </button>
+      </form>
+
+      {/* Divider */}
+      <div className="relative my-5">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-600/60" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-slate-800 px-3 text-slate-500 uppercase tracking-wide">ou</span>
         </div>
       </div>
 
-      {/* Right Panel (Form) */}
-      <div className="flex flex-1 flex-col items-center justify-center p-6 sm:p-12 bg-[#1f1f23]">
-        <div className="w-full max-w-sm">
-            
-            {/* Logo for mobile */}
-            <div className="flex lg:hidden items-center gap-3 mb-8">
-                <Zap className="w-8 h-8 text-violet-500" />
-                <span className="text-2xl font-bold text-white">CRM</span>
-            </div>
+      {/* Google */}
+      <button
+        type="button"
+        onClick={handleGoogleLogin}
+        disabled={isSubmitting || isGoogleSubmitting}
+        className="w-full flex justify-center items-center gap-3 py-3 px-4 rounded-xl border border-slate-600 bg-slate-700/40 text-sm font-medium text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+        aria-label="Continuar com Google"
+      >
+        {isGoogleSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <GoogleIcon />}
+        {isGoogleSubmitting ? 'Redirecionando...' : 'Continuar com Google'}
+      </button>
 
-          {/* Tabs */}
-          {mode !== 'forgotPassword' && (
-            <div className="p-1 bg-zinc-800 rounded-lg flex items-center gap-1 mb-8 border border-zinc-700">
-                <button
-                onClick={() => handleModeChange('login')}
-                className={`w-1/2 py-2 text-sm font-semibold rounded-md transition-colors ${mode === 'login' ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:text-white'}`}
-                >
-                Entrar
-                </button>
-                <button
-                onClick={() => handleModeChange('register')}
-                className={`w-1/2 py-2 text-sm font-semibold rounded-md transition-colors ${mode === 'register' ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:text-white'}`}
-                >
-                Cadastrar
-                </button>
-            </div>
-          )}
-          
-          {renderContent()}
-
-        </div>
-      </div>
-    </div>
+      {/* Mode toggle */}
+      <p className="mt-6 text-center text-sm text-slate-400">
+        {mode === 'login' ? (
+          <>
+            Não tem conta?{' '}
+            <button
+              type="button"
+              onClick={() => handleModeChange('register')}
+              className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+            >
+              Criar conta
+            </button>
+          </>
+        ) : (
+          <>
+            Já tem conta?{' '}
+            <button
+              type="button"
+              onClick={() => handleModeChange('login')}
+              className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+            >
+              Entrar
+            </button>
+          </>
+        )}
+      </p>
+    </PageWrapper>
   );
 };
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+const PageWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-[#0f1c3a] to-slate-950 px-4 py-12">
+    <div className="w-full max-w-md">
+      {/* Logo */}
+      <div className="flex items-center justify-center gap-2 mb-8">
+        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+          <span className="text-white text-sm font-bold">C</span>
+        </div>
+        <span className="text-xl font-bold text-white tracking-tight">CRM</span>
+      </div>
+
+      {/* Card */}
+      <div className="bg-slate-800 rounded-2xl shadow-2xl shadow-black/40 border border-slate-700/50 px-8 py-10">
+        {children}
+      </div>
+
+      <p className="mt-6 text-center text-xs text-slate-600">
+        &copy; {new Date().getFullYear()} CRM. Todos os direitos reservados.
+      </p>
+    </div>
+  </div>
+);
+
+const CardHeader: React.FC<{ title: string; subtitle: string }> = ({ title, subtitle }) => (
+  <div className="mb-8">
+    <h1 className="text-2xl font-bold text-white tracking-tight">{title}</h1>
+    <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
+  </div>
+);
+
+const ErrorMessage: React.FC<{ message: string }> = ({ message }) => (
+  <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400" role="alert">
+    {message}
+  </div>
+);
 
 export default AuthPage;
