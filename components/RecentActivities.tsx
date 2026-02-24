@@ -43,7 +43,7 @@ const RecentActivities: React.FC<RecentActivitiesProps> = ({ activities, leads, 
     };
 
     return (
-         <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 h-full flex flex-col">
+         <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] p-6 rounded-xl border border-white/5 h-full flex flex-col">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="font-bold text-white text-lg">Atividades Recentes</h2>
                 <button className="text-slate-500 hover:text-white transition-colors">
@@ -51,7 +51,7 @@ const RecentActivities: React.FC<RecentActivitiesProps> = ({ activities, leads, 
                 </button>
             </div>
             {sortedActivities.length > 0 ? (
-                <ul className="space-y-0 flex-1 overflow-y-auto">
+                <ul className="space-y-0 max-h-[320px] overflow-y-auto">
                     {sortedActivities.map((activity, index) => (
                          <li key={activity.id} className={`flex gap-4 items-start py-4 ${index !== sortedActivities.length - 1 ? 'border-b border-slate-800/50' : ''}`}>
                             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-950 flex items-center justify-center border border-slate-800">
