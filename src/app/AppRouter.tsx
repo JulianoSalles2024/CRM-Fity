@@ -26,7 +26,7 @@ interface AppRouterProps {
 }
 
 export const AppRouter: React.FC<AppRouterProps> = (props) => {
-  const { currentUserRole } = useAuth();
+  const { currentUserRole, isRoleReady } = useAuth();
   const {
     activeView, 
     leadsToPrint, 
@@ -102,6 +102,8 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
     calculateProbabilityForStage,
     onUpdateUsers
   } = props;
+
+  if (!isRoleReady) return null;
 
   if (leadsToPrint) {
     return <PrintableLeadsReport leads={leadsToPrint} tasks={tasks} activities={activities} onPrintEnd={() => setLeadsToPrint(null)} />;

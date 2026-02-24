@@ -38,7 +38,9 @@ const NavItem: React.FC<{
 );
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, onToggle, isChatEnabled }) => {
-  const { currentPermissions, currentUserRole } = useAuth();
+  const { currentPermissions, currentUserRole, isRoleReady } = useAuth();
+
+  if (!isRoleReady) return null;
 
   const mainNavItems = [
     { icon: Inbox, label: 'Inbox' },

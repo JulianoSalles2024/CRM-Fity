@@ -7,6 +7,7 @@ interface AuthContextValue {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  isRoleReady: boolean;
   currentUserRole: AppRole;
   currentPermissions: Permissions;
   login: (email: string, password: string) => Promise<void>;
@@ -25,6 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserRole, setCurrentUserRole] = useState<AppRole>('seller');
+  const [isRoleReady, setIsRoleReady] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -45,8 +47,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Fetch role from profiles whenever user changes
   useEffect(() => {
+    setIsRoleReady(false);
     if (!user) {
       setCurrentUserRole('seller');
+      setIsRoleReady(true);
       return;
     }
     supabase
@@ -54,8 +58,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .select('role')
       .eq('id', user.id)
       .single()
-      .then(({ data }) => {
-        setCurrentUserRole((data?.role as AppRole) ?? 'seller');
+      .then(({ data, error }) => {
+        console.log('[AuthContext] user.id:', user.id);
+        console.log('[AuthContext] email:', user.email);
+        console.log('[AuthContext] role from DB:', data?.role ?? null, '| error:', error?.message ?? null);
+        const role = (data?.role as AppRole) ?? 'seller';
+        console.log('[AuthContext] currentUserRole final:', role);
+        setCurrentUserRole(role);
+        setIsRoleReady(true);
       });
   }, [user]);
 
@@ -108,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={{
-      user, session, isLoading,
+      user, session, isLoading, isRoleReady,
       currentUserRole, currentPermissions,
       login, register, signInWithGoogle, forgotPassword, logout,
       authError, successMessage,
