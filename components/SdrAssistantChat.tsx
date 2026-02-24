@@ -183,7 +183,7 @@ const SdrAssistantChat: React.FC<SdrAssistantChatProps> = ({ onClose, leads, tas
                         <button 
                             type="submit" 
                             disabled={!input.trim() || isLoading}
-                            className="bg-violet-600 hover:bg-violet-500 text-white p-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-violet-900/20"
+                            className="bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] text-white p-3 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-sky-500/20"
                         >
                             <Send className="w-5 h-5" />
                         </button>

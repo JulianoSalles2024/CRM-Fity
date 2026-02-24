@@ -111,7 +111,7 @@ const BoardsSettings: React.FC<BoardsSettingsProps> = ({ boards, activeBoardId, 
                         <h2 className="text-lg font-semibold text-white">Seus Pipelines (Boards)</h2>
                         <p className="text-sm text-slate-400 mt-1">Gerencie seus diferentes fluxos de trabalho.</p>
                     </div>
-                    <button onClick={onCreateBoard} className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
+                    <button onClick={onCreateBoard} className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                         <PlusCircle className="w-4 h-4" /><span>Novo Pipeline</span>
                     </button>
                 </div>
@@ -250,7 +250,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
                         <h2 className="text-lg font-semibold text-white">Estágios do Pipeline: <span className="text-violet-400">Vendas Padrão</span></h2>
                         <p className="text-sm text-slate-400 mt-1">Configure os estágios do seu funil de vendas. Arraste para reordenar.</p>
                     </div>
-                    <button onClick={() => { setEditingStage(null); setCreateStageModalOpen(true); }} className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
+                    <button onClick={() => { setEditingStage(null); setCreateStageModalOpen(true); }} className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                         <PlusCircle className="w-4 h-4" /><span>Novo Estágio</span>
                     </button>
                 </div>

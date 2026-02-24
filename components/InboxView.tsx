@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Task, Notification, Lead, Id } from '../types';
 import {
     CheckCircle2,
@@ -84,6 +84,26 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
     // Priority task for focus mode: first overdue, then first today
     const priorityTask = overdueTasks[0] ?? todayTasks[0] ?? null;
     const allPendingTasks = [...overdueTasks, ...todayTasks];
+
+    // Lead associated with the priority task (for "Ver detalhes")
+    const priorityLead = useMemo(() => {
+        if (!priorityTask?.leadId) return null;
+        return leads.find(l => l.id === priorityTask.leadId) ?? null;
+    }, [priorityTask, leads]);
+
+    // Space key shortcut: open lead detail when in focus mode
+    useEffect(() => {
+        if (viewMode !== 'focus') return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const tag = (e.target as HTMLElement).tagName;
+            if (e.code === 'Space' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
+                e.preventDefault();
+                if (priorityLead) onOpenLead?.(priorityLead);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [viewMode, priorityLead, onOpenLead]);
 
     return (
         <div className="flex flex-col gap-8 h-full max-w-7xl mx-auto w-full p-6">
@@ -345,6 +365,20 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
                                     <Play className="w-4 h-4 fill-white" />
                                     Abrir na aba Tarefas
                                 </button>
+                                {priorityLead && (
+                                    <div className="relative group flex items-center gap-2">
+                                        <button
+                                            onClick={() => onOpenLead?.(priorityLead)}
+                                            className="flex items-center gap-2 py-3 px-5 rounded-xl text-sm font-semibold border border-yellow-400/30 text-yellow-300 bg-yellow-400/5 hover:bg-yellow-400/10 hover:border-yellow-400/50 transition-all duration-200 hover:shadow-[0_0_12px_rgba(255,196,0,0.35)] active:scale-[0.98]"
+                                        >
+                                            <ExternalLink className="w-4 h-4" />
+                                            Ver detalhes
+                                        </button>
+                                        <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[10px] px-2 py-1 rounded border border-yellow-400/40 bg-yellow-400/10 text-yellow-300 font-bold tracking-wider pointer-events-none whitespace-nowrap">
+                                            SPACE
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ) : (

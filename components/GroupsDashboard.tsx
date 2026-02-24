@@ -149,7 +149,7 @@ const GroupsDashboard: React.FC<GroupsDashboardProps> = ({ groups, leads, onSele
                         <p className="text-slate-400">Visão geral da saúde e performance de suas comunidades</p>
                     </div>
                 </div>
-                 <button onClick={onAddGroup} className="flex items-center justify-center md:justify-start gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
+                 <button onClick={onAddGroup} className="flex items-center justify-center md:justify-start gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                     <PlusCircle className="w-5 h-5" />
                     <span>Novo Grupo</span>
                 </button>

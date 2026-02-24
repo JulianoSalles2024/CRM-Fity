@@ -61,7 +61,7 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
                             </h2>
                             <p className="text-sm text-slate-400 mt-1">Crie e gerencie sequências de tarefas automatizadas para seus leads.</p>
                         </div>
-                        <button onClick={() => handleOpenModal()} className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
+                        <button onClick={() => handleOpenModal()} className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                             <PlusCircle className="w-4 h-4" />
                             <span>Novo Playbook</span>
                         </button>

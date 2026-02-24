@@ -73,7 +73,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, error, onNavigateToRegister, suc
               <button
                 type="submit"
                 disabled={isLoggingIn}
-                className="w-full flex justify-center items-center gap-2 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex justify-center items-center gap-2 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoggingIn && <Loader2 className="w-4 h-4 animate-spin" />}
                 {isLoggingIn ? 'Entrando...' : 'Entrar'}

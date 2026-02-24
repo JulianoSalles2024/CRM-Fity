@@ -78,7 +78,7 @@ const FAB: React.FC<FABProps> = ({ onOpenCreateLeadModal, onOpenCreateTaskModal 
                 
                 <button
                     onClick={() => setIsOpen(prev => !prev)}
-                    className="w-16 h-16 bg-violet-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-violet-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-violet-500/50"
+                    className="w-16 h-16 bg-gradient-to-r from-sky-500 to-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-[0_0_24px_rgba(29,161,242,0.5)] transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-sky-500/50"
                     aria-label={isOpen ? "Fechar menu" : "Abrir menu de criação rápida"}
                 >
                     <AnimatePresence initial={false}>

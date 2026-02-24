@@ -112,7 +112,7 @@ const CreateApiKeyModal: React.FC<{ onClose: () => void, onCreate: (name: string
                     </div>
                     <div className="p-4 bg-zinc-900/30 border-t border-zinc-700 flex justify-end gap-3">
                         <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700 rounded-md hover:bg-zinc-600">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700">Criar Chave</button>
+                        <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 rounded-md hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">Criar Chave</button>
                     </div>
                 </form>
             </motion.div>
@@ -138,7 +138,7 @@ const ShowNewApiKeyModal: React.FC<{ apiKey: ApiKey, onClose: () => void, onCopy
                     </div>
                 </div>
                 <div className="p-4 bg-zinc-900/30 border-t border-zinc-700 flex justify-end">
-                    <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700">Entendi, fechar</button>
+                    <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 rounded-md hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">Entendi, fechar</button>
                 </div>
             </motion.div>
         </div>
@@ -200,7 +200,7 @@ const ApiKeysTab: React.FC<{ showNotification: (msg: string, type: 'success' | '
                 </div>
             </div>
             <Section icon={KeyRound} title="Gerenciar API Keys" actions={
-                <button onClick={() => setCreateModalOpen(true)} className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
+                <button onClick={() => setCreateModalOpen(true)} className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                     <Plus className="w-4 h-4" /> Nova Chave
                 </button>
             }>
@@ -463,7 +463,7 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
                                     ))}
                                 </div>
                             </div>
-                             <button type="submit" className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
+                             <button type="submit" className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                                 <Plus className="w-4 h-4" /> Adicionar Webhook
                             </button>
                         </form>

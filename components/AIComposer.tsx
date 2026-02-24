@@ -181,7 +181,7 @@ const AIComposer: React.FC<AIComposerProps> = ({ lead, showNotification, onSaveD
                 <button 
                     onClick={handleGenerateEmail}
                     disabled={isLoading}
-                    className="w-full flex items-center justify-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                     {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
                     <span>{isLoading ? 'Gerando...' : 'Gerar Email'}</span>

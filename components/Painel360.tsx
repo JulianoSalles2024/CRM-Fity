@@ -3,26 +3,47 @@ import React, { useState } from 'react';
 import { Search, User, Trophy, FileText, Plus, ArrowRight, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { User as UserType, Id } from '../types';
+import SellerDetail360 from './SellerDetail360';
 
 interface Painel360Props {
     users: UserType[];
-    onSelectSeller: (seller: UserType) => void;
+    onSelectSeller?: (seller: UserType) => void;
 }
 
 const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
     const [activeTab, setActiveTab] = useState<'Vendedores' | 'Score' | 'Normativas'>('Vendedores');
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedSeller, setSelectedSeller] = useState<UserType | null>(null);
+
+    const handleSelectSeller = (seller: UserType) => {
+        setSelectedSeller(seller);
+        onSelectSeller?.(seller);
+    };
 
     const sellers = users.filter(u => u.role === 'Vendedor' || u.role === 'Admin');
 
-    const filteredSellers = sellers.filter(s => 
+    const filteredSellers = sellers.filter(s =>
         s.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    // ── Seller Detail View ─────────────────────────────────────────────────────
+    if (selectedSeller) {
+        return (
+            <SellerDetail360
+                seller={selectedSeller}
+                onBack={() => setSelectedSeller(null)}
+            />
+        );
+    }
+
+    // ── Main Painel 360 ────────────────────────────────────────────────────────
     return (
         <div className="flex flex-col h-full space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-white">Painel 360</h2>
+                <div>
+                    <h2 className="text-2xl font-bold text-white">Painel 360</h2>
+                    <p className="text-slate-500 text-sm mt-1">Visão completa de performance por vendedor.</p>
+                </div>
             </div>
 
             {/* Tabs */}
@@ -32,16 +53,16 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`px-6 py-3 text-sm font-medium transition-all relative ${
-                            activeTab === tab 
-                                ? 'text-blue-400' 
+                            activeTab === tab
+                                ? 'text-blue-400'
                                 : 'text-slate-500 hover:text-slate-300'
                         }`}
                     >
                         {tab}
                         {activeTab === tab && (
-                            <motion.div 
-                                layoutId="activeTab360" 
-                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" 
+                            <motion.div
+                                layoutId="activeTab360"
+                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
                             />
                         )}
                     </button>
@@ -70,37 +91,49 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {filteredSellers.map((seller) => (
-                                    <button
-                                        key={seller.id}
-                                        onClick={() => onSelectSeller(seller)}
-                                        className="flex items-center justify-between p-4 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-blue-500/50 hover:bg-slate-900 transition-all group text-left"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold border border-slate-700">
-                                                {seller.avatarUrl ? (
-                                                    <img src={seller.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
-                                                ) : (
-                                                    seller.name.substring(0, 2).toUpperCase()
-                                                )}
-                                            </div>
-                                            <div>
-                                                <h4 className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
-                                                    {seller.name}
-                                                </h4>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <span className={`w-2 h-2 rounded-full ${seller.role === 'Admin' ? 'bg-emerald-500' : 'bg-blue-500'}`} />
-                                                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
-                                                        Ativo
-                                                    </span>
+                            {filteredSellers.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-slate-500">
+                                    <User className="w-12 h-12 mb-3 opacity-20" />
+                                    <p className="text-sm">Nenhum vendedor encontrado.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {filteredSellers.map((seller) => (
+                                        <button
+                                            key={seller.id}
+                                            onClick={() => handleSelectSeller(seller)}
+                                            className="flex items-center justify-between p-4 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-blue-500/50 hover:bg-slate-900 transition-all group text-left"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold border border-slate-700 overflow-hidden">
+                                                    {seller.avatarUrl ? (
+                                                        <img src={seller.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
+                                                    ) : (
+                                                        seller.name.substring(0, 2).toUpperCase()
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
+                                                        {seller.name}
+                                                    </h4>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span className={`w-2 h-2 rounded-full ${seller.role === 'Admin' ? 'bg-emerald-500' : 'bg-blue-500'}`} />
+                                                        <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
+                                                            {seller.role ?? 'Vendedor'}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <ArrowRight className="w-4 h-4 text-slate-700 group-hover:text-blue-400 transition-all" />
-                                    </button>
-                                ))}
-                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] text-slate-600 group-hover:text-blue-400 transition-colors font-medium">
+                                                    Ver 360
+                                                </span>
+                                                <ArrowRight className="w-4 h-4 text-slate-700 group-hover:text-blue-400 transition-all" />
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </motion.div>
                     )}
 
@@ -114,23 +147,55 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
                         >
                             <div className="flex items-center justify-between">
                                 <h3 className="text-lg font-bold text-white">Ranking de Performance</h3>
-                                <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5">
-                                    <Search className="w-4 h-4 text-slate-500" />
-                                    <span className="text-xs text-slate-400">Filtro por período</span>
-                                </div>
                             </div>
 
-                            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-12 flex flex-col items-center justify-center text-center space-y-4">
-                                <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500">
-                                    <Trophy className="w-8 h-8" />
+                            {/* Quick ranking list linking to individual 360 */}
+                            {sellers.length > 0 ? (
+                                <div className="space-y-3">
+                                    {sellers.map((seller, idx) => (
+                                        <button
+                                            key={seller.id}
+                                            onClick={() => handleSelectSeller(seller)}
+                                            className="w-full flex items-center gap-4 p-4 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-blue-500/30 hover:bg-slate-900 transition-all group text-left"
+                                        >
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
+                                                idx === 0 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                                                idx === 1 ? 'bg-slate-400/20 text-slate-300 border border-slate-400/30' :
+                                                idx === 2 ? 'bg-orange-700/20 text-orange-400 border border-orange-700/30' :
+                                                'bg-slate-800 text-slate-500 border border-slate-700'
+                                            }`}>
+                                                {idx + 1}
+                                            </div>
+                                            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 text-xs font-bold border border-slate-700 overflow-hidden flex-shrink-0">
+                                                {seller.avatarUrl
+                                                    ? <img src={seller.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                                    : seller.name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors truncate">
+                                                    {seller.name}
+                                                </p>
+                                                <p className="text-xs text-slate-500">Score — ver 360º individual</p>
+                                            </div>
+                                            <Trophy className={`w-4 h-4 flex-shrink-0 ${
+                                                idx === 0 ? 'text-amber-400' : 'text-slate-700 group-hover:text-blue-400'
+                                            } transition-colors`} />
+                                        </button>
+                                    ))}
                                 </div>
-                                <div>
-                                    <h4 className="text-white font-bold">Ranking em breve</h4>
-                                    <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2">
-                                        Aqui você poderá visualizar o ranking de performance dos vendedores em tempo real.
-                                    </p>
+                            ) : (
+                                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-12 flex flex-col items-center justify-center text-center space-y-4">
+                                    <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500">
+                                        <Trophy className="w-8 h-8" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-white font-bold">Nenhum vendedor cadastrado</h4>
+                                        <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2">
+                                            Convide membros para a equipe para ver o ranking aqui.
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </motion.div>
                     )}
 

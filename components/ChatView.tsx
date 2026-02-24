@@ -381,7 +381,7 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
                                         className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-11 pr-4 h-10 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
                                     />
                                 </div>
-                                <button type="submit" className="w-10 h-10 bg-violet-600 rounded-lg flex items-center justify-center text-white hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0" disabled={!newMessage.trim()}>
+                                <button type="submit" className="w-10 h-10 bg-gradient-to-r from-sky-500 to-blue-500 rounded-lg flex items-center justify-center text-white hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0" disabled={!newMessage.trim()}>
                                     <Send className="w-5 h-5" />
                                 </button>
                             </form>
