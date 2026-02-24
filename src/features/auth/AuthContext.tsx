@@ -24,7 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUserRole, setCurrentUserRole] = useState<AppRole>('admin');
+  const [currentUserRole, setCurrentUserRole] = useState<AppRole>('seller');
   const [authError, setAuthError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Fetch role from profiles whenever user changes
   useEffect(() => {
     if (!user) {
-      setCurrentUserRole('admin');
+      setCurrentUserRole('seller');
       return;
     }
     supabase
@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
-        setCurrentUserRole((data?.role as AppRole) ?? 'admin');
+        setCurrentUserRole((data?.role as AppRole) ?? 'seller');
       });
   }, [user]);
 

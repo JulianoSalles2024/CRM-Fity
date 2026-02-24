@@ -1,6 +1,8 @@
 import React from 'react';
+import { useAuth } from '@/src/features/auth/AuthContext';
 import { ProfileView } from '@/src/features/profile';
 import KanbanBoard from '@/components/KanbanBoard';
+import Painel360 from '@/components/Painel360';
 import Dashboard from '@/components/Dashboard';
 import SettingsPage from '@/components/SettingsPage';
 import ActivitiesView from '@/components/ActivitiesView';
@@ -24,7 +26,8 @@ interface AppRouterProps {
 }
 
 export const AppRouter: React.FC<AppRouterProps> = (props) => {
-  const { 
+  const { currentUserRole } = useAuth();
+  const {
     activeView, 
     leadsToPrint, 
     setLeadsToPrint,
@@ -310,6 +313,12 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
             onResetApplication={handleResetApplication}
             initialTab={settingsTab}
         />;
+    case 'Painel 360':
+        if (currentUserRole !== 'admin') {
+            setActiveView('Inbox');
+            return null;
+        }
+        return <Painel360 users={users} />;
     default:
         return <div>View not found</div>;
   }

@@ -38,7 +38,7 @@ const NavItem: React.FC<{
 );
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, onToggle, isChatEnabled }) => {
-  const { currentPermissions } = useAuth();
+  const { currentPermissions, currentUserRole } = useAuth();
 
   const mainNavItems = [
     { icon: Inbox, label: 'Inbox' },
@@ -58,6 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, 
     if (!isChatEnabled && item.label === 'Chat') return false;
     if (!currentPermissions.canViewDashboard && item.label === 'Dashboard') return false;
     if (!currentPermissions.canViewReports && item.label === 'Relatórios') return false;
+    if (currentUserRole !== 'admin' && item.label === 'Painel 360') return false;
     return true;
   });
 
@@ -67,7 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, 
   });
 
   return (
-    <aside className={`hidden md:flex flex-col bg-slate-900/60 backdrop-blur-md border-r border-white/10 p-4 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
+    <aside className={`hidden md:flex flex-col bg-[#0B1220]/80 backdrop-blur-md border-r border-white/5 p-4 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
       <div className={`flex items-center gap-3 mb-10 px-2 h-8 ${isCollapsed ? 'justify-center' : ''}`}>
          {!isCollapsed && (
              <h1 className="text-xl font-bold text-white whitespace-nowrap flex items-center gap-2 tracking-tight">
