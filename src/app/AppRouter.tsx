@@ -121,15 +121,16 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
           onOpenLead={setSelectedLead}
       />;
     case 'Dashboard':
-      return <Dashboard 
-                  leads={leads} 
-                  columns={columns} 
-                  activities={activities} 
-                  tasks={tasks} 
+      return <Dashboard
+                  leads={leads}
+                  columns={columns}
+                  activities={activities}
+                  tasks={tasks}
                   users={users}
-                  onNavigate={setActiveView} 
-                  onAnalyzePortfolio={handleStartAnalysis} 
-                  showNotification={showNotification} 
+                  boards={boards}
+                  onNavigate={setActiveView}
+                  onAnalyzePortfolio={handleStartAnalysis}
+                  showNotification={showNotification}
                   onExportReport={() => handleExportPDF(leads)}
              />;
     case 'Pipeline':

@@ -1,7 +1,8 @@
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { Lead, ColumnData, Activity, Task, User } from '../types';
-import { Users, Target, TrendingUp, DollarSign, ChevronDown, UserCheck, AlertTriangle, Wallet } from 'lucide-react';
+import type { Board } from '../types';
+import { Users, Target, TrendingUp, DollarSign, ChevronDown, UserCheck, AlertTriangle, Wallet, Layers } from 'lucide-react';
 import KpiCard from './KpiCard';
 import TopSellers from './TopSellers';
 import RecentActivities from './RecentActivities';
@@ -12,51 +13,62 @@ interface DashboardProps {
     activities: Activity[];
     tasks: Task[];
     users: User[];
+    boards: Board[];
     onNavigate: (view: string) => void;
     onAnalyzePortfolio?: () => void;
     showNotification: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
     onExportReport?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks, users, onNavigate, onAnalyzePortfolio, showNotification, onExportReport }) => {
+const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks, users, boards, onNavigate, onAnalyzePortfolio, showNotification, onExportReport }) => {
+    const [selectedBoardId, setSelectedBoardId] = useState<'all' | string>('all');
+
+    const activeColumns = useMemo(() => {
+        if (selectedBoardId === 'all') return columns;
+        const board = boards.find(b => b.id === selectedBoardId);
+        return board ? board.columns : columns;
+    }, [selectedBoardId, boards, columns]);
+
+    const activeLeadPool = useMemo(() => {
+        if (selectedBoardId === 'all') return leads;
+        const ids = new Set(activeColumns.map(c => c.id));
+        return leads.filter(l => ids.has(l.columnId));
+    }, [leads, activeColumns, selectedBoardId]);
 
     const kpiData = useMemo(() => {
-        const wonColumnIds = columns.filter(c => c.type === 'won').map(c => c.id);
-        const lostColumnIds = columns.filter(c => c.type === 'lost').map(c => c.id);
+        const wonColumnIds = activeColumns.filter(c => c.type === 'won').map(c => c.id);
+        const lostColumnIds = activeColumns.filter(c => c.type === 'lost').map(c => c.id);
 
-        const totalDeals = leads.length;
-        const totalWon = leads.filter(l => wonColumnIds.includes(l.columnId)).length;
-        // const totalLost = leads.filter(l => lostColumnIds.includes(l.columnId)).length;
-        const activeLeads = leads.filter(l => !wonColumnIds.includes(l.columnId) && !lostColumnIds.includes(l.columnId));
-        
+        const totalDeals = activeLeadPool.length;
+        const totalWon = activeLeadPool.filter(l => wonColumnIds.includes(l.columnId)).length;
+        const activeLeads = activeLeadPool.filter(l => !wonColumnIds.includes(l.columnId) && !lostColumnIds.includes(l.columnId));
+
         const totalValue = activeLeads.reduce((sum, lead) => sum + Number(lead.value || 0), 0);
-        const wonValue = leads.filter(l => wonColumnIds.includes(l.columnId)).reduce((sum, lead) => sum + Number(lead.value || 0), 0);
-        
+        const wonValue = activeLeadPool.filter(l => wonColumnIds.includes(l.columnId)).reduce((sum, lead) => sum + Number(lead.value || 0), 0);
+
         const conversionRate = totalDeals > 0 ? ((totalWon / totalDeals) * 100).toFixed(1) : '0.0';
 
-        // Fake trend data for demo visuals matching the image
         return {
             pipelineValue: totalValue,
             activeCount: activeLeads.length,
             conversionRate,
             revenue: wonValue,
         };
-    }, [leads, columns]);
+    }, [activeLeadPool, activeColumns]);
 
     const walletHealth = useMemo(() => {
-        const activeCount = leads.filter(l => l.status === 'Ativo').length;
-        const inactiveCount = leads.filter(l => l.status === 'Inativo').length;
-        const churnCount = leads.filter(l => l.groupInfo?.churned).length; // Approximate churn logic
+        const activeCount = activeLeadPool.filter(l => l.status === 'Ativo').length;
+        const inactiveCount = activeLeadPool.filter(l => l.status === 'Inativo').length;
+        const churnCount = activeLeadPool.filter(l => l.groupInfo?.churned).length;
         const total = activeCount + inactiveCount + churnCount || 1;
-        
+
         const activePct = Math.round((activeCount / total) * 100);
         const inactivePct = Math.round((inactiveCount / total) * 100);
         const churnPct = Math.round((churnCount / total) * 100);
 
-        // Simple LTV calculation (Average value of won deals)
-        const wonLeads = leads.filter(l => columns.find(c => c.id === l.columnId)?.type === 'won');
-        const ltv = wonLeads.length > 0 
-            ? wonLeads.reduce((acc, curr) => acc + Number(curr.value || 0), 0) / wonLeads.length 
+        const wonLeads = activeLeadPool.filter(l => activeColumns.find(c => c.id === l.columnId)?.type === 'won');
+        const ltv = wonLeads.length > 0
+            ? wonLeads.reduce((acc, curr) => acc + Number(curr.value || 0), 0) / wonLeads.length
             : 0;
 
         return {
@@ -64,7 +76,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
             activePct, inactivePct, churnPct,
             ltv
         };
-    }, [leads, columns]);
+    }, [activeLeadPool, activeColumns]);
 
     const currencyFormatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -98,17 +110,21 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     <h1 className="text-3xl font-bold text-white tracking-tight">Visão Geral</h1>
                     <p className="text-slate-400 mt-1">O pulso do seu negócio em tempo real.</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2 bg-slate-900 text-slate-300 px-4 py-2 rounded-lg border border-slate-800 hover:bg-slate-800 hover:text-white transition-colors text-sm font-medium">
-                        Este Mês <ChevronDown className="w-4 h-4" />
-                    </button>
-                    <button 
-                        onClick={onAnalyzePortfolio}
-                        className="bg-slate-900 text-slate-300 px-4 py-2 rounded-lg border border-slate-800 hover:bg-slate-800 hover:text-white transition-colors text-sm font-medium"
-                    >
-                        Análise de Carteira
-                    </button>
-                    <button 
+                <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2">
+                        <Layers className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                        <select
+                            value={selectedBoardId}
+                            onChange={e => setSelectedBoardId(e.target.value)}
+                            className="bg-transparent text-sm text-slate-200 focus:outline-none cursor-pointer"
+                        >
+                            <option value="all">Geral (todos os pipelines)</option>
+                            {boards.map(b => (
+                                <option key={b.id} value={b.id}>{b.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <button
                         onClick={onExportReport}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors text-sm font-medium shadow-lg shadow-blue-900/20 border border-blue-500/50"
                     >
@@ -229,7 +245,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
             {/* Bottom Section: Top Sellers & Activities */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1">
-                    <TopSellers columns={columns} leads={leads} users={users} />
+                    <TopSellers columns={activeColumns} leads={activeLeadPool} users={users} />
                 </div>
                 <div className="lg:col-span-2">
                     <RecentActivities activities={activities} leads={leads} onNavigate={onNavigate} />
