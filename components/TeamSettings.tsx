@@ -36,9 +36,11 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
     const [supabaseMembers, setSupabaseMembers] = useState<TeamMember[]>([]);
     const [isFetchingUsers, setIsFetchingUsers] = useState(true);
 
-    // Block state
+    // Block / Reactivate state
     const [blockTarget, setBlockTarget] = useState<TeamMember | null>(null);
     const [isBlocking, setIsBlocking] = useState(false);
+    const [reactivateTarget, setReactivateTarget] = useState<TeamMember | null>(null);
+    const [isReactivating, setIsReactivating] = useState(false);
     const [toast, setToast] = useState<Toast | null>(null);
 
     const showToast = (message: string, type: 'success' | 'error') => {
@@ -82,6 +84,20 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
         } else {
             await fetchMembers();
             showToast('Usuário bloqueado com sucesso', 'success');
+        }
+    };
+
+    const handleReactivateUser = async () => {
+        if (!reactivateTarget) return;
+        setIsReactivating(true);
+        const { error } = await supabase.rpc('admin_unblock_user', { p_user_id: reactivateTarget.id });
+        setIsReactivating(false);
+        setReactivateTarget(null);
+        if (error) {
+            showToast(`Erro ao reativar: ${error.message}`, 'error');
+        } else {
+            await fetchMembers();
+            showToast('Usuário reativado com sucesso', 'success');
         }
     };
 
@@ -238,9 +254,9 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                         </button>
                                     ) : (
                                         <button
-                                            disabled
-                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-500 border border-slate-700 rounded-lg cursor-not-allowed opacity-50"
-                                            title="Reativar (em breve)"
+                                            onClick={() => setReactivateTarget(member)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-400 border border-emerald-500/30 rounded-lg hover:bg-emerald-500/10 hover:border-emerald-500/50 transition-all"
+                                            title="Reativar acesso"
                                         >
                                             <RefreshCw className="w-3.5 h-3.5" />
                                             Reativar
@@ -290,6 +306,50 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                         : <Ban className="w-4 h-4" />
                                     }
                                     {isBlocking ? 'Bloqueando...' : 'Bloquear'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Reactivate Confirmation Modal */}
+            <AnimatePresence>
+                {reactivateTarget && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
+                        >
+                            <div className="p-6">
+                                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+                                    <RefreshCw className="w-6 h-6 text-emerald-400" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white text-center">Reativar usuário?</h3>
+                                <p className="text-sm text-slate-400 text-center mt-2">
+                                    <span className="text-white font-medium">{reactivateTarget.name}</span> voltará a ter acesso ao sistema.
+                                </p>
+                            </div>
+                            <div className="px-6 pb-6 flex gap-3">
+                                <button
+                                    onClick={() => setReactivateTarget(null)}
+                                    disabled={isReactivating}
+                                    className="flex-1 py-2.5 rounded-xl text-sm font-medium text-slate-300 border border-slate-700 hover:bg-slate-800 transition-colors disabled:opacity-50"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleReactivateUser}
+                                    disabled={isReactivating}
+                                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isReactivating
+                                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                                        : <RefreshCw className="w-4 h-4" />
+                                    }
+                                    {isReactivating ? 'Reativando...' : 'Reativar'}
                                 </button>
                             </div>
                         </motion.div>
