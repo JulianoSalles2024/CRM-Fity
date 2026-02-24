@@ -1,7 +1,8 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 import { Lead, ColumnData, Task, Activity } from '../types';
-import { BarChart, RefreshCw, Download, Users, Target, DollarSign, CheckCircle } from 'lucide-react';
+import type { Board } from '../types';
+import { BarChart, RefreshCw, Download, Users, Target, DollarSign, CheckCircle, Layers } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 
@@ -10,6 +11,7 @@ interface ReportsPageProps {
     columns: ColumnData[];
     tasks: Task[];
     activities: Activity[];
+    boards: Board[];
 }
 
 interface ReportKpiCardProps {
@@ -32,9 +34,27 @@ const ReportKpiCard: React.FC<ReportKpiCardProps> = ({ title, value, icon: Icon,
 );
 
 
-const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activities }) => {
+const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activities, boards }) => {
     const [timeRange, setTimeRange] = useState<'30d' | '365d'>('30d');
     const [chartViewMode, setChartViewMode] = useState<'day' | 'week' | 'month'>('week');
+    const [selectedBoardId, setSelectedBoardId] = useState<'all' | string>('all');
+
+    // Derive columns and leads for the selected pipeline
+    const activeColumns = useMemo(() => {
+        if (selectedBoardId === 'all') return columns;
+        const board = boards.find(b => b.id === selectedBoardId);
+        return board ? board.columns : columns;
+    }, [selectedBoardId, boards, columns]);
+
+    const activeColumnIds = useMemo(
+        () => new Set(activeColumns.map(c => c.id)),
+        [activeColumns]
+    );
+
+    const boardFilteredLeads = useMemo(
+        () => leads.filter(l => activeColumnIds.has(l.columnId)),
+        [leads, activeColumnIds]
+    );
 
     
     const currencyFormatter = new Intl.NumberFormat('pt-BR', {
@@ -54,18 +74,18 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                 startDate.setDate(now.getDate() - 365);
                 break;
         }
-        
+
         startDate.setHours(0, 0, 0, 0);
 
-        const newFilteredLeads = leads.filter(l => l.createdAt && new Date(l.createdAt) >= startDate);
+        const newFilteredLeads = boardFilteredLeads.filter(l => l.createdAt && new Date(l.createdAt) >= startDate);
         const newFilteredTasks = tasks.filter(t => new Date(t.dueDate) >= startDate);
 
         return { filteredLeads: newFilteredLeads, filteredTasks: newFilteredTasks };
-    }, [leads, tasks, timeRange]);
+    }, [boardFilteredLeads, tasks, timeRange]);
 
 
     const reportData = useMemo(() => {
-        const wonLeads = filteredLeads.filter(l => columns.find(c => c.id === l.columnId)?.type === 'won');
+        const wonLeads = filteredLeads.filter(l => activeColumns.find(c => c.id === l.columnId)?.type === 'won');
         const totalLeads = filteredLeads.length;
         const wonLeadsCount = wonLeads.length;
         const conversionRate = totalLeads > 0 ? ((wonLeadsCount / totalLeads) * 100).toFixed(1) : '0.0';
@@ -76,8 +96,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
         const totalTasks = filteredTasks.length;
         const completedTasks = filteredTasks.filter(t => t.status === 'completed').length;
         const activityCompletionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : '0.0';
-        
-        const funnelData = columns.map(col => {
+
+        const funnelData = activeColumns.map(col => {
             const leadsInCol = filteredLeads.filter(l => l.columnId === col.id);
             return {
                 ...col,
@@ -97,7 +117,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
             funnelData,
             topLeads,
         };
-    }, [filteredLeads, filteredTasks, columns]);
+    }, [filteredLeads, filteredTasks, activeColumns]);
 
     const timeSeriesData = useMemo(() => {
         const now = new Date();
@@ -145,10 +165,10 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
              }
         }
     
-        const wonColumnIds = columns.filter(c => c.type === 'won').map(c => c.id);
-        const lostColumnIds = columns.filter(c => c.type === 'lost').map(c => c.id);
+        const wonColumnIds = activeColumns.filter(c => c.type === 'won').map(c => c.id);
+        const lostColumnIds = activeColumns.filter(c => c.type === 'lost').map(c => c.id);
         
-        leads.forEach(lead => {
+        boardFilteredLeads.forEach(lead => {
             const creationDate = lead.createdAt ? new Date(lead.createdAt) : null;
             const wonDate = (lead.lastActivityTimestamp && wonColumnIds.includes(lead.columnId)) ? new Date(lead.lastActivityTimestamp) : null;
             const churnDate = (lead.lastActivityTimestamp && lostColumnIds.includes(lead.columnId)) ? new Date(lead.lastActivityTimestamp) : null;
@@ -174,14 +194,14 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                 { label: 'Churn', data: buckets.map(b => b.churn), color: '#ef4444' },
             ],
         };
-    }, [leads, columns, chartViewMode]);
+    }, [boardFilteredLeads, activeColumns, chartViewMode]);
 
      const columnMap = useMemo(() => {
-        return columns.reduce((acc, col) => {
+        return activeColumns.reduce((acc, col) => {
             acc[col.id] = {title: col.title, color: col.color};
             return acc;
         }, {} as Record<string, {title: string, color: string}>);
-    }, [columns]);
+    }, [activeColumns]);
     
     const PerformanceChart = ({ data }: { data: typeof timeSeriesData }) => {
         const svgRef = useRef<SVGSVGElement>(null);
@@ -336,11 +356,25 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                         <p className="text-slate-400">Análise detalhada de desempenho e métricas</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                    {/* Pipeline filter */}
+                    <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2">
+                        <Layers className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                        <select
+                            value={selectedBoardId}
+                            onChange={e => setSelectedBoardId(e.target.value)}
+                            className="bg-transparent text-sm text-slate-200 focus:outline-none cursor-pointer"
+                        >
+                            <option value="all">Geral (todos os pipelines)</option>
+                            {boards.map(b => (
+                                <option key={b.id} value={b.id}>{b.name}</option>
+                            ))}
+                        </select>
+                    </div>
                     <button className="p-2.5 text-slate-300 bg-slate-800 border border-slate-700 hover:bg-slate-700/80 rounded-lg" title="Atualizar dados">
                         <RefreshCw className="w-4 h-4" />
                     </button>
-                     <button className="p-2.5 text-slate-300 bg-slate-800 border border-slate-700 hover:bg-slate-700/80 rounded-lg" title="Baixar relatório">
+                    <button className="p-2.5 text-slate-300 bg-slate-800 border border-slate-700 hover:bg-slate-700/80 rounded-lg" title="Baixar relatório">
                         <Download className="w-4 h-4" />
                     </button>
                 </div>

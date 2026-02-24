@@ -204,7 +204,7 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                     onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus}
                />;
     case 'Relatórios':
-        return <ReportsPage leads={leads} columns={columns} tasks={tasks} activities={activities} />;
+        return <ReportsPage leads={leads} columns={columns} tasks={tasks} activities={activities} boards={boards} />;
     case 'Recuperação':
         const recoveryLeads = leads.filter((l: any) => l.reactivationDate);
         return <RecoveryView 
