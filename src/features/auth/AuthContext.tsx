@@ -17,6 +17,8 @@ interface AuthContextValue {
   logout: () => Promise<void>;
   authError: string | null;
   successMessage: string | null;
+  blockedError: string | null;
+  clearBlockedError: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -29,6 +31,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isRoleReady, setIsRoleReady] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [blockedError, setBlockedError] = useState<string | null>(null);
+  const clearBlockedError = () => setBlockedError(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -45,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch role from profiles whenever user changes
+  // Fetch role + is_active from profiles whenever user changes
   useEffect(() => {
     setIsRoleReady(false);
     if (!user) {
@@ -55,13 +59,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     supabase
       .from('profiles')
-      .select('role')
+      .select('role, is_active')
       .eq('id', user.id)
       .single()
       .then(({ data, error }) => {
         console.log('[AuthContext] user.id:', user.id);
         console.log('[AuthContext] email:', user.email);
-        console.log('[AuthContext] role from DB:', data?.role ?? null, '| error:', error?.message ?? null);
+        console.log('[AuthContext] role from DB:', data?.role ?? null, '| is_active:', data?.is_active ?? null, '| error:', error?.message ?? null);
+
+        if (data?.is_active === false) {
+          console.warn('[AuthContext] user is blocked — signing out');
+          setBlockedError('Usuário bloqueado. Contate o administrador.');
+          supabase.auth.signOut();
+          // isRoleReady will be set true when user becomes null (branch above)
+          return;
+        }
+
         const role = (data?.role as AppRole) ?? 'user';
         console.log('[AuthContext] currentUserRole final:', role);
         setCurrentUserRole(role);
@@ -71,6 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     setAuthError(null);
+    setBlockedError(null);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) setAuthError(error.message);
   };
@@ -122,6 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       currentUserRole, currentPermissions,
       login, register, signInWithGoogle, forgotPassword, logout,
       authError, successMessage,
+      blockedError, clearBlockedError,
     }}>
       {children}
     </AuthContext.Provider>
