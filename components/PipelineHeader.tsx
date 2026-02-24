@@ -168,7 +168,7 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
                 <button
                     onClick={onApplyPlaybookClick}
                     disabled={!isPlaybookActionEnabled}
-                    className="flex items-center gap-2 text-sm text-white bg-violet-600 px-3 py-1.5 rounded-md font-semibold transition-colors hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 text-sm text-white bg-gradient-to-r from-sky-500 to-blue-500 px-3 py-1.5 rounded-md font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <BookOpen className="w-4 h-4" />
                     <span>Aplicar Playbook</span>

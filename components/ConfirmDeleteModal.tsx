@@ -21,7 +21,7 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
   confirmVariant = 'danger' 
 }) => {
   const confirmButtonClasses = {
-    primary: 'bg-violet-600 hover:bg-violet-700',
+    primary: 'bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200',
     danger: 'bg-red-600 hover:bg-red-700',
   };
   

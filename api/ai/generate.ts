@@ -3,7 +3,7 @@ import path from "path";
 import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
-import { decrypt } from "../../src/features/ai-credentials/aiProviders.utils";
+import { decrypt } from "../_utils";
 
 const CREDENTIALS_DIR = path.resolve(process.cwd(), "credentials");
 

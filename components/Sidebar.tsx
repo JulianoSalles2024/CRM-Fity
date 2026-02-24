@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { LayoutDashboard, Columns, Users, User as UserIcon, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap, Bell, HelpCircle, MessageSquare, ToyBrick, BookOpen, ArchiveRestore } from 'lucide-react';
+import { LayoutDashboard, Columns, Users, User as UserIcon, ClipboardList, Calendar, BarChart, Contact, PanelLeft, Settings, Zap, Bell, HelpCircle, MessageSquare, ToyBrick, BookOpen, ArchiveRestore, ScanLine } from 'lucide-react';
+import { useAuth } from '@/src/features/auth/AuthContext';
 
 interface SidebarProps {
     activeView: string;
@@ -37,6 +38,10 @@ const NavItem: React.FC<{
 );
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, onToggle, isChatEnabled }) => {
+  const { currentPermissions, currentUserRole, isRoleReady } = useAuth();
+
+  if (!isRoleReady) return null;
+
   const mainNavItems = [
     { icon: Inbox, label: 'Inbox' },
     { icon: LayoutDashboard, label: 'Dashboard' },
@@ -49,8 +54,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, 
     { icon: ArchiveRestore, label: 'Recuperação' },
     { icon: MessageSquare, label: 'Chat' },
     { icon: Users, label: 'Grupos' },
+    { icon: ScanLine, label: 'Painel 360' },
     // { icon: ToyBrick, label: 'Integrações' }, // Removed: moved to Settings
-  ].filter(item => isChatEnabled || item.label !== 'Chat');
+  ].filter(item => {
+    if (!isChatEnabled && item.label === 'Chat') return false;
+    if (!currentPermissions.canViewDashboard && item.label === 'Dashboard') return false;
+    if (!currentPermissions.canViewReports && item.label === 'Relatórios') return false;
+    if (currentUserRole !== 'admin' && item.label === 'Painel 360') return false;
+    return true;
+  });
 
   const renderNavItems = mainNavItems.map(item => {
       if (item.label === 'Dashboard') return { ...item, label: 'Visão Geral', originalKey: 'Dashboard' };
@@ -58,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isCollapsed, 
   });
 
   return (
-    <aside className={`hidden md:flex flex-col bg-slate-950 border-r border-slate-800/60 p-4 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
+    <aside className={`hidden md:flex flex-col bg-[#0B1220]/80 backdrop-blur-md border-r border-white/5 p-4 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
       <div className={`flex items-center gap-3 mb-10 px-2 h-8 ${isCollapsed ? 'justify-center' : ''}`}>
          {!isCollapsed && (
              <h1 className="text-xl font-bold text-white whitespace-nowrap flex items-center gap-2 tracking-tight">

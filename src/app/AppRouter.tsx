@@ -1,6 +1,8 @@
 import React from 'react';
+import { useAuth } from '@/src/features/auth/AuthContext';
 import { ProfileView } from '@/src/features/profile';
 import KanbanBoard from '@/components/KanbanBoard';
+import Painel360 from '@/components/Painel360';
 import Dashboard from '@/components/Dashboard';
 import SettingsPage from '@/components/SettingsPage';
 import ActivitiesView from '@/components/ActivitiesView';
@@ -24,7 +26,8 @@ interface AppRouterProps {
 }
 
 export const AppRouter: React.FC<AppRouterProps> = (props) => {
-  const { 
+  const { currentUserRole, isRoleReady } = useAuth();
+  const {
     activeView, 
     leadsToPrint, 
     setLeadsToPrint,
@@ -100,6 +103,8 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
     onUpdateUsers
   } = props;
 
+  if (!isRoleReady) return null;
+
   if (leadsToPrint) {
     return <PrintableLeadsReport leads={leadsToPrint} tasks={tasks} activities={activities} onPrintEnd={() => setLeadsToPrint(null)} />;
   }
@@ -121,15 +126,16 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
           onOpenLead={setSelectedLead}
       />;
     case 'Dashboard':
-      return <Dashboard 
-                  leads={leads} 
-                  columns={columns} 
-                  activities={activities} 
-                  tasks={tasks} 
+      return <Dashboard
+                  leads={leads}
+                  columns={columns}
+                  activities={activities}
+                  tasks={tasks}
                   users={users}
-                  onNavigate={setActiveView} 
-                  onAnalyzePortfolio={handleStartAnalysis} 
-                  showNotification={showNotification} 
+                  boards={boards}
+                  onNavigate={setActiveView}
+                  onAnalyzePortfolio={handleStartAnalysis}
+                  showNotification={showNotification}
                   onExportReport={() => handleExportPDF(leads)}
              />;
     case 'Pipeline':
@@ -204,7 +210,7 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                     onDeleteTask={handleDeleteTask} onUpdateTaskStatus={handleUpdateTaskStatus}
                />;
     case 'Relatórios':
-        return <ReportsPage leads={leads} columns={columns} tasks={tasks} activities={activities} />;
+        return <ReportsPage leads={leads} columns={columns} tasks={tasks} activities={activities} boards={boards} />;
     case 'Recuperação':
         const recoveryLeads = leads.filter((l: any) => l.reactivationDate);
         return <RecoveryView 
@@ -309,6 +315,12 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
             onResetApplication={handleResetApplication}
             initialTab={settingsTab}
         />;
+    case 'Painel 360':
+        if (currentUserRole !== 'admin') {
+            setActiveView('Inbox');
+            return null;
+        }
+        return <Painel360 users={users} />;
     default:
         return <div>View not found</div>;
   }

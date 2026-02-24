@@ -136,7 +136,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ leads, onReactivateLead, on
                                                 e.stopPropagation();
                                                 onReactivateLead(lead.id);
                                             }}
-                                            className="flex items-center gap-2 bg-violet-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors"
+                                            className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200"
                                         >
                                             <RefreshCw className="w-4 h-4" />
                                             <span>Reativar</span>

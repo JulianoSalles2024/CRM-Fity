@@ -28,7 +28,7 @@ if (!fs.existsSync(CREDENTIALS_DIR)) {
 
 // --- API ROUTES ---
 
-app.all("/api/ai/credentials", (req, res) => credentialsHandler(req, res));
+app.all("/api/ai/credentials", (req, res) => credentialsHandler(req as any, res as any));
 app.all("/api/ai/test-connection", (req, res) => testConnectionHandler(req, res));
 app.all("/api/ai/generate", (req, res) => generateHandler(req, res));
 

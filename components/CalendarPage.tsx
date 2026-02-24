@@ -111,7 +111,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ tasks, leads, onNewActivity
                 <GlassCard className="lg:col-span-2 flex flex-col overflow-hidden p-0">
                      <div className="flex-shrink-0 p-4 flex justify-between items-center border-b border-white/10">
                         <h2 className="font-semibold text-white capitalize">{selectedDateString}</h2>
-                        <button onClick={() => onNewActivity(selectedDate.toISOString().split('T')[0])} className="flex items-center gap-2 bg-violet-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors">
+                        <button onClick={() => onNewActivity(selectedDate.toISOString().split('T')[0])} className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                             <Plus className="w-4 h-4" />
                             <span>Nova Atividade</span>
                         </button>

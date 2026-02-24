@@ -278,7 +278,7 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                         <button 
                             onClick={handleGenerateAnalysis}
                             disabled={isLoadingAnalysis}
-                            className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-violet-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             {isLoadingAnalysis ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />

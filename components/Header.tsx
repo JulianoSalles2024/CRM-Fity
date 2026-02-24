@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, Bell, LogOut, Sun, Moon, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { User } from '../types';
+import { useAuth } from '../src/features/auth/AuthContext';
 
 interface HeaderProps {
     currentUser: User;
@@ -15,11 +16,11 @@ interface HeaderProps {
     activeView: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ 
-    currentUser, 
-    onLogout, 
-    searchQuery, 
-    onSearchChange, 
+const Header: React.FC<HeaderProps> = ({
+    currentUser,
+    onLogout,
+    searchQuery,
+    onSearchChange,
     theme,
     onThemeToggle,
     unreadCount,
@@ -27,6 +28,7 @@ const Header: React.FC<HeaderProps> = ({
     activeView
 }) => {
     const [isUserMenuOpen, setUserMenuOpen] = useState(false);
+    const { currentUserRole } = useAuth();
     const userMenuRef = useRef<HTMLDivElement>(null);
 
     // Disable search on Inbox and Dashboard views to prevent confusion
@@ -64,7 +66,7 @@ const Header: React.FC<HeaderProps> = ({
                 {/* SDR Bot Button */}
                 <button 
                     onClick={onOpenSdrBot}
-                    className="p-2.5 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-900/20 hover:shadow-violet-600/30 hover:scale-105 transition-all duration-200 group"
+                    className="p-2.5 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/20 hover:shadow-sky-500/30 hover:scale-105 transition-all duration-200 group"
                     title="SDR Bot (IA)"
                 >
                     <Bot className="w-5 h-5 group-hover:rotate-12 transition-transform" />
@@ -99,7 +101,7 @@ const Header: React.FC<HeaderProps> = ({
                     <button onClick={() => setUserMenuOpen(p => !p)} className="flex items-center gap-3 pl-2 pr-1 py-1 rounded-lg hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-800">
                         <div className="text-right hidden md:block">
                             <p className="text-sm font-medium text-white leading-tight">{currentUser.name}</p>
-                            <p className="text-xs text-slate-500">Admin</p>
+                            <p className="text-xs text-slate-500 capitalize">{currentUserRole}</p>
                         </div>
                         <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-violet-600 flex items-center justify-center font-bold text-sm text-white shadow-lg shadow-blue-900/20">
                             {currentUser.name.split(' ').map(n => n[0]).join('')}

@@ -43,7 +43,7 @@ const SampleDataPrompt: React.FC<SampleDataPromptProps> = ({ onConfirm, onDismis
                     <button
                         onClick={handleConfirm}
                         disabled={isLoading}
-                        className="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                        className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 rounded-md hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
                     >
                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sim, por favor'}
                     </button>

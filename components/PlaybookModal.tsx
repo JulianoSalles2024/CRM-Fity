@@ -44,7 +44,7 @@ const PlaybookModal: React.FC<PlaybookModalProps> = ({ lead, playbooks, onClose,
                                 </div>
                                 <button
                                     onClick={() => onApply(playbook.id)}
-                                    className="px-3 py-1.5 text-sm font-semibold text-white bg-violet-600 rounded-md hover:bg-violet-700 transition-colors"
+                                    className="px-3 py-1.5 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 rounded-md hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200"
                                 >
                                     Aplicar
                                 </button>

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, InviteLink, UserRole } from '../types';
-import { Users, UserPlus, Copy, Trash2, Clock, Shield, Check } from 'lucide-react';
+import { Users, UserPlus, Copy, Trash2, Clock, Shield, Check, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { supabase } from '@/src/lib/supabase';
+import { useAuth } from '@/src/features/auth/AuthContext';
 
 interface TeamSettingsProps {
     users: User[];
@@ -10,37 +12,103 @@ interface TeamSettingsProps {
 }
 
 const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdateUsers }) => {
+    const { currentPermissions } = useAuth();
     const [isInviteModalOpen, setInviteModalOpen] = useState(false);
     const [inviteLinks, setInviteLinks] = useState<InviteLink[]>([]);
-    
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [generateError, setGenerateError] = useState<string | null>(null);
+    const [supabaseUsers, setSupabaseUsers] = useState<User[]>([]);
+    const [isFetchingUsers, setIsFetchingUsers] = useState(true);
+
+    useEffect(() => {
+        const fetchMembers = async () => {
+            setIsFetchingUsers(true);
+            const { data } = await supabase
+                .from('profiles')
+                .select('id, email, name, role, company_id, created_at')
+                .order('created_at', { ascending: true });
+            if (data) {
+                setSupabaseUsers(data.map(p => ({
+                    id: p.id,
+                    email: p.email,
+                    name: p.name ?? p.email,
+                    role: p.role === 'admin' ? 'Admin' : 'Vendedor',
+                    joinedAt: p.created_at,
+                })));
+            }
+            setIsFetchingUsers(false);
+        };
+        fetchMembers();
+    }, []);
+
+    const displayUsers = supabaseUsers.length > 0 ? supabaseUsers : users;
+
     // Invite Modal State
     const [inviteRole, setInviteRole] = useState<UserRole>('Vendedor');
     const [inviteExpiration, setInviteExpiration] = useState<'7 days' | '30 days' | 'never'>('7 days');
 
-    const handleGenerateInvite = () => {
-        const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        let expiresAt: string | null = null;
-        
-        if (inviteExpiration === '7 days') {
-            const date = new Date();
-            date.setDate(date.getDate() + 7);
-            expiresAt = date.toISOString();
-        } else if (inviteExpiration === '30 days') {
-            const date = new Date();
-            date.setDate(date.getDate() + 30);
-            expiresAt = date.toISOString();
+    const handleGenerateInvite = async () => {
+        setIsGenerating(true);
+        setGenerateError(null);
+
+        try {
+            // 1. Secure token
+            const token = crypto.randomUUID();
+
+            // 2. Calculate expires_at
+            let expiresAt: string | null = null;
+            if (inviteExpiration === '7 days') {
+                const d = new Date();
+                d.setDate(d.getDate() + 7);
+                expiresAt = d.toISOString();
+            } else if (inviteExpiration === '30 days') {
+                const d = new Date();
+                d.setDate(d.getDate() + 30);
+                expiresAt = d.toISOString();
+            }
+
+            // 3. Map role to profiles check constraint values
+            const roleValue = inviteRole === 'Admin' ? 'admin' : 'seller';
+
+            // 4. Get company_id from profiles (not user.id)
+            const { data: { user } } = await supabase.auth.getUser();
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('company_id')
+                .eq('id', user!.id)
+                .single();
+            const companyId = profile?.company_id ?? null;
+
+            // 5. Insert into invites table
+            const { data, error } = await supabase
+                .from('invites')
+                .insert({
+                    token,
+                    role: roleValue,
+                    company_id: companyId,
+                    expires_at: expiresAt,
+                })
+                .select()
+                .single();
+
+            if (error) throw new Error(error.message);
+
+            // 6. Add to local state
+            const newInvite: InviteLink = {
+                id: data.id ?? `invite-${Date.now()}`,
+                role: inviteRole,
+                expiration: inviteExpiration,
+                expiresAt,
+                token,
+                createdAt: new Date().toISOString(),
+            };
+
+            setInviteLinks(prev => [newInvite, ...prev]);
+        } catch (err: any) {
+            setGenerateError(err.message ?? 'Erro ao gerar convite.');
+        } finally {
+            setIsGenerating(false);
         }
-
-        const newInvite: InviteLink = {
-            id: `invite-${Date.now()}`,
-            role: inviteRole,
-            expiration: inviteExpiration,
-            expiresAt,
-            token,
-            createdAt: new Date().toISOString()
-        };
-
-        setInviteLinks(prev => [newInvite, ...prev]);
     };
 
     const handleDeleteInvite = (id: string) => {
@@ -74,29 +142,35 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                 <div>
                     <h2 className="text-2xl font-bold text-white">Sua Equipe</h2>
                     <p className="text-slate-400 mt-1">
-                        {users.length} membro{users.length !== 1 && 's'} • {users.filter(u => u.role === 'Admin' || !u.role).length} admin, {users.filter(u => u.role === 'Vendedor').length} vendedores
+                        {displayUsers.length} membro{displayUsers.length !== 1 && 's'} • {displayUsers.filter(u => u.role === 'Admin' || !u.role).length} admin, {displayUsers.filter(u => u.role === 'Vendedor').length} vendedores
                     </p>
                 </div>
-                <button 
-                    onClick={() => setInviteModalOpen(true)}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                >
-                    <UserPlus className="w-4 h-4" />
-                    Convidar
-                </button>
+                {currentPermissions.canManageTeam && (
+                    <button
+                        onClick={() => setInviteModalOpen(true)}
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                        <UserPlus className="w-4 h-4" />
+                        Convidar
+                    </button>
+                )}
             </div>
 
             {/* Members List */}
             <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
                 <div className="divide-y divide-slate-800">
-                    {users.map(user => (
+                    {isFetchingUsers ? (
+                        <div className="p-6 flex justify-center">
+                            <Loader2 className="w-5 h-5 text-slate-500 animate-spin" />
+                        </div>
+                    ) : (currentPermissions.canManageTeam ? displayUsers : displayUsers.filter(u => u.id === currentUser.id)).map(user => (
                         <div key={user.id} className="p-4 flex items-center justify-between hover:bg-slate-800/50 transition-colors">
                             <div className="flex items-center gap-4">
                                 <div className="relative">
                                     {user.avatarUrl ? (
                                         <img src={user.avatarUrl} alt={user.name} className="w-12 h-12 rounded-xl object-cover" />
                                     ) : (
-                                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-lg">
+                                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center text-white font-bold text-lg ${user.role === 'Admin' || !user.role ? 'from-orange-400 to-orange-600' : 'from-blue-400 to-blue-600'}`}>
                                             {getInitials(user.name)}
                                         </div>
                                     )}
@@ -131,7 +205,8 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                             
                             {/* Actions could go here */}
                         </div>
-                    ))}
+                    ))
+                    }
                 </div>
             </div>
 
@@ -178,7 +253,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                                     </div>
                                                     <div className="flex items-center gap-1">
                                                         <button 
-                                                            onClick={() => copyToClipboard(`https://app.crm.com/invite/${link.token}`)}
+                                                            onClick={() => copyToClipboard(`${window.location.origin}/invite/${link.token}`)}
                                                             className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
                                                             title="Copiar Link"
                                                         >
@@ -246,13 +321,22 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                 >
                                     Fechar
                                 </button>
-                                <button 
-                                    onClick={handleGenerateInvite}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-colors shadow-lg shadow-blue-500/20"
-                                >
-                                    <Copy className="w-4 h-4" />
-                                    Gerar Link
-                                </button>
+                                <div className="flex flex-col items-end gap-2">
+                                    {generateError && (
+                                        <p className="text-xs text-red-400">{generateError}</p>
+                                    )}
+                                    <button
+                                        onClick={handleGenerateInvite}
+                                        disabled={isGenerating}
+                                        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-colors shadow-lg shadow-blue-500/20"
+                                    >
+                                        {isGenerating
+                                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                                            : <Copy className="w-4 h-4" />
+                                        }
+                                        {isGenerating ? 'Gerando...' : 'Gerar Link'}
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     </div>

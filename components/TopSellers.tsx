@@ -44,11 +44,11 @@ const TopSellers: React.FC<TopSellersProps> = ({ leads, users, columns }) => {
                 };
             })
             .sort((a, b) => b.totalValue - a.totalValue)
-            .slice(0, 5); // Top 5
+            .slice(0, 3);
     }, [leads, users, columns]);
 
     return (
-        <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 h-full flex flex-col">
+        <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] p-6 rounded-xl border border-white/5 h-full flex flex-col">
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-amber-500" />

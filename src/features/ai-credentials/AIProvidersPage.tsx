@@ -1,13 +1,29 @@
 import React from 'react';
-import { Key, ShieldCheck, Info } from 'lucide-react';
+import { Key, ShieldCheck, Info, Lock } from 'lucide-react';
 import { useAIProviders } from './useAIProviders';
 import { AIProviderCard } from './AIProviderCard';
 import { AIProviderId } from './aiProviders.types';
+import { useAuth } from '@/src/features/auth/AuthContext';
 
 export const AIProvidersPage: React.FC = () => {
+  const { currentPermissions } = useAuth();
   const { credentials, isLoading, updateCredential, saveCredential, testConnection } = useAIProviders();
 
   const providers: AIProviderId[] = ['openai', 'gemini', 'anthropic'];
+
+  if (!currentPermissions.canManageCredentials) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
+        <div className="p-4 rounded-2xl bg-slate-800 border border-slate-700">
+          <Lock className="w-8 h-8 text-slate-400" />
+        </div>
+        <h2 className="text-lg font-semibold text-white">IA configurada pela organização</h2>
+        <p className="text-slate-400 text-sm max-w-sm">
+          As credenciais de inteligência artificial são gerenciadas pelo administrador da sua conta.
+        </p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
