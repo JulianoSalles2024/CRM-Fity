@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, User, Trophy, FileText, Plus, ArrowRight, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { User as UserType, Id } from '../types';
 import SellerDetail360 from './SellerDetail360';
+import { supabase } from '../services/supabaseClient';
 
 interface Painel360Props {
     users: UserType[];
@@ -14,13 +15,47 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
     const [activeTab, setActiveTab] = useState<'Vendedores' | 'Score' | 'Normativas'>('Vendedores');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedSeller, setSelectedSeller] = useState<UserType | null>(null);
+    const [supabaseUsers, setSupabaseUsers] = useState<UserType[]>([]);
+    const [isFetchingUsers, setIsFetchingUsers] = useState(true);
+
+    useEffect(() => {
+        const fetchSellers = async () => {
+            setIsFetchingUsers(true);
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('id, email, name, role, created_at')
+                    .in('role', ['admin', 'seller'])
+                    .eq('is_active', true)
+                    .order('created_at', { ascending: true });
+
+                if (error) throw error;
+
+                const mapped: UserType[] = (data ?? []).map(p => ({
+                    id: p.id,
+                    name: p.name ?? p.email ?? 'Sem nome',
+                    email: p.email ?? '',
+                    role: p.role === 'admin' ? 'Admin' : 'Vendedor',
+                    joinedAt: p.created_at,
+                }));
+                setSupabaseUsers(mapped);
+            } catch (err) {
+                console.error('[Painel360] fetchSellers error:', err);
+            } finally {
+                setIsFetchingUsers(false);
+            }
+        };
+
+        fetchSellers();
+    }, []);
 
     const handleSelectSeller = (seller: UserType) => {
         setSelectedSeller(seller);
         onSelectSeller?.(seller);
     };
 
-    const sellers = users.filter(u => u.role === 'Vendedor' || u.role === 'Admin');
+    const allUsers = supabaseUsers.length > 0 ? supabaseUsers : users;
+    const sellers = allUsers.filter(u => u.role === 'Vendedor' || u.role === 'Admin');
 
     const filteredSellers = sellers.filter(s =>
         s.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -91,7 +126,11 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
                                 />
                             </div>
 
-                            {filteredSellers.length === 0 ? (
+                            {isFetchingUsers ? (
+                                <div className="flex items-center justify-center py-16">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500" />
+                                </div>
+                            ) : filteredSellers.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-16 text-slate-500">
                                     <User className="w-12 h-12 mb-3 opacity-20" />
                                     <p className="text-sm">Nenhum vendedor encontrado.</p>
