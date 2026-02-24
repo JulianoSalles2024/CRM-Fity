@@ -63,7 +63,7 @@ export const ProfileView: React.FC = () => {
     <div className="max-w-3xl mx-auto py-10 px-6 space-y-6">
 
       {/* ── Card 1: User Info ──────────────────────────────── */}
-      <div className="relative bg-slate-800/40 backdrop-blur-md border border-white/[0.06] rounded-2xl shadow-xl shadow-black/30 overflow-hidden">
+      <div className="relative bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-2xl shadow-xl shadow-black/30 overflow-hidden">
         {/* top gradient highlight */}
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
@@ -196,7 +196,7 @@ export const ProfileView: React.FC = () => {
       </div>
 
       {/* ── Card 2: Security ──────────────────────────────── */}
-      <div className="relative bg-slate-800/40 backdrop-blur-md border border-white/[0.06] rounded-2xl shadow-xl shadow-black/30 overflow-hidden">
+      <div className="relative bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-2xl shadow-xl shadow-black/30 overflow-hidden">
         {/* top gradient highlight */}
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
