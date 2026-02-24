@@ -87,8 +87,12 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
     });
 
     if (signInData?.user) {
-      // Account already exists — reuse session
+      // Account already exists — reuse session and sync role from invite
       userId = signInData.user.id;
+      await supabase
+        .from('profiles')
+        .update({ role: invite.role })
+        .eq('id', signInData.user.id);
     } else if (signInError && signInError.message === 'Invalid login credentials') {
       // Account does not exist — create it
       // Profile is created automatically by the on_auth_user_created trigger.
