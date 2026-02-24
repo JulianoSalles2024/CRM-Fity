@@ -1,4 +1,4 @@
-export type AppRole = 'admin' | 'seller';
+export type AppRole = 'admin' | 'seller' | 'user';
 
 export interface Permissions {
   canViewDashboard: boolean;
@@ -21,6 +21,15 @@ export const PERMISSIONS: Record<AppRole, Permissions> = {
     canManagePipeline: true,
   },
   seller: {
+    canViewDashboard: false,
+    canViewReports: false,
+    canManageTeam: false,
+    canManageCredentials: false,
+    canManageIntegrations: false,
+    canManagePreferences: false,
+    canManagePipeline: false,
+  },
+  user: {
     canViewDashboard: false,
     canViewReports: false,
     canManageTeam: false,

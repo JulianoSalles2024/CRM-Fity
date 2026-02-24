@@ -25,7 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUserRole, setCurrentUserRole] = useState<AppRole>('seller');
+  const [currentUserRole, setCurrentUserRole] = useState<AppRole>('user');
   const [isRoleReady, setIsRoleReady] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     setIsRoleReady(false);
     if (!user) {
-      setCurrentUserRole('seller');
+      setCurrentUserRole('user');
       setIsRoleReady(true);
       return;
     }
@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('[AuthContext] user.id:', user.id);
         console.log('[AuthContext] email:', user.email);
         console.log('[AuthContext] role from DB:', data?.role ?? null, '| error:', error?.message ?? null);
-        const role = (data?.role as AppRole) ?? 'seller';
+        const role = (data?.role as AppRole) ?? 'user';
         console.log('[AuthContext] currentUserRole final:', role);
         setCurrentUserRole(role);
         setIsRoleReady(true);
