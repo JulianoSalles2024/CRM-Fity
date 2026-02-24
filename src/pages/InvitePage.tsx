@@ -41,17 +41,26 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
 
     (async () => {
       const { data, error } = await supabase
-        .from('invites')
-        .select('*')
-        .eq('token', token)
-        .single();
+        .rpc('validate_invite', { p_token: token });
 
-      if (error || !data) {
-        setState({ status: 'invalid', message: 'Convite inválido ou não encontrado.' });
+      if (error) {
+        console.error('[InvitePage] validate_invite error:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
+        setState({ status: 'invalid', message: 'Erro ao validar convite. Tente novamente.' });
         return;
       }
 
-      const invite = data as Invite;
+      if (!data || data.length === 0) {
+        console.warn('[InvitePage] token not found:', token);
+        setState({ status: 'invalid', message: 'Convite não encontrado.' });
+        return;
+      }
+
+      const invite = data[0] as Invite;
 
       if (invite.used_at) {
         setState({ status: 'invalid', message: 'Este convite já foi utilizado.' });
@@ -63,7 +72,7 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
         return;
       }
 
-      setState({ status: 'form', invite });
+      setState({ status: 'form', invite: { ...invite, token } });
     })();
   }, [token]);
 
