@@ -21,7 +21,7 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon: Icon, iconColor, 
     return (
         <div 
             onClick={onClick}
-            className={`bg-slate-900 p-6 rounded-xl border border-slate-800 flex flex-col justify-between h-full relative overflow-hidden group ${onClick ? 'cursor-pointer hover:border-slate-600 hover:shadow-lg hover:shadow-slate-950/50 transition-all duration-200' : ''}`}
+            className={`bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] p-6 rounded-xl border border-white/5 flex flex-col justify-between h-full relative overflow-hidden group ${onClick ? 'cursor-pointer hover:border-slate-600 hover:shadow-lg hover:shadow-slate-950/50 transition-all duration-200' : ''}`}
         >
             <div className="flex justify-between items-start mb-2 relative z-10">
                 <div>

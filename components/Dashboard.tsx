@@ -177,7 +177,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Distribution Card */}
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-center h-full">
+                    <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-6 flex flex-col justify-center h-full">
                         <div className="mb-4">
                             <p className="text-sm font-medium text-slate-400 mb-2">Distribuição da Carteira</p>
                             <div className="flex items-baseline gap-2">
@@ -209,7 +209,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     </div>
 
                     {/* Churn Risk Card */}
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-center h-full relative overflow-hidden">
+                    <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-6 flex flex-col justify-center h-full relative overflow-hidden">
                         <div className="relative z-10">
                             <p className="text-sm font-medium text-slate-400 mb-2">Risco de Churn</p>
                             <div className="flex items-center gap-3 mb-3">
@@ -228,7 +228,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     </div>
 
                     {/* LTV Card */}
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-center h-full relative overflow-hidden">
+                    <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-6 flex flex-col justify-center h-full relative overflow-hidden">
                         <div className="relative z-10">
                             <p className="text-sm font-medium text-slate-400 mb-2">LTV Médio</p>
                             <div className="flex items-center gap-3 mb-3">
