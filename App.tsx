@@ -44,12 +44,13 @@ import { useAuth } from '@/src/features/auth/AuthContext';
 import { useLeads } from '@/src/hooks/useLeads';
 import { useTasks } from '@/src/hooks/useTasks';
 import { useActivities } from '@/src/hooks/useActivities';
+import { useBoards } from '@/src/hooks/useBoards';
 
 // Types
 import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, Notification as NotificationType, Playbook, PlaybookHistoryEntry, Board } from './types';
 
 // Data (UI-only initial values — no leads/tasks/activities)
-import { initialColumns, initialTags, initialUsers, initialGroups, initialConversations, initialMessages, initialNotifications, initialPlaybooks, initialBoards } from './data';
+import { initialTags, initialUsers, initialGroups, initialConversations, initialMessages, initialNotifications, initialPlaybooks } from './data';
 
 
 // --- Local Storage Hook (for UI preferences only) ---
@@ -108,11 +109,12 @@ const App: React.FC = () => {
 
     // --- LOCAL STORAGE STATE (UI preferences + non-migrated data) ---
     const [users, setUsers] = useLocalStorage<User[]>('crm-users', initialUsers);
-    const [boards, setBoards] = useLocalStorage<Board[]>('crm-boards', initialBoards);
-    const [activeBoardId, setActiveBoardId] = useLocalStorage<Id>('crm-active-board', initialBoards[0].id);
 
-    const activeBoard = useMemo(() => boards.find(b => b.id === activeBoardId) || boards[0], [boards, activeBoardId]);
-    const columns = activeBoard.columns;
+    // Boards + stages from Supabase (replaces localStorage crm-boards)
+    const { boards, setBoards, activeBoardId, setActiveBoardId } = useBoards(companyId);
+
+    const activeBoard = useMemo(() => boards.find(b => b.id === activeBoardId) ?? boards[0], [boards, activeBoardId]);
+    const columns = activeBoard?.columns ?? [];
 
     const setColumns = useCallback((newColumnsOrUpdater: ColumnData[] | ((prev: ColumnData[]) => ColumnData[])) => {
         setBoards(currentBoards => {
@@ -291,7 +293,7 @@ const App: React.FC = () => {
 
     const searchedLeads = useMemo(() => {
         const searchLower = searchQuery.toLowerCase();
-        const boardLeads = leads.filter(l => l.boardId === activeBoardId || (!l.boardId && activeBoardId === 'board-sales'));
+        const boardLeads = leads.filter(l => l.boardId === activeBoardId);
 
         const filtered = boardLeads.filter(lead =>
             lead.name.toLowerCase().includes(searchLower) ||
@@ -347,10 +349,16 @@ const App: React.FC = () => {
                 showNotification(`Lead "${data.name || oldLead.name}" atualizado.`, 'success');
                 await createActivityLog(editingLead.id, 'note', 'Lead atualizado.');
             } else { // CREATE
+                const defaultColumn = columns.find(c => c.type === 'open') ?? columns[0];
+                if (!defaultColumn) {
+                    showNotification('Nenhuma coluna disponível. Aguarde carregar o board.', 'warning');
+                    return;
+                }
+                const newColumnId = data.columnId || defaultColumn.id;
                 const newLead: Omit<Lead, 'id'> = {
                     ...data,
                     boardId: activeBoardId,
-                    columnId: data.columnId || columns[0].id,
+                    columnId: newColumnId,
                     name: data.name || 'Novo Lead',
                     company: data.company || '',
                     value: data.value || 0,
@@ -360,7 +368,7 @@ const App: React.FC = () => {
                     lastActivityTimestamp: now,
                     createdAt: now,
                     qualificationStatus: 'pending',
-                    probability: calculateProbabilityForStage(data.columnId || columns[0].id, columns),
+                    probability: calculateProbabilityForStage(newColumnId, columns),
                 };
                 const created = await createLead(newLead);
                 showNotification(`Lead "${created.name}" criado.`, 'success');
@@ -499,7 +507,8 @@ const App: React.FC = () => {
         const lead = leads.find(l => l.id === leadId);
         if (!lead) return;
 
-        const firstColumn = columns.find(c => c.type === 'open' || c.type === 'qualification') || columns[0];
+        const firstColumn = columns.find(c => c.type === 'open' || c.type === 'qualification') ?? columns[0];
+        if (!firstColumn) return;
         const updates: Partial<Lead> = {
             columnId: firstColumn.id,
             lostReason: undefined,
