@@ -90,13 +90,13 @@ export function mapActivityFromDb(row: Record<string, unknown>): Activity {
 }
 
 // company_id stamped by trigger — not sent from frontend.
+// timestamp column does not exist in DB; created_at is auto-set server-side.
 export function mapActivityToDb(act: Omit<Activity, 'id'>): Record<string, unknown> {
   return {
     lead_id: act.leadId,
     type: act.type,
     text: act.text,
     author_name: act.authorName,
-    timestamp: act.timestamp,
   };
 }
 

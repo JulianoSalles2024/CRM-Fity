@@ -3,6 +3,9 @@ import { supabase } from '@/src/lib/supabase';
 import type { Task, Id } from '@/types';
 import { mapTaskFromDb, mapTaskToDb } from '@/src/lib/mappers';
 
+// PGRST205 = table not found in schema cache (tasks table may not exist yet)
+const TABLE_NOT_FOUND = 'PGRST205';
+
 export function useTasks(companyId: string | null) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +22,11 @@ export function useTasks(companyId: string | null) {
       .select('*')
       .eq('company_id', companyId)
       .order('due_date', { ascending: true });
-    if (!error) setTasks((data ?? []).map(mapTaskFromDb));
+    if (error) {
+      if (error.code !== TABLE_NOT_FOUND) console.error('useTasks fetch error:', error);
+    } else {
+      setTasks((data ?? []).map(mapTaskFromDb));
+    }
     setLoading(false);
   }, [companyId]);
 
@@ -33,7 +40,13 @@ export function useTasks(companyId: string | null) {
       .insert(mapTaskToDb(task))
       .select()
       .single();
-    if (error) throw error;
+    if (error) {
+      if (error.code === TABLE_NOT_FOUND) {
+        console.warn('useTasks: tasks table not found, skipping createTask');
+        return { ...task, id: `tmp-${Date.now()}` } as Task;
+      }
+      throw error;
+    }
     const created = mapTaskFromDb(data);
     await fetchTasks();
     return created;
@@ -45,7 +58,13 @@ export function useTasks(companyId: string | null) {
     const { error } = await supabase
       .from('tasks')
       .insert(taskList.map(t => mapTaskToDb(t)));
-    if (error) throw error;
+    if (error) {
+      if (error.code === TABLE_NOT_FOUND) {
+        console.warn('useTasks: tasks table not found, skipping createManyTasks');
+        return;
+      }
+      throw error;
+    }
     await fetchTasks();
   }, [companyId, fetchTasks]);
 
@@ -55,20 +74,38 @@ export function useTasks(companyId: string | null) {
       .from('tasks')
       .update(mapTaskToDb(updates))
       .eq('id', id);
-    if (error) throw error;
+    if (error) {
+      if (error.code === TABLE_NOT_FOUND) {
+        console.warn('useTasks: tasks table not found, skipping updateTask');
+        return;
+      }
+      throw error;
+    }
     await fetchTasks();
   }, [companyId, fetchTasks]);
 
   const deleteTask = useCallback(async (id: Id): Promise<void> => {
     const { error } = await supabase.from('tasks').delete().eq('id', id);
-    if (error) throw error;
+    if (error) {
+      if (error.code === TABLE_NOT_FOUND) {
+        console.warn('useTasks: tasks table not found, skipping deleteTask');
+        return;
+      }
+      throw error;
+    }
     await fetchTasks();
   }, [fetchTasks]);
 
   const deleteManyTasks = useCallback(async (ids: Id[]): Promise<void> => {
     if (ids.length === 0) return;
     const { error } = await supabase.from('tasks').delete().in('id', ids);
-    if (error) throw error;
+    if (error) {
+      if (error.code === TABLE_NOT_FOUND) {
+        console.warn('useTasks: tasks table not found, skipping deleteManyTasks');
+        return;
+      }
+      throw error;
+    }
     await fetchTasks();
   }, [fetchTasks]);
 

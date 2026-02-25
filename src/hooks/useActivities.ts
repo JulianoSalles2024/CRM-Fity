@@ -18,7 +18,7 @@ export function useActivities(companyId: string | null) {
       .from('activities')
       .select('*')
       .eq('company_id', companyId)
-      .order('timestamp', { ascending: false });
+      .order('created_at', { ascending: false });
     if (!error) setActivities((data ?? []).map(mapActivityFromDb));
     setLoading(false);
   }, [companyId]);
