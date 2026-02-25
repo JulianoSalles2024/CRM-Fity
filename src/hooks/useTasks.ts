@@ -25,11 +25,12 @@ export function useTasks(companyId: string | null) {
 
   useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
+  // company_id is NOT sent — the enforce_company_id() trigger stamps it server-side.
   const createTask = useCallback(async (task: Omit<Task, 'id'>): Promise<Task> => {
     if (!companyId) throw new Error('CompanyId missing');
     const { data, error } = await supabase
       .from('tasks')
-      .insert(mapTaskToDb(task, companyId))
+      .insert(mapTaskToDb(task))
       .select()
       .single();
     if (error) throw error;
@@ -43,7 +44,7 @@ export function useTasks(companyId: string | null) {
     if (taskList.length === 0) return;
     const { error } = await supabase
       .from('tasks')
-      .insert(taskList.map(t => mapTaskToDb(t, companyId)));
+      .insert(taskList.map(t => mapTaskToDb(t)));
     if (error) throw error;
     await fetchTasks();
   }, [companyId, fetchTasks]);
@@ -52,7 +53,7 @@ export function useTasks(companyId: string | null) {
     if (!companyId) throw new Error('CompanyId missing');
     const { error } = await supabase
       .from('tasks')
-      .update(mapTaskToDb(updates, companyId))
+      .update(mapTaskToDb(updates))
       .eq('id', id);
     if (error) throw error;
     await fetchTasks();

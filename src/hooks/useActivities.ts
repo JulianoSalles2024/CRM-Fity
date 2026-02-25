@@ -25,11 +25,12 @@ export function useActivities(companyId: string | null) {
 
   useEffect(() => { fetchActivities(); }, [fetchActivities]);
 
+  // company_id is NOT sent — the enforce_company_id() trigger stamps it server-side.
   const createActivity = useCallback(async (act: Omit<Activity, 'id'>): Promise<Activity> => {
     if (!companyId) throw new Error('CompanyId missing');
     const { data, error } = await supabase
       .from('activities')
-      .insert(mapActivityToDb(act, companyId))
+      .insert(mapActivityToDb(act))
       .select()
       .single();
     if (error) throw error;

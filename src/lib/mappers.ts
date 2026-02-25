@@ -40,7 +40,10 @@ export function mapLeadFromDb(row: Record<string, unknown>): Lead {
   };
 }
 
-export function mapLeadToDb(lead: Partial<Lead>, companyId: string): Record<string, unknown> {
+// company_id is intentionally NOT included here.
+// It is stamped server-side by the enforce_company_id() trigger (BEFORE INSERT)
+// and must never change on UPDATE, so the RLS USING clause protects it.
+export function mapLeadToDb(lead: Partial<Lead>): Record<string, unknown> {
   return omitUndefined({
     column_id: lead.columnId,
     board_id: lead.boardId,
@@ -63,14 +66,13 @@ export function mapLeadToDb(lead: Partial<Lead>, companyId: string): Record<stri
     source: lead.source,
     created_at: lead.createdAt,
     group_info: lead.groupInfo,
-    // Use null explicitly to clear these fields in Supabase when set to undefined via spread
+    // null clears the field in Supabase when explicitly removed
     active_playbook: 'activePlaybook' in lead ? (lead.activePlaybook ?? null) : undefined,
     playbook_history: lead.playbookHistory,
     lost_reason: lead.lostReason,
     reactivation_date: 'reactivationDate' in lead ? (lead.reactivationDate ?? null) : undefined,
     qualification_status: lead.qualificationStatus,
     disqualification_reason: lead.disqualificationReason,
-    company_id: companyId,
   });
 }
 
@@ -87,14 +89,14 @@ export function mapActivityFromDb(row: Record<string, unknown>): Activity {
   };
 }
 
-export function mapActivityToDb(act: Omit<Activity, 'id'>, companyId: string): Record<string, unknown> {
+// company_id stamped by trigger — not sent from frontend.
+export function mapActivityToDb(act: Omit<Activity, 'id'>): Record<string, unknown> {
   return {
     lead_id: act.leadId,
     type: act.type,
     text: act.text,
     author_name: act.authorName,
     timestamp: act.timestamp,
-    company_id: companyId,
   };
 }
 
@@ -115,7 +117,8 @@ export function mapTaskFromDb(row: Record<string, unknown>): Task {
   };
 }
 
-export function mapTaskToDb(task: Partial<Task>, companyId: string): Record<string, unknown> {
+// company_id stamped by trigger — not sent from frontend.
+export function mapTaskToDb(task: Partial<Task>): Record<string, unknown> {
   return omitUndefined({
     type: task.type,
     title: task.title,
@@ -126,6 +129,5 @@ export function mapTaskToDb(task: Partial<Task>, companyId: string): Record<stri
     user_id: task.userId,
     playbook_id: task.playbookId,
     playbook_step_index: task.playbookStepIndex,
-    company_id: companyId,
   });
 }

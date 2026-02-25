@@ -25,11 +25,12 @@ export function useLeads(companyId: string | null) {
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
 
+  // company_id is NOT sent — the enforce_company_id() trigger stamps it server-side.
   const createLead = useCallback(async (lead: Omit<Lead, 'id'>): Promise<Lead> => {
     if (!companyId) throw new Error('CompanyId missing');
     const { data, error } = await supabase
       .from('leads')
-      .insert(mapLeadToDb(lead, companyId))
+      .insert(mapLeadToDb(lead))
       .select()
       .single();
     if (error) throw error;
@@ -42,7 +43,7 @@ export function useLeads(companyId: string | null) {
     if (!companyId) throw new Error('CompanyId missing');
     const { error } = await supabase
       .from('leads')
-      .update(mapLeadToDb(updates, companyId))
+      .update(mapLeadToDb(updates))
       .eq('id', id);
     if (error) throw error;
     await fetchLeads();
@@ -58,7 +59,7 @@ export function useLeads(companyId: string | null) {
     if (!companyId) throw new Error('CompanyId missing');
     await Promise.all(
       updates.map(({ id, data }) =>
-        supabase.from('leads').update(mapLeadToDb(data, companyId)).eq('id', id)
+        supabase.from('leads').update(mapLeadToDb(data)).eq('id', id)
       )
     );
     await fetchLeads();
