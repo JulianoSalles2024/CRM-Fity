@@ -10,6 +10,7 @@ interface AuthContextValue {
   isRoleReady: boolean;
   currentUserRole: AppRole;
   currentPermissions: Permissions;
+  companyId: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -29,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserRole, setCurrentUserRole] = useState<AppRole>('user');
   const [isRoleReady, setIsRoleReady] = useState(false);
+  const [companyId, setCompanyId] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [blockedError, setBlockedError] = useState<string | null>(null);
@@ -54,18 +56,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsRoleReady(false);
     if (!user) {
       setCurrentUserRole('user');
+      setCompanyId(null);
       setIsRoleReady(true);
       return;
     }
     supabase
       .from('profiles')
-      .select('role, is_active')
+      .select('role, is_active, company_id')
       .eq('id', user.id)
       .single()
       .then(({ data, error }) => {
         console.log('[AuthContext] user.id:', user.id);
         console.log('[AuthContext] email:', user.email);
-        console.log('[AuthContext] role from DB:', data?.role ?? null, '| is_active:', data?.is_active ?? null, '| error:', error?.message ?? null);
+        console.log('[AuthContext] role from DB:', data?.role ?? null, '| is_active:', data?.is_active ?? null, '| company_id:', data?.company_id ?? null, '| error:', error?.message ?? null);
 
         if (data?.is_active === false) {
           console.warn('[AuthContext] user is blocked — signing out');
@@ -78,6 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const role = (data?.role as AppRole) ?? 'user';
         console.log('[AuthContext] currentUserRole final:', role);
         setCurrentUserRole(role);
+        setCompanyId((data?.company_id as string) ?? null);
         setIsRoleReady(true);
       });
   }, [user]);
@@ -134,6 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider value={{
       user, session, isLoading, isRoleReady,
       currentUserRole, currentPermissions,
+      companyId,
       login, register, signInWithGoogle, forgotPassword, logout,
       authError, successMessage,
       blockedError, clearBlockedError,

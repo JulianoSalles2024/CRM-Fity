@@ -207,36 +207,32 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
 
             {/* Main KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <KpiCard 
-                    title="Pipeline Total" 
-                    value={currencyFormatter.format(kpiData.pipelineValue)} 
+                <KpiCard
+                    title="Pipeline Total"
+                    value={currencyFormatter.format(kpiData.pipelineValue)}
                     icon={DollarSign}
                     iconColor="text-blue-500"
-                    trend={12.5}
                     onClick={() => onNavigate('Pipeline')}
                 />
-                <KpiCard 
-                    title="Negócios Ativos" 
-                    value={kpiData.activeCount.toString()} 
+                <KpiCard
+                    title="Negócios Ativos"
+                    value={kpiData.activeCount.toString()}
                     icon={Users}
                     iconColor="text-purple-500"
-                    trend={5.2}
                     onClick={() => onNavigate('Pipeline')}
                 />
-                <KpiCard 
-                    title="Conversão" 
-                    value={`${kpiData.conversionRate}%`} 
+                <KpiCard
+                    title="Conversão"
+                    value={`${kpiData.conversionRate}%`}
                     icon={Target}
                     iconColor="text-emerald-500"
-                    trend={2.1}
                     onClick={() => onNavigate('Relatórios')}
                 />
-                 <KpiCard 
-                    title="Receita (Ganha)" 
-                    value={currencyFormatter.format(kpiData.revenue)} 
+                <KpiCard
+                    title="Receita (Ganha)"
+                    value={currencyFormatter.format(kpiData.revenue)}
                     icon={TrendingUp}
                     iconColor="text-orange-500"
-                    trend={18}
                     onClick={() => onNavigate('Pipeline')}
                 />
             </div>

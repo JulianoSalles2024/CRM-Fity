@@ -40,15 +40,19 @@ import { useAIProviders } from '@/src/features/ai-credentials/useAIProviders';
 // Auth
 import { useAuth } from '@/src/features/auth/AuthContext';
 
+// Supabase hooks
+import { useLeads } from '@/src/hooks/useLeads';
+import { useTasks } from '@/src/hooks/useTasks';
+import { useActivities } from '@/src/hooks/useActivities';
 
 // Types
 import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, Notification as NotificationType, Playbook, PlaybookHistoryEntry, Board } from './types';
 
-// Data
-import { initialColumns, initialTags, initialLeads, initialTasks, initialActivities, initialUsers, initialGroups, initialConversations, initialMessages, initialNotifications, initialPlaybooks, initialBoards } from './data';
+// Data (UI-only initial values — no leads/tasks/activities)
+import { initialColumns, initialTags, initialUsers, initialGroups, initialConversations, initialMessages, initialNotifications, initialPlaybooks, initialBoards } from './data';
 
 
-// --- Local Storage Hook (Optimized with Debounce) ---
+// --- Local Storage Hook (for UI preferences only) ---
 function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
     const [storedValue, setStoredValue] = useState<T>(() => {
         try {
@@ -60,7 +64,6 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<Re
         }
     });
 
-    // Use a ref to track the latest value for the effect without triggering it
     const valueRef = useRef(storedValue);
     valueRef.current = storedValue;
 
@@ -71,7 +74,7 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<Re
             } catch (error) {
                 console.error('Error saving to localStorage:', error);
             }
-        }, 500); // 500ms debounce
+        }, 500);
 
         return () => clearTimeout(handler);
     }, [key, storedValue]);
@@ -81,7 +84,7 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<Re
 
 
 const App: React.FC = () => {
-    const { user: authUser, logout } = useAuth();
+    const { user: authUser, logout, companyId } = useAuth();
 
     const localUser: User = {
         id: authUser?.id ?? 'local-user',
@@ -91,12 +94,23 @@ const App: React.FC = () => {
         joinedAt: authUser?.created_at ?? new Date().toISOString(),
     };
 
-    // --- STATE MANAGEMENT (LOCAL STORAGE) ---
+    // --- SUPABASE STATE (leads, tasks, activities) ---
+    const { leads, createLead, updateLead, deleteLead, bulkUpdateLeads } = useLeads(companyId);
+    const { activities, createActivity } = useActivities(companyId);
+    const {
+        tasks,
+        createTask,
+        createManyTasks,
+        updateTask: updateTaskInDb,
+        deleteTask: deleteTaskInDb,
+        deleteManyTasks,
+    } = useTasks(companyId);
+
+    // --- LOCAL STORAGE STATE (UI preferences + non-migrated data) ---
     const [users, setUsers] = useLocalStorage<User[]>('crm-users', initialUsers);
     const [boards, setBoards] = useLocalStorage<Board[]>('crm-boards', initialBoards);
     const [activeBoardId, setActiveBoardId] = useLocalStorage<Id>('crm-active-board', initialBoards[0].id);
 
-    // Derived columns state to maintain compatibility with existing code
     const activeBoard = useMemo(() => boards.find(b => b.id === activeBoardId) || boards[0], [boards, activeBoardId]);
     const columns = activeBoard.columns;
 
@@ -104,7 +118,7 @@ const App: React.FC = () => {
         setBoards(currentBoards => {
             return currentBoards.map(board => {
                 if (board.id === activeBoardId) {
-                    const newColumns = typeof newColumnsOrUpdater === 'function' 
+                    const newColumns = typeof newColumnsOrUpdater === 'function'
                         ? newColumnsOrUpdater(board.columns)
                         : newColumnsOrUpdater;
                     return { ...board, columns: newColumns };
@@ -114,9 +128,6 @@ const App: React.FC = () => {
         });
     }, [activeBoardId, setBoards]);
 
-    const [leads, setLeads] = useLocalStorage<Lead[]>('crm-leads', initialLeads);
-    const [activities, setActivities] = useLocalStorage<Activity[]>('crm-activities', initialActivities);
-    const [tasks, setTasks] = useLocalStorage<Task[]>('crm-tasks', initialTasks);
     const [tags, setTags] = useLocalStorage<Tag[]>('crm-tags', initialTags);
     const [emailDrafts, setEmailDrafts] = useLocalStorage<EmailDraft[]>('crm-emailDrafts', []);
     const [conversations, setConversations] = useLocalStorage<ChatConversation[]>('crm-conversations', initialConversations);
@@ -125,7 +136,6 @@ const App: React.FC = () => {
     const [groupAnalyses, setGroupAnalyses] = useLocalStorage<GroupAnalysis[]>('crm-groupAnalyses', []);
     const [notifications, setNotifications] = useLocalStorage<NotificationType[]>('crm-notifications', initialNotifications);
     const [playbooks, setPlaybooks] = useLocalStorage<Playbook[]>('crm-playbooks', initialPlaybooks);
-
 
     const [activeView, setActiveView] = useState('Inbox');
     const [inboxMode, setInboxMode] = useState<'standard' | 'analysis'>('standard');
@@ -148,10 +158,9 @@ const App: React.FC = () => {
     const [isCreateBoardModalOpen, setCreateBoardModalOpen] = useState(false);
     const [settingsTab, setSettingsTab] = useState<string | undefined>(undefined);
 
-
     // Notification State
     const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
-    
+
     // Playbook states
     const [selectedLeadForPlaybookId, setSelectedLeadForPlaybookId] = useState<Id | null>(null);
     const [isPlaybookModalOpen, setPlaybookModalOpen] = useState(false);
@@ -160,8 +169,7 @@ const App: React.FC = () => {
     // Printing state
     const [leadsToPrint, setLeadsToPrint] = useState<Lead[] | null>(null);
 
-
-    // Display Settings
+    // Display Settings (UI preferences — stay in localStorage)
     const [cardDisplaySettings, setCardDisplaySettings] = useLocalStorage<CardDisplaySettings>('crm-cardSettings', {
         showCompany: true, showSegment: true, showValue: true, showTags: true, showAssignedTo: true, showDueDate: false, showProbability: true, showEmail: false, showPhone: false, showCreatedAt: false, showStage: false,
     });
@@ -175,7 +183,7 @@ const App: React.FC = () => {
     const [selectedGroupForView, setSelectedGroupForView] = useState<Id | null>(null);
 
     const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => setNotification({ message, type }), []);
-    
+
     // Theme effect
     useEffect(() => {
         if (theme === 'dark') {
@@ -186,7 +194,7 @@ const App: React.FC = () => {
             localStorage.setItem('crm-theme', 'light');
         }
     }, [theme]);
-    
+
     // Switch to standard inbox mode when leaving Inbox view
     useEffect(() => {
         if (activeView !== 'Inbox') {
@@ -209,30 +217,26 @@ const App: React.FC = () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const leadsToNotify = leads.filter(lead => {
-            if (!lead.reactivationDate) return false;
+        leads.forEach(lead => {
+            if (!lead.reactivationDate) return;
             const reactivationDate = new Date(lead.reactivationDate);
             reactivationDate.setHours(0, 0, 0, 0);
-            return reactivationDate <= today;
-        });
+            if (reactivationDate > today) return;
 
-        const newTasks: Task[] = [];
-        const newNotifications: NotificationType[] = [];
-
-        leadsToNotify.forEach(lead => {
             const taskExists = tasks.some(task => task.leadId === lead.id && task.title.includes('Reativar contato'));
-            if (!taskExists) {
-                newTasks.push({
-                    id: `task-reactivate-${lead.id}-${Date.now()}`,
-                    userId: localUser.id,
-                    leadId: lead.id,
-                    type: 'task',
-                    title: `Reativar contato: ${lead.name}`,
-                    description: `Lead perdido por "${lead.lostReason}". Hora de tentar um novo contato.`,
-                    dueDate: new Date().toISOString(), // Due today
-                    status: 'pending',
-                });
-                newNotifications.push({
+            if (taskExists) return;
+
+            const newTask: Omit<Task, 'id'> = {
+                userId: localUser.id,
+                leadId: lead.id,
+                type: 'task',
+                title: `Reativar contato: ${lead.name}`,
+                description: `Lead perdido por "${lead.lostReason}". Hora de tentar um novo contato.`,
+                dueDate: new Date().toISOString(),
+                status: 'pending',
+            };
+            createTask(newTask).then(() => {
+                setNotifications(current => [...current, {
                     id: `notif-reactivate-${lead.id}`,
                     userId: localUser.id,
                     type: 'lead_reactivation',
@@ -240,21 +244,16 @@ const App: React.FC = () => {
                     link: { view: 'Recuperação', leadId: lead.id },
                     isRead: false,
                     createdAt: new Date().toISOString(),
-                });
-            }
+                }]);
+                showNotification(`Você tem leads para reativar hoje.`, 'info');
+            }).catch(console.error);
         });
-
-        if (newTasks.length > 0) {
-            setTasks(current => [...current, ...newTasks]);
-            setNotifications(current => [...current, ...newNotifications]);
-            showNotification(`Você tem ${newTasks.length} lead(s) para reativar hoje.`, 'info');
-        }
-    }, [leads, setTasks, setNotifications, showNotification]);
+    }, [leads, tasks, createTask, setNotifications, showNotification]);
 
 
-    // --- COMPUTED DATA & UTILS ---
+    // --- COMPUTED DATA ---
     const unreadCount = useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);
-    
+
     const calculateProbabilityForStage = useCallback((stageId: Id, allColumns: ColumnData[]): number => {
         const stage = allColumns.find(c => c.id === stageId);
         if (!stage) return 0;
@@ -270,318 +269,335 @@ const App: React.FC = () => {
             const currentIndex = openStages.findIndex(c => c.id === stageId);
             const total = openStages.length;
             if (total <= 1) return 25;
-            const base = 10;
-            const range = 40; // 10% to 50%
-            return Math.round(base + (currentIndex / (total - 1)) * range);
+            return Math.round(10 + (currentIndex / (total - 1)) * 40);
         }
 
         if (stage.type === 'follow-up') {
             const currentIndex = followUpStages.findIndex(c => c.id === stageId);
             const total = followUpStages.length;
             if (total <= 1) return 60;
-            const base = 41;
-            const range = 39; // 41% to 80%
-            return Math.round(base + (currentIndex / (total - 1)) * range);
+            return Math.round(41 + (currentIndex / (total - 1)) * 39);
         }
 
         if (stage.type === 'scheduling') {
             const currentIndex = schedulingStages.findIndex(c => c.id === stageId);
             const total = schedulingStages.length;
             if (total <= 1) return 90;
-            const base = 81;
-            const range = 18; // 81% to 99%
-            return Math.round(base + (currentIndex / (total - 1)) * range);
+            return Math.round(81 + (currentIndex / (total - 1)) * 18);
         }
 
         return 0;
     }, []);
 
     const searchedLeads = useMemo(() => {
-      const searchLower = searchQuery.toLowerCase();
-      // Filter leads by active board
-      const boardLeads = leads.filter(l => l.boardId === activeBoardId || (!l.boardId && activeBoardId === 'board-sales')); // Fallback for legacy leads
-      
-      const filtered = boardLeads.filter(lead => 
-          lead.name.toLowerCase().includes(searchLower) || 
-          lead.company.toLowerCase().includes(searchLower) || 
-          (lead.email && lead.email.toLowerCase().includes(searchLower))
-      );
+        const searchLower = searchQuery.toLowerCase();
+        const boardLeads = leads.filter(l => l.boardId === activeBoardId || (!l.boardId && activeBoardId === 'board-sales'));
 
-      if (activeView === 'Leads' || activeView === 'Clientes') {
-         return filtered.filter(lead => {
-            const statusMatch = listStatusFilter === 'all' || lead.status === listStatusFilter;
-            const tagMatch = listSelectedTags.length === 0 || listSelectedTags.every(st => lead.tags.some(lt => lt.id === st.id));
-            return statusMatch && tagMatch;
-        });
-      }
-      return filtered;
-    }, [leads, searchQuery, activeView, listStatusFilter, listSelectedTags]);
-    
+        const filtered = boardLeads.filter(lead =>
+            lead.name.toLowerCase().includes(searchLower) ||
+            lead.company.toLowerCase().includes(searchLower) ||
+            (lead.email && lead.email.toLowerCase().includes(searchLower))
+        );
+
+        if (activeView === 'Leads' || activeView === 'Clientes') {
+            return filtered.filter(lead => {
+                const statusMatch = listStatusFilter === 'all' || lead.status === listStatusFilter;
+                const tagMatch = listSelectedTags.length === 0 || listSelectedTags.every(st => lead.tags.some(lt => lt.id === st.id));
+                return statusMatch && tagMatch;
+            });
+        }
+        return filtered;
+    }, [leads, searchQuery, activeView, listStatusFilter, listSelectedTags, activeBoardId]);
+
     const analysisForGroup = useMemo(() => (selectedGroupForView ? groupAnalyses.find(a => a.groupId === selectedGroupForView) || null : null), [groupAnalyses, selectedGroupForView]);
 
-    // --- HANDLERS (LOCAL STATE LOGIC) ---
-    
+
+    // --- HANDLERS ---
+
     // Activity Log
-    const createActivityLog = useCallback((leadId: Id, type: Activity['type'], text: string) => {
-        const newActivity: Activity = {
-            id: `activity-${Date.now()}`,
-            leadId,
-            type,
-            text,
-            authorName: localUser.name || "Sistema",
-            timestamp: new Date().toISOString()
-        };
-        setActivities(current => [newActivity, ...current]);
-    }, [setActivities]);
-    
+    const createActivityLog = useCallback(async (leadId: Id, type: Activity['type'], text: string) => {
+        try {
+            await createActivity({
+                leadId,
+                type,
+                text,
+                authorName: localUser.name || 'Sistema',
+                timestamp: new Date().toISOString(),
+            });
+        } catch (err) {
+            console.error('Failed to log activity:', err);
+        }
+    }, [createActivity, localUser.name]);
+
     // Leads
     const handleCreateOrUpdateLead = async (data: CreateLeadData | UpdateLeadData) => {
         const now = new Date().toISOString();
-        if (editingLead && editingLead.id) { // UPDATE
-            const oldLead = leads.find(l => l.id === editingLead.id)!;
-            const newColumnId = data.columnId || oldLead.columnId;
-            const newProbability = calculateProbabilityForStage(newColumnId, columns);
-            const updatedLead = { ...oldLead, ...data, probability: newProbability, lastActivity: 'agora', lastActivityTimestamp: now };
-
-            setLeads(current => current.map(lead => lead.id === editingLead.id ? updatedLead : lead));
-            showNotification(`Lead "${updatedLead.name}" atualizado.`, 'success');
-            createActivityLog(updatedLead.id, 'note', `Lead atualizado.`);
-        } else { // CREATE
-            const newLead: Lead = {
-                id: `lead-${Date.now()}`,
-                ...data,
-                boardId: activeBoardId,
-                columnId: data.columnId || columns[0].id,
-                name: data.name || 'Novo Lead',
-                company: data.company || '',
-                value: data.value || 0,
-                avatarUrl: data.avatarUrl || `https://i.pravatar.cc/150?u=${Date.now()}`,
-                tags: data.tags || [],
-                lastActivity: 'agora',
-                lastActivityTimestamp: now,
-                createdAt: now,
-                qualificationStatus: 'pending',
-            };
-            newLead.probability = calculateProbabilityForStage(newLead.columnId, columns);
-            setLeads(current => [newLead, ...current]);
-            showNotification(`Lead "${newLead.name}" criado.`, 'success');
+        try {
+            if (editingLead && editingLead.id) { // UPDATE
+                const oldLead = leads.find(l => l.id === editingLead.id)!;
+                const newColumnId = data.columnId || oldLead.columnId;
+                const newProbability = calculateProbabilityForStage(newColumnId, columns);
+                const updates: Partial<Lead> = {
+                    ...data,
+                    probability: newProbability,
+                    lastActivity: 'agora',
+                    lastActivityTimestamp: now,
+                };
+                await updateLead(editingLead.id, updates);
+                showNotification(`Lead "${data.name || oldLead.name}" atualizado.`, 'success');
+                await createActivityLog(editingLead.id, 'note', 'Lead atualizado.');
+            } else { // CREATE
+                const newLead: Omit<Lead, 'id'> = {
+                    ...data,
+                    boardId: activeBoardId,
+                    columnId: data.columnId || columns[0].id,
+                    name: data.name || 'Novo Lead',
+                    company: data.company || '',
+                    value: data.value || 0,
+                    avatarUrl: data.avatarUrl || `https://i.pravatar.cc/150?u=${Date.now()}`,
+                    tags: data.tags || [],
+                    lastActivity: 'agora',
+                    lastActivityTimestamp: now,
+                    createdAt: now,
+                    qualificationStatus: 'pending',
+                    probability: calculateProbabilityForStage(data.columnId || columns[0].id, columns),
+                };
+                const created = await createLead(newLead);
+                showNotification(`Lead "${created.name}" criado.`, 'success');
+            }
+        } catch (err) {
+            console.error('Failed to save lead:', err);
+            showNotification('Erro ao salvar lead.', 'error');
         }
         setCreateLeadModalOpen(false);
         setEditingLead(null);
     };
 
     const handleDeleteLead = async (leadId: Id) => {
-        setLeads(current => current.filter(lead => lead.id !== leadId));
-        setSelectedLead(null);
-        showNotification(`Lead deletado.`, 'success');
+        try {
+            await deleteLead(leadId);
+            setSelectedLead(null);
+            showNotification('Lead deletado.', 'success');
+        } catch (err) {
+            console.error('Failed to delete lead:', err);
+            showNotification('Erro ao deletar lead.', 'error');
+        }
     };
 
-    const handleUpdateLeadColumn = (leadId: Id, newColumnId: Id, isAutomated: boolean = false) => {
+    const handleUpdateLeadColumn = async (leadId: Id, newColumnId: Id, isAutomated: boolean = false) => {
         const leadToMove = leads.find(l => l.id === leadId);
         const newColumn = columns.find(c => c.id === newColumnId);
         const oldColumn = columns.find(c => c.id === leadToMove?.columnId);
-        
+
         if (!leadToMove || !newColumn) return;
 
-        // --- LOST LEAD MODAL ---
+        // Lost lead modal
         if (newColumn.type === 'lost' && leadToMove.columnId !== newColumn.id) {
             setLostLeadInfo({ lead: leadToMove, columnId: newColumnId });
-            return; 
+            return;
         }
 
-        // --- DIRECT MOVE ---
         const now = new Date().toISOString();
         const newProbability = calculateProbabilityForStage(newColumnId, columns);
-        let updatedLead = { ...leadToMove, columnId: newColumnId, lastActivity: 'agora', lastActivityTimestamp: now, probability: newProbability };
 
-        // --- PLAYBOOK LOGIC ---
-        if (updatedLead.activePlaybook && !updatedLead.playbookHistory?.some(h => h.playbookId === updatedLead.activePlaybook?.playbookId)) {
-             const playbookDef = playbooks.find(p => p.id === updatedLead.activePlaybook?.playbookId);
-             if (playbookDef && !playbookDef.stages.includes(newColumnId)) {
-                 const historyEntry: PlaybookHistoryEntry = {
-                     playbookId: updatedLead.activePlaybook.playbookId,
-                     playbookName: updatedLead.activePlaybook.playbookName,
-                     startedAt: updatedLead.activePlaybook.startedAt,
-                     completedAt: now,
-                 };
-                 updatedLead.playbookHistory = [...(updatedLead.playbookHistory || []), historyEntry];
-                 updatedLead.activePlaybook = undefined;
+        let updates: Partial<Lead> = {
+            columnId: newColumnId,
+            lastActivity: 'agora',
+            lastActivityTimestamp: now,
+            probability: newProbability,
+        };
 
-                  // Remove pending tasks from this playbook
-                setTasks(currentTasks => currentTasks.filter(task => 
-                    !(task.leadId === updatedLead.id && task.playbookId === historyEntry.playbookId && task.status === 'pending')
-                ));
-             }
+        // Playbook logic — check if lead has active playbook leaving its stages
+        if (leadToMove.activePlaybook && !leadToMove.playbookHistory?.some(h => h.playbookId === leadToMove.activePlaybook?.playbookId)) {
+            const playbookDef = playbooks.find(p => p.id === leadToMove.activePlaybook?.playbookId);
+            if (playbookDef && !playbookDef.stages.includes(newColumnId)) {
+                const historyEntry: PlaybookHistoryEntry = {
+                    playbookId: leadToMove.activePlaybook.playbookId,
+                    playbookName: leadToMove.activePlaybook.playbookName,
+                    startedAt: leadToMove.activePlaybook.startedAt,
+                    completedAt: now,
+                };
+                updates.playbookHistory = [...(leadToMove.playbookHistory || []), historyEntry];
+                updates.activePlaybook = undefined; // will be sent as null to Supabase
+
+                // Remove pending tasks from this playbook
+                const tasksToDelete = tasks.filter(t =>
+                    t.leadId === leadId && t.playbookId === historyEntry.playbookId && t.status === 'pending'
+                );
+                await deleteManyTasks(tasksToDelete.map(t => t.id));
+            }
         }
-        
-        // Re-activate a playbook if moving back to its stage
-        const lastCompletedPlaybook = updatedLead.playbookHistory?.[updatedLead.playbookHistory.length - 1];
+
+        // Re-activate playbook if moving back to its stage
+        const lastCompletedPlaybook = (updates.playbookHistory ?? leadToMove.playbookHistory)?.[
+            (updates.playbookHistory ?? leadToMove.playbookHistory ?? []).length - 1
+        ];
         if (lastCompletedPlaybook) {
             const playbookDef = playbooks.find(p => p.id === lastCompletedPlaybook.playbookId);
             if (playbookDef?.stages.includes(newColumnId)) {
-                updatedLead.activePlaybook = {
+                updates.activePlaybook = {
                     playbookId: lastCompletedPlaybook.playbookId,
                     playbookName: lastCompletedPlaybook.playbookName,
                     startedAt: lastCompletedPlaybook.startedAt,
                 };
-                updatedLead.playbookHistory = updatedLead.playbookHistory?.slice(0, -1);
-                showNotification(`Playbook "${updatedLead.activePlaybook.playbookName}" reativado.`, 'info');
+                updates.playbookHistory = (updates.playbookHistory ?? leadToMove.playbookHistory ?? []).slice(0, -1);
+                showNotification(`Playbook "${updates.activePlaybook.playbookName}" reativado.`, 'info');
             }
         }
 
-        // AUTOMATION: Create a task when moving to "Agendamento"
-        if (newColumn.type === 'scheduling' && oldColumn?.type !== 'scheduling') {
-            const newTask: Task = {
-                id: `task-sched-${updatedLead.id}-${Date.now()}`,
-                userId: localUser.id,
-                leadId: updatedLead.id,
-                type: 'meeting',
-                title: `Agendar reunião com ${updatedLead.name}`,
-                description: 'Lead movido para o estágio de agendamento.',
-                dueDate: new Date().toISOString(), // Due today
-                status: 'pending',
-            };
-            setTasks(current => [newTask, ...current]);
-            showNotification(`Tarefa de agendamento criada para ${updatedLead.name}.`, 'info');
+        try {
+            await updateLead(leadId, updates);
+        } catch (err) {
+            console.error('Failed to move lead:', err);
+            showNotification('Erro ao mover lead.', 'error');
+            return;
         }
 
-        setLeads(current => current.map(l => l.id === leadId ? updatedLead : l));
+        // Automation: Create scheduling task
+        if (newColumn.type === 'scheduling' && oldColumn?.type !== 'scheduling') {
+            const newTask: Omit<Task, 'id'> = {
+                userId: localUser.id,
+                leadId,
+                type: 'meeting',
+                title: `Agendar reunião com ${leadToMove.name}`,
+                description: 'Lead movido para o estágio de agendamento.',
+                dueDate: new Date().toISOString(),
+                status: 'pending',
+            };
+            createTask(newTask).catch(console.error);
+            showNotification(`Tarefa de agendamento criada para ${leadToMove.name}.`, 'info');
+        }
+
         if (oldColumn && oldColumn.id !== newColumn.id && !isAutomated) {
-             createActivityLog(leadId, 'status_change', `Movido de "${oldColumn.title}" para "${newColumn.title}".`);
+            createActivityLog(leadId, 'status_change', `Movido de "${oldColumn.title}" para "${newColumn.title}".`);
         }
     };
 
-    const handleProcessLostLead = (reason: string, reactivationDate: string | null) => {
+    const handleProcessLostLead = async (reason: string, reactivationDate: string | null) => {
         if (!lostLeadInfo) return;
         const { lead, columnId } = lostLeadInfo;
         const now = new Date().toISOString();
-        const newProbability = calculateProbabilityForStage(columnId, columns);
-        
-        const updatedLead = { 
-            ...lead, 
-            columnId, 
-            lastActivity: 'agora', 
-            lastActivityTimestamp: now, 
-            probability: newProbability,
+        const updates: Partial<Lead> = {
+            columnId,
+            lastActivity: 'agora',
+            lastActivityTimestamp: now,
+            probability: calculateProbabilityForStage(columnId, columns),
             lostReason: reason,
             reactivationDate: reactivationDate ? new Date(reactivationDate).toISOString() : undefined,
         };
-
-        setLeads(current => current.map(l => (l.id === lead.id ? updatedLead : l)));
-        createActivityLog(lead.id, 'status_change', `Lead movido para "${columns.find(c=>c.id === columnId)?.title}" (Motivo: ${reason}).`);
+        try {
+            await updateLead(lead.id, updates);
+            createActivityLog(lead.id, 'status_change', `Lead movido para "${columns.find(c => c.id === columnId)?.title}" (Motivo: ${reason}).`);
+        } catch (err) {
+            console.error('Failed to process lost lead:', err);
+            showNotification('Erro ao processar lead perdido.', 'error');
+        }
         setLostLeadInfo(null);
     };
 
-    const handleReactivateLead = (leadId: Id) => {
+    const handleReactivateLead = async (leadId: Id) => {
         const lead = leads.find(l => l.id === leadId);
         if (!lead) return;
 
         const firstColumn = columns.find(c => c.type === 'open' || c.type === 'qualification') || columns[0];
-        
-        const updatedLead = {
-            ...lead,
+        const updates: Partial<Lead> = {
             columnId: firstColumn.id,
             lostReason: undefined,
             reactivationDate: undefined,
             lastActivity: 'agora',
             lastActivityTimestamp: new Date().toISOString(),
+            probability: calculateProbabilityForStage(firstColumn.id, columns),
         };
-        updatedLead.probability = calculateProbabilityForStage(updatedLead.columnId, columns);
-
-        setLeads(current => current.map(l => (l.id === leadId ? updatedLead : l)));
-        showNotification(`Lead "${lead.name}" foi reativado!`, 'success');
-        createActivityLog(leadId, 'status_change', `Lead reativado da lista de recuperação.`);
+        try {
+            await updateLead(leadId, updates);
+            showNotification(`Lead "${lead.name}" foi reativado!`, 'success');
+            createActivityLog(leadId, 'status_change', 'Lead reativado da lista de recuperação.');
+        } catch (err) {
+            console.error('Failed to reactivate lead:', err);
+            showNotification('Erro ao reativar lead.', 'error');
+        }
     };
 
-
     // Tasks
-    const handleCreateOrUpdateTask = (data: CreateTaskData | UpdateTaskData) => {
-        if (editingTask && editingTask.id) { // Update
-            const updatedTask: Task = { ...editingTask, ...data };
-            setTasks(current => current.map(t => t.id === editingTask.id ? updatedTask : t));
-            showNotification(`Tarefa "${updatedTask.title}" atualizada.`, 'success');
-        } else { // Create
-            const newTask: Task = {
-                id: `task-${Date.now()}`,
-                userId: localUser.id,
-                ...data as CreateTaskData
-            };
-            setTasks(current => [newTask, ...current]);
-            showNotification(`Tarefa "${newTask.title}" criada.`, 'success');
+    const handleCreateOrUpdateTask = async (data: CreateTaskData | UpdateTaskData) => {
+        try {
+            if (editingTask && editingTask.id) { // Update
+                await updateTaskInDb(editingTask.id, data as Partial<Task>);
+                showNotification(`Tarefa "${(data as any).title || editingTask.title}" atualizada.`, 'success');
+            } else { // Create
+                const newTask: Omit<Task, 'id'> = {
+                    userId: localUser.id,
+                    ...(data as CreateTaskData),
+                };
+                const created = await createTask(newTask);
+                showNotification(`Tarefa "${created.title}" criada.`, 'success');
+            }
+        } catch (err) {
+            console.error('Failed to save task:', err);
+            showNotification('Erro ao salvar tarefa.', 'error');
         }
         setCreateTaskModalOpen(false);
         setEditingTask(null);
         setPreselectedDataForTask(null);
     };
 
-    const handleDeleteTask = (taskId: Id) => {
-        setTasks(current => current.filter(t => t.id !== taskId));
-        showNotification('Tarefa deletada.', 'success');
-    };
-
-    const handleUpdateTaskStatus = (taskId: Id, status: 'pending' | 'completed') => {
-        let leadToMove: Lead | null = null;
-        let targetColumnId: Id | null = null;
-    
-        setTasks(current => {
-            const updatedTasks = current.map(task => {
-                if (task.id === taskId) {
-                    const updatedTask = { ...task, status };
-    
-                    // Check for playbook completion
-                    const lead = leads.find(l => l.id === task.leadId);
-                    if (lead?.activePlaybook && task.playbookId === lead.activePlaybook.playbookId) {
-                        const playbook = playbooks.find(p => p.id === task.playbookId);
-                        if (playbook) {
-                            const allPlaybookTasks = current.filter(t => t.leadId === lead.id && t.playbookId === playbook.id);
-                            const otherTasks = allPlaybookTasks.filter(t => t.id !== taskId);
-                            
-                            const areAllOtherTasksCompleted = otherTasks.every(t => t.status === 'completed');
-                            
-                            if (status === 'completed' && areAllOtherTasksCompleted) {
-                                // This is the last task being completed
-                                const currentStageIndex = columns.findIndex(c => c.id === lead.columnId);
-                                const nextColumn = columns[currentStageIndex + 1];
-                                if (nextColumn) {
-                                    leadToMove = lead;
-                                    targetColumnId = nextColumn.id;
-                                }
-                            }
-                        }
-                    }
-                    return updatedTask;
-                }
-                return task;
-            });
-            return updatedTasks;
-        });
-
-        if (leadToMove && targetColumnId) {
-            handleUpdateLeadColumn(leadToMove.id, targetColumnId, true);
+    const handleDeleteTask = async (taskId: Id) => {
+        try {
+            await deleteTaskInDb(taskId);
+            showNotification('Tarefa deletada.', 'success');
+        } catch (err) {
+            console.error('Failed to delete task:', err);
+            showNotification('Erro ao deletar tarefa.', 'error');
         }
     };
-    
+
+    const handleUpdateTaskStatus = async (taskId: Id, status: 'pending' | 'completed') => {
+        try {
+            await updateTaskInDb(taskId, { status });
+        } catch (err) {
+            console.error('Failed to update task status:', err);
+            showNotification('Erro ao atualizar tarefa.', 'error');
+            return;
+        }
+
+        // Check for playbook completion
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        const lead = leads.find(l => l.id === task.leadId);
+        if (lead?.activePlaybook && task.playbookId === lead.activePlaybook.playbookId) {
+            const playbook = playbooks.find(p => p.id === task.playbookId);
+            if (playbook) {
+                const allPlaybookTasks = tasks.filter(t => t.leadId === lead.id && t.playbookId === playbook.id);
+                const otherTasks = allPlaybookTasks.filter(t => t.id !== taskId);
+                const areAllOtherTasksCompleted = otherTasks.every(t => t.status === 'completed');
+
+                if (status === 'completed' && areAllOtherTasksCompleted) {
+                    const currentStageIndex = columns.findIndex(c => c.id === lead.columnId);
+                    const nextColumn = columns[currentStageIndex + 1];
+                    if (nextColumn) {
+                        handleUpdateLeadColumn(lead.id, nextColumn.id, true);
+                    }
+                }
+            }
+        }
+    };
+
     // Playbooks
     const handleSelectLeadForPlaybook = (leadId: Id) => {
-        if (selectedLeadForPlaybookId === leadId) {
-            setSelectedLeadForPlaybookId(null);
-        } else {
-            setSelectedLeadForPlaybookId(leadId);
-        }
+        setSelectedLeadForPlaybookId(prev => prev === leadId ? null : leadId);
     };
-    
-    const handleApplyPlaybook = (playbookId: Id) => {
-        if (!selectedLeadForPlaybook) return;
 
+    const handleApplyPlaybook = async (playbookId: Id) => {
+        if (!selectedLeadForPlaybook) return;
         const playbook = playbooks.find(p => p.id === playbookId);
         if (!playbook) return;
-        
+
         const now = new Date();
-        const newTasks: Task[] = playbook.steps.map((step, index) => {
+        const newTasks: Array<Omit<Task, 'id'>> = playbook.steps.map((step, index) => {
             const dueDate = new Date(now);
             dueDate.setDate(now.getDate() + step.day);
             return {
-                id: `task-pb-${selectedLeadForPlaybook.id}-${playbookId}-${index}-${Date.now()}`,
                 userId: localUser.id,
                 leadId: selectedLeadForPlaybook.id,
                 type: step.type,
@@ -593,50 +609,52 @@ const App: React.FC = () => {
             };
         });
 
-        setTasks(current => [...current, ...newTasks]);
-
-        const updatedLead: Lead = {
-            ...selectedLeadForPlaybook,
-            activePlaybook: {
-                playbookId: playbook.id,
-                playbookName: playbook.name,
-                startedAt: new Date().toISOString(),
-            }
-        };
-        setLeads(current => current.map(l => l.id === updatedLead.id ? updatedLead : l));
-        showNotification(`Playbook "${playbook.name}" aplicado a ${updatedLead.name}.`, 'success');
+        try {
+            await createManyTasks(newTasks);
+            await updateLead(selectedLeadForPlaybook.id, {
+                activePlaybook: {
+                    playbookId: playbook.id,
+                    playbookName: playbook.name,
+                    startedAt: new Date().toISOString(),
+                },
+            });
+            showNotification(`Playbook "${playbook.name}" aplicado a ${selectedLeadForPlaybook.name}.`, 'success');
+        } catch (err) {
+            console.error('Failed to apply playbook:', err);
+            showNotification('Erro ao aplicar playbook.', 'error');
+        }
         setPlaybookModalOpen(false);
         setSelectedLeadForPlaybookId(null);
     };
 
-    const handleDeactivatePlaybook = (leadId: Id) => {
+    const handleDeactivatePlaybook = async (leadId: Id) => {
         const lead = leads.find(l => l.id === leadId);
         if (!lead || !lead.activePlaybook) return;
 
         const playbookId = lead.activePlaybook.playbookId;
 
-        // Remove pending tasks for this playbook
-        setTasks(current => current.filter(task => 
-            !(task.leadId === leadId && task.playbookId === playbookId && task.status === 'pending')
-        ));
-        
-        // Remove active playbook from lead
-        const { activePlaybook, ...restOfLead } = lead;
-        const updatedLead = restOfLead;
-        
-        setLeads(current => current.map(l => (l.id === leadId ? updatedLead : l)));
-        setSelectedLead(updatedLead); // Update slideover view
-        showNotification(`Cadência desativada para ${lead.name}.`, 'info');
-    };
+        const tasksToDelete = tasks.filter(task =>
+            task.leadId === leadId && task.playbookId === playbookId && task.status === 'pending'
+        );
 
+        try {
+            await deleteManyTasks(tasksToDelete.map(t => t.id));
+            await updateLead(leadId, { activePlaybook: undefined });
+            setSelectedLead(prev => prev?.id === leadId ? { ...prev, activePlaybook: undefined } : prev);
+            showNotification(`Cadência desativada para ${lead.name}.`, 'info');
+        } catch (err) {
+            console.error('Failed to deactivate playbook:', err);
+            showNotification('Erro ao desativar cadência.', 'error');
+        }
+    };
 
     // Groups
     const handleCreateOrUpdateGroup = (data: CreateGroupData | UpdateGroupData) => {
-         if (editingGroup && editingGroup.id) { // UPDATE
+        if (editingGroup && editingGroup.id) {
             const updatedGroup: Group = { ...editingGroup, ...data };
             setGroups(current => current.map(g => g.id === editingGroup.id ? updatedGroup : g));
             showNotification(`Grupo "${updatedGroup.name}" atualizado.`, 'success');
-        } else { // CREATE
+        } else {
             const newGroup: Group = { id: `group-${Date.now()}`, ...data as CreateGroupData };
             setGroups(current => [newGroup, ...current]);
             showNotification(`Grupo "${newGroup.name}" criado.`, 'success');
@@ -644,11 +662,12 @@ const App: React.FC = () => {
         setGroupModalOpen(false);
         setEditingGroup(null);
     };
+
     const handleDeleteGroup = (groupId: Id) => {
         setGroups(current => current.filter(g => g.id !== groupId));
         showNotification('Grupo deletado.', 'success');
     };
-    
+
     // Group Analysis
     const handleCreateOrUpdateGroupAnalysis = (data: CreateGroupAnalysisData | UpdateGroupAnalysisData, analysisId?: Id) => {
         if (analysisId) {
@@ -658,18 +677,18 @@ const App: React.FC = () => {
             const newAnalysis: GroupAnalysis = {
                 id: `analysis-${Date.now()}`,
                 createdAt: new Date().toISOString(),
-                ...data as CreateGroupAnalysisData
+                ...data as CreateGroupAnalysisData,
             };
-            // FIX: Type assertion to ensure 'groupId' exists on 'data' in the creation path.
             setGroupAnalyses(current => [...current.filter(a => a.groupId !== (data as CreateGroupAnalysisData).groupId), newAnalysis]);
-             showNotification('Análise salva.', 'success');
+            showNotification('Análise salva.', 'success');
         }
     };
+
     const handleDeleteGroupAnalysis = (analysisId: Id) => {
-         setGroupAnalyses(current => current.filter(a => a.id !== analysisId));
-         showNotification('Rascunho da análise descartado.', 'info');
+        setGroupAnalyses(current => current.filter(a => a.id !== analysisId));
+        showNotification('Rascunho da análise descartado.', 'info');
     };
-    
+
     const handleExportPDF = (leadsToExport: Lead[]) => {
         setLeadsToPrint(leadsToExport);
     };
@@ -678,7 +697,7 @@ const App: React.FC = () => {
         const newBoard: Board = {
             id: `board-${Date.now()}`,
             ...newBoardData,
-            isDefault: false
+            isDefault: false,
         };
         setBoards(prev => [...prev, newBoard]);
         setActiveBoardId(newBoard.id);
@@ -690,7 +709,6 @@ const App: React.FC = () => {
             showNotification('Não é possível excluir o único board existente.', 'warning');
             return;
         }
-        
         setBoards(prev => prev.filter(b => b.id !== boardId));
         if (activeBoardId === boardId) {
             const remainingBoards = boards.filter(b => b.id !== boardId);
@@ -713,17 +731,6 @@ const App: React.FC = () => {
         showNotification(`${importedBoards.length} board(s) importado(s) com sucesso!`, 'success');
     };
 
-    const handleResetApplication = () => {
-        // Clear all relevant local storage keys
-        Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('crm-')) {
-                localStorage.removeItem(key);
-            }
-        });
-        // Reload the page to apply initial state
-        window.location.reload();
-    };
-    
     const handleCardClick = (lead: Lead) => {
         setSelectedLead(lead);
         setSelectedLeadForPlaybookId(lead.id);
@@ -794,7 +801,8 @@ const App: React.FC = () => {
         selectedGroupForView,
         setSelectedGroupForView,
         analysisForGroup,
-        setLeads,
+        updateLead,
+        bulkUpdateLeads,
         setSelectedLead,
         createActivityLog,
         selectedLead,
@@ -805,13 +813,12 @@ const App: React.FC = () => {
         setGroupModalOpen,
         handleDeleteGroup,
         setPreselectedDataForTask,
-        handleResetApplication,
         settingsTab,
         setColumns,
         calculateProbabilityForStage,
         handleUpdateBoard,
         handleImportBoards,
-        onUpdateUsers: setUsers
+        onUpdateUsers: setUsers,
     };
 
     return (
@@ -833,7 +840,7 @@ const App: React.FC = () => {
                 onThemeToggle={() => setTheme(p => p === 'dark' ? 'light' : 'dark')}
                 unreadCount={unreadCount}
                 onOpenSdrBot={handleOpenSdrBot}
-                activeView={activeView} // Pass activeView to Header
+                activeView={activeView}
             />
             <main className="flex-1 overflow-auto p-6">
                 <AppRouter {...routerProps} />
@@ -880,8 +887,8 @@ const App: React.FC = () => {
                 />
             )}
         </AnimatePresence>
-        
-         <AnimatePresence>
+
+        <AnimatePresence>
             {isCreateTaskModalOpen && (
                 <CreateEditTaskModal
                     task={editingTask}
@@ -893,8 +900,8 @@ const App: React.FC = () => {
                 />
             )}
         </AnimatePresence>
-        
-         <AnimatePresence>
+
+        <AnimatePresence>
             {isGroupModalOpen && (
                 <CreateEditGroupModal
                     group={editingGroup}
@@ -906,7 +913,7 @@ const App: React.FC = () => {
 
         <AnimatePresence>
             {isPlaybookModalOpen && selectedLeadForPlaybook && (
-                <PlaybookModal 
+                <PlaybookModal
                     lead={selectedLeadForPlaybook}
                     playbooks={playbooks}
                     onClose={() => setPlaybookModalOpen(false)}
@@ -914,7 +921,7 @@ const App: React.FC = () => {
                 />
             )}
         </AnimatePresence>
-        
+
         <AnimatePresence>
             {lostLeadInfo && (
                 <LostLeadModal
@@ -928,7 +935,7 @@ const App: React.FC = () => {
         <AnimatePresence>
             {isSdrBotOpen && (
                 isAiConfigured ? (
-                    <SdrAssistantChat 
+                    <SdrAssistantChat
                         onClose={() => setSdrBotOpen(false)}
                         leads={leads}
                         tasks={tasks}
@@ -936,11 +943,11 @@ const App: React.FC = () => {
                         activities={activities}
                     />
                 ) : (
-                    <SdrBotModal 
-                        onClose={() => setSdrBotOpen(false)} 
+                    <SdrBotModal
+                        onClose={() => setSdrBotOpen(false)}
                         onGoToSettings={() => {
                             setSdrBotOpen(false);
-                            setSettingsTab('Inteligência Artificial'); // Define a aba correta
+                            setSettingsTab('Inteligência Artificial');
                             setActiveView('Configurações');
                         }}
                     />

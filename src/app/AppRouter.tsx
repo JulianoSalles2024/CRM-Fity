@@ -85,7 +85,8 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
     selectedGroupForView,
     setSelectedGroupForView,
     analysisForGroup,
-    setLeads,
+    updateLead,
+    bulkUpdateLeads,
     setSelectedLead,
     createActivityLog,
     selectedLead,
@@ -96,7 +97,6 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
     setGroupModalOpen,
     handleDeleteGroup,
     setPreselectedDataForTask,
-    handleResetApplication,
     settingsTab,
     setColumns,
     calculateProbabilityForStage,
@@ -240,16 +240,20 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                         group={group}
                         leads={groupLeads}
                         analysis={analysisForGroup}
-                        onUpdateLead={(leadId: string, updates: any) => {
-                            const lead = leads.find((l: any) => l.id === leadId);
-                            if (lead) {
-                                const updatedLead = { ...lead, ...updates, lastActivity: 'agora', lastActivityTimestamp: new Date().toISOString() };
-                                setLeads((current: any[]) => current.map(l => (l.id === leadId ? updatedLead : l)));
+                        onUpdateLead={async (leadId: string, updates: any) => {
+                            try {
+                                await updateLead(leadId, {
+                                    ...updates,
+                                    lastActivity: 'agora',
+                                    lastActivityTimestamp: new Date().toISOString(),
+                                });
                                 if (selectedLead?.id === leadId) {
-                                    setSelectedLead(updatedLead);
+                                    setSelectedLead((prev: any) => prev ? { ...prev, ...updates } : prev);
                                 }
                                 createActivityLog(leadId, 'note', 'Informações de grupo do lead atualizadas.');
                                 showNotification('Informações de grupo atualizadas.', 'success');
+                            } catch {
+                                showNotification('Erro ao atualizar lead.', 'error');
                             }
                         }}
                         onBack={() => setSelectedGroupForView(null)}
@@ -302,17 +306,17 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
             onUpdateProfile={() => showNotification("Perfil atualizado!", 'success')}
             onUpdatePipeline={(newColumns: any[]) => {
                 setColumns(newColumns);
-                setLeads((currentLeads: any[]) => currentLeads.map(lead => ({
-                    ...lead,
-                    probability: calculateProbabilityForStage(lead.columnId, newColumns)
-                })));
+                const updates = leads.map((lead: any) => ({
+                    id: lead.id,
+                    data: { probability: calculateProbabilityForStage(lead.columnId, newColumns) },
+                }));
+                bulkUpdateLeads(updates).catch(console.error);
                 showNotification("Pipeline salvo!", 'success');
             }}
             onUpdateUsers={onUpdateUsers}
             onSelectBoard={setActiveBoardId}
             onDeleteBoard={handleDeleteBoard}
             onCreateBoard={() => setCreateBoardModalOpen(true)}
-            onResetApplication={handleResetApplication}
             initialTab={settingsTab}
         />;
     case 'Painel 360':
