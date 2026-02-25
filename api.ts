@@ -66,7 +66,7 @@ export const getLeads = async (): Promise<Lead[]> => {
     const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     return data.map(d => ({
-        id: d.id, columnId: d.column_id, name: d.name, company: d.company, value: d.value,
+        id: d.id, columnId: d.column_id, name: d.name, company: d.company_name, value: d.value,
         avatarUrl: d.avatar_url, tags: d.tags || [], lastActivity: d.last_activity,
         lastActivityTimestamp: d.last_activity_timestamp || d.created_at,
         dueDate: d.due_date, assignedTo: d.assigned_to, description: d.description,
