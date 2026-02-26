@@ -17,15 +17,26 @@ export function useTasks(companyId: string | null) {
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase
+
+    let result = await supabase
       .from('tasks')
       .select('*')
       .eq('company_id', companyId)
       .order('due_date', { ascending: true });
-    if (error) {
-      if (error.code !== TABLE_NOT_FOUND) console.error('useTasks fetch error:', error);
+
+    // 42703 = coluna não existe no schema — fallback para created_at
+    if (result.error?.code === '42703') {
+      result = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false });
+    }
+
+    if (result.error) {
+      if (result.error.code !== TABLE_NOT_FOUND) console.error('useTasks fetch error:', result.error);
     } else {
-      setTasks((data ?? []).map(mapTaskFromDb));
+      setTasks((result.data ?? []).map(mapTaskFromDb));
     }
     setLoading(false);
   }, [companyId]);

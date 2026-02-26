@@ -85,12 +85,24 @@ export const useAIProviders = () => {
     }
   };
 
+  const disconnectCredential = async (provider: AIProviderId) => {
+    try {
+      await aiProvidersService.disconnectCredential(provider);
+      updateCredential(provider, { apiKey: '', status: 'not_configured' });
+    } catch (error) {
+      console.error('Error disconnecting credential:', error);
+      alert('Erro ao desconectar.');
+      throw error;
+    }
+  };
+
   return {
     credentials,
     isLoading,
     updateCredential,
     saveCredential,
     testConnection,
+    disconnectCredential,
     refresh: loadCredentials
   };
 };

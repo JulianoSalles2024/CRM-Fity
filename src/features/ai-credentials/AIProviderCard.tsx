@@ -1,20 +1,22 @@
 import React, { useMemo } from 'react';
 import { AICredential, AIProviderId } from './aiProviders.types';
 import { MODELS_REGISTRY } from './models.registry';
-import { CheckCircle2, XCircle, AlertCircle, Loader2, Save, Zap } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Loader2, Save, Zap, Unplug } from 'lucide-react';
 
 interface AIProviderCardProps {
   credential: AICredential;
   onUpdate: (updates: Partial<AICredential>) => void;
   onSave: () => Promise<void>;
   onTest: () => Promise<any>;
+  onDisconnect: () => Promise<void>;
 }
 
 export const AIProviderCard: React.FC<AIProviderCardProps> = ({
   credential,
   onUpdate,
   onSave,
-  onTest
+  onTest,
+  onDisconnect,
 }) => {
   const providerModels = useMemo(() => 
     MODELS_REGISTRY.filter(m => m.provider === credential.provider),
@@ -100,14 +102,23 @@ export const AIProviderCard: React.FC<AIProviderCardProps> = ({
         </div>
 
         <div className="flex items-center gap-3 pt-2">
-          <button 
+          <button
             onClick={onTest}
             disabled={credential.status === 'testing' || !credential.apiKey}
             className="flex-1 bg-white/5 hover:bg-white/10 text-white px-4 py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
           >
             Testar Conexão
           </button>
-          <button 
+          {credential.status === 'connected' && (
+            <button
+              onClick={onDisconnect}
+              className="flex items-center gap-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 px-4 py-3 rounded-xl text-sm font-semibold transition-all border border-red-500/20"
+            >
+              <Unplug className="w-4 h-4" />
+              Desconectar
+            </button>
+          )}
+          <button
             onClick={onSave}
             disabled={credential.status === 'testing'}
             className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"

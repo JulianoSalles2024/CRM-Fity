@@ -27,6 +27,16 @@ export const aiProvidersService = {
     if (!response.ok) throw new Error('Failed to save credential');
   },
 
+  async disconnectCredential(provider: AIProviderId): Promise<void> {
+    const userId = await getAuthenticatedUserId();
+    const response = await fetch(`${API_BASE}/credentials`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'disconnect', provider, userId }),
+    });
+    if (!response.ok) throw new Error('Failed to disconnect credential');
+  },
+
   async testConnection(provider: AIProviderId, model: string, apiKey: string): Promise<TestConnectionResponse> {
     const response = await fetch(`${API_BASE}/test-connection`, {
       method: 'POST',

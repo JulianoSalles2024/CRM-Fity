@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
+import { supabase } from '@/src/lib/supabase';
 import { AIToolId, AIToolConfig, DealCoachResult } from "../../features/ai/types";
 
 export class AIService {
@@ -57,11 +58,12 @@ export class AIService {
       }
 
       // Otherwise, use the backend proxy with stored credentials
+      const { data: authData } = await supabase.auth.getUser();
       const response = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          organizationId: 'default-org',
+          userId: authData?.user?.id,
           prompt,
           systemInstruction
         })

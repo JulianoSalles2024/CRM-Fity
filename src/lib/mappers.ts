@@ -45,8 +45,8 @@ export function mapLeadFromDb(row: Record<string, unknown>): Lead {
 // and must never change on UPDATE, so the RLS USING clause protects it.
 export function mapLeadToDb(lead: Partial<Lead>): Record<string, unknown> {
   return omitUndefined({
-    column_id: lead.columnId,
-    board_id: lead.boardId,
+    column_id: lead.columnId || undefined,
+    board_id: lead.boardId || undefined,
     name: lead.name,
     company_name: lead.company,
     segment: lead.segment,

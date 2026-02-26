@@ -7,7 +7,7 @@ import { useAuth } from '@/src/features/auth/AuthContext';
 
 export const AIProvidersPage: React.FC = () => {
   const { currentPermissions } = useAuth();
-  const { credentials, isLoading, updateCredential, saveCredential, testConnection } = useAIProviders();
+  const { credentials, isLoading, updateCredential, saveCredential, testConnection, disconnectCredential } = useAIProviders();
 
   const providers: AIProviderId[] = ['openai', 'gemini', 'anthropic'];
 
@@ -61,6 +61,7 @@ export const AIProvidersPage: React.FC = () => {
             onUpdate={(updates) => updateCredential(providerId, updates)}
             onSave={() => saveCredential(providerId)}
             onTest={() => testConnection(providerId)}
+            onDisconnect={() => disconnectCredential(providerId)}
           />
         ))}
       </div>

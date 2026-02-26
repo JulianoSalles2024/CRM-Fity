@@ -1,4 +1,4 @@
-import { ColumnData, Lead, Activity, User, Task, Tag, EmailDraft, ChatConversation, ChatMessage, Group, Notification, Playbook, Board } from './types';
+import { ColumnData, Lead, Activity, User, Task, Tag, EmailDraft, ChatConversation, ChatMessage, Group, Notification, Playbook } from './types';
 
 export const initialUsers: User[] = [
   { 
@@ -58,18 +58,6 @@ export const initialGroups: Group[] = [
     }
 ];
 
-
-export const initialBoards: Board[] = [
-  {
-    id: 'board-sales',
-    name: 'Pipeline de Vendas',
-    slug: 'sales-pipeline',
-    description: 'Pipeline padrão de vendas',
-    type: 'sales',
-    columns: initialColumns,
-    isDefault: true
-  }
-];
 
 export const initialLeads: Lead[] = [];
 

@@ -349,9 +349,13 @@ const App: React.FC = () => {
                 showNotification(`Lead "${data.name || oldLead.name}" atualizado.`, 'success');
                 await createActivityLog(editingLead.id, 'note', 'Lead atualizado.');
             } else { // CREATE
+                if (!activeBoardId) {
+                    showNotification('Nenhum pipeline carregado. Aguarde e tente novamente.', 'warning');
+                    return;
+                }
                 const defaultColumn = columns.find(c => c.type === 'open') ?? columns[0];
                 if (!defaultColumn) {
-                    showNotification('Nenhuma coluna disponível. Aguarde carregar o board.', 'warning');
+                    showNotification('Nenhuma coluna disponível. Aguarde carregar o pipeline.', 'warning');
                     return;
                 }
                 const newColumnId = data.columnId || defaultColumn.id;
@@ -704,7 +708,7 @@ const App: React.FC = () => {
 
     const handleCreateBoard = (newBoardData: Omit<Board, 'id'>) => {
         const newBoard: Board = {
-            id: `board-${Date.now()}`,
+            id: crypto.randomUUID(),
             ...newBoardData,
             isDefault: false,
         };
