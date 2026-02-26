@@ -78,7 +78,7 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
         { label: 'ATRASADOS', value: overdueTasks.length, subtext: overdueTasks.length === 0 ? 'Tudo em dia' : `${overdueTasks.length} pendentes`, color: overdueTasks.length > 0 ? 'text-red-400' : 'text-emerald-500', bgColor: overdueTasks.length > 0 ? 'bg-red-500/10' : 'bg-emerald-500/10', onClick: () => onNavigate('Tarefas') },
         { label: 'HOJE', value: todayTasks.length, subtext: todayTasks.length === 0 ? 'Sem tarefas para hoje' : `${todayTasks.length} tarefas`, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', onClick: () => onNavigate('Tarefas') },
         { label: 'SUGESTÕES CRÍTICAS', value: 0, subtext: 'Sem urgências', color: 'text-slate-500', bgColor: 'bg-slate-800/50', onClick: undefined },
-        { label: 'PENDÊNCIAS', value: 3, subtext: '1 próximos', color: 'text-slate-200', bgColor: 'bg-slate-800/50', onClick: undefined },
+        { label: 'PENDÊNCIAS', value: tasks.filter(t => t.status === 'pending').length, subtext: tasks.filter(t => t.status === 'pending').length === 0 ? 'Nenhuma pendência' : `${tasks.filter(t => t.status === 'pending').length} tarefas`, color: tasks.filter(t => t.status === 'pending').length > 0 ? 'text-slate-200' : 'text-slate-500', bgColor: 'bg-slate-800/50', onClick: () => onNavigate('Tarefas') },
     ];
 
     // Priority task for focus mode: first overdue, then first today

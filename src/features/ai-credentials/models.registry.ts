@@ -10,27 +10,6 @@ export interface AIModel {
 export const MODELS_REGISTRY: AIModel[] = [
   // OPENAI
   {
-    id: 'gpt-5.2-preview',
-    provider: 'openai',
-    name: 'GPT-5.2 (Preview)',
-    inputPrice: 1.75,
-    outputPrice: 14.00,
-  },
-  {
-    id: 'gpt-5.2-pro',
-    provider: 'openai',
-    name: 'GPT-5.2 Pro',
-    inputPrice: 21.00,
-    outputPrice: 168.00,
-  },
-  {
-    id: 'gpt-5.2-latest-chat',
-    provider: 'openai',
-    name: 'GPT-5.2 Latest Chat',
-    inputPrice: 1.75,
-    outputPrice: 14.00,
-  },
-  {
     id: 'gpt-5-mini',
     provider: 'openai',
     name: 'GPT-5 Mini',
@@ -51,6 +30,13 @@ export const MODELS_REGISTRY: AIModel[] = [
     name: 'GPT-4o',
     inputPrice: 2.50,
     outputPrice: 10.00,
+  },
+  {
+    id: 'gpt-4o-mini',
+    provider: 'openai',
+    name: 'GPT-4o Mini',
+    inputPrice: 0.15,
+    outputPrice: 0.60,
   },
 
   // GEMINI
