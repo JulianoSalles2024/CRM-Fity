@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { testProviderConnection } from '../_utils';
+import { testProviderConnection } from '../_utils.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
