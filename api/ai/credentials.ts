@@ -18,7 +18,7 @@ export default async function handler(req: any, res: any) {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        return res.status(500).json({ error: 'Failed to fetch credentials' });
+        return res.status(500).json({ error: 'Failed to fetch credentials', detail: error.message, code: error.code });
       }
 
       if (!data) return res.json({});
