@@ -168,9 +168,10 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
       return <PlaybookSettings initialPlaybooks={playbooks} pipelineColumns={columns} onSave={setPlaybooks} />;
     case 'Leads': {
       listViewFilteredLeads = filteredLeads.filter((l: any) => l.columnId !== 'closed');
-      return <LeadListView 
+      return <LeadListView
                   leads={listViewFilteredLeads}
-                  columns={columns} 
+                  columns={columns}
+                  users={users}
                   onLeadClick={setSelectedLead}
                   viewType="Leads"
                   listDisplaySettings={listDisplaySettings}
@@ -190,6 +191,7 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
       return <LeadListView
                   leads={listViewFilteredLeads}
                   columns={columns}
+                  users={users}
                   onLeadClick={setSelectedLead}
                   viewType="Clientes"
                   listDisplaySettings={listDisplaySettings}
@@ -200,7 +202,7 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                   statusFilter={listStatusFilter}
                   onStatusFilterChange={setListStatusFilter}
                   onExportPDF={() => handleExportPDF(listViewFilteredLeads)}
-                   onOpenCreateLeadModal={() => setCreateLeadModalOpen(true)}
+                  onOpenCreateLeadModal={() => setCreateLeadModalOpen(true)}
                   onOpenCreateTaskModal={() => setCreateTaskModalOpen(true)}
              />;
     }

@@ -18,6 +18,8 @@ export function useLeads(companyId: string | null) {
       .from('leads')
       .select('*')
       .eq('company_id', companyId)
+      .eq('is_archived', false)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
     if (!error) setLeads((data ?? []).map(mapLeadFromDb));
     setLoading(false);
@@ -28,9 +30,10 @@ export function useLeads(companyId: string | null) {
   // company_id is NOT sent — the enforce_company_id() trigger stamps it server-side.
   const createLead = useCallback(async (lead: Omit<Lead, 'id'>): Promise<Lead> => {
     if (!companyId) throw new Error('CompanyId missing');
+    const { data: { user } } = await supabase.auth.getUser();
     const { data, error } = await supabase
       .from('leads')
-      .insert(mapLeadToDb(lead))
+      .insert(mapLeadToDb({ ...lead, ownerId: user?.id }))
       .select()
       .single();
     if (error) throw error;

@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { Lead, ColumnData, Tag, ListDisplaySettings } from '../types';
+import { Lead, ColumnData, Tag, ListDisplaySettings, User } from '../types';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import LeadListHeader from './LeadListHeader';
 import { GlassCard } from '@/src/shared/components/GlassCard';
+import { getLeadComputedStatus, STATUS_BADGE, STATUS_DOT_COLOR } from '@/src/lib/leadStatus';
+import { useAuth } from '@/src/features/auth/AuthContext';
 
 const TagPill: React.FC<{ tag: Tag }> = ({ tag }) => (
     <span 
@@ -18,6 +20,7 @@ type SortableKeys = keyof Lead | 'status';
 interface LeadListViewProps {
     leads: Lead[];
     columns: ColumnData[];
+    users: User[];
     onLeadClick: (lead: Lead) => void;
     viewType: 'Leads' | 'Clientes';
     listDisplaySettings: ListDisplaySettings;
@@ -32,12 +35,13 @@ interface LeadListViewProps {
     onOpenCreateTaskModal: () => void;
 }
 
-const LeadListView: React.FC<LeadListViewProps> = ({ 
-    leads, 
-    columns, 
-    onLeadClick, 
-    viewType, 
-    listDisplaySettings, 
+const LeadListView: React.FC<LeadListViewProps> = ({
+    leads,
+    columns,
+    users,
+    onLeadClick,
+    viewType,
+    listDisplaySettings,
     onUpdateListSettings,
     allTags,
     selectedTags,
@@ -48,13 +52,14 @@ const LeadListView: React.FC<LeadListViewProps> = ({
     onOpenCreateLeadModal,
     onOpenCreateTaskModal
 }) => {
+    const { currentUserRole } = useAuth();
     const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending'});
 
     const currencyFormatter = new Intl.NumberFormat('pt-BR', {
         style: 'currency',
         currency: 'BRL',
     });
-    
+
     const formatDate = (dateString: string | undefined) => {
         if (!dateString) return '—';
         return new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
@@ -65,6 +70,14 @@ const LeadListView: React.FC<LeadListViewProps> = ({
             acc[col.id] = col.title;
             return acc;
         }, {} as Record<string, string>);
+    }, [columns]);
+
+    // Maps column id → linked_lifecycle_stage type for computed status derivation
+    const columnTypeMap = useMemo(() => {
+        return columns.reduce((acc, col) => {
+            acc[col.id] = col.type;
+            return acc;
+        }, {} as Record<string, ColumnData['type']>);
     }, [columns]);
 
     const sortedLeads = useMemo(() => {
@@ -181,8 +194,9 @@ const LeadListView: React.FC<LeadListViewProps> = ({
     const bottomPaddingHeight = Math.max(0, (sortedLeads.length - (virtualRange.end + 1)) * ROW_HEIGHT);
 
     const numberOfColumns = useMemo(() => {
-        return 1 + Object.values(listDisplaySettings).filter(Boolean).length;
-    }, [listDisplaySettings]);
+        return 1 + Object.values(listDisplaySettings).filter(Boolean).length
+                 + (currentUserRole === 'admin' ? 1 : 0);
+    }, [listDisplaySettings, currentUserRole]);
     // --- END VIRTUALIZATION LOGIC ---
     
     const TableHeader: React.FC<{ sortKey: SortableKeys; label: string; className?: string }> = ({ sortKey, label, className }) => {
@@ -239,6 +253,11 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                     {listDisplaySettings.showTags && <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Tags</th>}
                                     {listDisplaySettings.showCreatedAt && <TableHeader sortKey="createdAt" label="Criação" />}
                                     {listDisplaySettings.showLastActivity && <TableHeader sortKey="lastActivity" label="Última Atividade" />}
+                                    {currentUserRole === 'admin' && (
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                                            Criado por
+                                        </th>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-700 relative">
@@ -257,9 +276,16 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                         </td>
                                         {listDisplaySettings.showStatus && (
                                             <td className="px-4 py-3 whitespace-nowrap">
-                                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-700 text-slate-300">
-                                                    {columnMap[lead.columnId] || 'N/A'}
-                                                </span>
+                                                {(() => {
+                                                    const s = getLeadComputedStatus(lead, columnTypeMap[lead.columnId]);
+                                                    const b = STATUS_BADGE[s];
+                                                    return (
+                                                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${b.classes}`}>
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT_COLOR[s]}`} />
+                                                            {b.label}
+                                                        </span>
+                                                    );
+                                                })()}
                                             </td>
                                         )}
                                         {listDisplaySettings.showValue && (
@@ -283,6 +309,11 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                         )}
                                         {listDisplaySettings.showLastActivity && (
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">{lead.lastActivity}</td>
+                                        )}
+                                        {currentUserRole === 'admin' && (
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">
+                                                {users.find(u => u.id === lead.ownerId)?.name ?? '—'}
+                                            </td>
                                         )}
                                     </tr>
                                 ))}

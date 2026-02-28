@@ -2,12 +2,15 @@ import React, { useState, useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { DollarSign, Tag, Clock, Building, TrendingUp, Calendar, Mail, Phone, ChevronDown, ChevronUp, MessageCircle, BookOpen, Briefcase, ShieldCheck, ShieldX, AlertCircle } from 'lucide-react';
-import type { Lead, CardDisplaySettings, User as UserType, Id, Task } from '../types';
+import { DollarSign, Tag, Clock, Building, TrendingUp, Calendar, Mail, Phone, ChevronDown, ChevronUp, MessageCircle, BookOpen, Briefcase, ShieldCheck, ShieldX, AlertCircle, User } from 'lucide-react';
+import type { Lead, CardDisplaySettings, User as UserType, Id, Task, ColumnData } from '../types';
+import { getLeadComputedStatus, STATUS_DOT_COLOR, STATUS_BADGE } from '@/src/lib/leadStatus';
+import { useAuth } from '@/src/features/auth/AuthContext';
 import { GlassCard } from '@/src/shared/components/GlassCard';
 
 interface CardProps {
     lead: Lead;
+    columnType: ColumnData['type'];
     displaySettings: CardDisplaySettings;
     users: UserType[];
     tasks: Task[];
@@ -26,7 +29,7 @@ const TagPill: React.FC<{ tag: { name: string, color: string } }> = ({ tag }) =>
     </span>
 );
 
-const Card: React.FC<CardProps> = ({ lead, displaySettings, users, tasks, onSelect, isSelected, minimizedLeads, onToggleLeadMinimize }) => {
+const Card: React.FC<CardProps> = ({ lead, columnType, displaySettings, users, tasks, onSelect, isSelected, minimizedLeads, onToggleLeadMinimize }) => {
     const {
         attributes,
         listeners,
@@ -78,7 +81,12 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, tasks, onSele
         window.open(url, '_blank', 'noopener,noreferrer');
     };
 
-    const qualificationIcon = lead.qualificationStatus === 'qualified' 
+    const computedStatus = getLeadComputedStatus(lead, columnType);
+    const badge = STATUS_BADGE[computedStatus];
+    const { currentUserRole } = useAuth();
+    const ownerName = users.find(u => u.id === lead.ownerId)?.name ?? '—';
+
+    const qualificationIcon = lead.qualificationStatus === 'qualified'
         ? <span title="Qualificado"><ShieldCheck className="w-4 h-4 text-green-500 flex-shrink-0" /></span> 
         : lead.qualificationStatus === 'disqualified' 
         ? <span title="Não Qualificado"><ShieldX className="w-4 h-4 text-slate-500 flex-shrink-0" /></span> 
@@ -102,6 +110,10 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, tasks, onSele
                 <div className="flex justify-between items-center gap-2">
                      <div className="flex items-center gap-1.5 flex-1 min-w-0">
                         {qualificationIcon}
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${badge.classes} flex-shrink-0`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT_COLOR[computedStatus]}`} />
+                          {badge.label}
+                        </span>
                         <h3 className="font-bold text-slate-900 dark:text-white text-md leading-tight truncate">{lead.name}</h3>
                         {isMinimized && lead.activePlaybook && (
                             <div title={lead.activePlaybook.playbookName} className="flex-shrink-0">
@@ -214,6 +226,12 @@ const Card: React.FC<CardProps> = ({ lead, displaySettings, users, tasks, onSele
                                         <div className="flex items-center gap-2">
                                             <Clock className="w-3 h-3 flex-shrink-0" />
                                             <span>Capturado em: {formatDate(lead.createdAt)}</span>
+                                        </div>
+                                    )}
+                                    {currentUserRole === 'admin' && (
+                                        <div className="flex items-center gap-2">
+                                            <User className="w-3 h-3 flex-shrink-0" />
+                                            <span>Criado por: {ownerName}</span>
                                         </div>
                                     )}
                                 </div>

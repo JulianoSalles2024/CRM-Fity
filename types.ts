@@ -90,6 +90,8 @@ export interface Lead {
   qualificationStatus?: 'pending' | 'qualified' | 'disqualified';
   disqualificationReason?: string;
   boardId?: Id;
+  isArchived?: boolean;
+  ownerId?: string;
 }
 
 export interface Board {
