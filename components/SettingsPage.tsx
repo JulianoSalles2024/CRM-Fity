@@ -346,16 +346,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         return () => window.removeEventListener('changeSettingsTab', handleTabChange);
     }, [initialTab]);
 
-    const tabs = [
-        { name: 'Pipelines', icon: Columns },
-        { name: 'Estágios', icon: Settings },
-        ...(currentPermissions.canManageTeam ? [{ name: 'Equipe', icon: Users }] : []),
-        { name: 'Inteligência Artificial', icon: Bot },
-        ...(currentPermissions.canManageCredentials ? [{ name: 'Credenciais de IA', icon: Key }] : []),
-        ...(currentPermissions.canManagePreferences ? [{ name: 'Preferências', icon: SlidersHorizontal }] : []),
-        ...(currentPermissions.canManageIntegrations ? [{ name: 'Integrações', icon: Webhook }] : []),
-        { name: 'Notificações', icon: Bell },
-    ];
+   const tabs = [
+    { name: 'Pipelines', icon: Columns },
+    { name: 'Estágios', icon: Settings },
+    ...(currentPermissions.canManageTeam ? [{ name: 'Equipe', icon: Users }] : []),
+    { name: 'Inteligência Artificial', icon: Bot },
+    ...(currentPermissions.canManageCredentials ? [{ name: 'Credenciais de IA', icon: Key }] : []),
+    ...(currentPermissions.canManagePreferences ? [{ name: 'Preferências', icon: SlidersHorizontal }] : []),
+    ...(currentPermissions.canManageIntegrations ? [{ name: 'Integrações', icon: Webhook }] : []),
+    { name: 'Notificações', icon: Bell },
+].filter(tab => !['Pipelines', 'Estágios'].includes(tab.name));
 
     return (
         <div className="flex flex-col gap-6">
