@@ -45,12 +45,13 @@ import { useLeads } from '@/src/hooks/useLeads';
 import { useTasks } from '@/src/hooks/useTasks';
 import { useActivities } from '@/src/hooks/useActivities';
 import { useBoards } from '@/src/hooks/useBoards';
+import { useUsers } from '@/src/hooks/useUsers';
 
 // Types
 import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, UpdateLeadData, CreateTaskData, UpdateTaskData, CardDisplaySettings, ListDisplaySettings, Tag, EmailDraft, CreateEmailDraftData, ChatConversation, ChatMessage, ChatConversationStatus, Group, CreateGroupData, UpdateGroupData, ChatChannel, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData, Notification as NotificationType, Playbook, PlaybookHistoryEntry, Board } from './types';
 
 // Data (UI-only initial values — no leads/tasks/activities)
-import { initialTags, initialUsers, initialGroups, initialConversations, initialMessages, initialNotifications, initialPlaybooks } from './data';
+import { initialTags, initialGroups, initialConversations, initialMessages, initialNotifications, initialPlaybooks } from './data';
 
 
 // --- Local Storage Hook (for UI preferences only) ---
@@ -108,7 +109,8 @@ const App: React.FC = () => {
     } = useTasks(companyId);
 
     // --- LOCAL STORAGE STATE (UI preferences + non-migrated data) ---
-    const [users, setUsers] = useLocalStorage<User[]>('crm-users', initialUsers);
+    // users now comes from Supabase profiles (not localStorage)
+    const { users, refetch: refetchUsers } = useUsers(companyId);
 
     // Boards + stages from Supabase (replaces localStorage crm-boards)
     const { boards, setBoards, activeBoardId, setActiveBoardId } = useBoards(companyId);
@@ -831,7 +833,7 @@ const App: React.FC = () => {
         calculateProbabilityForStage,
         handleUpdateBoard,
         handleImportBoards,
-        onUpdateUsers: setUsers,
+        onUpdateUsers: () => { refetchUsers(); },
     };
 
     return (
