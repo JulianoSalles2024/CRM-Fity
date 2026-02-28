@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { User, InviteLink, UserRole } from '../types';
-import { Users, UserPlus, Copy, Trash2, Shield, Loader2, Ban, RefreshCw } from 'lucide-react';
+import { Users, UserPlus, Copy, Trash2, Shield, Loader2, Ban, RefreshCw, Archive } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/features/auth/AuthContext';
@@ -12,6 +12,8 @@ interface TeamMember {
     role: string;
     joinedAt: string;
     isActive: boolean;
+    isArchived: boolean;
+    archivedAt?: string;
 }
 
 interface Toast {
@@ -43,6 +45,15 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
     const [isReactivating, setIsReactivating] = useState(false);
     const [toast, setToast] = useState<Toast | null>(null);
 
+    // Archive / Unarchive state
+    const [archiveTarget, setArchiveTarget] = useState<TeamMember | null>(null);
+    const [isArchiving, setIsArchiving] = useState(false);
+    const [unarchiveTarget, setUnarchiveTarget] = useState<TeamMember | null>(null);
+    const [isUnarchiving, setIsUnarchiving] = useState(false);
+
+    // Tab state
+    const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
+
     const showToast = (message: string, type: 'success' | 'error') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3500);
@@ -52,7 +63,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
         setIsFetchingUsers(true);
         const { data } = await supabase
             .from('profiles')
-            .select('id, email, name, role, company_id, created_at, is_active')
+            .select('id, email, name, role, company_id, created_at, is_active, is_archived, archived_at')
             .order('created_at', { ascending: true });
         if (data) {
             setSupabaseMembers(data.map(p => ({
@@ -62,6 +73,8 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                 role: p.role === 'admin' ? 'Admin' : 'Vendedor',
                 joinedAt: p.created_at,
                 isActive: p.is_active !== false,
+                isArchived: p.is_archived === true,
+                archivedAt: p.archived_at ?? undefined,
             })));
         }
         setIsFetchingUsers(false);
@@ -71,7 +84,11 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
 
     const displayMembers = supabaseMembers.length > 0
         ? supabaseMembers
-        : users.map(u => ({ ...u, role: u.role ?? 'Vendedor', joinedAt: u.joinedAt ?? '', isActive: true }));
+        : users.map(u => ({ ...u, role: u.role ?? 'Vendedor', joinedAt: u.joinedAt ?? '', isActive: true, isArchived: false }));
+
+    const activeMembers = displayMembers.filter(m => !m.isArchived);
+    const archivedMembers = displayMembers.filter(m => m.isArchived);
+    const tabMembers = activeTab === 'active' ? activeMembers : archivedMembers;
 
     const handleBlockUser = async () => {
         if (!blockTarget) return;
@@ -98,6 +115,34 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
         } else {
             await fetchMembers();
             showToast('Usuário reativado com sucesso', 'success');
+        }
+    };
+
+    const handleArchiveUser = async () => {
+        if (!archiveTarget) return;
+        setIsArchiving(true);
+        const { error } = await supabase.rpc('admin_archive_user', { p_user_id: archiveTarget.id });
+        setIsArchiving(false);
+        setArchiveTarget(null);
+        if (error) {
+            showToast(`Erro ao arquivar: ${error.message}`, 'error');
+        } else {
+            await fetchMembers();
+            showToast('Usuário arquivado com sucesso', 'success');
+        }
+    };
+
+    const handleUnarchiveUser = async () => {
+        if (!unarchiveTarget) return;
+        setIsUnarchiving(true);
+        const { error } = await supabase.rpc('admin_unarchive_user', { p_user_id: unarchiveTarget.id });
+        setIsUnarchiving(false);
+        setUnarchiveTarget(null);
+        if (error) {
+            showToast(`Erro ao desarquivar: ${error.message}`, 'error');
+        } else {
+            await fetchMembers();
+            showToast('Usuário desarquivado com sucesso', 'success');
         }
     };
 
@@ -176,9 +221,9 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                 <div>
                     <h2 className="text-2xl font-bold text-white">Sua Equipe</h2>
                     <p className="text-slate-400 mt-1">
-                        {displayMembers.length} membro{displayMembers.length !== 1 && 's'} •{' '}
-                        {displayMembers.filter(u => u.role === 'Admin').length} admin,{' '}
-                        {displayMembers.filter(u => u.role === 'Vendedor').length} vendedores
+                        {activeMembers.length} membro{activeMembers.length !== 1 && 's'} •{' '}
+                        {activeMembers.filter(u => u.role === 'Admin').length} admin,{' '}
+                        {activeMembers.filter(u => u.role === 'Vendedor').length} vendedores
                     </p>
                 </div>
                 {currentPermissions.canManageTeam && (
@@ -192,6 +237,22 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                 )}
             </div>
 
+            {/* Tabs */}
+            <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1 w-fit">
+                <button
+                    onClick={() => setActiveTab('active')}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'active' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'}`}
+                >
+                    Ativos{activeMembers.length > 0 && <span className="ml-1 text-xs text-slate-500">({activeMembers.length})</span>}
+                </button>
+                <button
+                    onClick={() => setActiveTab('archived')}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'archived' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'}`}
+                >
+                    Arquivados{archivedMembers.length > 0 && <span className="ml-1 text-xs text-slate-500">({archivedMembers.length})</span>}
+                </button>
+            </div>
+
             {/* Members List */}
             <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
                 <div className="divide-y divide-slate-800">
@@ -199,7 +260,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                         <div className="p-6 flex justify-center">
                             <Loader2 className="w-5 h-5 text-slate-500 animate-spin" />
                         </div>
-                    ) : (currentPermissions.canManageTeam ? displayMembers : displayMembers.filter(u => u.id === currentUser.id)).map(member => (
+                    ) : (currentPermissions.canManageTeam ? tabMembers : tabMembers.filter(u => u.id === currentUser.id)).map(member => (
                         <div key={member.id} className={`p-4 flex items-center justify-between hover:bg-slate-800/50 transition-colors ${!member.isActive ? 'opacity-60' : ''}`}>
                             <div className="flex items-center gap-4">
                                 <div className="relative">
@@ -225,6 +286,11 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                                 Bloqueado
                                             </span>
                                         )}
+                                        {member.isArchived && (
+                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-400 uppercase tracking-wider border border-amber-500/20">
+                                                Arquivado
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="flex items-center gap-2 text-sm text-slate-400">
                                         <span>{member.email}</span>
@@ -243,24 +309,45 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                             {/* Actions — only admin, not for self */}
                             {isAdmin && member.id !== currentUser.id && (
                                 <div className="flex items-center gap-2">
-                                    {member.isActive ? (
+                                    {activeTab === 'archived' ? (
                                         <button
-                                            onClick={() => setBlockTarget(member)}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/10 hover:border-red-500/50 transition-all"
-                                            title="Bloquear acesso"
+                                            onClick={() => setUnarchiveTarget(member)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-400 border border-amber-500/30 rounded-lg hover:bg-amber-500/10 hover:border-amber-500/50 transition-all"
+                                            title="Desarquivar usuário"
                                         >
-                                            <Ban className="w-3.5 h-3.5" />
-                                            Bloquear
+                                            <Archive className="w-3.5 h-3.5" />
+                                            Desarquivar
                                         </button>
                                     ) : (
-                                        <button
-                                            onClick={() => setReactivateTarget(member)}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-400 border border-emerald-500/30 rounded-lg hover:bg-emerald-500/10 hover:border-emerald-500/50 transition-all"
-                                            title="Reativar acesso"
-                                        >
-                                            <RefreshCw className="w-3.5 h-3.5" />
-                                            Reativar
-                                        </button>
+                                        <>
+                                            {member.isActive ? (
+                                                <button
+                                                    onClick={() => setBlockTarget(member)}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/10 hover:border-red-500/50 transition-all"
+                                                    title="Bloquear acesso"
+                                                >
+                                                    <Ban className="w-3.5 h-3.5" />
+                                                    Bloquear
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => setReactivateTarget(member)}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-400 border border-emerald-500/30 rounded-lg hover:bg-emerald-500/10 hover:border-emerald-500/50 transition-all"
+                                                    title="Reativar acesso"
+                                                >
+                                                    <RefreshCw className="w-3.5 h-3.5" />
+                                                    Reativar
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => setArchiveTarget(member)}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-400 border border-slate-600/50 rounded-lg hover:bg-slate-700/50 hover:border-slate-500 transition-all"
+                                                title="Arquivar usuário"
+                                            >
+                                                <Archive className="w-3.5 h-3.5" />
+                                                Arquivar
+                                            </button>
+                                        </>
                                     )}
                                 </div>
                             )}
@@ -350,6 +437,94 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                         : <RefreshCw className="w-4 h-4" />
                                     }
                                     {isReactivating ? 'Reativando...' : 'Reativar'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Archive Confirmation Modal */}
+            <AnimatePresence>
+                {archiveTarget && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
+                        >
+                            <div className="p-6">
+                                <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
+                                    <Archive className="w-6 h-6 text-amber-400" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white text-center">Arquivar usuário?</h3>
+                                <p className="text-sm text-slate-400 text-center mt-2">
+                                    <span className="text-white font-medium">{archiveTarget.name}</span> será removido da equipe ativa. Isso indica que o funcionário saiu da empresa.
+                                </p>
+                            </div>
+                            <div className="px-6 pb-6 flex gap-3">
+                                <button
+                                    onClick={() => setArchiveTarget(null)}
+                                    disabled={isArchiving}
+                                    className="flex-1 py-2.5 rounded-xl text-sm font-medium text-slate-300 border border-slate-700 hover:bg-slate-800 transition-colors disabled:opacity-50"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleArchiveUser}
+                                    disabled={isArchiving}
+                                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-amber-600 hover:bg-amber-500 text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isArchiving
+                                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                                        : <Archive className="w-4 h-4" />
+                                    }
+                                    {isArchiving ? 'Arquivando...' : 'Arquivar'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Unarchive Confirmation Modal */}
+            <AnimatePresence>
+                {unarchiveTarget && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
+                        >
+                            <div className="p-6">
+                                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+                                    <Archive className="w-6 h-6 text-emerald-400" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white text-center">Desarquivar usuário?</h3>
+                                <p className="text-sm text-slate-400 text-center mt-2">
+                                    <span className="text-white font-medium">{unarchiveTarget.name}</span> voltará para a lista de membros ativos.
+                                </p>
+                            </div>
+                            <div className="px-6 pb-6 flex gap-3">
+                                <button
+                                    onClick={() => setUnarchiveTarget(null)}
+                                    disabled={isUnarchiving}
+                                    className="flex-1 py-2.5 rounded-xl text-sm font-medium text-slate-300 border border-slate-700 hover:bg-slate-800 transition-colors disabled:opacity-50"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleUnarchiveUser}
+                                    disabled={isUnarchiving}
+                                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isUnarchiving
+                                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                                        : <Archive className="w-4 h-4" />
+                                    }
+                                    {isUnarchiving ? 'Desarquivando...' : 'Desarquivar'}
                                 </button>
                             </div>
                         </motion.div>
