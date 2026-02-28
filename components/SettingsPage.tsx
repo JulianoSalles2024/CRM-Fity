@@ -360,9 +360,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             ...(currentPermissions.canManageTeam ? [{ name: 'Equipe', icon: Users }] : []),
             { name: 'Inteligência Artificial', icon: Bot },
             ...(currentPermissions.canManageCredentials ? [{ name: 'Credenciais de IA', icon: Key }] : []),
-            ...(currentPermissions.canManagePreferences ? [{ name: 'Preferências', icon: SlidersHorizontal }] : []),
+           // ...(currentPermissions.canManagePreferences ? [{ name: 'Preferências', icon: SlidersHorizontal }] : []),
             ...(currentPermissions.canManageIntegrations ? [{ name: 'Integrações', icon: Webhook }] : []),
-            { name: 'Notificações', icon: Bell },
+           // { name: 'Notificações', icon: Bell },
         ];
     }, [currentPermissions]);
 
@@ -412,9 +412,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 {activeTab === 'Equipe' && <TeamSettings users={users} currentUser={currentUser} onUpdateUsers={onUpdateUsers} />}
                 {activeTab === 'Inteligência Artificial' && <AIHubView />}
                 {activeTab === 'Credenciais de IA' && <AIProvidersPage />}
-                {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />}
+              {/*  {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />} */}
                 {activeTab === 'Integrações' && <IntegrationsPage showNotification={() => { }} />}
-                {activeTab === 'Notificações' && <NotificationSettings />}
+              {/*  {activeTab === 'Notificações' && <NotificationSettings />} */}
             </div>
         </div>
     );
