@@ -127,14 +127,14 @@ const BoardsSettings: React.FC<BoardsSettingsProps> = ({ boards, activeBoardId, 
                             </div>
                             <div className="flex items-center gap-2">
                                 {board.id !== activeBoardId && (
-                                    <button 
+                                    <button
                                         onClick={() => onSelectBoard(board.id)}
                                         className="text-xs font-semibold text-blue-400 hover:text-blue-300 px-3 py-1.5 rounded-md hover:bg-blue-500/10 transition-colors"
                                     >
                                         Ativar
                                     </button>
                                 )}
-                                <button 
+                                <button
                                     onClick={() => setBoardToDelete(board)}
                                     disabled={boards.length <= 1}
                                     className={`p-2 rounded-md transition-colors ${boards.length <= 1 ? 'text-slate-700 cursor-not-allowed' : 'text-slate-400 hover:text-red-500 hover:bg-red-500/10'}`}
@@ -150,12 +150,12 @@ const BoardsSettings: React.FC<BoardsSettingsProps> = ({ boards, activeBoardId, 
 
             <AnimatePresence>
                 {boardToDelete && (
-                    <ConfirmDeleteModal 
-                        onClose={() => setBoardToDelete(null)} 
+                    <ConfirmDeleteModal
+                        onClose={() => setBoardToDelete(null)}
                         onConfirm={() => {
                             onDeleteBoard(boardToDelete.id);
                             setBoardToDelete(null);
-                        }} 
+                        }}
                         title="Confirmar Exclusão de Pipeline"
                         message={<><p>Tem certeza que deseja deletar o pipeline <strong>{boardToDelete.name}</strong>?</p><p className="mt-2 text-sm text-slate-500">Esta ação não pode ser desfeita. Todos os leads vinculados a este pipeline serão afetados.</p></>}
                     />
@@ -178,14 +178,14 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
     const [stageToDelete, setStageToDelete] = useState<Id | null>(null);
     const [activeColumn, setActiveColumn] = useState<ColumnData | null>(null);
 
-     useEffect(() => {
+    useEffect(() => {
         setColumns(initialColumns);
     }, [initialColumns]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
     );
-    
+
     const columnIds = useMemo(() => columns.map(c => c.id), [columns]);
 
     const handleDragStart = (event: DragStartEvent) => {
@@ -204,16 +204,16 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
             onUpdatePipeline(newColumns);
         }
     };
-    
+
     const handleOpenEditModal = (column: ColumnData) => {
         setEditingStage(column);
         setCreateStageModalOpen(true);
     };
-    
-    const handleCreateOrUpdateStage = (stageData: {id?: Id, title: string, color: string, type: ColumnData['type']}) => {
-      let newColumns: ColumnData[] = [];
+
+    const handleCreateOrUpdateStage = (stageData: { id?: Id, title: string, color: string, type: ColumnData['type'] }) => {
+        let newColumns: ColumnData[] = [];
         if (stageData.id) { // Update
-            newColumns = columns.map(c => 
+            newColumns = columns.map(c =>
                 c.id === stageData.id ? { ...c, title: stageData.title, color: stageData.color, type: stageData.type } : c
             );
         } else { // Create
@@ -224,7 +224,6 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
         setCreateStageModalOpen(false);
         setEditingStage(null);
     };
-
 
     const handleDeleteColumn = (id: Id) => {
         if (columns.length <= 1) {
@@ -245,7 +244,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
     return (
         <>
             <GlassCard className="p-0">
-                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
+                <div className="p-6 border-b border-white/10 flex justify-between items-center">
                     <div>
                         <h2 className="text-lg font-semibold text-white">Estágios do Pipeline: <span className="text-violet-400">Vendas Padrão</span></h2>
                         <p className="text-sm text-slate-400 mt-1">Configure os estágios do seu funil de vendas. Arraste para reordenar.</p>
@@ -254,7 +253,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
                         <PlusCircle className="w-4 h-4" /><span>Novo Estágio</span>
                     </button>
                 </div>
-                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                     <div className="p-6 space-y-3">
                         <SortableContext items={columnIds} strategy={verticalListSortingStrategy}>
                             {columns.map((col, index) => (
@@ -265,14 +264,14 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
                     <DragOverlay>{activeColumn ? <StageItem column={activeColumn} index={columns.findIndex(c => c.id === activeColumn.id)} /> : null}</DragOverlay>
                 </DndContext>
             </GlassCard>
-            
+
             <AnimatePresence>
                 {isCreateStageModalOpen && (
-                    <CreateStageModal 
+                    <CreateStageModal
                         onClose={() => {
                             setCreateStageModalOpen(false);
                             setEditingStage(null);
-                        }} 
+                        }}
                         onSubmit={handleCreateOrUpdateStage}
                         stageToEdit={editingStage}
                     />
@@ -346,20 +345,37 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         return () => window.removeEventListener('changeSettingsTab', handleTabChange);
     }, [initialTab]);
 
-    const tabs = [
-        { name: 'Pipelines', icon: Columns },
-        { name: 'Estágios', icon: Settings },
-        ...(currentPermissions.canManageTeam ? [{ name: 'Equipe', icon: Users }] : []),
-        { name: 'Inteligência Artificial', icon: Bot },
-        ...(currentPermissions.canManageCredentials ? [{ name: 'Credenciais de IA', icon: Key }] : []),
-        ...(currentPermissions.canManagePreferences ? [{ name: 'Preferências', icon: SlidersHorizontal }] : []),
-        ...(currentPermissions.canManageIntegrations ? [{ name: 'Integrações', icon: Webhook }] : []),
-        { name: 'Notificações', icon: Bell },
-    ];
+    // ✅ RBAC: SELLER vê APENAS Pipelines e Estágios | ADMIN vê somente as abas administrativas
+    const tabs = useMemo(() => {
+        // Regra: quem NÃO pode gerenciar time => Seller
+        if (!currentPermissions.canManageTeam) {
+            return [
+                { name: 'Pipelines', icon: Columns },
+                { name: 'Estágios', icon: Settings },
+            ];
+        }
+
+        // Admin (como já está correto em produção)
+        return [
+            ...(currentPermissions.canManageTeam ? [{ name: 'Equipe', icon: Users }] : []),
+            { name: 'Inteligência Artificial', icon: Bot },
+            ...(currentPermissions.canManageCredentials ? [{ name: 'Credenciais de IA', icon: Key }] : []),
+            ...(currentPermissions.canManagePreferences ? [{ name: 'Preferências', icon: SlidersHorizontal }] : []),
+            ...(currentPermissions.canManageIntegrations ? [{ name: 'Integrações', icon: Webhook }] : []),
+            { name: 'Notificações', icon: Bell },
+        ];
+    }, [currentPermissions]);
+
+    // ✅ Segurança: se a aba ativa não existe no menu atual, cair para a primeira aba disponível
+    useEffect(() => {
+        if (!tabs.length) return;
+        const exists = tabs.some(t => t.name === activeTab);
+        if (!exists) setActiveTab(tabs[0].name);
+    }, [tabs, activeTab]);
 
     return (
         <div className="flex flex-col gap-6">
-             <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4">
                 <Settings className="w-8 h-8 text-violet-500" />
                 <div>
                     <h1 className="text-2xl font-bold text-white">Configurações</h1>
@@ -384,12 +400,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
             <div className="space-y-6">
                 {activeTab === 'Pipelines' && (
-                    <BoardsSettings 
-                        boards={boards} 
-                        activeBoardId={activeBoardId} 
-                        onSelectBoard={onSelectBoard} 
-                        onDeleteBoard={onDeleteBoard} 
-                        onCreateBoard={onCreateBoard} 
+                    <BoardsSettings
+                        boards={boards}
+                        activeBoardId={activeBoardId}
+                        onSelectBoard={onSelectBoard}
+                        onDeleteBoard={onDeleteBoard}
+                        onCreateBoard={onCreateBoard}
                     />
                 )}
                 {activeTab === 'Estágios' && <PipelineSettings columns={columns} onUpdatePipeline={onUpdatePipeline} />}
@@ -397,7 +413,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 {activeTab === 'Inteligência Artificial' && <AIHubView />}
                 {activeTab === 'Credenciais de IA' && <AIProvidersPage />}
                 {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />}
-                {activeTab === 'Integrações' && <IntegrationsPage showNotification={() => {}} />}
+                {activeTab === 'Integrações' && <IntegrationsPage showNotification={() => { }} />}
                 {activeTab === 'Notificações' && <NotificationSettings />}
             </div>
         </div>
