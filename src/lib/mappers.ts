@@ -37,6 +37,8 @@ export function mapLeadFromDb(row: Record<string, unknown>): Lead {
     reactivationDate: (row.reactivation_date as string) ?? undefined,
     qualificationStatus: (row.qualification_status as Lead['qualificationStatus']) ?? undefined,
     disqualificationReason: (row.disqualification_reason as string) ?? undefined,
+    isArchived: (row.is_archived as boolean) ?? false,
+    ownerId: (row.owner_id as string) ?? undefined,
   };
 }
 
@@ -73,6 +75,7 @@ export function mapLeadToDb(lead: Partial<Lead>): Record<string, unknown> {
     reactivation_date: 'reactivationDate' in lead ? (lead.reactivationDate ?? null) : undefined,
     qualification_status: lead.qualificationStatus,
     disqualification_reason: lead.disqualificationReason,
+    owner_id: lead.ownerId || undefined,
   });
 }
 

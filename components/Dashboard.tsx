@@ -2,6 +2,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { Lead, ColumnData, Activity, Task, User } from '../types';
 import type { Board } from '../types';
+import { getLeadComputedStatus } from '@/src/lib/leadStatus';
 import { Users, Target, TrendingUp, DollarSign, UserCheck, AlertTriangle, Wallet, Layers, CalendarDays } from 'lucide-react';
 import KpiCard from './KpiCard';
 import TopSellers from './TopSellers';
@@ -78,15 +79,22 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
     const [selectedPeriod, setSelectedPeriod] = useState('Este Mês');
 
     const activeColumns = useMemo(() => {
-        if (selectedBoardId === 'all') return columns;
+        if (selectedBoardId === 'all') {
+            // Flatten all boards' columns so won/lost detection works across all pipelines
+            const seen = new Set<string>();
+            return boards.flatMap(b => b.columns).filter(c => !seen.has(c.id) && seen.add(c.id));
+        }
         const board = boards.find(b => b.id === selectedBoardId);
         return board ? board.columns : columns;
     }, [selectedBoardId, boards, columns]);
 
     const activeLeadPool = useMemo(() => {
-        if (selectedBoardId === 'all') return leads;
-        const ids = new Set(activeColumns.map(c => c.id));
-        return leads.filter(l => ids.has(l.columnId));
+        const base = selectedBoardId === 'all' ? leads : (() => {
+            const ids = new Set(activeColumns.map(c => c.id));
+            return leads.filter(l => ids.has(l.columnId));
+        })();
+        // Defensive: server already filters is_archived=false, but guard client-side too
+        return base.filter(l => !l.isArchived);
     }, [leads, activeColumns, selectedBoardId]);
 
     const periodFilteredLeads = useMemo(() => {
@@ -123,14 +131,15 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
     }, [periodFilteredLeads, activeColumns]);
 
     const walletHealth = useMemo(() => {
-        const activeCount = periodFilteredLeads.filter(l => l.status === 'Ativo').length;
-        const inactiveCount = periodFilteredLeads.filter(l => l.status === 'Inativo').length;
-        const churnCount = periodFilteredLeads.filter(l => l.groupInfo?.churned).length;
-        const total = activeCount + inactiveCount + churnCount || 1;
+        // Status derived from board_stages.linked_lifecycle_stage (via column.type)
+        const activeCount = periodFilteredLeads.filter(l => getLeadComputedStatus(l, activeColumns.find(c => c.id === l.columnId)?.type) === 'ativo').length;
+        const inactiveCount = periodFilteredLeads.filter(l => getLeadComputedStatus(l, activeColumns.find(c => c.id === l.columnId)?.type) === 'inativo').length;
+        const lostCount = periodFilteredLeads.filter(l => getLeadComputedStatus(l, activeColumns.find(c => c.id === l.columnId)?.type) === 'perdido').length;
+        const total = activeCount + inactiveCount + lostCount || 1;
 
         const activePct = Math.round((activeCount / total) * 100);
         const inactivePct = Math.round((inactiveCount / total) * 100);
-        const churnPct = Math.round((churnCount / total) * 100);
+        const churnPct = Math.round((lostCount / total) * 100);
 
         const wonLeads = periodFilteredLeads.filter(l => activeColumns.find(c => c.id === l.columnId)?.type === 'won');
         const ltv = wonLeads.length > 0
@@ -138,7 +147,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
             : 0;
 
         return {
-            activeCount, inactiveCount, churnCount,
+            activeCount, inactiveCount, lostCount,
             activePct, inactivePct, churnPct,
             ltv
         };
@@ -270,8 +279,8 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                                 <span>Inativos ({walletHealth.inactiveCount})</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-red-500"></div> 
-                                <span>Churn ({walletHealth.churnCount})</span>
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span>Perdidos ({walletHealth.lostCount})</span>
                             </div>
                         </div>
                     </div>

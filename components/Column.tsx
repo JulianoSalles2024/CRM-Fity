@@ -106,13 +106,14 @@ const Column: React.FC<ColumnProps> = ({ column, leads, users, tasks, cardDispla
                                 <SortableContext items={leadIds} strategy={verticalListSortingStrategy}>
                                     <div className="space-y-2">
                                         {leadsInColumn.map(lead => (
-                                            <Card 
-                                                key={lead.id} 
-                                                lead={lead} 
-                                                displaySettings={cardDisplaySettings} 
-                                                users={users} 
+                                            <Card
+                                                key={lead.id}
+                                                lead={lead}
+                                                columnType={column.type}
+                                                displaySettings={cardDisplaySettings}
+                                                users={users}
                                                 tasks={tasks}
-                                                onSelect={() => onSelectLead(lead)} 
+                                                onSelect={() => onSelectLead(lead)}
                                                 isSelected={selectedLeadId === lead.id}
                                                 minimizedLeads={minimizedLeads}
                                                 onToggleLeadMinimize={onToggleLeadMinimize}
