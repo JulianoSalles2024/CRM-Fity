@@ -127,6 +127,7 @@ const GoalsTab: React.FC = () => {
     const [isEditMode, setIsEditMode]         = useState(false);
     const [deleteTarget, setDeleteTarget]     = useState<Goal | null>(null);
     const [isDeleting, setIsDeleting]         = useState(false);
+    const [scopeTab, setScopeTab]             = useState<'global' | 'seller'>('global');
 
     const showToast = (message: string, type: 'success' | 'error') => {
         setToast({ message, type });
@@ -196,6 +197,9 @@ const GoalsTab: React.FC = () => {
         setIsModalOpen(false);
     };
 
+    const globalGoals = goals.filter(goal => !goal.userId);
+    const sellerGoals = goals.filter(goal => !!goal.userId);
+
     return (
         <div className="space-y-6">
 
@@ -220,9 +224,9 @@ const GoalsTab: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-xl font-bold text-white">Metas da Empresa</h2>
+                    <h2 className="text-xl font-bold text-white">Metas</h2>
                     <p className="text-slate-400 mt-1 text-sm">
-                        Defina e gerencie as metas globais da sua empresa.
+                        Defina e gerencie as metas da sua empresa.
                     </p>
                 </div>
                 {canManage && (
@@ -236,7 +240,60 @@ const GoalsTab: React.FC = () => {
                 )}
             </div>
 
+            {/* Scope Sub-tabs */}
+            <div className="flex">
+                <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1">
+                    {(['global', 'seller'] as const).map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setScopeTab(tab)}
+                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                                scopeTab === tab
+                                    ? 'bg-slate-700 text-white'
+                                    : 'text-slate-400 hover:text-white'
+                            }`}
+                        >
+                            {tab === 'global' ? 'Globais' : 'Por Vendedor'}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             {/* Content */}
+            {scopeTab === 'seller' && (
+                <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+                    {loading && (
+                        <div className="p-6 flex justify-center">
+                            <Loader2 className="w-5 h-5 text-slate-500 animate-spin" />
+                        </div>
+                    )}
+                    {!loading && sellerGoals.length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                            <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-4">
+                                <Target className="w-7 h-7 text-slate-500" />
+                            </div>
+                            <p className="text-slate-500 text-sm">Nenhuma meta individual criada ainda.</p>
+                        </div>
+                    )}
+                    {!loading && sellerGoals.length > 0 && (
+                        <div className="divide-y divide-slate-800">
+                            {sellerGoals.map(goal => (
+                                <GoalCard
+                                    key={goal.id}
+                                    goal={goal}
+                                    canManage={canManage}
+                                    isActivating={activating === goal.id}
+                                    onActivate={() => setActivateTarget(goal)}
+                                    onEdit={openEditModal}
+                                    onDelete={goal => setDeleteTarget(goal)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {scopeTab === 'global' && (
             <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
 
                 {/* Loading */}
@@ -247,7 +304,7 @@ const GoalsTab: React.FC = () => {
                 )}
 
                 {/* Empty State */}
-                {!loading && goals.length === 0 && (
+                {!loading && globalGoals.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-4">
                             <Target className="w-7 h-7 text-slate-500" />
@@ -271,9 +328,9 @@ const GoalsTab: React.FC = () => {
                 )}
 
                 {/* Goals List */}
-                {!loading && goals.length > 0 && (
+                {!loading && globalGoals.length > 0 && (
                     <div className="divide-y divide-slate-800">
-                        {goals.map(goal => (
+                        {globalGoals.map(goal => (
                             <GoalCard
                                 key={goal.id}
                                 goal={goal}
@@ -288,6 +345,7 @@ const GoalsTab: React.FC = () => {
                 )}
 
             </div>
+            )}
 
             {/* Modal Confirmação Ativar */}
             <AnimatePresence>

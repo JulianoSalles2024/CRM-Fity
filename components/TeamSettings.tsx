@@ -54,6 +54,9 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
 
     // Tab state
     const [activeTab, setActiveTab] = useState<'active' | 'archived' | 'goals'>('active');
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 4;
+    const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'seller'>('all');
 
     const showToast = (message: string, type: 'success' | 'error') => {
         setToast({ message, type });
@@ -90,6 +93,18 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
     const activeMembers = displayMembers.filter(m => !m.isArchived);
     const archivedMembers = displayMembers.filter(m => m.isArchived);
     const tabMembers = activeTab === 'active' ? activeMembers : archivedMembers;
+
+    const filteredMembers = activeTab === 'active'
+        ? tabMembers.filter(member => {
+            if (roleFilter === 'all')    return true;
+            if (roleFilter === 'admin')  return member.role === 'Admin';
+            if (roleFilter === 'seller') return member.role === 'Vendedor';
+            return true;
+        })
+        : tabMembers;
+
+    const totalPages       = Math.ceil(filteredMembers.length / pageSize);
+    const paginatedMembers = filteredMembers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
     const handleBlockUser = async () => {
         if (!blockTarget) return;
@@ -238,30 +253,46 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                 )}
             </div>
 
-            {/* Tabs */}
-            <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1 w-fit">
-                <button
-                    onClick={() => setActiveTab('active')}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'active' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'}`}
-                >
-                    Ativos{activeMembers.length > 0 && <span className="ml-1 text-xs text-slate-500">({activeMembers.length})</span>}
-                </button>
-                <button
-                    onClick={() => setActiveTab('archived')}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'archived' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'}`}
-                >
-                    Arquivados{archivedMembers.length > 0 && <span className="ml-1 text-xs text-slate-500">({archivedMembers.length})</span>}
-                </button>
-                <button
-                    onClick={() => setActiveTab('goals')}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                    activeTab === 'goals'
-                    ? 'bg-slate-700 text-white'
-                    : 'text-slate-400 hover:text-slate-300'
-                    }`}
-                >
-                    Metas
-            </button>
+            {/* Tabs + Role Filter */}
+            <div className="flex items-center justify-between gap-6">
+                <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1 w-fit">
+                    <button
+                        onClick={() => { setActiveTab('active'); setCurrentPage(1); }}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'active' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'}`}
+                    >
+                        Ativos{activeMembers.length > 0 && <span className="ml-1 text-xs text-slate-500">({activeMembers.length})</span>}
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('archived'); setCurrentPage(1); }}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'archived' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'}`}
+                    >
+                        Arquivados{archivedMembers.length > 0 && <span className="ml-1 text-xs text-slate-500">({archivedMembers.length})</span>}
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('goals'); setCurrentPage(1); }}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                            activeTab === 'goals' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'
+                        }`}
+                    >
+                        Metas
+                    </button>
+                </div>
+
+                {activeTab === 'active' && (
+                    <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1">
+                        {(['all', 'admin', 'seller'] as const).map(filter => (
+                            <button
+                                key={filter}
+                                onClick={() => { setRoleFilter(filter); setCurrentPage(1); }}
+                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                                    roleFilter === filter ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'
+                                }`}
+                            >
+                                {filter === 'all' ? 'Todos' : filter === 'admin' ? 'Admin' : 'Vendedores'}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Members List — só para abas de equipe */}
@@ -272,7 +303,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                         <div className="p-6 flex justify-center">
                             <Loader2 className="w-5 h-5 text-slate-500 animate-spin" />
                         </div>
-                    ) : (currentPermissions.canManageTeam ? tabMembers : tabMembers.filter(u => u.id === currentUser.id)).map(member => (
+                    ) : (currentPermissions.canManageTeam ? paginatedMembers : paginatedMembers.filter(u => u.id === currentUser.id)).map(member => (
                         <div key={member.id} className={`p-4 flex items-center justify-between hover:bg-slate-800/50 transition-colors ${!member.isActive ? 'opacity-60' : ''}`}>
                             <div className="flex items-center gap-4">
                                 <div className="relative">
@@ -366,6 +397,24 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                         </div>
                     ))}
                 </div>
+                {activeTab === 'active' && !isFetchingUsers && totalPages > 1 && (
+                    <div className="px-4 py-3 border-t border-slate-800 flex items-center justify-center gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                            <button
+                                key={page}
+                                onClick={() => setCurrentPage(page)}
+                                disabled={page === currentPage}
+                                className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                                    page === currentPage
+                                        ? 'bg-slate-700 text-white cursor-default'
+                                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                }`}
+                            >
+                                {page}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
             )}
 

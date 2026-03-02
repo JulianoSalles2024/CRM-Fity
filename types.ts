@@ -272,6 +272,7 @@ export interface Goal {
   createdAt: string;
   startDate: string;
   endDate: string;
+  userId?: string | null;
 }
 
 export interface GoalPeriod {
@@ -289,4 +290,5 @@ export interface CreateGoalData {
   isActive: boolean;
   periodStart: string;
   periodEnd: string;
+  userId?: string | null;
 }

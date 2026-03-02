@@ -35,6 +35,7 @@ export function useGoals(companyId: string | null) {
           createdAt: row.created_at,
           startDate: row.start_date ?? '',
           endDate: row.end_date ?? '',
+          userId: row.user_id ?? null,
         }))
       );
     }
@@ -57,6 +58,7 @@ export function useGoals(companyId: string | null) {
         start_date: data.periodStart,
         end_date: data.periodEnd,
         is_active: false,
+        user_id: data.userId ?? null,
       })
       .select('id')
       .single();
