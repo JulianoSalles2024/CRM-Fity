@@ -2,8 +2,9 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Lead, ColumnData, Task, Activity } from '../types';
 import type { Board } from '../types';
-import { BarChart, RefreshCw, Download, Users, Target, DollarSign, CheckCircle, Layers } from 'lucide-react';
+import { RefreshCw, Download, Users, Target, DollarSign, CheckCircle, Layers } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import FlatCard from '@/components/ui/FlatCard';
 
 
 interface ReportsPageProps {
@@ -22,7 +23,7 @@ interface ReportKpiCardProps {
 }
 
 const ReportKpiCard: React.FC<ReportKpiCardProps> = ({ title, value, icon: Icon, color }) => (
-    <div className="bg-slate-900 p-5 rounded-lg border border-slate-800 flex justify-between items-center transition-all duration-200 ease-in-out hover:bg-slate-800/50 hover:-translate-y-1 hover:shadow-lg">
+    <FlatCard className="p-5 flex justify-between items-center transition-all duration-200 ease-in-out hover:bg-slate-800/50 hover:-translate-y-1 hover:shadow-lg">
         <div>
             <p className="text-sm text-slate-400">{title}</p>
             <p className="text-2xl font-bold text-white mt-1">{value}</p>
@@ -30,7 +31,7 @@ const ReportKpiCard: React.FC<ReportKpiCardProps> = ({ title, value, icon: Icon,
         <div className="w-12 h-12 rounded-full flex items-center justify-center animate-pulse" style={{ backgroundColor: `${color}20` }}>
             <Icon className="w-6 h-6" style={{ color }} />
         </div>
-    </div>
+    </FlatCard>
 );
 
 
@@ -349,12 +350,9 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
     return (
         <div className="flex flex-col gap-6">
              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <BarChart className="w-8 h-8 text-violet-500" />
-                    <div>
-                        <h1 className="text-2xl font-bold text-white">Relatórios</h1>
-                        <p className="text-slate-400">Análise detalhada de desempenho e métricas</p>
-                    </div>
+                <div>
+                    <h1 className="text-2xl font-bold text-white">Relatórios</h1>
+                    <p className="text-slate-400">Análise detalhada de desempenho e métricas</p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                     {/* Pipeline filter */}
@@ -388,7 +386,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-slate-900 p-5 rounded-lg border border-slate-800">
+                <FlatCard className="p-5">
                     <h3 className="font-semibold text-white mb-4">Funil de Conversão</h3>
                     <div className="space-y-3">
                         {reportData.funnelData.map((stage) => {
@@ -415,8 +413,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                             );
                         })}
                     </div>
-                </div>
-                <div className="bg-slate-900 p-5 rounded-lg border border-slate-800 flex flex-col">
+                </FlatCard>
+                <FlatCard className="p-5 flex flex-col">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="font-semibold text-white">Desempenho ao Longo do Tempo</h3>
                         <div className="flex items-center gap-1 p-1 bg-slate-800 border border-slate-700 rounded-lg">
@@ -440,14 +438,14 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                            </div>
                         )}
                     </div>
-                </div>
+                </FlatCard>
             </div>
 
-            <div className="bg-slate-900 rounded-lg border border-slate-800 overflow-hidden">
+            <FlatCard className="overflow-hidden">
                 <h3 className="font-semibold text-white p-5">Top 10 Leads por Valor</h3>
                  <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-slate-800">
-                        <thead className="bg-slate-950/50">
+                        <thead>
                             <tr>
                                 <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Lead</th>
                                 <th className="px-5 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Valor</th>
@@ -490,7 +488,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                         </tbody>
                     </table>
                  </div>
-            </div>
+            </FlatCard>
         </div>
     );
 };

@@ -25,6 +25,7 @@ import {
     ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import FlatCard from '@/components/ui/FlatCard';
 
 interface InboxViewProps {
     tasks: Task[];
@@ -174,7 +175,7 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
                             <div
                                 key={i}
                                 onClick={stat.onClick}
-                                className={`p-6 rounded-2xl border border-slate-800/50 ${stat.bgColor} backdrop-blur-sm flex flex-col justify-between h-32 ${stat.onClick ? 'cursor-pointer hover:border-slate-600 hover:brightness-110 transition-all' : ''}`}
+                                className={`p-6 rounded-xl border backdrop-blur-sm flex flex-col justify-between h-32 ${stat.onClick ? 'cursor-pointer transition-all' : ''} ${(i === 0 || i === 1) ? 'bg-emerald-500/5 border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.08)] hover:border-emerald-500/40 hover:brightness-110' : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'}`}
                             >
                                 <div className="flex justify-between items-start">
                                     <span className="text-[10px] font-bold text-slate-500 tracking-widest">{stat.label}</span>
@@ -191,7 +192,7 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
                     {/* Lists Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Risco Section */}
-                        <div className="bg-slate-900/40 border border-slate-800/50 rounded-2xl p-6 backdrop-blur-sm">
+                        <FlatCard className="p-6">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-2">
                                     <AlertTriangle className="w-5 h-5 text-amber-500" />
@@ -228,10 +229,10 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
                                     <p className="text-slate-500 text-sm text-center py-4">Nenhum lead em risco</p>
                                 )}
                             </div>
-                        </div>
+                        </FlatCard>
 
                         {/* Oportunidades Section */}
-                        <div className="bg-slate-900/40 border border-slate-800/50 rounded-2xl p-6 backdrop-blur-sm">
+                        <FlatCard className="p-6">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-2">
                                     <TrendingUp className="w-5 h-5 text-emerald-500" />
@@ -268,7 +269,7 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNa
                                     <p className="text-slate-500 text-sm text-center py-4">Nenhuma oportunidade identificada</p>
                                 )}
                             </div>
-                        </div>
+                        </FlatCard>
                     </div>
                 </div>
             )}

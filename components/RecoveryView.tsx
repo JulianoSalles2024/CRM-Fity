@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Lead, Id } from '../types';
-import { ArchiveRestore, RefreshCw, User, Calendar, MessageCircle, Download, Trash2 } from 'lucide-react';
+import { RefreshCw, User, Calendar, MessageCircle, Download, Trash2 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 import FlatCard from '@/components/ui/FlatCard';
@@ -85,12 +85,9 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ leads, onReactivateLead, on
         <>
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                     <div className="flex items-center gap-4">
-                        <ArchiveRestore className="w-8 h-8 text-violet-500" />
-                        <div>
-                            <h1 className="text-2xl font-bold text-white">Recuperação de Leads</h1>
-                            <p className="text-slate-400">Leads perdidos com agendamento para reativação.</p>
-                        </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-white">Recuperação de Leads</h1>
+                        <p className="text-slate-400">Leads perdidos com agendamento para reativação.</p>
                     </div>
                      <div className="flex items-center gap-2 self-start md:self-center">
                         <div className="flex items-center gap-2">

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Bell, LogOut, Sun, Moon, Bot } from 'lucide-react';
+import { Bell, LogOut, Sun, Moon, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { User } from '../types';
 import { useAuth } from '@/src/features/auth/AuthContext';
@@ -7,8 +7,6 @@ import { useAuth } from '@/src/features/auth/AuthContext';
 interface HeaderProps {
   currentUser: User;
   onLogout: () => void;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
   theme: 'dark' | 'light';
   onThemeToggle: () => void;
   unreadCount: number;
@@ -19,8 +17,6 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({
   currentUser,
   onLogout,
-  searchQuery,
-  onSearchChange,
   theme,
   onThemeToggle,
   unreadCount,
@@ -32,9 +28,6 @@ const Header: React.FC<HeaderProps> = ({
 
   const { currentUserRole } = useAuth();
   const isAdmin = currentUserRole === 'admin';
-
-  // Disable search on Inbox and Dashboard views to prevent confusion
-  const isSearchDisabled = ['Inbox', 'Dashboard'].includes(activeView);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -48,24 +41,7 @@ const Header: React.FC<HeaderProps> = ({
   }, []);
 
   return (
-    <header className="flex-shrink-0 bg-transparent px-6 h-20 flex items-center justify-between z-30">
-      {/* Left Side - Search */}
-      <div
-        className={`relative w-full max-w-md transition-opacity duration-200 ${
-          isSearchDisabled ? 'opacity-0 pointer-events-none' : 'opacity-100'
-        }`}
-      >
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-        <input
-          type="text"
-          placeholder="Buscar leads, clientes, atividades... (⌘K)"
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          disabled={isSearchDisabled}
-          className="w-full bg-slate-900/80 border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all backdrop-blur-sm disabled:cursor-not-allowed"
-        />
-      </div>
-
+    <header className="flex-shrink-0 bg-transparent px-6 h-20 flex items-center justify-end z-30">
       {/* Right Side - Actions */}
       <div className="flex items-center gap-3">
         {/* SDR Bot Button */}
