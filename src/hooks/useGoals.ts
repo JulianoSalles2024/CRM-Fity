@@ -95,13 +95,22 @@ export function useGoals(companyId: string | null) {
 
     if (updateError) return updateError.message;
 
-    if (data.isActive) {
-      const { error: rpcError } = await supabase.rpc('activate_goal', {
-        p_goal_id:    goalId,
-        p_company_id: companyId,
-      });
-      if (rpcError) return rpcError.message;
-    }
+   if (data.isActive) {
+  const { error: rpcError } = await supabase.rpc('activate_goal', {
+    p_goal_id: goalId,
+    p_company_id: companyId,
+  });
+  if (rpcError) return rpcError.message;
+} else {
+  // Se desmarcou como ativa, desativa manualmente
+  const { error: deactivateError } = await supabase
+    .from('goals')
+    .update({ is_active: false })
+    .eq('id', goalId)
+    .eq('company_id', companyId);
+
+  if (deactivateError) return deactivateError.message;
+}
 
     await fetchGoals();
     return null;

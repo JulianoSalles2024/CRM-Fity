@@ -3,6 +3,7 @@ import { Target, Plus, Loader2, TrendingUp, Users, Receipt, BarChart2, UserMinus
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { useGoals } from '@/src/hooks/useGoals';
+import { useTeamMembers } from '@/src/hooks/useTeamMembers';
 import type { Goal, GoalType, GoalFrequency, CreateGoalData } from '@/types';
 
 const GOAL_TYPE_LABEL: Record<GoalType, string> = {
@@ -44,9 +45,10 @@ interface GoalCardProps {
     onActivate: () => void;
     onEdit?: (goal: Goal) => void;
     onDelete?: (goal: Goal) => void;
+    sellerName?: string | null;
 }
 
-const GoalCard: React.FC<GoalCardProps> = ({ goal, canManage, isActivating, onActivate, onEdit, onDelete }) => (
+const GoalCard: React.FC<GoalCardProps> = ({ goal, canManage, isActivating, onActivate, onEdit, onDelete, sellerName }) => (
     <div className="p-4 flex items-center justify-between hover:bg-slate-800/50 transition-colors">
         <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400">
@@ -55,6 +57,11 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, canManage, isActivating, onAc
             <div>
                 <div className="flex items-center gap-2">
                     <span className="text-white font-semibold">{goal.name}</span>
+                    {sellerName && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                            👤 {sellerName}
+                        </span>
+                    )}
                     {goal.isActive ? (
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-400 uppercase tracking-wider border border-emerald-500/20">
                             Ativa
@@ -115,6 +122,8 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, canManage, isActivating, onAc
 const GoalsTab: React.FC = () => {
     const { companyId, currentPermissions } = useAuth();
     const { goals, loading, activating, createGoal, updateGoal, deleteGoal, activateGoal } = useGoals(companyId);
+    const { members } = useTeamMembers(companyId);
+    const sellers = members.filter(m => m.role === 'Vendedor');
     const canManage = currentPermissions.canManageTeam;
 
     const [isModalOpen, setIsModalOpen]       = useState(false);
@@ -128,6 +137,7 @@ const GoalsTab: React.FC = () => {
     const [deleteTarget, setDeleteTarget]     = useState<Goal | null>(null);
     const [isDeleting, setIsDeleting]         = useState(false);
     const [scopeTab, setScopeTab]             = useState<'global' | 'seller'>('global');
+    const [goalScope, setGoalScope]           = useState<'global' | 'seller'>('global');
 
     const showToast = (message: string, type: 'success' | 'error') => {
         setToast({ message, type });
@@ -150,6 +160,7 @@ const GoalsTab: React.FC = () => {
         setFormError(null);
         setEditingGoal(null);
         setIsEditMode(false);
+        setGoalScope('global');
         setIsModalOpen(true);
     };
 
@@ -182,12 +193,15 @@ const GoalsTab: React.FC = () => {
         if (!form.periodEnd)                   return setFormError('Informe a data de fim.');
         if (form.periodEnd < form.periodStart) return setFormError('A data de fim deve ser após a data de início.');
         if (form.targetValue <= 0)             return setFormError('O valor alvo deve ser maior que zero.');
+        if (goalScope === 'seller' && !form.userId) return setFormError('Selecione um vendedor.');
+
+        const submitForm = goalScope === 'global' ? { ...form, userId: null } : form;
 
         setIsSaving(true);
         setFormError(null);
         const error = isEditMode && editingGoal
-            ? await updateGoal(editingGoal.id, form)
-            : await createGoal(form);
+            ? await updateGoal(editingGoal.id, submitForm)
+            : await createGoal(submitForm);
         setIsSaving(false);
 
         if (error) { setFormError(error); return; }
@@ -199,6 +213,7 @@ const GoalsTab: React.FC = () => {
 
     const globalGoals = goals.filter(goal => !goal.userId);
     const sellerGoals = goals.filter(goal => !!goal.userId);
+    const sellerMap = Object.fromEntries(members.map(m => [m.id, m.name]));
 
     return (
         <div className="space-y-6">
@@ -268,12 +283,29 @@ const GoalsTab: React.FC = () => {
                         </div>
                     )}
                     {!loading && sellerGoals.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                            <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-4">
-                                <Target className="w-7 h-7 text-slate-500" />
-                            </div>
-                            <p className="text-slate-500 text-sm">Nenhuma meta individual criada ainda.</p>
-                        </div>
+                        <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
+                    <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-4">
+                       <Target className="w-7 h-7 text-slate-500" />
+                         </div>
+
+                    <h3 className="text-white font-semibold text-base mb-1">
+                 Nenhuma meta individual criada
+                    </h3>
+
+                <p className="text-slate-500 text-sm max-w-xs">
+                Crie uma meta para um vendedor específico e acompanhe sua performance individual.
+            </p>
+
+            {canManage && (
+             <button
+            onClick={openModal}
+            className="mt-6 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+         >
+            <Plus className="w-4 h-4" />
+            Nova Meta
+        </button>
+    )}
+</div>
                     )}
                     {!loading && sellerGoals.length > 0 && (
                         <div className="divide-y divide-slate-800">
@@ -286,6 +318,7 @@ const GoalsTab: React.FC = () => {
                                     onActivate={() => setActivateTarget(goal)}
                                     onEdit={openEditModal}
                                     onDelete={goal => setDeleteTarget(goal)}
+                                    sellerName={goal.userId ? sellerMap[goal.userId] : null}
                                 />
                             ))}
                         </div>
@@ -305,7 +338,7 @@ const GoalsTab: React.FC = () => {
 
                 {/* Empty State */}
                 {!loading && globalGoals.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                    <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-4">
                             <Target className="w-7 h-7 text-slate-500" />
                         </div>
@@ -339,6 +372,7 @@ const GoalsTab: React.FC = () => {
                                 onActivate={() => setActivateTarget(goal)}
                                 onEdit={openEditModal}
                                 onDelete={goal => setDeleteTarget(goal)}
+                                sellerName={goal.userId ? sellerMap[goal.userId] : null}
                             />
                         ))}
                     </div>
@@ -441,6 +475,51 @@ const GoalsTab: React.FC = () => {
                                         className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
                                     />
                                 </div>
+
+                                {/* Escopo */}
+                                {!isEditMode && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-300 mb-1.5">Escopo</label>
+                                        <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1 w-fit">
+                                            {(['global', 'seller'] as const).map(s => (
+                                                <button
+                                                    key={s}
+                                                    type="button"
+                                                    disabled={isSaving}
+                                                    onClick={() => {
+                                                        setGoalScope(s);
+                                                        setForm(f => ({ ...f, userId: null }));
+                                                    }}
+                                                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50 ${
+                                                        goalScope === s
+                                                            ? 'bg-slate-700 text-white'
+                                                            : 'text-slate-400 hover:text-white'
+                                                    }`}
+                                                >
+                                                    {s === 'global' ? 'Global' : 'Por Vendedor'}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Dropdown Vendedor */}
+                                {!isEditMode && goalScope === 'seller' && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-300 mb-1.5">Vendedor</label>
+                                        <select
+                                            value={form.userId ?? ''}
+                                            onChange={e => setForm(f => ({ ...f, userId: e.target.value || null }))}
+                                            disabled={isSaving}
+                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+                                        >
+                                            <option value="">Selecione um vendedor</option>
+                                            {sellers.map(m => (
+                                                <option key={m.id} value={m.id}>{m.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
 
                                 {/* Tipo + Frequência */}
                                 <div className="grid grid-cols-2 gap-3">
