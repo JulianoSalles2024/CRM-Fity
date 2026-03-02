@@ -77,12 +77,9 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
 
     return (
         <div className="flex flex-col gap-4">
-             <div className="flex items-center gap-4">
-                 <Icon className="w-8 h-8 text-violet-500" />
-                <div>
-                    <h1 className="text-2xl font-bold text-white">{title}</h1>
-                    <p className="text-zinc-400">{description}</p>
-                </div>
+            <div>
+                <h1 className="text-2xl font-bold text-white">{title}</h1>
+                <p className="text-zinc-400">{description}</p>
             </div>
              <div className="flex items-center gap-4 p-2 bg-zinc-800/50 rounded-lg border border-zinc-700 min-h-[52px]">
                 {/* Status Filter */}

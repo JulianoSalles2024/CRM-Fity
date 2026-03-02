@@ -144,7 +144,6 @@ const App: React.FC = () => {
     const [activeView, setActiveView] = useState('Inbox');
     const [inboxMode, setInboxMode] = useState<'standard' | 'analysis'>('standard');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
     const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('crm-theme') as 'dark' | 'light') || 'dark');
     const [isChatEnabled, setIsChatEnabled] = useState(false);
 
@@ -294,24 +293,17 @@ const App: React.FC = () => {
     }, []);
 
     const searchedLeads = useMemo(() => {
-        const searchLower = searchQuery.toLowerCase();
         const boardLeads = leads.filter(l => l.boardId === activeBoardId);
 
-        const filtered = boardLeads.filter(lead =>
-            lead.name.toLowerCase().includes(searchLower) ||
-            lead.company.toLowerCase().includes(searchLower) ||
-            (lead.email && lead.email.toLowerCase().includes(searchLower))
-        );
-
         if (activeView === 'Leads' || activeView === 'Clientes') {
-            return filtered.filter(lead => {
+            return boardLeads.filter(lead => {
                 const statusMatch = listStatusFilter === 'all' || lead.status === listStatusFilter;
                 const tagMatch = listSelectedTags.length === 0 || listSelectedTags.every(st => lead.tags.some(lt => lt.id === st.id));
                 return statusMatch && tagMatch;
             });
         }
-        return filtered;
-    }, [leads, searchQuery, activeView, listStatusFilter, listSelectedTags, activeBoardId]);
+        return boardLeads;
+    }, [leads, activeView, listStatusFilter, listSelectedTags, activeBoardId]);
 
     const analysisForGroup = useMemo(() => (selectedGroupForView ? groupAnalyses.find(a => a.groupId === selectedGroupForView) || null : null), [groupAnalyses, selectedGroupForView]);
 
@@ -852,8 +844,6 @@ const App: React.FC = () => {
             <Header
                 currentUser={localUser}
                 onLogout={logout}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
                 theme={theme}
                 onThemeToggle={() => setTheme(p => p === 'dark' ? 'light' : 'dark')}
                 unreadCount={unreadCount}

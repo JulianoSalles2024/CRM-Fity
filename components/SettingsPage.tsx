@@ -375,27 +375,28 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="flex items-center gap-4">
-                <Settings className="w-8 h-8 text-violet-500" />
-                <div>
-                    <h1 className="text-2xl font-bold text-white">Configurações</h1>
-                    <p className="text-slate-400">Gerencie suas preferências e configurações da conta</p>
-                </div>
+            <div>
+                <h1 className="text-2xl font-bold text-white">Configurações</h1>
+                <p className="text-slate-400">Gerencie suas preferências e configurações da conta</p>
             </div>
             <div>
-                <div className="border-b border-slate-700 mb-6">
-                    <nav className="flex -mb-px space-x-6 overflow-x-auto" aria-label="Tabs">
-                        {tabs.map(tab => (
-                            <button
-                                key={tab.name}
-                                onClick={() => setActiveTab(tab.name)}
-                                className={`whitespace-nowrap flex items-center gap-2 py-3 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.name ? 'border-violet-500 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
-                            >
-                                <tab.icon className="w-4 h-4" />
-                                {tab.name}
-                            </button>
-                        ))}
-                    </nav>
+                <div className="flex border-b border-slate-800 mb-6 overflow-x-auto">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.name}
+                            onClick={() => setActiveTab(tab.name)}
+                            className={`whitespace-nowrap flex items-center gap-2 px-6 py-3 text-sm font-medium transition-all relative ${activeTab === tab.name ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                            <tab.icon className="w-4 h-4" />
+                            {tab.name}
+                            {activeTab === tab.name && (
+                                <motion.div
+                                    layoutId="activeTabSettings"
+                                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
+                                />
+                            )}
+                        </button>
+                    ))}
                 </div>
             </div>
             <div className="space-y-6">
