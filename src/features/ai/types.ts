@@ -1,15 +1,16 @@
 import { Id } from '@/src/types';
 
-export type AIToolId = 
-  | 'pilot' 
-  | 'sales_script' 
-  | 'daily_briefing' 
-  | 'deal_coach' 
-  | 'email_draft' 
-  | 'objections' 
-  | 'board_structure' 
-  | 'board_strategy' 
-  | 'board_refine';
+export type AIToolId =
+  | 'pilot'
+  | 'sales_script'
+  | 'daily_briefing'
+  | 'deal_coach'
+  | 'email_draft'
+  | 'objections'
+  | 'board_structure'
+  | 'board_strategy'
+  | 'board_refine'
+  | 'sdr_vendas';
 
 export interface AIToolConfig {
   id: AIToolId;

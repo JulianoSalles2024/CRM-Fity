@@ -5,7 +5,7 @@ import path from "path";
 
 import credentialsHandler from "./api/ai/credentials";
 import testConnectionHandler from "./api/ai/test-connection";
-import generateHandler from "./api/ai/generate";
+import generateHandler from "./src/pages/api/ai/generate";
 
 const app = express();
 const PORT = 3000;
