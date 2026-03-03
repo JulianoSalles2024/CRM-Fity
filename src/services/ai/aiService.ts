@@ -59,15 +59,22 @@ export class AIService {
 
       // Otherwise, use the backend proxy with stored credentials
       const { data: authData } = await supabase.auth.getUser();
-      const response = await fetch('/api/ai/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: authData?.user?.id,
-          prompt,
-          systemInstruction
-        })
-      });
+
+const { data: profile } = await supabase
+  .from('profiles')
+  .select('company_id')
+  .eq('id', authData?.user?.id)
+  .single();
+
+const response = await fetch('/api/ai/generate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    organizationId: profile?.company_id,
+    prompt,
+    systemInstruction
+  })
+});
 
       if (!response.ok) {
         const error = await response.json();
