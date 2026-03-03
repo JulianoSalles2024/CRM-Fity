@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Target, Plus, Loader2, TrendingUp, Users, Receipt, BarChart2, UserMinus, X, Zap, Pencil, Trash2 } from 'lucide-react';
+import FlatCard from '@/components/ui/FlatCard';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { useGoals } from '@/src/hooks/useGoals';
@@ -276,7 +277,7 @@ const GoalsTab: React.FC = () => {
 
             {/* Content */}
             {scopeTab === 'seller' && (
-                <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+                <FlatCard className="overflow-hidden">
                     {loading && (
                         <div className="p-6 flex justify-center">
                             <Loader2 className="w-5 h-5 text-slate-500 animate-spin" />
@@ -323,11 +324,11 @@ const GoalsTab: React.FC = () => {
                             ))}
                         </div>
                     )}
-                </div>
+                </FlatCard>
             )}
 
             {scopeTab === 'global' && (
-            <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+            <FlatCard className="overflow-hidden">
 
                 {/* Loading */}
                 {loading && (
@@ -378,7 +379,7 @@ const GoalsTab: React.FC = () => {
                     </div>
                 )}
 
-            </div>
+            </FlatCard>
             )}
 
             {/* Modal Confirmação Ativar */}

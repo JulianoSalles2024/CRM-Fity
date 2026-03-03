@@ -45,70 +45,79 @@ interface SellerDetail360Props {
 
 // ── Date Utilities ────────────────────────────────────────────────────────────
 
+/**
+ * Formata um Date usando getters locais (getFullYear/getMonth/getDate).
+ * Evita o bug de toISOString() que converte para UTC e pode retornar
+ * o dia anterior em fusos UTC+ (ex: UTC-3 = Brasil).
+ */
+function toLocalDateStr(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
 function getDateRange(period: Period): { start: string; end: string } {
-    const now = new Date();
+    const now  = new Date();
+    const y    = now.getFullYear();
+    const mo   = now.getMonth();
+    const d    = now.getDate();
+
+    // Todos os casos usam new Date(y, m, d) — meia-noite local, sem horário residual.
+    // JS resolve automaticamente overflows (ex: d-6 negativo vira mês anterior).
+    const end = new Date(y, mo, d);
     let start: Date;
-    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     switch (period) {
         case 'hoje':
-            start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            start = new Date(y, mo, d);
             break;
-        case 'semana': {
-            start = new Date(now);
-            start.setDate(now.getDate() - 6);
+        case 'semana':
+            start = new Date(y, mo, d - 6);
             break;
-        }
         case 'ano':
-            start = new Date(now.getFullYear(), 0, 1);
+            start = new Date(y, 0, 1);
             break;
         case 'mes':
         default:
-            start = new Date(now.getFullYear(), now.getMonth(), 1);
+            start = new Date(y, mo, 1);
     }
 
     return {
-        start: start.toISOString().split('T')[0],
-        end: end.toISOString().split('T')[0],
+        start: toLocalDateStr(start),
+        end:   toLocalDateStr(end),
     };
 }
 
 function getPrevDateRange(period: Period): { start: string; end: string } {
-    const now = new Date();
+    const now  = new Date();
+    const y    = now.getFullYear();
+    const mo   = now.getMonth();
+    const d    = now.getDate();
+
+    // Mesmo padrão: new Date(y, m, d) puro em todos os casos.
     switch (period) {
         case 'hoje': {
-            const d = new Date(now);
-            d.setDate(d.getDate() - 1);
-            const s = d.toISOString().split('T')[0];
+            const s = toLocalDateStr(new Date(y, mo, d - 1));
             return { start: s, end: s };
         }
-        case 'semana': {
-            const prevEnd = new Date(now);
-            prevEnd.setDate(now.getDate() - 7);
-            const prevStart = new Date(prevEnd);
-            prevStart.setDate(prevEnd.getDate() - 6);
+        case 'semana':
+            // Janela anterior: 13 dias atrás até 7 dias atrás (7 dias, imediatamente antes da atual)
             return {
-                start: prevStart.toISOString().split('T')[0],
-                end: prevEnd.toISOString().split('T')[0],
+                start: toLocalDateStr(new Date(y, mo, d - 13)),
+                end:   toLocalDateStr(new Date(y, mo, d - 7)),
             };
-        }
-        case 'ano': {
-            const start = new Date(now.getFullYear() - 1, 0, 1);
-            const end = new Date(now.getFullYear() - 1, 11, 31);
+        case 'ano':
             return {
-                start: start.toISOString().split('T')[0],
-                end: end.toISOString().split('T')[0],
+                start: toLocalDateStr(new Date(y - 1, 0,  1)),
+                end:   toLocalDateStr(new Date(y - 1, 11, 31)),
             };
-        }
         case 'mes':
-        default: {
-            const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            const end = new Date(now.getFullYear(), now.getMonth(), 0);
+        default:
             return {
-                start: start.toISOString().split('T')[0],
-                end: end.toISOString().split('T')[0],
+                start: toLocalDateStr(new Date(y, mo - 1, 1)),
+                end:   toLocalDateStr(new Date(y, mo,     0)),
             };
-        }
     }
 }
 
@@ -266,7 +275,7 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
             ? { start: customStart, end: customEnd } // no "prev" concept for custom → growth = 0
             : getPrevDateRange(period as Exclude<Period, 'custom'>);
 
-        const today = new Date().toISOString().split('T')[0];
+        const today = toLocalDateStr(new Date());
 
         const [
             curRes, prevRes, profileRes, teamRes,
@@ -312,8 +321,8 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
                 .eq('status', 'GANHO')
                 .eq('is_archived', false)
                 .is('deleted_at', null)
-                .gte('won_at', start)
-                .lte('won_at', end + 'T23:59:59'),
+                .gte('won_at', start + 'T00:00:00')
+                .lte('won_at', end + 'T23:59:59.999'),
 
             // ── Individual: leads GANHO do vendedor — período anterior ─────
             supabase
@@ -324,8 +333,8 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
                 .eq('status', 'GANHO')
                 .eq('is_archived', false)
                 .is('deleted_at', null)
-                .gte('won_at', prevStart)
-                .lte('won_at', prevEnd + 'T23:59:59'),
+                .gte('won_at', prevStart + 'T00:00:00')
+                .lte('won_at', prevEnd + 'T23:59:59.999'),
 
             // ── Time: todos leads GANHO da empresa — período atual ────────
             supabase
@@ -335,8 +344,8 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
                 .eq('status', 'GANHO')
                 .eq('is_archived', false)
                 .is('deleted_at', null)
-                .gte('won_at', start)
-                .lte('won_at', end + 'T23:59:59'),
+                .gte('won_at', start + 'T00:00:00')
+                .lte('won_at', end + 'T23:59:59.999'),
 
             // ── Time: todos leads GANHO da empresa — período anterior ──────
             supabase
@@ -346,8 +355,8 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
                 .eq('status', 'GANHO')
                 .eq('is_archived', false)
                 .is('deleted_at', null)
-                .gte('won_at', prevStart)
-                .lte('won_at', prevEnd + 'T23:59:59'),
+                .gte('won_at', prevStart + 'T00:00:00')
+                .lte('won_at', prevEnd + 'T23:59:59.999'),
 
             // ── Meta global (user_id IS NULL) — query direta ──────────────
             supabase

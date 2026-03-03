@@ -103,7 +103,7 @@ const TopSellers: React.FC<TopSellersProps> = ({ leads, users, selectedPeriod })
             })
             .filter(s => s.role !== 'Admin')
             .sort((a, b) => b.totalValue - a.totalValue)
-            .slice(0, 3);
+            .slice(0, 4);
     }, [leads, users, selectedPeriod]);
 
     return (
