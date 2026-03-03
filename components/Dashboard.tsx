@@ -179,7 +179,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
     }, [leads, showNotification]);
 
     return (
-        <div className="flex flex-col gap-8 pb-10">
+        <div className="flex flex-col gap-4 pb-10">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
@@ -216,7 +216,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
             </div>
 
             {/* Main KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KpiCard
                     title="Pipeline Total"
                     value={currencyFormatter.format(kpiData.pipelineValue)}
@@ -258,7 +258,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     <FlatCard className="rounded-xl p-6 flex flex-col justify-center h-full">
                         <div className="mb-4">
                             <p className="text-sm font-medium text-slate-400 mb-2">Distribuição da Carteira</p>
-                            <div className="flex items-baseline gap-2">
+                            <div className="flex items-baseline gap-1">
                                 <span className="text-3xl font-bold text-white">{walletHealth.activePct}%</span>
                                 <span className="text-emerald-500 text-sm font-bold uppercase">Ativos</span>
                             </div>
@@ -308,10 +308,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     {/* LTV Card */}
                     <FlatCard className="rounded-xl p-6 flex flex-col justify-center h-full relative overflow-hidden">
                         <div className="relative z-10">
-                            <p className="text-sm font-medium text-slate-400 mb-2">LTV Médio</p>
-                            <div className="flex items-center gap-3 mb-3">
+                            <p className="text-sm font-medium text-slate-400 mb-8">LTV Médio</p>
+                            <div className="flex items-center gap-3 mb-5">
                                 <span className="text-3xl font-bold text-white">{currencyFormatter.format(walletHealth.ltv / 1000)}k</span>
-                                <span className="text-emerald-400 text-[10px] font-bold uppercase bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded tracking-wide">Médio</span>
+                                <span className="text-emerald-400 text-[12px] font-bold uppercase bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded tracking-wide">Médio</span>
                             </div>
                             <p className="text-xs text-slate-500 leading-relaxed">Valor médio vitalício por cliente ativo.</p>
                         </div>

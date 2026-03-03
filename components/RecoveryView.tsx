@@ -86,8 +86,12 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ leads, onReactivateLead, on
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-white">Recuperação de Leads</h1>
-                        <p className="text-slate-400">Leads perdidos com agendamento para reativação.</p>
+                        <h1 className="text-3xl font-bold text-white tracking-tight">
+  Recuperação de Leads
+</h1>
+<p className="text-slate-400 mt-1">
+  Leads perdidos com agendamento para reativação.
+</p>
                     </div>
                      <div className="flex items-center gap-2 self-start md:self-center">
                         <div className="flex items-center gap-2">

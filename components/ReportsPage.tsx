@@ -351,8 +351,12 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
         <div className="flex flex-col gap-6">
              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Relatórios</h1>
-                    <p className="text-slate-400">Análise detalhada de desempenho e métricas</p>
+                    <h1 className="text-3xl font-bold text-white tracking-tight">
+  Relatórios
+</h1>
+<p className="text-slate-400 mt-1">
+  Análise detalhada de desempenho e métricas
+</p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                     {/* Pipeline filter */}

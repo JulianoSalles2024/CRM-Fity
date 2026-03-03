@@ -374,10 +374,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     }, [tabs, activeTab]);
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-1">
             <div>
-                <h1 className="text-2xl font-bold text-white">Configurações</h1>
-                <p className="text-slate-400">Gerencie suas preferências e configurações da conta</p>
+                <h1 className="text-3xl font-bold text-white tracking-tight">
+  Configurações
+</h1>
+
+<p className="text-slate-400 mt-1">
+  Gerencie suas preferências e configurações da conta
+</p>
             </div>
             <div>
                 <div className="flex border-b border-slate-800 mb-6 overflow-x-auto">
