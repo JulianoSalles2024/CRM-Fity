@@ -47,7 +47,7 @@ export function useBoards(companyId: string | null) {
       const mapped: Board[] = ((boardsRes.data ?? []) as Record<string, unknown>[]).map((b) => ({
         id: b.id as string,
         name: (b.name as string) ?? '',
-        slug: (b.slug as string | undefined) ?? undefined,
+        slug: (b.slug as string) ?? '',
         description: (b.description as string) ?? undefined,
         type: (b.type as Board['type']) ?? 'sales',
         isDefault: Boolean(b.is_default),
@@ -76,19 +76,20 @@ export function useBoards(companyId: string | null) {
     if (!companyId) return null;
 
     const boardId = crypto.randomUUID();
-    const insertPayload: Record<string, unknown> = {
-      id: boardId,
-      name: boardData.name,
-      description: boardData.description ?? null,
-      type: boardData.type,
-      company_id: companyId,
-      is_default: false,
-    };
-    if (boardData.slug) insertPayload.slug = boardData.slug;
+    const { data, error: boardError } = await supabase
+  .from('boards')
+  .insert({
+    id: boardId,
+    name: boardData.name,
+    description: boardData.description ?? null,
+    type: boardData.type,
+    company_id: companyId,
+    is_default: false,
+  })
+  .select();
 
-    const { error: boardError } = await supabase
-      .from('boards')
-      .insert(insertPayload);
+console.log('createBoard DATA:', data);
+console.log('createBoard ERROR:', boardError);
 
     if (boardError) {
       console.error('createBoard error:', boardError);
