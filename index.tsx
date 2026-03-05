@@ -5,6 +5,12 @@ import App from './App';
 import { AuthProvider } from '@/src/features/auth/AuthContext';
 import AuthGate from '@/src/features/auth/AuthGate';
 import InvitePage, { InvalidTokenPage } from '@/src/pages/InvitePage';
+import { InstallProvider } from '@/src/features/install/context/InstallContext';
+import InstallRouter from '@/src/features/install/InstallRouter';
+
+const safeError = (...args: unknown[]) => {
+  try { console.error(...args); } catch { /* ignore */ }
+};
 
 // ── TEMPORARY Error Boundary for diagnosis ──────────────────
 class ErrorBoundary extends React.Component<
@@ -38,6 +44,8 @@ class ErrorBoundary extends React.Component<
 
 // ── Invite route interception ──────────────────────────────
 const inviteMatch = window.location.pathname.match(/^\/invite\/(.+)$/);
+// ── Install wizard route interception ──────────────────────
+const installMatch = window.location.pathname.match(/^\/install\/(.+)$/);
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -46,7 +54,15 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 
-if (inviteMatch) {
+if (installMatch) {
+  root.render(
+    <React.StrictMode>
+      <InstallProvider>
+        <InstallRouter />
+      </InstallProvider>
+    </React.StrictMode>
+  );
+} else if (inviteMatch) {
   const token = inviteMatch[1]?.trim();
   root.render(
     <React.StrictMode>
