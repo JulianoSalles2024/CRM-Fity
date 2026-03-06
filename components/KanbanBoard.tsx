@@ -75,8 +75,20 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
     const [isEditBoardModalOpen, setIsEditBoardModalOpen] = useState(false);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const columnIds = useMemo(() => columns.map(c => c.id), [columns]);
+
+    const displayLeads = useMemo(() => {
+        if (!searchQuery.trim()) return leads;
+        const q = searchQuery.toLowerCase();
+        return leads.filter(l =>
+            l.name?.toLowerCase().includes(q) ||
+            l.email?.toLowerCase().includes(q) ||
+            l.company?.toLowerCase().includes(q) ||
+            l.phone?.includes(q)
+        );
+    }, [leads, searchQuery]);
     const activeBoard = boards.find(b => b.id === activeBoardId) || boards[0];
 
     const sensors = useSensors(useSensor(PointerSensor, {
@@ -127,6 +139,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     onExportBoardClick={() => setIsExportModalOpen(true)}
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
                 />
             </div>
             <div className="flex-1 overflow-x-auto overflow-y-hidden">
@@ -142,7 +156,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                 <Column
                                     key={col.id}
                                     column={col}
-                                    leads={leads}
+                                    leads={displayLeads}
                                     users={users}
                                     tasks={tasks}
                                     cardDisplaySettings={cardDisplaySettings}
@@ -184,7 +198,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800">
-                                {leads.map(lead => (
+                                {displayLeads.map(lead => (
                                     <tr 
                                         key={lead.id} 
                                         onClick={() => onSelectLead(lead)}

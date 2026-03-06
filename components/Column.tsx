@@ -58,7 +58,7 @@ const Column: React.FC<ColumnProps> = ({ column, leads, users, tasks, cardDispla
                             className="flex flex-col items-center justify-between h-full p-2 overflow-hidden border-b-4"
                             style={{ borderBottomColor: column.color }}
                         >
-                            <button onClick={() => onToggleColumnMinimize(column.id)} className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-white" title="Expandir coluna">
+                            <button onClick={() => onToggleColumnMinimize(column.id)} className="p-1 text-blue-400 hover:text-blue-300" title="Expandir coluna">
                                 <ChevronRight className="w-5 h-5" />
                             </button>
                             <div className="flex-1 flex flex-col items-center justify-center gap-4 py-4 cursor-default">
@@ -70,7 +70,7 @@ const Column: React.FC<ColumnProps> = ({ column, leads, users, tasks, cardDispla
                                     <p className="text-xs text-slate-500 dark:text-slate-400">leads</p>
                                 </div>
                             </div>
-                            <button onClick={() => onAddLead(column.id)} className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-white" title="Adicionar lead">
+                            <button onClick={() => onAddLead(column.id)} className="p-1 text-blue-400 hover:text-blue-300" title="Adicionar lead">
                                 <PlusCircle className="w-5 h-5" />
                             </button>
                         </motion.div>
@@ -92,10 +92,10 @@ const Column: React.FC<ColumnProps> = ({ column, leads, users, tasks, cardDispla
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                    <button onClick={() => onAddLead(column.id)} className="text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors" title="Adicionar lead a este estágio">
+                                    <button onClick={() => onAddLead(column.id)} className="text-blue-400 hover:text-blue-300 transition-colors" title="Adicionar lead a este estágio">
                                         <PlusCircle className="w-5 h-5" />
                                     </button>
-                                    <button onClick={() => onToggleColumnMinimize(column.id)} className="text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors" title="Minimizar coluna">
+                                    <button onClick={() => onToggleColumnMinimize(column.id)} className="text-blue-400 hover:text-blue-300 transition-colors" title="Minimizar coluna">
                                         <ChevronLeft className="w-5 h-5" />
                                     </button>
                                 </div>

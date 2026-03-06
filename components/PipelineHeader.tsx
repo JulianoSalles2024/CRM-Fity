@@ -1,7 +1,7 @@
 
 
 import React, { useState } from 'react';
-import { SlidersHorizontal, Columns, BookOpen, ChevronDown, Plus, Check, Trash2, Settings, Download, LayoutGrid, List } from 'lucide-react';
+import { SlidersHorizontal, Columns, BookOpen, ChevronDown, Plus, Check, Trash2, Settings, Download, LayoutGrid, List, Search } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import CardCustomizationPopup from './CardCustomizationPopup';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
@@ -21,6 +21,8 @@ interface PipelineHeaderProps {
     onExportBoardClick: () => void;
     viewMode: 'kanban' | 'list';
     onViewModeChange: (mode: 'kanban' | 'list') => void;
+    searchQuery: string;
+    onSearchChange: (q: string) => void;
 }
 
 const PipelineHeader: React.FC<PipelineHeaderProps> = ({ 
@@ -36,7 +38,9 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
     onEditBoardClick,
     onExportBoardClick,
     viewMode,
-    onViewModeChange
+    onViewModeChange,
+    searchQuery,
+    onSearchChange,
 }) => {
     const [isCustomizeOpen, setCustomizeOpen] = useState(false);
     const [isBoardMenuOpen, setBoardMenuOpen] = useState(false);
@@ -147,20 +151,31 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
                 </div>
 
                 <div className="flex bg-slate-900 border border-slate-800 p-1 rounded-lg ml-2">
-                    <button 
+                    <button
                         onClick={() => onViewModeChange('kanban')}
                         className={`p-1.5 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
                         title="Visualização Kanban"
                     >
                         <LayoutGrid className="w-4 h-4" />
                     </button>
-                    <button 
+                    <button
                         onClick={() => onViewModeChange('list')}
                         className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
                         title="Visualização em Lista"
                     >
                         <List className="w-4 h-4" />
                     </button>
+                </div>
+
+                <div className="relative ml-2">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input
+                        type="text"
+                        placeholder="Buscar lead..."
+                        value={searchQuery}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        className="w-48 bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-all"
+                    />
                 </div>
             </div>
 
@@ -176,7 +191,7 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
                  <div className="relative">
                     <button
                         onClick={() => setCustomizeOpen(prev => !prev)}
-                        className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-700 px-3 py-1.5 rounded-md"
+                        className="flex items-center gap-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded-md transition-colors"
                     >
                         <SlidersHorizontal className="w-4 h-4" />
                         <span>Personalizar Cards</span>

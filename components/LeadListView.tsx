@@ -232,8 +232,8 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                     {label}
                     <span className={isActive ? 'opacity-100' : 'opacity-50 group-hover:opacity-100 transition-opacity'}>
                         {isActive 
-                            ? (isAscending ? <ChevronUp className="w-4 h-4 text-violet-400" /> : <ChevronDown className="w-4 h-4 text-violet-400" />)
-                            : <ChevronsUpDown className="w-4 h-4" />
+                            ? (isAscending ? <ChevronUp className="w-4 h-4 text-blue-400" /> : <ChevronDown className="w-4 h-4 text-blue-400" />)
+                            : <ChevronsUpDown className="w-4 h-4 text-blue-400" />
                         }
                     </span>
                 </button>
@@ -281,6 +281,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                     }
                                     {listDisplaySettings.showCreatedAt && <TableHeader sortKey="createdAt" label="Criação" />}
                                     {listDisplaySettings.showLastActivity && <TableHeader sortKey="lastActivity" label="Última Atividade" />}
+                                    {listDisplaySettings.showAssignedTo && <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">Responsável</th>}
                                     {currentUserRole === 'admin' && (
                                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 tracking-wider whitespace-nowrap">
                                             Criado por
@@ -342,6 +343,11 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                         )}
                                         {listDisplaySettings.showLastActivity && (
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">{lead.lastActivity}</td>
+                                        )}
+                                        {listDisplaySettings.showAssignedTo && (
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">
+                                                {users.find(u => u.id === lead.assignedTo)?.name ?? '—'}
+                                            </td>
                                         )}
                                         {currentUserRole === 'admin' && (
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">

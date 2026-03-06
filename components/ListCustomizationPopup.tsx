@@ -42,6 +42,7 @@ const ListCustomizationPopup: React.FC<ListCustomizationPopupProps> = ({ setting
         { key: 'showEmail', label: 'Mostrar E-mail' },
         { key: 'showPhone', label: 'Mostrar Telefone' },
         { key: 'showCreatedAt', label: 'Mostrar Data de Criação' },
+        { key: 'showAssignedTo', label: 'Mostrar Responsável' },
     ];
 
     return (

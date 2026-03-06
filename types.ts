@@ -36,6 +36,7 @@ export interface Group {
   accessLink?: string;
   status: GroupStatus;
   memberGoal?: number;
+  createdBy?: string;
 }
 
 export interface GroupInfo {
@@ -152,17 +153,13 @@ export interface EmailDraft {
 }
 
 export interface CardDisplaySettings {
-  showCompany: boolean;
-  showSegment: boolean;
   showValue: boolean;
   showTags: boolean;
   showProbability: boolean;
-  showDueDate: boolean;
   showAssignedTo: boolean;
   showEmail: boolean;
   showPhone: boolean;
   showCreatedAt: boolean;
-  showStage: boolean;
 }
 
 export interface ListDisplaySettings {
@@ -173,6 +170,7 @@ export interface ListDisplaySettings {
   showEmail: boolean;
   showPhone: boolean;
   showCreatedAt: boolean;
+  showAssignedTo: boolean;
 }
 
 // FIX: Added ChatChannel type to be used in ChatMessage and ChatConversation interfaces.

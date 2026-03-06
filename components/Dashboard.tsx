@@ -132,15 +132,20 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
     }, [periodFilteredLeads, activeColumns]);
 
     const walletHealth = useMemo(() => {
-        // Status derived from board_stages.linked_lifecycle_stage (via column.type)
-        const activeCount = periodFilteredLeads.filter(l => getLeadComputedStatus(l, activeColumns.find(c => c.id === l.columnId)?.type) === 'ativo').length;
-        const inactiveCount = periodFilteredLeads.filter(l => getLeadComputedStatus(l, activeColumns.find(c => c.id === l.columnId)?.type) === 'inativo').length;
-        const lostCount = periodFilteredLeads.filter(l => getLeadComputedStatus(l, activeColumns.find(c => c.id === l.columnId)?.type) === 'perdido').length;
-        const total = activeCount + inactiveCount + lostCount || 1;
+        const getStatus = (l: typeof periodFilteredLeads[0]) =>
+            getLeadComputedStatus(l, activeColumns.find(c => c.id === l.columnId)?.type);
 
-        const activePct = Math.round((activeCount / total) * 100);
-        const inactivePct = Math.round((inactiveCount / total) * 100);
-        const churnPct = Math.round((lostCount / total) * 100);
+        const activeCount    = periodFilteredLeads.filter(l => getStatus(l) === 'ativo').length;
+        const perdidoCount   = periodFilteredLeads.filter(l => getStatus(l) === 'perdido').length;
+        const encerradoCount = periodFilteredLeads.filter(l => getStatus(l) === 'encerrado').length;
+        const ganhoCount     = periodFilteredLeads.filter(l => getStatus(l) === 'ganho').length;
+
+        const total = activeCount + perdidoCount + encerradoCount + ganhoCount || 1;
+
+        const activePct    = Math.round((activeCount    / total) * 100);
+        const perdidoPct   = Math.round((perdidoCount   / total) * 100);
+        const encerradoPct = Math.round((encerradoCount / total) * 100);
+        const ganhoPct     = Math.round((ganhoCount     / total) * 100);
 
         const wonLeads = periodFilteredLeads.filter(l => activeColumns.find(c => c.id === l.columnId)?.type === 'won');
         const ltv = wonLeads.length > 0
@@ -148,8 +153,8 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
             : 0;
 
         return {
-            activeCount, inactiveCount, lostCount,
-            activePct, inactivePct, churnPct,
+            activeCount, perdidoCount, encerradoCount, ganhoCount,
+            activePct, perdidoPct, encerradoPct, ganhoPct,
             ltv
         };
     }, [periodFilteredLeads, activeColumns]);
@@ -263,23 +268,28 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                         </div>
                         
                         <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden flex mb-5">
-                            <div className="h-full bg-emerald-500" style={{ width: `${walletHealth.activePct}%` }}></div>
-                            <div className="h-full bg-amber-500" style={{ width: `${walletHealth.inactivePct}%` }}></div>
-                            <div className="h-full bg-red-500" style={{ width: `${walletHealth.churnPct}%` }}></div>
+                            <div className="h-full bg-emerald-500"  style={{ width: `${walletHealth.activePct}%` }}></div>
+                            <div className="h-full bg-amber-500"    style={{ width: `${walletHealth.perdidoPct}%` }}></div>
+                            <div className="h-full bg-red-500"      style={{ width: `${walletHealth.encerradoPct}%` }}></div>
+                            <div className="h-full bg-blue-500"     style={{ width: `${walletHealth.ganhoPct}%` }}></div>
                         </div>
-                        
-                        <div className="flex justify-between text-xs font-medium text-slate-400">
+
+                        <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs font-medium text-slate-400">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                                 <span>Ativos ({walletHealth.activeCount})</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                                <span>Inativos ({walletHealth.inactiveCount})</span>
+                                <span>Perdidos ({walletHealth.perdidoCount})</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                <span>Perdidos ({walletHealth.lostCount})</span>
+                                <span>Encerrados ({walletHealth.encerradoCount})</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                <span>Ganhos ({walletHealth.ganhoCount})</span>
                             </div>
                         </div>
                     </FlatCard>
