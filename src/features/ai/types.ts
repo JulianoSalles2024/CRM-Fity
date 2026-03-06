@@ -22,6 +22,7 @@ export interface AIToolConfig {
 
 export interface AIState {
   tools: Record<AIToolId, AIToolConfig>;
+  promptsVersion?: string;
 }
 
 export interface DealCoachResult {
