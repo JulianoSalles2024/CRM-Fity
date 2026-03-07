@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { User, InviteLink, UserRole } from '../types';
-import { Users, UserPlus, Copy, Trash2, Shield, Loader2, Ban, RefreshCw, Archive } from 'lucide-react';
+import { Users, UserPlus, Copy, Check, Trash2, Shield, Loader2, Ban, RefreshCw, Archive } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/features/auth/AuthContext';
@@ -30,7 +30,7 @@ interface TeamSettingsProps {
 }
 
 const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdateUsers }) => {
-    const { currentPermissions, currentUserRole } = useAuth();
+    const { currentPermissions, currentUserRole, companyId } = useAuth();
     const isAdmin = currentUserRole === 'admin';
 
     const [isInviteModalOpen, setInviteModalOpen] = useState(false);
@@ -56,6 +56,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
     // Delete state
     const [deleteTarget, setDeleteTarget] = useState<TeamMember | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
 
     // Tab state
     const [activeTab, setActiveTab] = useState<'active' | 'archived' | 'goals'>('active');
@@ -70,15 +71,19 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
 
     const fetchMembers = useCallback(async () => {
         setIsFetchingUsers(true);
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('profiles')
-            .select('id, email, name, role, company_id, created_at, is_active, is_archived, archived_at')
+            .select('id, name, email, role, company_id, created_at, is_active, is_archived, archived_at')
+            .eq('company_id', companyId ?? '')
+            .eq('is_active', true)
             .order('created_at', { ascending: true });
-        if (data) {
+        if (error) {
+            console.error('[TeamSettings] fetchMembers error:', error.message, '| code:', error.code);
+        } else if (data) {
             setSupabaseMembers(data.map(p => ({
                 id: p.id,
-                email: p.email,
-                name: p.name ?? p.email,
+                email: p.email ?? '',
+                name: p.name ?? p.email ?? '',
                 role: p.role === 'admin' ? 'Admin' : 'Vendedor',
                 joinedAt: p.created_at,
                 isActive: p.is_active !== false,
@@ -87,7 +92,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
             })));
         }
         setIsFetchingUsers(false);
-    }, []);
+    }, [companyId]);
 
     useEffect(() => { fetchMembers(); }, [fetchMembers]);
 
@@ -227,7 +232,11 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
     };
 
     const handleDeleteInvite = (id: string) => setInviteLinks(prev => prev.filter(l => l.id !== id));
-    const copyToClipboard = (text: string) => navigator.clipboard.writeText(text);
+    const copyToClipboard = (text: string, inviteId: string) => {
+        navigator.clipboard.writeText(text);
+        setCopiedInviteId(inviteId);
+        setTimeout(() => setCopiedInviteId(null), 2000);
+    };
     const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
     const formatDate = (dateString?: string) => {
         if (!dateString) return '';
@@ -726,11 +735,14 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                                     </div>
                                                     <div className="flex items-center gap-1">
                                                         <button
-                                                            onClick={() => copyToClipboard(`${window.location.origin}/invite/${link.token}`)}
+                                                            onClick={() => copyToClipboard(`${window.location.origin}/invite/${link.token}`, link.id)}
                                                             className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
                                                             title="Copiar Link"
                                                         >
-                                                            <Copy className="w-4 h-4" />
+                                                            {copiedInviteId === link.id
+                                                                ? <Check className="w-4 h-4 text-green-400" />
+                                                                : <Copy className="w-4 h-4" />
+                                                            }
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeleteInvite(link.id)}

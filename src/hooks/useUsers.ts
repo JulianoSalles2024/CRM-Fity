@@ -7,7 +7,7 @@ function mapProfileToUser(row: Record<string, unknown>): User {
   return {
     id: row.id as string,
     name: (row.name as string) ?? '',
-    email: (row.email as string) ?? '',
+    email: '',
     avatarUrl: (row.avatar_url as string) ?? undefined,
     role: role === 'admin' ? 'Admin' : role === 'seller' ? 'Vendedor' : undefined,
     joinedAt: (row.created_at as string) ?? undefined,
@@ -27,7 +27,7 @@ export function useUsers(companyId: string | null) {
     setLoading(true);
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, name, email, avatar_url, role, created_at')
+      .select('id, name, avatar_url, role, created_at')
       .eq('company_id', companyId)
       .eq('is_active', true)
       .order('name', { ascending: true });

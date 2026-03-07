@@ -96,12 +96,8 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
     });
 
     if (signInData?.user) {
-      // Account already exists — reuse session and sync role from invite
+      // Account already exists — reuse session; RPC will sync role + company_id
       userId = signInData.user.id;
-      await supabase
-        .from('profiles')
-        .update({ role: invite.role, company_id: invite.company_id })
-        .eq('id', signInData.user.id);
     } else if (signInError && signInError.message === 'Invalid login credentials') {
       // Account does not exist — create it
       // Profile is created automatically by the on_auth_user_created trigger.
@@ -152,11 +148,26 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
       return;
     }
 
-    // PASSO 5 — Invalidar convite
-    await supabase
+    // PASSO 5 — Aceitar convite via RPC (atualiza profiles + marca used_at atomicamente)
+    const { data: inviteRow, error: inviteRowError } = await supabase
       .from('invites')
-      .update({ used_at: new Date().toISOString() })
-      .eq('token', token);
+      .select('id')
+      .eq('token', token)
+      .single();
+
+    if (inviteRowError || !inviteRow?.id) {
+      setState({ status: 'error', invite, message: 'Não foi possível localizar o convite.' });
+      return;
+    }
+
+    const { error: rpcError } = await supabase.rpc('accept_invite', {
+      invite_id: inviteRow.id,
+    });
+
+    if (rpcError) {
+      setState({ status: 'error', invite, message: rpcError.message });
+      return;
+    }
 
     // PASSO 6 — Redirecionar
     window.location.href = '/';

@@ -75,7 +75,7 @@ alter table companies enable row level security;
 create table if not exists profiles (
   id          uuid        primary key references auth.users(id) on delete cascade,
   company_id  uuid        references companies(id) on delete set null,
-  full_name   text,
+  name        text,
   role        text        not null default 'user' check (role in ('admin','seller','user')),
   is_active   boolean     not null default true,
   avatar_url  text,
@@ -597,14 +597,14 @@ returns trigger language plpgsql security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, full_name, role)
+  insert into public.profiles (id, name, role)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data->>'full_name', new.email),
+    coalesce(new.raw_user_meta_data->>'name', new.email),
     coalesce(new.raw_user_meta_data->>'role', 'user')
   )
   on conflict (id) do update
-    set full_name = excluded.full_name,
+    set name = excluded.name,
         role      = excluded.role;
   return new;
 end;

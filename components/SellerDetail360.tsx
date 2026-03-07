@@ -301,7 +301,7 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
 
             supabase
                 .from('profiles')
-                .select('meta_mensal, name, email, role, company_id')
+                .select('name, email, role, company_id')
                 .eq('id', seller.id)
                 .single(),
 
