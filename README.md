@@ -14,10 +14,12 @@
 
 - [Sobre o projeto](#sobre-o-projeto)
 - [Pré-requisitos](#pré-requisitos)
+- [Install Wizard](#install-wizard)
 - [Instalação e execução local](#instalação-e-execução-local)
 - [Variáveis de ambiente](#variáveis-de-ambiente)
 - [Estrutura do projeto](#estrutura-do-projeto)
 - [Banco de dados](#banco-de-dados)
+- [Oportunidades Inteligentes](#oportunidades-inteligentes)
 - [Roles e permissões](#roles-e-permissões)
 - [Deploy](#deploy)
 
@@ -192,6 +194,75 @@ Execute os arquivos de `supabase/migrations/` **em ordem** no SQL Editor do Supa
 | `validate_invite(p_token)` | Valida token de convite |
 | `admin_block_user(p_user_id)` | Bloqueia usuário |
 | `admin_unblock_user(p_user_id)` | Desbloqueia usuário |
+
+---
+
+## Install Wizard
+
+O CRM Zenius possui um assistente de instalação guiado que configura toda a infraestrutura automaticamente — sem precisar editar arquivos manualmente.
+
+### Como acessar
+
+Após fazer fork e deploy na Vercel, acesse:
+
+```
+https://seu-dominio.vercel.app/install
+```
+
+### Fluxo de instalação (4 etapas)
+
+```
+/install/start     → Dados do administrador (nome, e-mail, senha)
+/install/vercel    → Token da Vercel (para configurar env vars e redeploy)
+/install/supabase  → URL, Service Role Key, Anon Key e PAT do Supabase
+/install/run       → Execução automática com feedback em tempo real
+```
+
+### O que o wizard faz automaticamente
+
+| Etapa | Ação |
+|---|---|
+| 1 | Detecta o projeto na Vercel via token |
+| 2 | Cria as variáveis de ambiente (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) |
+| 3 | Executa as migrations no Supabase via Management API |
+| 4 | Cria o usuário administrador no Supabase Auth |
+| 5 | Cria o perfil do admin com `role = 'admin'` |
+| 6 | Dispara redeploy automático na Vercel com as novas env vars |
+
+### Arquivos do Install Wizard
+
+```
+src/features/install/
+├── InstallRouter.tsx              # Dispatcher de rotas /install/*
+├── context/InstallContext.tsx     # Estado global + guards de etapa
+├── utils/installStorage.ts        # Persistência no localStorage
+├── pages/
+│   ├── InstallStartPage.tsx       # Etapa 1: dados do admin
+│   ├── InstallVercelPage.tsx      # Etapa 2: token Vercel
+│   ├── InstallSupabasePage.tsx    # Etapa 3: credenciais Supabase
+│   ├── InstallRunPage.tsx         # Etapa 4: execução cinematic
+│   ├── ForkInstructionsPage.tsx   # Instruções de fork
+│   ├── DeployInstructionsPage.tsx # Instruções de deploy
+│   └── DeployPreparationPage.tsx  # Countdown 90s pós-deploy
+└── services/installService.ts     # Chamadas de API do wizard
+
+src/server/install/
+└── runMigrations.ts               # Runner de migrations via Supabase Management API
+
+api/install/
+└── migrate.ts                     # Endpoint que executa as migrations
+```
+
+### Pré-requisitos para o wizard
+
+1. Fazer **fork** do repositório no GitHub
+2. Fazer **deploy** na Vercel conectando o fork (com env vars vazias por enquanto)
+3. Ter em mãos:
+   - Token da Vercel (em [vercel.com/account/tokens](https://vercel.com/account/tokens))
+   - URL do projeto Supabase
+   - Service Role Key do Supabase
+   - Anon Key do Supabase
+   - Personal Access Token do Supabase (para rodar migrations)
 
 ---
 
