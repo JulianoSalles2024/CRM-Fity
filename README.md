@@ -36,6 +36,8 @@ O **CRM Zenius** é uma plataforma de gestão comercial voltada para equipes de 
 - ✅ **Tarefas** — gestão de atividades vinculadas a leads
 - 🤖 **IA integrada** — assistente SDR, geração de e-mails e análise de deals
 - 👥 **Multiusuário** — admin, vendedor e usuário com permissões distintas
+- 🔮 **Oportunidades Inteligentes** — scoring determinístico de leads com bandas hot/warm/cold/risk/upsell
+- 🎯 **Deal Detail View** — pipeline dinâmico, status em tempo real e timeline com paginação
 
 ---
 
@@ -65,7 +67,9 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Acesse em: `http://localhost:3000`
+Acesse em: `http://localhost:3002` (Vite) — a API Express roda em `http://localhost:3000`.
+
+> O comando `npm run dev` inicia ambos os servidores em paralelo via `concurrently`.
 
 ---
 
@@ -94,20 +98,23 @@ CRM-Fity/
 ├── index.html                  # Entry point do Vite
 ├── index.tsx                   # Bootstrap React
 ├── App.tsx                     # Root da aplicação, estado global
-├── api.ts                      # Funções de API legadas
-├── data.ts                     # Dados iniciais / seed
-├── types.ts                    # Tipos globais legados
-├── server.ts                   # Servidor Express (dev local)
+├── server.ts                   # Servidor Express (API local, porta 3000)
+├── vite.config.ts              # Config Vite (porta 3002, proxy → 3000)
 │
-├── api/                        # Serverless functions (Vercel)
-│   ├── health.ts
-│   └── ai/
-│       ├── credentials.ts      # CRUD de credenciais de IA
-│       ├── generate.ts         # Geração de texto com IA
-│       └── test-connection.ts
+├── api/                        # Serverless functions (Vercel) / rotas Express
+│   ├── ai/
+│   │   ├── credentials.ts      # CRUD de credenciais de IA
+│   │   ├── generate.ts         # Geração de texto com IA
+│   │   └── test-connection.ts
+│   ├── install/
+│   │   └── migrate.ts
+│   └── opportunities/
+│       ├── analyze.ts          # Scoring determinístico de leads
+│       └── list.ts             # Listagem de oportunidades por empresa
 │
 ├── components/                 # Componentes React
-│   ├── ui/                     # Componentes base (FlatCard, GlassCard)
+│   ├── LeadDetailSlideover.tsx # Deal Detail View (pipeline dinâmico, timeline paginada)
+│   ├── InboxView.tsx           # Inbox com modal de Oportunidades Inteligentes
 │   ├── Sidebar.tsx
 │   ├── Dashboard.tsx
 │   ├── KanbanBoard.tsx
@@ -118,43 +125,36 @@ CRM-Fity/
 ├── src/
 │   ├── app/
 │   │   └── AppRouter.tsx       # Roteamento e guards de role
+│   ├── components/
+│   │   └── opportunities/
+│   │       └── PredictiveOpportunitiesModal.tsx  # Modal de oportunidades inteligentes
 │   ├── features/
 │   │   ├── auth/               # AuthContext, AuthGate, AuthPage
 │   │   ├── ai/                 # Estado e hooks de IA
 │   │   ├── ai-credentials/     # Gestão de provedores de IA
 │   │   └── profile/            # Perfil do usuário
-│   ├── hooks/                  # Hooks de dados Supabase
+│   ├── hooks/
 │   │   ├── useBoards.ts        # Boards e estágios do Kanban
 │   │   ├── useLeads.ts         # CRUD de leads
 │   │   ├── useTasks.ts         # CRUD de tarefas
 │   │   ├── useActivities.ts    # Histórico de atividades
 │   │   ├── useUsers.ts         # Membros da equipe
 │   │   ├── useGoals.ts         # Metas
-│   │   └── useActiveGoal.ts    # Meta ativa do vendedor
+│   │   ├── useActiveGoal.ts    # Meta ativa do vendedor
+│   │   └── useOpportunityScores.ts  # Scores de oportunidades
 │   ├── lib/
 │   │   ├── supabase.ts         # Client Supabase
 │   │   ├── permissions.ts      # RBAC — AppRole e Permissions
 │   │   ├── mappers.ts          # snake_case ↔ camelCase
 │   │   └── leadStatus.ts       # Status derivado de lead
-│   ├── pages/
-│   │   └── InvitePage.tsx      # Fluxo de convite por token
-│   ├── services/
-│   │   └── ai/                 # Serviços de geração de IA
-│   ├── types.ts                # Tipos principais (Lead, Board, User…)
-│   └── utils/
-│       └── logger.ts           # Logger seguro (só loga em development)
+│   └── types.ts                # Tipos principais (Lead, Board, User…)
 │
-└── database/
+└── supabase/
     └── migrations/             # Histórico de migrations do Supabase
-        ├── 001_painel_360.sql
+        ├── 001_init.sql
         ├── 002_handle_new_user_trigger.sql
         ├── 003_fix_invite_trigger.sql
-        ├── 004_multitenant_rbac.sql
-        ├── 005_seller_360_module.sql
-        ├── 006_fix_role_default.sql
-        ├── 007_validate_invite_rpc.sql
-        ├── 008_add_is_active_to_profiles.sql
-        └── 009_enforce_company_id_trigger.sql
+        └── 004_lead_opportunity_scores.sql   # Tabela de scoring de oportunidades
 ```
 
 ---
@@ -168,20 +168,21 @@ O projeto usa **Supabase** (PostgreSQL) com **Row Level Security (RLS)** ativo e
 | Tabela | Descrição |
 |---|---|
 | `profiles` | Usuários com `role`, `company_id`, `is_active` |
-| `leads` | Leads com `owner_id`, `won_at`, `is_archived` |
+| `leads` | Leads com `owner_id`, `column_id`, `won_at`, `is_archived` |
 | `boards` | Pipelines de venda por empresa |
 | `board_stages` | Estágios do Kanban vinculados ao lifecycle |
 | `tasks` | Tarefas vinculadas a leads |
 | `activities` | Histórico de atividades |
 | `goals` | Metas individuais e globais por período |
 | `sales` | Vendas fechadas (faturamento por banco/tipo) |
+| `lead_opportunity_scores` | Scores de conversão, upsell e risco por lead |
 
 ### Aplicar migrations
 
-Execute os arquivos de `database/migrations/` **em ordem** no SQL Editor do Supabase:
+Execute os arquivos de `supabase/migrations/` **em ordem** no SQL Editor do Supabase:
 
 ```
-001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009
+001 → 002 → 003 → 004
 ```
 
 ### RPCs disponíveis
@@ -191,6 +192,32 @@ Execute os arquivos de `database/migrations/` **em ordem** no SQL Editor do Supa
 | `validate_invite(p_token)` | Valida token de convite |
 | `admin_block_user(p_user_id)` | Bloqueia usuário |
 | `admin_unblock_user(p_user_id)` | Desbloqueia usuário |
+
+---
+
+## Oportunidades Inteligentes
+
+O módulo analisa automaticamente os leads ativos e gera scores determinísticos:
+
+| Score | Descrição |
+|---|---|
+| `conversion_score` | Probabilidade de fechar o negócio (0–100) |
+| `upsell_score` | Potencial de venda adicional (0–100) |
+| `risk_score` | Risco de perda por inatividade (0–100) |
+
+**Bandas de prioridade:** `hot` · `warm` · `cold` · `risk` · `upsell`
+
+Para rodar a análise, execute no console do browser (após login):
+
+```js
+const { data } = await (await import('/src/lib/supabase.ts')).supabase.auth.getSession();
+const token = data.session.access_token;
+const res = await fetch('/api/opportunities/analyze', {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${token}` }
+});
+console.log(await res.json()); // { analyzed: N, upserted: N }
+```
 
 ---
 
