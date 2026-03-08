@@ -3,9 +3,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Phone, Shield, Check, Save, User, AtSign, Lock, Pencil } from 'lucide-react';
 import { ProfileAvatar } from './components/ProfileAvatar';
 import FlatCard from '@/components/ui/FlatCard';
-
-// ⚠️ mantenha o mesmo import do seu projeto (o que já está funcionando)
 import { supabase } from '@/src/lib/supabase';
+
+const safeError = (...args: unknown[]) => console.error(...args);
 
 type ProfileForm = {
   firstName: string;
@@ -37,6 +37,10 @@ export const ProfileView: React.FC = () => {
   const [saved, setSaved] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSaved, setPasswordSaved] = useState(false);
 
   // 🔹 Carrega do Supabase (inclui name/avatar como fallback)
   useEffect(() => {
@@ -155,6 +159,30 @@ export const ProfileView: React.FC = () => {
     setSaved(true);
     setIsEditing(false);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleSavePassword = async () => {
+    setPasswordError('');
+    if (newPassword.length < 6) {
+      setPasswordError('A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('As senhas não coincidem.');
+      return;
+    }
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      setPasswordError(error.message);
+      return;
+    }
+    setPasswordSaved(true);
+    setNewPassword('');
+    setConfirmPassword('');
+    setTimeout(() => {
+      setPasswordSaved(false);
+      setShowPasswordForm(false);
+    }, 2000);
   };
 
   const handleCancel = () => {
@@ -331,31 +359,53 @@ export const ProfileView: React.FC = () => {
                 <label htmlFor="new-password" className="text-xs font-medium text-slate-500 uppercase tracking-wide">
                   Nova Senha
                 </label>
-                <input id="new-password" type="password" placeholder="Mínimo 6 caracteres" className={inputClass} />
+                <input
+                id="new-password"
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                className={inputClass}
+              />
               </div>
               <div className="space-y-1.5">
                 <label htmlFor="confirm-password" className="text-xs font-medium text-slate-500 uppercase tracking-wide">
                   Confirmar Nova Senha
                 </label>
-                <input id="confirm-password" type="password" placeholder="Digite novamente" className={inputClass} />
+                <input
+                  id="confirm-password"
+                  type="password"
+                  placeholder="Digite novamente"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  className={inputClass}
+                />
               </div>
             </div>
+
+            {passwordError && (
+              <p className="text-xs text-red-400">{passwordError}</p>
+            )}
 
             <div className="flex items-center justify-end gap-3 pt-1">
               <button
                 type="button"
-                onClick={() => setShowPasswordForm(false)}
+                onClick={() => { setShowPasswordForm(false); setNewPassword(''); setConfirmPassword(''); setPasswordError(''); }}
                 className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="button"
-                onClick={() => setShowPasswordForm(false)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-lg shadow-blue-500/20 transition-all active:scale-[0.97]"
+                onClick={handleSavePassword}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg transition-all active:scale-[0.97] ${
+                  passwordSaved
+                    ? 'bg-emerald-500 shadow-emerald-500/20 text-white'
+                    : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-blue-500/20'
+                }`}
               >
-                <Lock className="w-3.5 h-3.5" />
-                Salvar Senha
+                {passwordSaved ? <Check className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                {passwordSaved ? 'Salvo!' : 'Salvar Senha'}
               </button>
             </div>
           </div>

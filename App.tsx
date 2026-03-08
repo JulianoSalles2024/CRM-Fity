@@ -61,6 +61,9 @@ import type { User, ColumnData, Lead, Activity, Task, Id, CreateLeadData, Update
 import { initialTags, initialConversations, initialMessages, initialNotifications, initialPlaybooks } from './data';
 
 
+// --- Utilitário de log de erros ---
+const safeError = (...args: unknown[]) => console.error(...args);
+
 // --- Local Storage Hook (for UI preferences only) ---
 function useLocalStorage<T>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
     const [storedValue, setStoredValue] = useState<T>(() => {

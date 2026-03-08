@@ -75,7 +75,6 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
             .from('profiles')
             .select('id, name, email, role, company_id, created_at, is_active, is_archived, archived_at')
             .eq('company_id', companyId ?? '')
-            .eq('is_active', true)
             .order('created_at', { ascending: true });
         if (error) {
             console.error('[TeamSettings] fetchMembers error:', error.message, '| code:', error.code);
@@ -100,8 +99,8 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
         ? supabaseMembers
         : users.map(u => ({ ...u, role: u.role ?? 'Vendedor', joinedAt: u.joinedAt ?? '', isActive: true, isArchived: false }));
 
-    const activeMembers = displayMembers.filter(m => !m.isArchived);
-    const archivedMembers = displayMembers.filter(m => m.isArchived);
+    const activeMembers = displayMembers.filter(m => m.isActive && !m.isArchived);
+    const archivedMembers = displayMembers.filter(m => m.isArchived || !m.isActive);
     const tabMembers = activeTab === 'active' ? activeMembers : archivedMembers;
 
     const filteredMembers = activeTab === 'active'

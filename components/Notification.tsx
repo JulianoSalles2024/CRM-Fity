@@ -19,7 +19,7 @@ const icons = {
 };
 
 const colors = {
-  success: 'bg-emerald-600 border-emerald-500',
+  success: 'bg-blue-600 border-blue-500',
   error: 'bg-red-600 border-red-500',
   warning: 'bg-amber-500 border-amber-400',
   info: 'bg-blue-600 border-blue-500',

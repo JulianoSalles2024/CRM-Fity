@@ -71,13 +71,48 @@ alter table companies enable row level security;
 
 -- NOTE: policy "Companies: members can read own" is created after profiles table below.
 
--- ── 2. profiles (users) ──────────────────────────────────────
+-- ── 2. SECURITY DEFINER helpers (necessários antes das RLS policies) ────
+-- Criadas antes de profiles pois as policies de profiles as usam.
+-- my_company_id() e my_role() executam como owner → bypass RLS → sem recursão.
+
+create or replace function public.my_company_id()
+returns uuid
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select company_id from public.profiles where id = auth.uid()
+$$;
+
+create or replace function public.my_role()
+returns text
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select role from public.profiles where id = auth.uid()
+$$;
+
+grant execute on function public.my_company_id() to authenticated;
+grant execute on function public.my_role()       to authenticated;
+
+-- ── 3. profiles (users) ──────────────────────────────────────
 create table if not exists profiles (
   id          uuid        primary key references auth.users(id) on delete cascade,
   company_id  uuid        references companies(id) on delete set null,
   name        text,
+  first_name  text,
+  last_name   text,
+  nickname    text,
+  email       text,
+  phone       text,
+  avatar      text,
   role        text        not null default 'user' check (role in ('admin','seller','user')),
   is_active   boolean     not null default true,
+  is_archived boolean     not null default false,
+  archived_at timestamptz,
   avatar_url  text,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
@@ -109,10 +144,8 @@ do $$ begin
     create policy "Profiles: admin reads company"
       on profiles for select
       using (
-        company_id in (
-          select company_id from profiles
-          where id = auth.uid() and role = 'admin'
-        )
+        public.my_role() = 'admin'
+        and company_id = public.my_company_id()
       );
   end if;
 end $$;
@@ -136,10 +169,8 @@ do $$ begin
     create policy "Profiles: admin manages company"
       on profiles for all
       using (
-        company_id in (
-          select company_id from profiles
-          where id = auth.uid() and role = 'admin'
-        )
+        public.my_role() = 'admin'
+        and company_id = public.my_company_id()
       );
   end if;
 end $$;
@@ -161,18 +192,7 @@ do $$ begin
   end if;
 end $$;
 
--- ── 3. my_company_id() helper ────────────────────────────────
--- Returns the company_id of the currently authenticated user.
--- SECURITY DEFINER avoids recursive RLS self-joins.
--- Used by RLS policies and the enforce_company_id trigger.
-create or replace function public.my_company_id()
-returns uuid
-language sql
-security definer
-stable
-as $$
-  select company_id from public.profiles where id = auth.uid()
-$$;
+-- (my_company_id e my_role já foram criadas na seção 2 acima)
 
 -- ── 4. invites ───────────────────────────────────────────────
 create table if not exists invites (
@@ -257,6 +277,9 @@ create table if not exists boards (
   id          uuid        primary key default uuid_generate_v4(),
   company_id  uuid        not null references companies(id) on delete cascade,
   name        text        not null,
+  description text,
+  type        text,
+  is_default  boolean     not null default false,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
@@ -288,8 +311,9 @@ end $$;
 create table if not exists board_stages (
   id                     uuid    primary key default uuid_generate_v4(),
   board_id               uuid    not null references boards(id) on delete cascade,
-  title                  text    not null,
-  position               integer not null default 0,
+  company_id             uuid    references companies(id) on delete cascade,
+  name                   text    not null,
+  "order"                integer not null default 0,
   linked_lifecycle_stage text,
   color                  text,
   created_at             timestamptz not null default now(),
@@ -322,21 +346,42 @@ end $$;
 
 -- ── 8. leads (deals) ─────────────────────────────────────────
 create table if not exists leads (
-  id            uuid        primary key default uuid_generate_v4(),
-  company_id    uuid        not null references companies(id) on delete cascade,
-  board_id      uuid        references boards(id) on delete set null,
-  stage_id      uuid        references board_stages(id) on delete set null,
-  owner_id      uuid        references profiles(id) on delete set null,
-  contact_id    uuid        references contacts(id) on delete set null,
-  name          text        not null,
-  value         numeric(14,2),
-  status        text        not null default 'Ativo',
-  is_archived   boolean     not null default false,
-  deleted_at    timestamptz,
-  won_at        timestamptz,
-  lost_at       timestamptz,
-  created_at    timestamptz not null default now(),
-  updated_at    timestamptz not null default now()
+  id                       uuid        primary key default uuid_generate_v4(),
+  company_id               uuid        not null references companies(id) on delete cascade,
+  board_id                 uuid        references boards(id) on delete set null,
+  column_id                uuid        references board_stages(id) on delete set null,
+  owner_id                 uuid        references profiles(id) on delete set null,
+  contact_id               uuid        references contacts(id) on delete set null,
+  name                     text        not null,
+  company_name             text,
+  email                    text,
+  phone                    text,
+  value                    numeric(14,2),
+  status                   text        not null default 'Ativo',
+  source                   text,
+  probability              numeric(5,2),
+  avatar_url               text,
+  tags                     jsonb       not null default '[]',
+  last_activity            text,
+  last_activity_timestamp  text,
+  due_date                 text,
+  assigned_to              text,
+  description              text,
+  segment                  text,
+  client_id                text,
+  group_info               jsonb,
+  active_playbook          jsonb,
+  playbook_history         jsonb,
+  qualification_status     text,
+  disqualification_reason  text,
+  lost_reason              text,
+  reactivation_date        text,
+  is_archived              boolean     not null default false,
+  deleted_at               timestamptz,
+  won_at                   timestamptz,
+  lost_at                  timestamptz,
+  created_at               timestamptz not null default now(),
+  updated_at               timestamptz not null default now()
 );
 
 drop trigger if exists set_leads_updated_at on leads;
@@ -367,10 +412,9 @@ create table if not exists activities (
   id          uuid        primary key default uuid_generate_v4(),
   company_id  uuid        not null references companies(id) on delete cascade,
   lead_id     uuid        references leads(id) on delete cascade,
-  user_id     uuid        references profiles(id) on delete set null,
   type        text        not null,
-  description text,
-  occurred_at timestamptz not null default now(),
+  text        text,
+  author_name text,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
@@ -400,17 +444,19 @@ end $$;
 
 -- ── 10. tasks ─────────────────────────────────────────────────
 create table if not exists tasks (
-  id          uuid        primary key default uuid_generate_v4(),
-  company_id  uuid        not null references companies(id) on delete cascade,
-  lead_id     uuid        references leads(id) on delete cascade,
-  assigned_to uuid        references profiles(id) on delete set null,
-  title       text        not null,
-  description text,
-  due_date    date,
-  is_done     boolean     not null default false,
-  done_at     timestamptz,
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now()
+  id                  uuid        primary key default uuid_generate_v4(),
+  company_id          uuid        not null references companies(id) on delete cascade,
+  lead_id             uuid        references leads(id) on delete cascade,
+  user_id             uuid        references profiles(id) on delete set null,
+  type                text,
+  title               text        not null,
+  description         text,
+  due_date            text,
+  status              text        not null default 'pending',
+  playbook_id         text,
+  playbook_step_index integer,
+  created_at          timestamptz not null default now(),
+  updated_at          timestamptz not null default now()
 );
 
 drop trigger if exists set_tasks_updated_at on tasks;
@@ -767,6 +813,45 @@ $$;
 
 grant execute on function public.activate_goal(uuid, uuid) to authenticated;
 
+-- ── 20. accept_invite RPC ─────────────────────────────────────
+-- Aceita um convite: atualiza profile do usuário e marca convite como usado.
+-- Operação atômica — executada em uma transação.
+drop function if exists public.accept_invite(uuid) cascade;
+create or replace function public.accept_invite(invite_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_invite  invites%rowtype;
+  v_uid     uuid := auth.uid();
+begin
+  select * into v_invite from public.invites where id = invite_id;
+
+  if not found then
+    raise exception 'Convite não encontrado.' using errcode = 'P0002';
+  end if;
+  if v_invite.used_at is not null then
+    raise exception 'Este convite já foi utilizado.' using errcode = 'P0003';
+  end if;
+  if v_invite.expires_at is not null and v_invite.expires_at < now() then
+    raise exception 'Este convite expirou.' using errcode = 'P0004';
+  end if;
+
+  update public.profiles
+  set company_id = v_invite.company_id,
+      role       = v_invite.role
+  where id = v_uid;
+
+  update public.invites
+  set used_at = now()
+  where id = invite_id;
+end;
+$$;
+
+grant execute on function public.accept_invite(uuid) to authenticated;
+
 -- ── 21. Performance indexes ───────────────────────────────────
 create index if not exists idx_profiles_company    on profiles(company_id);
 create index if not exists idx_contacts_company    on contacts(company_id);
@@ -781,7 +866,7 @@ create index if not exists idx_seller_scores_seller  on public.seller_scores(sel
 create index if not exists idx_seller_scores_period  on public.seller_scores(period);
 create index if not exists idx_seller_scores_company on public.seller_scores(company_id);
 
-create index if not exists idx_leads_stage   on leads(stage_id);
+create index if not exists idx_leads_column  on leads(column_id);
 create index if not exists idx_leads_owner   on leads(owner_id);
 create index if not exists idx_sales_seller  on sales(seller_id);
 create index if not exists idx_sales_date    on sales(data_fechamento);
