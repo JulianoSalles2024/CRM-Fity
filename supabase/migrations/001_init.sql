@@ -71,34 +71,7 @@ alter table companies enable row level security;
 
 -- NOTE: policy "Companies: members can read own" is created after profiles table below.
 
--- ── 2. SECURITY DEFINER helpers (necessários antes das RLS policies) ────
--- Criadas antes de profiles pois as policies de profiles as usam.
--- my_company_id() e my_role() executam como owner → bypass RLS → sem recursão.
-
-create or replace function public.my_company_id()
-returns uuid
-language sql
-security definer
-stable
-set search_path = public
-as $$
-  select company_id from public.profiles where id = auth.uid()
-$$;
-
-create or replace function public.my_role()
-returns text
-language sql
-security definer
-stable
-set search_path = public
-as $$
-  select role from public.profiles where id = auth.uid()
-$$;
-
-grant execute on function public.my_company_id() to authenticated;
-grant execute on function public.my_role()       to authenticated;
-
--- ── 3. profiles (users) ──────────────────────────────────────
+-- ── 2. profiles (users) ──────────────────────────────────────
 create table if not exists profiles (
   id          uuid        primary key references auth.users(id) on delete cascade,
   company_id  uuid        references companies(id) on delete set null,
@@ -122,6 +95,33 @@ drop trigger if exists set_profiles_updated_at on profiles;
 create trigger set_profiles_updated_at
   before update on profiles
   for each row execute function set_updated_at();
+
+-- ── 3. SECURITY DEFINER helpers ──────────────────────────────
+-- Criadas após profiles pois consultam essa tabela internamente.
+-- SECURITY DEFINER → bypass RLS → sem recursão em policies.
+
+create or replace function public.my_company_id()
+returns uuid
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select company_id from public.profiles where id = auth.uid()
+$$;
+
+create or replace function public.my_role()
+returns text
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select role from public.profiles where id = auth.uid()
+$$;
+
+grant execute on function public.my_company_id() to authenticated;
+grant execute on function public.my_role()       to authenticated;
 
 alter table profiles enable row level security;
 
@@ -192,7 +192,7 @@ do $$ begin
   end if;
 end $$;
 
--- (my_company_id e my_role já foram criadas na seção 2 acima)
+-- (my_company_id e my_role foram criadas na seção 3, após profiles)
 
 -- ── 4. invites ───────────────────────────────────────────────
 create table if not exists invites (
