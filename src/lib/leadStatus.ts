@@ -13,7 +13,7 @@ export function getLeadComputedStatus(
   if (lead.isArchived) return 'inativo';
   if (lead.status === 'Inativo') return 'inativo';
   if (columnType === 'lost') return lead.status === 'ENCERRADO' ? 'encerrado' : 'perdido';
-  if (columnType === 'won') return 'ganho';
+  if (columnType === 'won' && lead.status === 'GANHO') return 'ganho';
   return 'ativo';
 }
 
