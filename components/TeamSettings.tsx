@@ -57,6 +57,10 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
     const [deleteTarget, setDeleteTarget] = useState<TeamMember | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
+    const [inviteModalTab, setInviteModalTab] = useState<'create' | 'history'>('create');
+    const [sentInvites, setSentInvites] = useState<any[]>([]);
+    const [isFetchingInvites, setIsFetchingInvites] = useState(false);
+    const [copiedHistoryToken, setCopiedHistoryToken] = useState<string | null>(null);
 
     // Tab state
     const [activeTab, setActiveTab] = useState<'active' | 'archived' | 'goals'>('active');
@@ -235,6 +239,60 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
         navigator.clipboard.writeText(text);
         setCopiedInviteId(inviteId);
         setTimeout(() => setCopiedInviteId(null), 2000);
+    };
+
+    const getInviteStatus = (invite: { used_at: string | null; expires_at: string | null }) => {
+        if (invite.used_at) return 'usado' as const;
+        if (invite.expires_at && new Date(invite.expires_at) < new Date()) return 'expirado' as const;
+        return 'ativo' as const;
+    };
+
+    const fetchSentInvites = async () => {
+        if (!companyId) return;
+        setIsFetchingInvites(true);
+        try {
+            const [{ data: inviteData }, { data: profileData }] = await Promise.all([
+                supabase
+                    .from('invites')
+                    .select('id, token, role, created_at, expires_at, used_at')
+                    .eq('company_id', companyId)
+                    .order('created_at', { ascending: false }),
+                supabase
+                    .from('profiles')
+                    .select('email, name, role, created_at')
+                    .eq('company_id', companyId),
+            ]);
+
+            const profiles = profileData ?? [];
+            const invites = (inviteData ?? []).map((invite: any) => {
+                let usedByEmail: string | null = null;
+                if (invite.used_at) {
+                    const usedAt = new Date(invite.used_at).getTime();
+                    const match = profiles.find(
+                        (p: any) =>
+                            p.role === invite.role &&
+                            Math.abs(new Date(p.created_at).getTime() - usedAt) < 15000
+                    );
+                    usedByEmail = match?.email ?? null;
+                }
+                return { ...invite, usedByEmail };
+            });
+
+            setSentInvites(invites);
+        } finally {
+            setIsFetchingInvites(false);
+        }
+    };
+
+    const deleteSentInvite = async (id: string) => {
+        await supabase.from('invites').delete().eq('id', id);
+        setSentInvites(prev => prev.filter((i: any) => i.id !== id));
+    };
+
+    const copyHistoryLink = (token: string) => {
+        navigator.clipboard.writeText(`${window.location.origin}/invite/${token}`);
+        setCopiedHistoryToken(token);
+        setTimeout(() => setCopiedHistoryToken(null), 2000);
     };
     const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
     const formatDate = (dateString?: string) => {
@@ -700,122 +758,261 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+                            className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
                         >
+                            {/* Header */}
                             <div className="p-6 border-b border-slate-800 flex items-center gap-4">
                                 <div className="p-3 rounded-xl bg-blue-500/10 text-blue-500">
                                     <UserPlus className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-bold text-white">Gerar Convite</h3>
-                                    <p className="text-sm text-slate-400">Crie links de acesso para sua equipe</p>
+                                    <h3 className="text-lg font-bold text-white">Convites</h3>
+                                    <p className="text-sm text-slate-400">Gerencie os acessos da sua equipe</p>
                                 </div>
                             </div>
 
-                            <div className="p-6 space-y-6">
-                                {inviteLinks.length > 0 && (
-                                    <div className="space-y-3">
-                                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Links Ativos</label>
-                                        <div className="space-y-2">
-                                            {inviteLinks.map(link => (
-                                                <div key={link.id} className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 flex items-center justify-between group">
-                                                    <div className="overflow-hidden">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 uppercase">
-                                                                {link.role}
-                                                            </span>
-                                                            <span className="text-xs text-slate-500">
-                                                                Expira em {link.expiresAt ? new Date(link.expiresAt).toLocaleDateString() : 'Nunca'}
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-sm text-slate-300 font-mono truncate">
-                                                            ...{link.token.substring(link.token.length - 8)}
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <button
-                                                            onClick={() => copyToClipboard(`${window.location.origin}/invite/${link.token}`, link.id)}
-                                                            className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-                                                            title="Copiar Link"
-                                                        >
-                                                            {copiedInviteId === link.id
-                                                                ? <Check className="w-4 h-4 text-green-400" />
-                                                                : <Copy className="w-4 h-4" />
-                                                            }
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteInvite(link.id)}
-                                                            className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                                                            title="Revogar"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-300 mb-2">Cargo</label>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <button
-                                                onClick={() => setInviteRole('Vendedor')}
-                                                className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${inviteRole === 'Vendedor' ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'}`}
-                                            >
-                                                <BriefcaseIcon className="w-4 h-4" />
-                                                <span className="font-medium">Vendedor</span>
-                                                {inviteRole === 'Vendedor' && <div className="w-2 h-2 rounded-full bg-blue-500 ml-1" />}
-                                            </button>
-                                            <button
-                                                onClick={() => setInviteRole('Admin')}
-                                                className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${inviteRole === 'Admin' ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'}`}
-                                            >
-                                                <Shield className="w-4 h-4" />
-                                                <span className="font-medium">Admin</span>
-                                                {inviteRole === 'Admin' && <div className="w-2 h-2 rounded-full bg-blue-500 ml-1" />}
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-300 mb-2">Expiração</label>
-                                        <div className="grid grid-cols-3 gap-3">
-                                            {(['7 days', '30 days', 'never'] as const).map((opt) => (
-                                                <button
-                                                    key={opt}
-                                                    onClick={() => setInviteExpiration(opt)}
-                                                    className={`py-2 px-3 rounded-lg text-sm font-medium border transition-all ${inviteExpiration === opt ? 'bg-white text-slate-900 border-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'}`}
-                                                >
-                                                    {opt === '7 days' ? '7 dias' : opt === '30 days' ? '30 dias' : 'Nunca'}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="p-6 border-t border-slate-800 flex justify-between items-center bg-slate-900/50">
+                            {/* Tabs */}
+                            <div className="flex border-b border-slate-800">
                                 <button
-                                    onClick={() => setInviteModalOpen(false)}
-                                    className="text-slate-400 hover:text-white font-medium transition-colors"
+                                    onClick={() => setInviteModalTab('create')}
+                                    className={`flex-1 py-3 text-sm font-semibold transition-colors border-b-2 ${inviteModalTab === 'create' ? 'text-white border-blue-500' : 'text-slate-400 border-transparent hover:text-white'}`}
                                 >
-                                    Fechar
+                                    Criar Convite
                                 </button>
-                                <div className="flex flex-col items-end gap-2">
-                                    {generateError && <p className="text-xs text-red-400">{generateError}</p>}
-                                    <button
-                                        onClick={handleGenerateInvite}
-                                        disabled={isGenerating}
-                                        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-colors shadow-lg shadow-blue-500/20"
-                                    >
-                                        {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
-                                        {isGenerating ? 'Gerando...' : 'Gerar Link'}
-                                    </button>
-                                </div>
+                                <button
+                                    onClick={() => { setInviteModalTab('history'); fetchSentInvites(); }}
+                                    className={`flex-1 py-3 text-sm font-semibold transition-colors border-b-2 ${inviteModalTab === 'history' ? 'text-white border-blue-500' : 'text-slate-400 border-transparent hover:text-white'}`}
+                                >
+                                    Convites Enviados
+                                </button>
                             </div>
+
+                            {inviteModalTab === 'create' ? (
+                                <>
+                                    {/* Criar convite — corpo original inalterado */}
+                                    <div className="p-6 space-y-6">
+                                        {inviteLinks.length > 0 && (
+                                            <div className="space-y-3">
+                                                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Links Ativos</label>
+                                                <div className="space-y-2">
+                                                    {inviteLinks.map(link => (
+                                                        <div key={link.id} className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 flex items-center justify-between group">
+                                                            <div className="overflow-hidden">
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 uppercase">
+                                                                        {link.role}
+                                                                    </span>
+                                                                    <span className="text-xs text-slate-500">
+                                                                        Expira em {link.expiresAt ? new Date(link.expiresAt).toLocaleDateString() : 'Nunca'}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="text-sm text-slate-300 font-mono truncate">
+                                                                    ...{link.token.substring(link.token.length - 8)}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-1">
+                                                                <button
+                                                                    onClick={() => copyToClipboard(`${window.location.origin}/invite/${link.token}`, link.id)}
+                                                                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                                                                    title="Copiar Link"
+                                                                >
+                                                                    {copiedInviteId === link.id
+                                                                        ? <Check className="w-4 h-4 text-green-400" />
+                                                                        : <Copy className="w-4 h-4" />
+                                                                    }
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDeleteInvite(link.id)}
+                                                                    className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                                    title="Revogar"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-300 mb-2">Cargo</label>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <button
+                                                        onClick={() => setInviteRole('Vendedor')}
+                                                        className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${inviteRole === 'Vendedor' ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'}`}
+                                                    >
+                                                        <BriefcaseIcon className="w-4 h-4" />
+                                                        <span className="font-medium">Vendedor</span>
+                                                        {inviteRole === 'Vendedor' && <div className="w-2 h-2 rounded-full bg-blue-500 ml-1" />}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setInviteRole('Admin')}
+                                                        className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${inviteRole === 'Admin' ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'}`}
+                                                    >
+                                                        <Shield className="w-4 h-4" />
+                                                        <span className="font-medium">Admin</span>
+                                                        {inviteRole === 'Admin' && <div className="w-2 h-2 rounded-full bg-blue-500 ml-1" />}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-300 mb-2">Expiração</label>
+                                                <div className="grid grid-cols-3 gap-3">
+                                                    {(['7 days', '30 days', 'never'] as const).map((opt) => (
+                                                        <button
+                                                            key={opt}
+                                                            onClick={() => setInviteExpiration(opt)}
+                                                            className={`py-2 px-3 rounded-lg text-sm font-medium border transition-all ${inviteExpiration === opt ? 'bg-white text-slate-900 border-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'}`}
+                                                        >
+                                                            {opt === '7 days' ? '7 dias' : opt === '30 days' ? '30 dias' : 'Nunca'}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-6 border-t border-slate-800 flex justify-between items-center bg-slate-900/50">
+                                        <button
+                                            onClick={() => setInviteModalOpen(false)}
+                                            className="text-slate-400 hover:text-white font-medium transition-colors"
+                                        >
+                                            Fechar
+                                        </button>
+                                        <div className="flex flex-col items-end gap-2">
+                                            {generateError && <p className="text-xs text-red-400">{generateError}</p>}
+                                            <button
+                                                onClick={handleGenerateInvite}
+                                                disabled={isGenerating}
+                                                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-colors shadow-lg shadow-blue-500/20"
+                                            >
+                                                {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
+                                                {isGenerating ? 'Gerando...' : 'Gerar Link'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    {/* Convites Enviados */}
+                                    <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+                                        {isFetchingInvites ? (
+                                            <div className="flex items-center justify-center py-10">
+                                                <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {/* Dashboard */}
+                                                {(() => {
+                                                    const total = sentInvites.length;
+                                                    const ativos = sentInvites.filter(i => getInviteStatus(i) === 'ativo').length;
+                                                    const usados = sentInvites.filter(i => getInviteStatus(i) === 'usado').length;
+                                                    const expirados = sentInvites.filter(i => getInviteStatus(i) === 'expirado').length;
+                                                    return (
+                                                        <div className="grid grid-cols-4 gap-3">
+                                                            {[
+                                                                { label: 'Total', value: total, color: 'text-slate-300' },
+                                                                { label: 'Ativos', value: ativos, color: 'text-emerald-400' },
+                                                                { label: 'Usados', value: usados, color: 'text-blue-400' },
+                                                                { label: 'Expirados', value: expirados, color: 'text-red-400' },
+                                                            ].map(({ label, value, color }) => (
+                                                                <div key={label} className="bg-slate-800/50 border border-slate-700 rounded-xl p-3 text-center">
+                                                                    <p className={`text-xl font-bold ${color}`}>{value}</p>
+                                                                    <p className="text-[10px] text-slate-500 mt-0.5">{label}</p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    );
+                                                })()}
+
+                                                {/* Lista */}
+                                                {sentInvites.length === 0 ? (
+                                                    <p className="text-sm text-slate-500 text-center py-6">Nenhum convite enviado ainda.</p>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        {sentInvites.map((invite) => {
+                                                            const status = getInviteStatus(invite);
+                                                            const statusConfig = {
+                                                                ativo:    { label: 'Ativo',    cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' },
+                                                                usado:    { label: 'Usado',    cls: 'bg-blue-500/15 text-blue-400 border-blue-500/20' },
+                                                                expirado: { label: 'Expirado', cls: 'bg-red-500/15 text-red-400 border-red-500/20' },
+                                                            };
+                                                            const sc = statusConfig[status];
+                                                            return (
+                                                                <div key={invite.token} className="bg-slate-800/40 border border-slate-700/50 rounded-lg px-3 py-2.5 flex items-center justify-between gap-2">
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="flex items-center gap-2 mb-0.5">
+                                                                            <span className="text-xs font-semibold text-slate-300">
+                                                                                {invite.role === 'seller' ? 'Vendedor' : 'Admin'}
+                                                                            </span>
+                                                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${sc.cls}`}>
+                                                                                {sc.label}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-3 text-[10px] text-slate-500">
+                                                                            <span>Criado: {new Date(invite.created_at).toLocaleDateString('pt-BR')}</span>
+                                                                            <span>Expira: {invite.expires_at ? new Date(invite.expires_at).toLocaleDateString('pt-BR') : 'Nunca'}</span>
+                                                                        </div>
+                                                                        {status === 'usado' && (
+                                                                            <div className="mt-0.5 text-[10px] text-slate-400 truncate">
+                                                                                {invite.usedByEmail
+                                                                                    ? <span>Usado por: <span className="text-slate-300 font-medium">{invite.usedByEmail}</span></span>
+                                                                                    : <span className="text-slate-600 italic">email não identificado</span>
+                                                                                }
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                                                        {status === 'ativo' && (
+                                                                            <button
+                                                                                onClick={() => copyHistoryLink(invite.token)}
+                                                                                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                                                                                title="Copiar link de convite"
+                                                                            >
+                                                                                {copiedHistoryToken === invite.token
+                                                                                    ? <Check className="w-3.5 h-3.5 text-green-400" />
+                                                                                    : <Copy className="w-3.5 h-3.5" />
+                                                                                }
+                                                                            </button>
+                                                                        )}
+                                                                        <button
+                                                                            onClick={() => deleteSentInvite(invite.id)}
+                                                                            className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                                            title="Excluir convite"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+
+                                    <div className="p-4 border-t border-slate-800 flex justify-between items-center bg-slate-900/50">
+                                        <button
+                                            onClick={() => setInviteModalOpen(false)}
+                                            className="text-slate-400 hover:text-white font-medium transition-colors text-sm"
+                                        >
+                                            Fechar
+                                        </button>
+                                        <button
+                                            onClick={fetchSentInvites}
+                                            disabled={isFetchingInvites}
+                                            className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors disabled:opacity-50"
+                                        >
+                                            <RefreshCw className={`w-4 h-4 ${isFetchingInvites ? 'animate-spin' : ''}`} />
+                                            Atualizar
+                                        </button>
+                                    </div>
+                                </>
+                            )}
                         </motion.div>
                     </div>
                 )}

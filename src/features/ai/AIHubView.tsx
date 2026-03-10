@@ -68,27 +68,27 @@ export const AIHubView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       {/* Header Section */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="p-3 rounded-2xl bg-sky-500/10 border border-sky-500/20">
-          <Bot className="w-8 h-8 text-sky-500" />
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20">
+          <Bot className="w-5 h-5 text-sky-500" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-white">Inteligência Artificial</h1>
-          <p className="text-slate-400">Personalize os prompts e comportamentos das funções de IA</p>
+          <h1 className="text-lg font-bold text-white">Inteligência Artificial</h1>
+          <p className="text-slate-400 text-xs">Personalize os prompts e comportamentos das funções de IA</p>
         </div>
       </div>
 
       {/* Connection Status Info */}
       {!activeCredential ? (
-        <div className="p-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 flex items-start gap-4">
-          <div className="p-2 rounded-lg bg-amber-500/10">
-            <AlertCircle className="w-5 h-5 text-amber-500" />
+        <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 flex items-start gap-3">
+          <div className="p-1.5 rounded-lg bg-amber-500/10">
+            <AlertCircle className="w-4 h-4 text-amber-500" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-bold text-white mb-1">IA Desativada</h3>
-            <p className="text-sm text-slate-400 mb-4">Você precisa configurar ao menos uma API Key para ativar as funções de inteligência artificial.</p>
+            <h3 className="text-sm font-bold text-white mb-1">IA Desativada</h3>
+            <p className="text-xs text-slate-400 mb-3">Você precisa configurar ao menos uma API Key para ativar as funções de inteligência artificial.</p>
             <button 
               onClick={() => {
                 // This is a bit hacky since we don't have direct access to setActiveTab here
@@ -113,23 +113,23 @@ export const AIHubView: React.FC = () => {
       )}
 
       {/* Tools Grid */}
-      <div 
-        className="p-6 rounded-2xl border border-white/10"
+      <div
+        className="p-4 rounded-xl border border-white/10"
         style={{
           background: 'rgba(255, 255, 255, 0.04)',
           backdropFilter: 'blur(12px)',
         }}
       >
-        <div className="flex items-center gap-3 mb-6">
-          <Sparkles className="w-5 h-5 text-sky-500" />
-          <h3 className="text-lg font-bold text-white">Funções de IA</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles className="w-4 h-4 text-sky-500" />
+          <h3 className="text-sm font-bold text-white">Funções de IA</h3>
         </div>
-        
-        <p className="text-sm text-slate-400 mb-8">
+
+        <p className="text-xs text-slate-400 mb-4">
           Ative ou desative as ferramentas e personalize os prompts para cada uma delas.
         </p>
 
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-3">
           {toolsList.map((tool: any) => (
             <AIToolCard 
               key={tool.id}
