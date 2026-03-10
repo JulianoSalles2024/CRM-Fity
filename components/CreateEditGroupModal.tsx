@@ -3,6 +3,7 @@ import React, { useState, FormEvent, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import type { Group, CreateGroupData, UpdateGroupData, GroupStatus } from '../types';
+import { ui } from '@/src/lib/uiStyles';
 
 interface CreateEditGroupModalProps {
   group: Group | null;
@@ -72,7 +73,7 @@ const CreateEditGroupModal: React.FC<CreateEditGroupModalProps> = ({ group, onCl
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.2 }}
-        className="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg border border-slate-800 flex flex-col"
+        className={`${ui.modalContainer} w-full max-w-lg`}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex-shrink-0 p-6 border-b border-slate-800">
@@ -91,38 +92,38 @@ const CreateEditGroupModal: React.FC<CreateEditGroupModalProps> = ({ group, onCl
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-2">Nome do Grupo <span className="text-red-500">*</span></label>
                 <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required placeholder="Ex: Clientes VIP"
-                       className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                       className={ui.input} />
               </div>
               <div>
                 <label htmlFor="description" className="block text-sm font-medium text-slate-300 mb-2">Descrição</label>
                 <textarea id="description" name="description" value={formData.description} onChange={handleChange} placeholder="Para que serve este grupo?" rows={3}
-                       className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                       className={ui.input} />
               </div>
               <div>
                 <label htmlFor="accessLink" className="block text-sm font-medium text-slate-300 mb-2">Link de Acesso</label>
                 <input type="url" id="accessLink" name="accessLink" value={formData.accessLink} onChange={handleChange} placeholder="https://chat.whatsapp.com/..."
-                       className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                       className={ui.input} />
               </div>
               <div className="flex gap-4">
                   <div className="flex-1">
                       <label htmlFor="status" className="block text-sm font-medium text-slate-300 mb-2">Status</label>
                       <select id="status" name="status" value={formData.status} onChange={handleChange}
-                              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none">
+                              className={`${ui.input} appearance-none`}>
                           {statusOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                       </select>
                   </div>
                   <div className="flex-1">
                       <label htmlFor="memberGoal" className="block text-sm font-medium text-slate-300 mb-2">Meta de Membros</label>
                       <input type="number" id="memberGoal" name="memberGoal" value={formData.memberGoal} onChange={handleChange} placeholder="Ex: 100" min="0"
-                             className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                             className={ui.input} />
                   </div>
               </div>
             </div>
             <div className="flex-shrink-0 px-6 py-4 border-t border-slate-800 flex justify-end gap-3">
-                <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-300 border border-slate-700 rounded-xl hover:bg-slate-800 transition-colors">
+                <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-300 border border-white/10 rounded-lg hover:bg-white/5 transition-colors">
                     Cancelar
                 </button>
-                <button type="submit" className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition-colors">
+                <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
                     {isEditMode ? 'Salvar Alterações' : 'Criar Grupo'}
                 </button>
             </div>

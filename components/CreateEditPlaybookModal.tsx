@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { Playbook, PlaybookStep, ColumnData, Task, Id } from '../types';
+import { ui } from '@/src/lib/uiStyles';
 
 interface CreateEditPlaybookModalProps {
     playbook: Playbook | null;
@@ -78,7 +79,7 @@ const CreateEditPlaybookModal: React.FC<CreateEditPlaybookModalProps> = ({ playb
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-slate-900 rounded-lg shadow-xl w-full max-w-2xl border border-slate-800 flex flex-col max-h-[90vh]"
+                className={`${ui.modalContainer} w-full max-w-2xl`}
                 onClick={e => e.stopPropagation()}
             >
                 <div className="p-6 border-b border-slate-800">
@@ -91,7 +92,7 @@ const CreateEditPlaybookModal: React.FC<CreateEditPlaybookModalProps> = ({ playb
                     <div className="p-6 space-y-6 overflow-y-auto">
                         <div>
                             <label className="block text-sm font-medium text-slate-300 mb-2">Nome do Playbook</label>
-                            <input type="text" value={name} onChange={e => setName(e.target.value)} required className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white focus:ring-violet-500" />
+                            <input type="text" value={name} onChange={e => setName(e.target.value)} required className={ui.input} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-300 mb-2">Estágios do Pipeline</label>
@@ -109,27 +110,27 @@ const CreateEditPlaybookModal: React.FC<CreateEditPlaybookModalProps> = ({ playb
                             <label className="block text-sm font-medium text-slate-300 mb-2">Etapas da Cadência</label>
                             <div className="space-y-3">
                                 {steps.map((step, index) => (
-                                    <div key={index} className="flex items-center gap-2 p-2 bg-slate-950/50 rounded-md border border-slate-800/50">
+                                    <div key={index} className="flex items-center gap-2 p-2 bg-slate-900/50 rounded-lg border border-white/10">
                                         <div className="flex items-center gap-1">
                                             <span className="text-sm text-slate-400">D+</span>
-                                            <input type="number" value={step.day} onChange={e => handleStepChange(index, 'day', e.target.value)} className="w-16 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white" min="1" />
+                                            <input type="number" value={step.day} onChange={e => handleStepChange(index, 'day', e.target.value)} className="w-16 bg-slate-900/50 border border-white/10 rounded-lg px-2 py-1 text-sm text-white" min="1" />
                                         </div>
-                                        <select value={step.type} onChange={e => handleStepChange(index, 'type', e.target.value)} className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white">
+                                        <select value={step.type} onChange={e => handleStepChange(index, 'type', e.target.value)} className="bg-slate-900/50 border border-white/10 rounded-lg px-2 py-1 text-sm text-white">
                                             {taskTypes.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
                                         </select>
-                                        <input type="text" value={step.instructions} onChange={e => handleStepChange(index, 'instructions', e.target.value)} placeholder="Instruções da tarefa..." className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white" />
+                                        <input type="text" value={step.instructions} onChange={e => handleStepChange(index, 'instructions', e.target.value)} placeholder="Instruções da tarefa..." className="flex-1 bg-slate-900/50 border border-white/10 rounded-lg px-2 py-1 text-sm text-white" />
                                         <button type="button" onClick={() => removeStep(index)} disabled={steps.length <= 1} className="p-2 text-slate-500 hover:text-red-500 disabled:opacity-50"><Trash2 className="w-4 h-4" /></button>
                                     </div>
                                 ))}
                             </div>
-                            <button type="button" onClick={addStep} className="mt-3 flex items-center gap-2 text-sm font-semibold text-violet-400 hover:text-violet-300">
+                            <button type="button" onClick={addStep} className="mt-3 flex items-center gap-2 text-sm font-semibold text-sky-400 hover:text-sky-300">
                                 <Plus className="w-4 h-4" /> Adicionar Etapa
                             </button>
                         </div>
                     </div>
-                    <div className="p-4 bg-slate-800/50 border-t border-slate-800 flex justify-end gap-3">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-slate-300 bg-slate-800 rounded-md hover:bg-slate-700">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 rounded-md hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">{isEditMode ? 'Salvar' : 'Criar'}</button>
+                    <div className="px-6 py-4 border-t border-slate-800 flex justify-end gap-3">
+                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-300 border border-white/10 rounded-lg hover:bg-white/5 transition-colors">Cancelar</button>
+                        <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">{isEditMode ? 'Salvar Alterações' : 'Criar Playbook'}</button>
                     </div>
                 </form>
             </motion.div>

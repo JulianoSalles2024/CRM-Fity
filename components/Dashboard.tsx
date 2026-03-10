@@ -166,22 +166,23 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
     }); 
 
     // Risk Detection Logic
-    useEffect(() => {
+    const riskLeads = useMemo(() => {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-        // Filter: Active status AND (lastActivity > 30 days ago OR created > 30 days ago if no activity)
-        const riskLeads = leads.filter(l => {
+        return leads.filter(l => {
             const lastDate = l.lastActivityTimestamp ? new Date(l.lastActivityTimestamp) : new Date(l.createdAt || Date.now());
             return l.status === 'Ativo' && lastDate < thirtyDaysAgo;
         });
+    }, [leads]);
 
+    const handleAnalyzePortfolio = () => {
         if (riskLeads.length > 0) {
             showNotification(`${riskLeads.length} alertas de risco gerados na lista de atividades!`, 'warning');
         } else {
             showNotification('Nenhum novo risco detectado. Carteira saudável!', 'info');
         }
-    }, [leads, showNotification]);
+        onAnalyzePortfolio?.();
+    };
 
     return (
         <div className="flex flex-col gap-4 pb-10">
@@ -267,29 +268,29 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                             </div>
                         </div>
 
-                        <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden flex mb-5">
-                            <div className="h-full" style={{ width: `${walletHealth.activePct}%`,    backgroundColor: '#3B82F6' }}></div>
-                            <div className="h-full" style={{ width: `${walletHealth.perdidoPct}%`,   backgroundColor: '#93C5FD' }}></div>
-                            <div className="h-full" style={{ width: `${walletHealth.encerradoPct}%`, backgroundColor: '#60A5FA' }}></div>
-                            <div className="h-full" style={{ width: `${walletHealth.ganhoPct}%`,     backgroundColor: '#1D4ED8' }}></div>
+                        <div className="w-full h-2 rounded-full overflow-hidden flex mb-5 bg-slate-800">
+                            <div style={{ width: `${walletHealth.activePct}%`,    backgroundColor: '#3B82F6' }} />
+                            <div style={{ width: `${walletHealth.ganhoPct}%`,     backgroundColor: '#22C55E' }} />
+                            <div style={{ width: `${walletHealth.perdidoPct}%`,   backgroundColor: '#EF4444' }} />
+                            <div style={{ width: `${walletHealth.encerradoPct}%`, backgroundColor: '#6B7280' }} />
                         </div>
 
                         <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs font-medium text-slate-400">
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#3B82F6' }}></div>
-                                <span>Ativos ({walletHealth.activeCount})</span>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                <span>{walletHealth.activeCount} Ativos</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#93C5FD' }}></div>
-                                <span>Perdidos ({walletHealth.perdidoCount})</span>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full bg-green-500" />
+                                <span>{walletHealth.ganhoCount} Ganhos</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#60A5FA' }}></div>
-                                <span>Encerrados ({walletHealth.encerradoCount})</span>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full bg-red-500" />
+                                <span>{walletHealth.perdidoCount} Perdidos</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#1D4ED8' }}></div>
-                                <span>Ganhos ({walletHealth.ganhoCount})</span>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full bg-gray-500" />
+                                <span>{walletHealth.encerradoCount} Encerrados</span>
                             </div>
                         </div>
                     </FlatCard>
@@ -299,12 +300,12 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                         <div className="relative z-10">
                             <p className="text-sm font-medium text-slate-400 mb-2">Risco de Churn</p>
                             <div className="flex items-center gap-3 mb-3">
-                                <span className="text-3xl font-bold text-white">0 Clientes</span>
+                                <span className="text-3xl font-bold text-white">{riskLeads.length} {riskLeads.length === 1 ? 'Cliente' : 'Clientes'}</span>
                                 <span className="text-red-400 text-[10px] font-bold uppercase bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded tracking-wide">Alertas</span>
                             </div>
                             <p className="text-xs text-slate-500 mb-5 leading-relaxed">Clientes ativos sem compra há {'>'} 30 dias.</p>
                             <button 
-                                onClick={onAnalyzePortfolio}
+                                onClick={handleAnalyzePortfolio}
                                 className="text-sm text-blue-400 font-medium hover:text-blue-300 self-start transition-colors flex items-center gap-1"
                             >
                                 Rodar verificação agora

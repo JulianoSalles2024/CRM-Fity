@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import type { Lead, CreateLeadData, UpdateLeadData, ColumnData, Id, Tag, Group } from '../types';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
+import { ui } from '@/src/lib/uiStyles';
 
 interface CreateEditLeadModalProps {
   lead: Lead | null;
@@ -50,10 +51,10 @@ const InputField: React.FC<{ label: string; name: keyof FormData; value: string;
         </label>
         {type === 'textarea' ? (
              <textarea id={name} name={name} value={value} onChange={onChange} placeholder={placeholder} rows={3}
-             className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+             className={ui.input} />
         ) : (
             <input type={type} id={name} name={name} value={value} onChange={onChange} required={required} placeholder={placeholder} maxLength={maxLength}
-            className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className={ui.input} />
         )}
        
     </div>
@@ -68,7 +69,7 @@ const SelectField: React.FC<{ label: string; name: keyof FormData; value: Id; on
         <div className="relative">
             {customElement}
             <select id={name} name={name} value={value} onChange={onChange} required={required}
-            className={`w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none ${customElement ? 'pl-8' : ''}`}>
+            className={`${ui.input} appearance-none ${customElement ? 'pl-8' : ''}`}>
                 {children}
             </select>
         </div>
@@ -262,7 +263,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.2 }}
-          className="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-800 flex flex-col max-h-[90vh]"
+          className={`${ui.modalContainer} w-full max-w-2xl`}
           onClick={e => e.stopPropagation()}
         >
           <div className="flex-shrink-0 p-6 border-b border-slate-800">
@@ -290,7 +291,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                           name="source"
                           value={formData.source}
                           onChange={handleChange}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                          className={`${ui.input} appearance-none`}
                       >
                           <option value="">Selecione a origem do lead</option>
                           {leadSources.map(s => <option key={s} value={s}>{s}</option>)}
@@ -316,7 +317,7 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
 
                   <div className="md:col-span-3">
                       <label className="block text-sm font-medium text-slate-300 mb-2">Tags</label>
-                      <div className="flex flex-wrap gap-2 items-center p-2 bg-slate-950 border border-slate-800 rounded-md min-h-[42px]">
+                      <div className="flex flex-wrap gap-2 items-center p-2 bg-slate-900/50 border border-slate-800 rounded-lg min-h-[42px]">
                           {formData.tags.map(tag => (
                               <span key={tag.id} className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full text-white/90" style={{ backgroundColor: tag.color }}>
                                   {tag.name}
@@ -351,10 +352,10 @@ const CreateEditLeadModal: React.FC<CreateEditLeadModalProps> = ({ lead, columns
                   </div>
               </div>
               <div className="flex-shrink-0 px-6 py-4 border-t border-slate-800 flex justify-end gap-3">
-                  <button type="button" onClick={handleClose} className="px-4 py-2 text-sm font-medium text-slate-300 border border-slate-700 rounded-xl hover:bg-slate-800 transition-colors">
+                  <button type="button" onClick={handleClose} className={ui.buttonSecondary}>
                       Cancelar
                   </button>
-                  <button type="submit" className="px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 rounded-xl hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
+                  <button type="submit" className={ui.buttonPrimary}>
                       {isEditMode ? 'Salvar Alterações' : 'Criar Lead'}
                   </button>
               </div>

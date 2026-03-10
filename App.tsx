@@ -375,8 +375,8 @@ const App: React.FC = () => {
                 const updates: Partial<Lead> = {
                     ...data,
                     probability: newProbability,
-                    lastActivity: 'agora',
                     lastActivityTimestamp: now,
+                    lastActivityType: 'edited',
                 };
                 await updateLead(editingLead.id, updates);
                 showNotification(`Lead "${data.name || oldLead.name}" atualizado.`, 'info');
@@ -401,8 +401,8 @@ const App: React.FC = () => {
                     value: data.value || 0,
                     avatarUrl: data.avatarUrl || `https://i.pravatar.cc/150?u=${Date.now()}`,
                     tags: data.tags || [],
-                    lastActivity: 'agora',
                     lastActivityTimestamp: now,
+                    lastActivityType: 'created',
                     createdAt: now,
                     qualificationStatus: 'pending',
                     probability: calculateProbabilityForStage(newColumnId, columns),
@@ -452,8 +452,8 @@ const App: React.FC = () => {
 
         let updates: Partial<Lead> = {
             columnId: newColumnId,
-            lastActivity: 'agora',
             lastActivityTimestamp: now,
+            lastActivityType: 'move_stage',
             probability: newProbability,
             ...(isWon        ? { status: 'GANHO', wonAt: now  } : {}),
             ...(isLeavingWon ? { status: 'ATIVO',  wonAt: null } : {}),
@@ -534,8 +534,8 @@ const App: React.FC = () => {
         const now = new Date().toISOString();
         const updates: Partial<Lead> = {
             columnId,
-            lastActivity: 'agora',
             lastActivityTimestamp: now,
+            lastActivityType: 'lost',
             probability: calculateProbabilityForStage(columnId, columns),
             lostReason: reason,
             reactivationDate: reactivationDate ? new Date(reactivationDate).toISOString() : undefined,
@@ -563,8 +563,8 @@ const App: React.FC = () => {
             status: undefined,
             lostReason: undefined,
             reactivationDate: undefined,
-            lastActivity: 'agora',
             lastActivityTimestamp: new Date().toISOString(),
+            lastActivityType: 'reactivated',
             probability: calculateProbabilityForStage(firstColumn.id, columns),
         };
         try {
@@ -946,6 +946,8 @@ const App: React.FC = () => {
                     onUpdateTaskStatus={handleUpdateTaskStatus}
                     onDeactivatePlaybook={() => handleDeactivatePlaybook(selectedLead.id)}
                     onApplyPlaybook={handleApplyPlaybook}
+                    allTags={tags}
+                    onUpdateLead={(updated) => updateLead(updated.id, updated)}
                 />
             )}
         </AnimatePresence>

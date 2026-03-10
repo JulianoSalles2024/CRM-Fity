@@ -174,12 +174,8 @@ const GroupsDashboard: React.FC<GroupsDashboardProps> = ({ groups, leads, onSele
                 </div>
              ) : (
                 <div className="flex flex-col items-center justify-center flex-1 text-center border border-dashed border-slate-700 rounded-xl py-16">
-                     <h3 className="text-lg font-semibold text-white">Nenhum grupo encontrado</h3>
-                    <p className="text-slate-500 mt-1 mb-4">Comece criando seu primeiro grupo para gerenciar seus membros.</p>
-                    <button onClick={onAddGroup} className="flex items-center gap-2 bg-slate-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-slate-600 transition-colors">
-                        <PlusCircle className="w-5 h-5" />
-                        <span>Criar Grupo</span>
-                    </button>
+                    <h3 className="text-lg font-semibold text-white">Nenhum grupo encontrado</h3>
+                    <p className="text-slate-500 mt-1">Use o botão 'Novo Grupo' no canto superior direito para criar seu primeiro grupo.</p>
                 </div>
              )}
         </div>

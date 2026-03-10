@@ -3,6 +3,7 @@ import React, { useState, FormEvent, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { ColumnData, Id } from '../types';
+import { ui } from '@/src/lib/uiStyles';
 
 interface CreateStageModalProps {
   onClose: () => void;
@@ -48,7 +49,7 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
-                className="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-800 flex flex-col"
+                className={`${ui.modalContainer} w-full max-w-md`}
                 onClick={e => e.stopPropagation()}
             >
                 <div className="px-6 py-5 border-b border-slate-800 flex items-start justify-between gap-4">
@@ -75,7 +76,7 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="Ex: Qualificação"
                                 required
-                                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                className={ui.input}
                             />
                         </div>
                         <div>
@@ -101,7 +102,7 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
                                     type="text"
                                     value={color}
                                     onChange={(e) => setColor(e.target.value)}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 font-mono"
+                                    className={`${ui.input} font-mono`}
                                 />
                             </div>
                         </div>
@@ -109,7 +110,7 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
                              <label className="block text-sm font-medium text-slate-300 mb-2">
                                 Tipo de Estágio
                             </label>
-                            <div className="flex gap-1 rounded-xl bg-slate-950 p-1 border border-slate-800">
+                            <div className="flex gap-1 rounded-lg bg-slate-900/50 p-1 border border-white/10">
                                 {typeOptions.map(option => (
                                     <button
                                         type="button"
@@ -117,8 +118,8 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
                                         onClick={() => setType(option.value)}
                                         className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 ${
                                             type === option.value
-                                                ? 'bg-slate-700 text-white shadow-sm'
-                                                : 'text-slate-500 hover:text-slate-300'
+                                                ? 'bg-sky-500/20 text-sky-400'
+                                                : 'text-slate-400 hover:bg-white/5'
                                         }`}
                                     >
                                         {option.label}
@@ -128,10 +129,10 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
                         </div>
                     </div>
                     <div className="px-6 py-4 border-t border-slate-800 flex justify-end gap-3">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-300 border border-slate-700 rounded-xl hover:bg-slate-800 transition-colors">
+                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-300 border border-white/10 rounded-lg hover:bg-white/5 transition-colors">
                             Cancelar
                         </button>
-                        <button type="submit" className="px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 rounded-xl hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
+                        <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
                             {isEditMode ? 'Salvar Alterações' : 'Criar Estágio'}
                         </button>
                     </div>

@@ -46,6 +46,8 @@ interface LeadDetailSlideoverProps {
   onUpdateTaskStatus: (taskId: Id, status: 'pending' | 'completed') => void;
   onDeactivatePlaybook: () => void;
   onApplyPlaybook: (playbookId: Id) => void;
+  allTags: Tag[];
+  onUpdateLead: (lead: Lead) => void;
 }
 
 const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
@@ -68,13 +70,39 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
     showNotification,
     onUpdateTaskStatus,
     onDeactivatePlaybook,
-    onApplyPlaybook
+    onApplyPlaybook,
+    allTags,
+    onUpdateLead,
 }) => {
   const [activeTab, setActiveTab] = useState('Timeline');
   const tabs = ['Timeline', 'Playbook', 'Produtos', 'IA Insights'];
   const [newNote, setNewNote] = useState('');
   const [timelinePage, setTimelinePage] = useState(1);
   const TIMELINE_PER_PAGE = 3;
+  const [tagInput, setTagInput] = useState('');
+
+  const availableTagSuggestions = allTags.filter(
+    t => !lead.tags.find(lt => lt.id === t.id)
+      && (tagInput === '' || t.name.toLowerCase().includes(tagInput.toLowerCase()))
+  );
+
+  const handleAddTag = (tag: Tag) => {
+    if (lead.tags.find(t => t.id === tag.id)) return;
+    onUpdateLead({ ...lead, tags: [...lead.tags, tag] });
+    setTagInput('');
+  };
+
+  const handleAddTagByInput = () => {
+    if (!tagInput.trim()) return;
+    const match = availableTagSuggestions.find(
+      t => t.name.toLowerCase() === tagInput.trim().toLowerCase()
+    );
+    if (match) handleAddTag(match);
+  };
+
+  const handleRemoveTag = (tagToRemove: Tag) => {
+    onUpdateLead({ ...lead, tags: lead.tags.filter(t => t.id !== tagToRemove.id) });
+  };
   
   const currencyFormatter = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -221,7 +249,7 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
               <div className="flex flex-wrap gap-2">
                 {lead.tags.map(tag => (
                   <span key={tag.id} className="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
-                    {tag.name} <X className="w-3 h-3 cursor-pointer" />
+                    {tag.name} <X className="w-3 h-3 cursor-pointer" onClick={() => handleRemoveTag(tag)} />
                   </span>
                 ))}
                 {lead.tags.length === 0 && <span className="text-xs text-slate-600 italic">Sem tags</span>}
@@ -230,15 +258,33 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
 
             <section>
               <h3 className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-4">ADICIONAR TAG</h3>
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  placeholder="Ex: VIP, Urgente, Q4..." 
+              <div className="relative flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Ex: VIP, Urgente, Q4..."
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddTagByInput(); } }}
                   className="flex-1 bg-slate-900/50 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50"
                 />
-                <button className="bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 p-2 rounded-lg transition-colors">
+                <button type="button" onClick={handleAddTagByInput} className="bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 p-2 rounded-lg transition-colors">
                   <Plus className="w-4 h-4" />
                 </button>
+                {tagInput.trim().length > 0 && availableTagSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 mt-1 w-full bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
+                    {availableTagSuggestions.map(tag => (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => handleAddTag(tag)}
+                        className="w-full text-left px-3 py-2 text-xs text-slate-200 hover:bg-slate-700 flex items-center gap-2"
+                      >
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
+                        {tag.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </section>
           </div>

@@ -65,8 +65,9 @@ export interface Lead {
   value: number;
   avatarUrl: string;
   tags: Tag[];
-  lastActivity: string;
-  lastActivityTimestamp: string;
+  lastActivity?: string;
+  lastActivityTimestamp?: string | null;
+  lastActivityType?: string | null;
   dueDate?: string; 
   assignedTo?: string;
 

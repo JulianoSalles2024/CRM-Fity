@@ -438,11 +438,11 @@ const GoalsTab: React.FC = () => {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+                            className="bg-[#0B1220] border border-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
                             onClick={e => e.stopPropagation()}
                         >
                             {/* Header */}
-                            <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+                            <div className="p-6 border-b border-white/10 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400">
                                         <Target className="w-5 h-5" />
@@ -455,7 +455,7 @@ const GoalsTab: React.FC = () => {
                                 <button
                                     onClick={closeModal}
                                     disabled={isSaving}
-                                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50"
+                                    className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -473,7 +473,7 @@ const GoalsTab: React.FC = () => {
                                         onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                                         placeholder="Ex: Meta de Receita Q1"
                                         disabled={isSaving}
-                                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+                                        className="w-full bg-[#0B1220] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors disabled:opacity-50"
                                     />
                                 </div>
 
@@ -481,7 +481,7 @@ const GoalsTab: React.FC = () => {
                                 {!isEditMode && (
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1.5">Escopo</label>
-                                        <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1 w-fit">
+                                        <div className="flex gap-1 bg-[#0B1220] border border-white/10 rounded-lg p-1 w-fit">
                                             {(['global', 'seller'] as const).map(s => (
                                                 <button
                                                     key={s}
@@ -493,8 +493,8 @@ const GoalsTab: React.FC = () => {
                                                     }}
                                                     className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50 ${
                                                         goalScope === s
-                                                            ? 'bg-slate-700 text-white'
-                                                            : 'text-slate-400 hover:text-white'
+                                                            ? 'bg-sky-500/20 text-sky-400'
+                                                            : 'text-slate-400 hover:bg-white/5'
                                                     }`}
                                                 >
                                                     {s === 'global' ? 'Global' : 'Por Vendedor'}
@@ -512,7 +512,7 @@ const GoalsTab: React.FC = () => {
                                             value={form.userId ?? ''}
                                             onChange={e => setForm(f => ({ ...f, userId: e.target.value || null }))}
                                             disabled={isSaving}
-                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+                                            className="w-full bg-[#0B1220] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors disabled:opacity-50"
                                         >
                                             <option value="">Selecione um vendedor</option>
                                             {sellers.map(m => (
@@ -530,7 +530,7 @@ const GoalsTab: React.FC = () => {
                                             value={form.goalType}
                                             onChange={e => setForm(f => ({ ...f, goalType: e.target.value as GoalType }))}
                                             disabled={isSaving}
-                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+                                            className="w-full bg-[#0B1220] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors disabled:opacity-50"
                                         >
                                             {(Object.keys(GOAL_TYPE_LABEL) as GoalType[]).map(key => (
                                                 <option key={key} value={key}>{GOAL_TYPE_LABEL[key]}</option>
@@ -543,7 +543,7 @@ const GoalsTab: React.FC = () => {
                                             value={form.frequency}
                                             onChange={e => setForm(f => ({ ...f, frequency: e.target.value as GoalFrequency }))}
                                             disabled={isSaving}
-                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+                                            className="w-full bg-[#0B1220] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors disabled:opacity-50"
                                         >
                                             {(Object.keys(FREQUENCY_LABEL) as GoalFrequency[]).map(key => (
                                                 <option key={key} value={key}>{FREQUENCY_LABEL[key]}</option>
@@ -561,7 +561,7 @@ const GoalsTab: React.FC = () => {
                                             value={form.periodStart}
                                             onChange={e => setForm(f => ({ ...f, periodStart: e.target.value }))}
                                             disabled={isSaving}
-                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50 [color-scheme:dark]"
+                                            className="w-full bg-[#0B1220] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors disabled:opacity-50 [color-scheme:dark]"
                                         />
                                     </div>
                                     <div>
@@ -571,7 +571,7 @@ const GoalsTab: React.FC = () => {
                                             value={form.periodEnd}
                                             onChange={e => setForm(f => ({ ...f, periodEnd: e.target.value }))}
                                             disabled={isSaving}
-                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50 [color-scheme:dark]"
+                                            className="w-full bg-[#0B1220] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors disabled:opacity-50 [color-scheme:dark]"
                                         />
                                     </div>
                                 </div>
@@ -586,7 +586,7 @@ const GoalsTab: React.FC = () => {
                                         onChange={e => setForm(f => ({ ...f, targetValue: Number(e.target.value) }))}
                                         placeholder={form.goalType === 'receita' || form.goalType === 'ticket_medio' ? 'Ex: 50000' : 'Ex: 30'}
                                         disabled={isSaving}
-                                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+                                        className="w-full bg-[#0B1220] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors disabled:opacity-50"
                                     />
                                 </div>
 
@@ -597,7 +597,7 @@ const GoalsTab: React.FC = () => {
                                         checked={form.isActive}
                                         onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))}
                                         disabled={isSaving}
-                                        className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900 disabled:opacity-50"
+                                        className="w-4 h-4 rounded border-white/10 bg-[#0B1220] text-blue-500 focus:ring-sky-500 focus:ring-offset-slate-900 disabled:opacity-50"
                                     />
                                     <div>
                                         <span className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">
@@ -620,14 +620,14 @@ const GoalsTab: React.FC = () => {
                                     <button
                                         onClick={closeModal}
                                         disabled={isSaving}
-                                        className="flex-1 py-2.5 rounded-xl text-sm font-medium text-slate-300 border border-slate-700 hover:bg-slate-800 transition-colors disabled:opacity-50"
+                                        className="flex-1 px-4 py-2 rounded-lg text-sm font-medium text-slate-300 border border-white/10 hover:bg-white/5 transition-colors disabled:opacity-50"
                                     >
                                         Cancelar
                                     </button>
                                     <button
                                         onClick={handleSubmit}
                                         disabled={isSaving}
-                                        className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                                     >
                                         {isSaving
                                             ? <><Loader2 className="w-4 h-4 animate-spin" /> {isEditMode ? 'Atualizando...' : 'Salvando...'}</>

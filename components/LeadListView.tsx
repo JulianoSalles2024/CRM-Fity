@@ -6,6 +6,33 @@ import FlatCard from '@/components/ui/FlatCard';
 import { getLeadComputedStatus, STATUS_BADGE, STATUS_DOT_COLOR } from '@/src/lib/leadStatus';
 import { useAuth } from '@/src/features/auth/AuthContext';
 
+function getActivityLabel(type?: string | null): string {
+    switch (type) {
+        case 'move_stage':  return 'Movido no pipeline';
+        case 'email':       return 'Email enviado';
+        case 'call':        return 'Ligação';
+        case 'note':        return 'Nota adicionada';
+        case 'task':        return 'Tarefa criada';
+        case 'created':     return 'Lead criado';
+        case 'edited':      return 'Lead atualizado';
+        case 'lost':        return 'Lead perdido';
+        case 'reactivated': return 'Lead reativado';
+        default:            return 'Atividade';
+    }
+}
+
+function formatRelativeTime(ts: string | null | undefined): string {
+    if (!ts) return 'Sem atividade';
+    const diff = Date.now() - new Date(ts).getTime();
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return 'agora há pouco';
+    if (minutes < 60) return `há ${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `há ${hours} h`;
+    const days = Math.floor(hours / 24);
+    return `há ${days} dia${days !== 1 ? 's' : ''}`;
+}
+
 const TagPill: React.FC<{ tag: Tag }> = ({ tag }) => (
     <span 
         className="px-2 py-0.5 text-xs font-medium rounded-full text-white/90"
@@ -164,7 +191,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
             if (listDisplaySettings.showPhone) rowData.push(escapeCsvCell(lead.phone || ''));
             if (listDisplaySettings.showTags) rowData.push(escapeCsvCell(lead.tags.map(t => t.name).join(', ')));
             if (listDisplaySettings.showCreatedAt) rowData.push(escapeCsvCell(lead.createdAt ? new Date(lead.createdAt).toISOString().split('T')[0] : ''));
-            if (listDisplaySettings.showLastActivity) rowData.push(escapeCsvCell(lead.lastActivity));
+            if (listDisplaySettings.showLastActivity) rowData.push(escapeCsvCell(lead.lastActivityTimestamp ? `${getActivityLabel(lead.lastActivityType)} — ${formatRelativeTime(lead.lastActivityTimestamp)}` : 'Sem atividade'));
             return rowData.join(',');
         });
 
@@ -342,7 +369,11 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">{formatDate(lead.createdAt)}</td>
                                         )}
                                         {listDisplaySettings.showLastActivity && (
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">{lead.lastActivity}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">
+                                                {lead.lastActivityTimestamp
+                                                    ? `${getActivityLabel(lead.lastActivityType)} — ${formatRelativeTime(lead.lastActivityTimestamp)}`
+                                                    : 'Sem atividade'}
+                                            </td>
                                         )}
                                         {listDisplaySettings.showAssignedTo && (
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">

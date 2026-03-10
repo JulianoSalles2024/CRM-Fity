@@ -249,8 +249,8 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                             try {
                                 await updateLead(leadId, {
                                     ...updates,
-                                    lastActivity: 'agora',
                                     lastActivityTimestamp: new Date().toISOString(),
+                                    lastActivityType: 'edited',
                                 });
                                 if (selectedLead?.id === leadId) {
                                     setSelectedLead((prev: any) => prev ? { ...prev, ...updates } : prev);
