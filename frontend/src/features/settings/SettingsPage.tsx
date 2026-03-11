@@ -1,4 +1,17 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+const SETTINGS_TAB_PATHS: Record<string, string> = {
+    'Pipelines':               '/configuracoes/pipelines',
+    'Estágios':                '/configuracoes/estagios',
+    'Equipe':                  '/configuracoes/equipe',
+    'Inteligência Artificial': '/configuracoes/inteligencia-artificial',
+    'Credenciais de IA':       '/configuracoes/credenciais-ia',
+    'Integrações':             '/configuracoes/integracoes',
+};
+const SETTINGS_PATH_TABS: Record<string, string> = Object.fromEntries(
+    Object.entries(SETTINGS_TAB_PATHS).map(([k, v]) => [v, k])
+);
 import { User, ColumnData, Id, Playbook } from '@/types';
 import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit, Bell, Webhook, MessageSquare, Loader2, BookOpen, Bot, Users, Columns } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -328,22 +341,32 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     initialTab
 }) => {
     const { currentPermissions } = useAuth();
-    const [activeTab, setActiveTab] = useState('Pipelines');
+    const navigate = useNavigate();
+    const { pathname } = useLocation();
+    const activeTab = SETTINGS_PATH_TABS[pathname] ?? 'Equipe';
+    const setActiveTab = (tab: string) => {
+        const path = SETTINGS_TAB_PATHS[tab];
+        if (path) navigate(path, { replace: true });
+    };
 
+    // Handle initialTab prop (e.g. from SdrBot navigation)
+    const lastInitialTab = useRef<string | undefined>(undefined);
     useEffect(() => {
-        if (initialTab) {
-            setActiveTab(initialTab);
+        if (initialTab && initialTab !== lastInitialTab.current) {
+            lastInitialTab.current = initialTab;
+            const path = SETTINGS_TAB_PATHS[initialTab];
+            if (path) navigate(path, { replace: true });
         }
+    }, [initialTab, navigate]);
 
+    // Handle programmatic tab change via custom event
+    useEffect(() => {
         const handleTabChange = (e: any) => {
-            if (e.detail) {
-                setActiveTab(e.detail);
-            }
+            if (e.detail) setActiveTab(e.detail);
         };
-
         window.addEventListener('changeSettingsTab', handleTabChange);
         return () => window.removeEventListener('changeSettingsTab', handleTabChange);
-    }, [initialTab]);
+    }, [navigate]);
 
     // ✅ RBAC: SELLER vê APENAS Pipelines e Estágios | ADMIN vê somente as abas administrativas
     const tabs = useMemo(() => {

@@ -113,7 +113,10 @@ export function useAppState() {
     // --- UI STATE ---
     const [activeView, setActiveView] = useState<string>(() => {
         const path = window.location.pathname;
-        return PATH_VIEWS[path] ?? 'Inbox';
+        if (PATH_VIEWS[path]) return PATH_VIEWS[path];
+        if (path.startsWith('/painel360/')) return 'Painel360';
+        if (path.startsWith('/configuracoes/')) return 'Configurações';
+        return 'Inbox';
     });
     const [inboxMode, setInboxMode] = useState<'standard' | 'analysis'>('standard');
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);

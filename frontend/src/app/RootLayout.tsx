@@ -27,11 +27,12 @@ export default function RootLayout() {
     const ctx = useAppContext();
     const navigate = useNavigate();
 
-    // Sync URL with activeView state
+    // Sync URL with activeView state — preserve sub-paths (e.g. /painel360/vendedores)
     useEffect(() => {
-        const path = VIEW_PATHS[ctx.activeView] ?? '/';
-        if (window.location.pathname !== path) {
-            navigate(path, { replace: true });
+        const base = VIEW_PATHS[ctx.activeView] ?? '/';
+        const current = window.location.pathname;
+        if (current !== base && !current.startsWith(base + '/')) {
+            navigate(base, { replace: true });
         }
     }, [ctx.activeView, navigate]);
 

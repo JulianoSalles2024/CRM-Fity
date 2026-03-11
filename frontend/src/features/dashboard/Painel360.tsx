@@ -3,11 +3,22 @@ import { safeError } from '@/src/utils/logger';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, User, Trophy, Plus, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate, useLocation } from 'react-router-dom';
 import type { User as UserType, Id } from '@/types';
 import SellerDetail360 from './SellerDetail360';
 import GlobalSales360 from './GlobalSales360';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/features/auth/AuthContext';
+
+const PAINEL360_TAB_PATHS: Record<string, string> = {
+    'Vendas Globais': '/painel360/vendas-globais',
+    'Vendedores':     '/painel360/vendedores',
+    'Score':          '/painel360/score',
+    'Normativas':     '/painel360/normativas',
+};
+const PAINEL360_PATH_TABS: Record<string, string> = Object.fromEntries(
+    Object.entries(PAINEL360_TAB_PATHS).map(([k, v]) => [v, k])
+);
 
 interface Painel360Props {
     users: UserType[];
@@ -515,7 +526,18 @@ const ScoreTab: React.FC<ScoreTabProps> = ({ sellers, onSelectSeller, companyId 
 };
 
 const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
-    const [activeTab, setActiveTab] = useState<'Vendas Globais' | 'Vendedores' | 'Score' | 'Normativas'>('Vendas Globais');
+    const navigate = useNavigate();
+    const { pathname } = useLocation();
+    const activeTab = PAINEL360_PATH_TABS[pathname] ?? 'Vendas Globais';
+    const setActiveTab = (tab: string) =>
+        navigate(PAINEL360_TAB_PATHS[tab] ?? '/painel360/vendas-globais', { replace: true });
+
+    // Redirect /painel360 → /painel360/vendas-globais
+    useEffect(() => {
+        if (pathname === '/painel360') {
+            navigate('/painel360/vendas-globais', { replace: true });
+        }
+    }, [pathname, navigate]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedSeller, setSelectedSeller] = useState<UserType | null>(null);
     const [supabaseUsers, setSupabaseUsers] = useState<UserType[]>([]);
