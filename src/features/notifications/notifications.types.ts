@@ -1,4 +1,4 @@
-export type NotificationEventType = 'lead_created' | 'lead_won' | 'lead_lost';
+export type NotificationEventType = 'lead_created' | 'lead_won' | 'lead_lost' | 'lead_reactivation';
 
 export interface AppNotification {
   id: string;

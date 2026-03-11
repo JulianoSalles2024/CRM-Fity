@@ -1,25 +1,18 @@
 import React from 'react';
 import { Bell, CheckCheck, Trash2, MessageSquare, ClipboardList, UserPlus, Zap, AlertCircle, RefreshCw } from 'lucide-react';
-import { Id, Notification, NotificationType } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/src/features/auth/AuthContext';
+import { useNotifications } from './useNotifications';
+import type { AppNotification, NotificationEventType } from './notifications.types';
 
-interface NotificationsViewProps {
-    notifications: Notification[];
-    onMarkAsRead: (id: Id) => void;
-    onMarkAllAsRead: () => void;
-    onClearAll: () => void;
-    onNavigate: (link: Notification['link']) => void;
-}
-
-const notificationIcons: Record<NotificationType, React.ElementType> = {
-    new_message: MessageSquare,
-    task_due_soon: ClipboardList,
-    task_overdue: AlertCircle,
-    lead_assigned: UserPlus,
-    mention: (props: any) => <span {...props}>@</span>,
-    system_update: Zap,
+const notificationIcons: Record<NotificationEventType, React.ElementType> = {
+    lead_created: UserPlus,
+    lead_won: ClipboardList,
+    lead_lost: AlertCircle,
     lead_reactivation: RefreshCw,
 };
+
+const fallbackIcon = Bell;
 
 const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -50,15 +43,15 @@ const isYesterday = (someDate: Date) => {
         someDate.getFullYear() === yesterday.getFullYear();
 };
 
-const NotificationItem: React.FC<{ notification: Notification; onMarkAsRead: (id: Id) => void; onNavigate: (link: Notification['link']) => void }> = ({ notification, onMarkAsRead, onNavigate }) => {
-    const Icon = notificationIcons[notification.type] || Bell;
+const NotificationItem: React.FC<{
+    notification: AppNotification;
+    onMarkAsRead: (id: string) => void;
+}> = ({ notification, onMarkAsRead }) => {
+    const Icon = notificationIcons[notification.type] ?? fallbackIcon;
 
     const handleClick = () => {
-        if (!notification.isRead) {
+        if (!notification.is_read) {
             onMarkAsRead(notification.id);
-        }
-        if (notification.link) {
-            onNavigate(notification.link);
         }
     };
 
@@ -70,15 +63,15 @@ const NotificationItem: React.FC<{ notification: Notification; onMarkAsRead: (id
             exit={{ opacity: 0, x: -50 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             onClick={handleClick}
-            className={`flex items-start gap-4 p-4 border border-zinc-700 rounded-lg transition-colors cursor-pointer ${notification.isRead ? 'bg-zinc-900/50 hover:bg-zinc-800/50' : 'bg-violet-900/30 hover:bg-violet-900/50'}`}
+            className={`flex items-start gap-4 p-4 border border-zinc-700 rounded-lg transition-colors cursor-pointer ${notification.is_read ? 'bg-zinc-900/50 hover:bg-zinc-800/50' : 'bg-violet-900/30 hover:bg-violet-900/50'}`}
         >
-            {!notification.isRead && <div className="w-2.5 h-2.5 bg-violet-500 rounded-full flex-shrink-0 mt-1.5 animate-pulse"></div>}
-            <div className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full ${notification.isRead ? 'bg-zinc-700' : 'bg-violet-800/50'}`}>
-                <Icon className={`w-4 h-4 ${notification.isRead ? 'text-zinc-400' : 'text-violet-400'}`} />
+            {!notification.is_read && <div className="w-2.5 h-2.5 bg-violet-500 rounded-full flex-shrink-0 mt-1.5 animate-pulse"></div>}
+            <div className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full ${notification.is_read ? 'bg-zinc-700' : 'bg-violet-800/50'}`}>
+                <Icon className={`w-4 h-4 ${notification.is_read ? 'text-zinc-400' : 'text-violet-400'}`} />
             </div>
             <div className="flex-1">
-                <p className={`text-sm ${notification.isRead ? 'text-zinc-300' : 'text-white font-medium'}`}>{notification.text}</p>
-                <p className="text-xs text-zinc-500 mt-1">{formatTimestamp(notification.createdAt)}</p>
+                <p className={`text-sm ${notification.is_read ? 'text-zinc-300' : 'text-white font-medium'}`}>{notification.description}</p>
+                <p className="text-xs text-zinc-500 mt-1">{formatTimestamp(notification.created_at)}</p>
             </div>
         </motion.div>
     );
@@ -93,11 +86,14 @@ const NotificationGroup: React.FC<{ title: string; children: React.ReactNode }> 
     </div>
 );
 
-const NotificationsView: React.FC<NotificationsViewProps> = ({ notifications, onMarkAsRead, onMarkAllAsRead, onClearAll, onNavigate }) => {
-    const sortedNotifications = [...notifications].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+const NotificationsView: React.FC = () => {
+    const { user: authUser } = useAuth();
+    const { notifications, markAsRead, deleteAll } = useNotifications(authUser?.id ?? null);
+
+    const sortedNotifications = [...notifications].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     const groupedNotifications = sortedNotifications.reduce((acc, notif) => {
-        const date = new Date(notif.createdAt);
+        const date = new Date(notif.created_at);
         if (isToday(date)) {
             acc.today.push(notif);
         } else if (isYesterday(date)) {
@@ -106,7 +102,13 @@ const NotificationsView: React.FC<NotificationsViewProps> = ({ notifications, on
             acc.older.push(notif);
         }
         return acc;
-    }, { today: [] as Notification[], yesterday: [] as Notification[], older: [] as Notification[] });
+    }, { today: [] as AppNotification[], yesterday: [] as AppNotification[], older: [] as AppNotification[] });
+
+    const handleMarkAllAsRead = async () => {
+        for (const n of notifications.filter(n => !n.is_read)) {
+            await markAsRead(n.id);
+        }
+    };
 
     return (
         <div className="flex flex-col gap-6 h-full">
@@ -119,11 +121,11 @@ const NotificationsView: React.FC<NotificationsViewProps> = ({ notifications, on
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button onClick={onMarkAllAsRead} className="flex items-center gap-2 text-sm bg-zinc-700 text-white px-3 py-1.5 rounded-md hover:bg-zinc-600">
+                    <button onClick={handleMarkAllAsRead} className="flex items-center gap-2 text-sm bg-zinc-700 text-white px-3 py-1.5 rounded-md hover:bg-zinc-600">
                         <CheckCheck className="w-4 h-4" /> Marcar todas como lidas
                     </button>
                     <button
-                        onClick={onClearAll}
+                        onClick={deleteAll}
                         title="Limpar tudo"
                         aria-label="Limpar tudo"
                         className="p-2 bg-zinc-700 text-white rounded-md hover:bg-zinc-600"
@@ -144,17 +146,17 @@ const NotificationsView: React.FC<NotificationsViewProps> = ({ notifications, on
                     <AnimatePresence>
                         {groupedNotifications.today.length > 0 && (
                             <NotificationGroup title="Hoje">
-                                {groupedNotifications.today.map(n => <NotificationItem key={n.id} notification={n} onMarkAsRead={onMarkAsRead} onNavigate={onNavigate} />)}
+                                {groupedNotifications.today.map(n => <NotificationItem key={n.id} notification={n} onMarkAsRead={markAsRead} />)}
                             </NotificationGroup>
                         )}
                         {groupedNotifications.yesterday.length > 0 && (
                             <NotificationGroup title="Ontem">
-                                {groupedNotifications.yesterday.map(n => <NotificationItem key={n.id} notification={n} onMarkAsRead={onMarkAsRead} onNavigate={onNavigate} />)}
+                                {groupedNotifications.yesterday.map(n => <NotificationItem key={n.id} notification={n} onMarkAsRead={markAsRead} />)}
                             </NotificationGroup>
                         )}
                         {groupedNotifications.older.length > 0 && (
                             <NotificationGroup title="Anteriores">
-                                {groupedNotifications.older.map(n => <NotificationItem key={n.id} notification={n} onMarkAsRead={onMarkAsRead} onNavigate={onNavigate} />)}
+                                {groupedNotifications.older.map(n => <NotificationItem key={n.id} notification={n} onMarkAsRead={markAsRead} />)}
                             </NotificationGroup>
                         )}
                     </AnimatePresence>

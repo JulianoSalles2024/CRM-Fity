@@ -28,16 +28,14 @@ interface AppRouterProps {
 export const AppRouter: React.FC<AppRouterProps> = (props) => {
   const { currentUserRole, isRoleReady } = useAuth();
   const {
-    activeView, 
-    leadsToPrint, 
+    activeView,
+    leadsToPrint,
     setLeadsToPrint,
     tasks,
     activities,
     searchedLeads,
     inboxMode,
-    notifications,
     setActiveView,
-    setNotifications,
     leads,
     columns,
     showNotification,
@@ -120,10 +118,8 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
       return <InboxView
           mode={inboxMode}
           tasks={tasks}
-          notifications={notifications}
           leads={leads}
           onNavigate={(view: string) => setActiveView(view)}
-          onMarkNotificationRead={(id: string) => setNotifications((curr: any[]) => curr.map(n => n.id === id ? { ...n, isRead: true } : n))}
           onOpenLead={setSelectedLead}
       />;
     case 'Dashboard':
@@ -286,21 +282,7 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
             onUpdateTaskStatus={handleUpdateTaskStatus}
          />;
     case 'Notificações':
-        return <NotificationsView
-            notifications={notifications}
-            onMarkAsRead={(id: string) => setNotifications((curr: any[]) => curr.map(n => n.id === id ? { ...n, isRead: true } : n))}
-            onMarkAllAsRead={() => setNotifications((curr: any[]) => curr.map(n => ({...n, isRead: true})))}
-            onClearAll={() => setNotifications([])}
-            onNavigate={(link: any) => {
-                if (link) {
-                    if (link.view) setActiveView(link.view);
-                    if (link.leadId) {
-                        const leadToSelect = leads.find((l: any) => l.id === link.leadId);
-                        if (leadToSelect) setSelectedLead(leadToSelect);
-                    }
-                }
-            }}
-        />
+        return <NotificationsView />
     case 'Configurações':
         return <SettingsPage
             currentUser={localUser}

@@ -79,5 +79,21 @@ export function useNotificationActions(
     [notify],
   );
 
-  return { notifyLeadCreated, notifyLeadWon, notifyLeadLost };
+  const notifyLeadReactivation = useCallback(
+    async (leadName: string, _leadId: string) => {
+      if (!companyId || !actorUserId) return;
+      await supabase.from('notifications').insert({
+        company_id: companyId,
+        recipient_user_id: actorUserId,
+        actor_user_id: actorUserId,
+        type: 'lead_reactivation',
+        title: 'Lembrete de reativação',
+        description: `Lembrete para reativar o lead "${leadName}" hoje.`,
+        is_read: false,
+      });
+    },
+    [companyId, actorUserId],
+  );
+
+  return { notifyLeadCreated, notifyLeadWon, notifyLeadLost, notifyLeadReactivation };
 }

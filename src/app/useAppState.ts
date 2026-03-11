@@ -12,9 +12,13 @@ import { useActivities } from '@/src/hooks/useActivities';
 import { useBoards } from '@/src/hooks/useBoards';
 import { useUsers } from '@/src/hooks/useUsers';
 import { useGroups } from '@/src/hooks/useGroups';
+import { usePlaybooks } from '@/src/hooks/usePlaybooks';
+import { useGroupAnalyses } from '@/src/hooks/useGroupAnalyses';
+import { useTags } from '@/src/hooks/useTags';
 
 // Feature hooks
 import { useNotificationActions } from '@/src/features/notifications/useNotificationActions';
+import { useNotifications } from '@/src/features/notifications/useNotifications';
 import { useAIProviders } from '@/src/features/ai-credentials/useAIProviders';
 
 // Types
@@ -25,11 +29,8 @@ import type {
     ChatConversation, ChatMessage,
     Group, CreateGroupData, UpdateGroupData,
     GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData,
-    Notification as NotificationType, Playbook, PlaybookHistoryEntry, Board,
+    Playbook, PlaybookHistoryEntry, Board,
 } from '@/types';
-
-// Initial data
-import { initialTags, initialConversations, initialMessages, initialNotifications, initialPlaybooks } from '@/data';
 
 // View path mapping
 import { PATH_VIEWS } from './viewPaths';
@@ -98,14 +99,16 @@ export function useAppState() {
     }, [activeBoardId, setBoards]);
 
     // --- LOCALSTORAGE STATE ---
-    const [tags, setTags] = useLocalStorage<Tag[]>('crm-tags', initialTags);
     const [emailDrafts, setEmailDrafts] = useLocalStorage<EmailDraft[]>('crm-emailDrafts', []);
-    const [conversations, setConversations] = useLocalStorage<ChatConversation[]>('crm-conversations', initialConversations);
-    const [messages, setMessages] = useLocalStorage<ChatMessage[]>('crm-messages', initialMessages);
+    const [conversations, setConversations] = useState<ChatConversation[]>([]);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const { groups, createGroup, updateGroup: updateGroupInDb, deleteGroup: deleteGroupInDb } = useGroups(companyId);
-    const [groupAnalyses, setGroupAnalyses] = useLocalStorage<GroupAnalysis[]>('crm-groupAnalyses', []);
-    const [notifications, setNotifications] = useLocalStorage<NotificationType[]>('crm-notifications', initialNotifications);
-    const [playbooks, setPlaybooks] = useLocalStorage<Playbook[]>('crm-playbooks', initialPlaybooks);
+    const { groupAnalyses, createOrUpdateAnalysis: createOrUpdateAnalysisInDb, deleteAnalysis: deleteAnalysisInDb } = useGroupAnalyses(companyId);
+    const { tags, createTag, updateTag: updateTagInDb, deleteTag } = useTags(companyId);
+    const { playbooks, replacePlaybooks } = usePlaybooks(companyId);
+
+    // --- NOTIFICATIONS (Supabase) ---
+    const { unreadCount: notifUnreadCount } = useNotifications(authUser?.id ?? null);
 
     // --- UI STATE ---
     const [activeView, setActiveView] = useState<string>(() => {
@@ -174,7 +177,7 @@ export function useAppState() {
     }, [activeView]);
 
     const isSeller = currentUserRole === 'seller';
-    const { notifyLeadCreated, notifyLeadWon, notifyLeadLost } =
+    const { notifyLeadCreated, notifyLeadWon, notifyLeadLost, notifyLeadReactivation } =
         useNotificationActions(isSeller ? companyId : null, isSeller ? authUser?.id ?? null : null);
 
     const { credentials } = useAIProviders();
@@ -209,22 +212,14 @@ export function useAppState() {
                 status: 'pending',
             };
             createTask(newTask).then(() => {
-                setNotifications(current => [...current, {
-                    id: `notif-reactivate-${lead.id}`,
-                    userId: localUser.id,
-                    type: 'lead_reactivation',
-                    text: `Lembrete para reativar o lead "${lead.name}" hoje.`,
-                    link: { view: 'Recuperação', leadId: lead.id },
-                    isRead: false,
-                    createdAt: new Date().toISOString(),
-                }]);
+                notifyLeadReactivation(lead.name, String(lead.id)).catch(safeError);
                 showNotification(`Você tem leads para reativar hoje.`, 'info');
             }).catch(safeError);
         });
-    }, [leads, tasks, createTask, setNotifications, showNotification]);
+    }, [leads, tasks, createTask, notifyLeadReactivation, showNotification]);
 
     // --- COMPUTED DATA ---
-    const unreadCount = useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);
+    const unreadCount = notifUnreadCount;
 
     const calculateProbabilityForStage = useCallback((stageId: Id, allColumns: ColumnData[]): number => {
         const stage = allColumns.find(c => c.id === stageId);
@@ -653,23 +648,13 @@ export function useAppState() {
         }
     };
 
-    const handleCreateOrUpdateGroupAnalysis = (data: CreateGroupAnalysisData | UpdateGroupAnalysisData, analysisId?: Id) => {
-        if (analysisId) {
-            setGroupAnalyses(current => current.map(a => a.id === analysisId ? { ...a, ...data } : a));
-            showNotification('Análise atualizada.', 'success');
-        } else {
-            const newAnalysis: GroupAnalysis = {
-                id: `analysis-${Date.now()}`,
-                createdAt: new Date().toISOString(),
-                ...data as CreateGroupAnalysisData,
-            };
-            setGroupAnalyses(current => [...current.filter(a => a.groupId !== (data as CreateGroupAnalysisData).groupId), newAnalysis]);
-            showNotification('Análise salva.', 'success');
-        }
+    const handleCreateOrUpdateGroupAnalysis = async (data: CreateGroupAnalysisData | UpdateGroupAnalysisData, analysisId?: Id) => {
+        await createOrUpdateAnalysisInDb(data, analysisId);
+        showNotification(analysisId ? 'Análise atualizada.' : 'Análise salva.', 'success');
     };
 
-    const handleDeleteGroupAnalysis = (analysisId: Id) => {
-        setGroupAnalyses(current => current.filter(a => a.id !== analysisId));
+    const handleDeleteGroupAnalysis = async (analysisId: Id) => {
+        await deleteAnalysisInDb(analysisId);
         showNotification('Rascunho da análise descartado.', 'info');
     };
 
@@ -738,15 +723,14 @@ export function useAppState() {
         users, refetchUsers,
         boards, setBoards, activeBoardId, setActiveBoardId, createBoard, saveBoardStages, deleteBoard,
         columns, setColumns, activeBoard,
-        // localStorage data
-        tags, setTags,
+        // data
+        tags, createTag, updateTag: updateTagInDb, deleteTag,
         emailDrafts, setEmailDrafts,
         conversations, setConversations,
         messages, setMessages,
         groups, createGroup, updateGroupInDb, deleteGroupInDb,
-        groupAnalyses, setGroupAnalyses,
-        notifications, setNotifications,
-        playbooks, setPlaybooks,
+        groupAnalyses,
+        playbooks, setPlaybooks: replacePlaybooks,
         // UI state
         activeView, setActiveView,
         inboxMode, setInboxMode,

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Task, Notification, Lead, Id } from '@/types';
+import { Task, Lead, Id } from '@/types';
 import {
     CheckCircle2,
     Bell,
@@ -31,15 +31,13 @@ import PredictiveOpportunitiesModal from '@/src/components/opportunities/Predict
 
 interface InboxViewProps {
     tasks: Task[];
-    notifications: Notification[];
     leads: Lead[];
     onNavigate: (view: string, itemId?: Id) => void;
-    onMarkNotificationRead: (id: Id) => void;
     onOpenLead?: (lead: Lead) => void;
     mode?: 'standard' | 'analysis';
 }
 
-const InboxView: React.FC<InboxViewProps> = ({ tasks, notifications, leads, onNavigate, onMarkNotificationRead, onOpenLead, mode = 'standard' }) => {
+const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, onNavigate, onOpenLead, mode = 'standard' }) => {
     const [viewMode, setViewMode] = useState<'overview' | 'list' | 'focus'>('overview');
     const [showOpportunities, setShowOpportunities] = useState(false);
 
