@@ -225,7 +225,7 @@ function InstallComplete({ adminName, supabaseUrl, supabaseAnonKey }: {
   function handleEnter() {
     localStorage.setItem('crm_supabase_config', JSON.stringify({
       url:     supabaseUrl.trim().replace(/\/$/, ''),
-      anonKey: supabaseAnonKey,
+      anonKey: supabaseAnonKey.trim(),
     }));
     clearInstallState();
     window.location.href = '/';
