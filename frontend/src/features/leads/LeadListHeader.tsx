@@ -12,8 +12,8 @@ interface LeadListHeaderProps {
     allTags: TagType[];
     selectedTags: TagType[];
     onSelectedTagsChange: React.Dispatch<React.SetStateAction<TagType[]>>;
-    statusFilter: 'all' | 'Ativo' | 'Perdido';
-    onStatusFilterChange: (status: 'all' | 'Ativo' | 'Perdido') => void;
+    statusFilter: 'all' | 'Ganho' | 'Perdido';
+    onStatusFilterChange: (status: 'all' | 'Ganho' | 'Perdido') => void;
     onExportCSV: () => void;
     onExportPDF: () => void;
     onOpenCreateLeadModal: () => void;
@@ -99,10 +99,10 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
                         Todos
                     </button>
                     <button
-                        onClick={() => onStatusFilterChange('Ativo')}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${statusFilter === 'Ativo' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'}`}
+                        onClick={() => onStatusFilterChange('Ganho')}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${statusFilter === 'Ganho' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-300'}`}
                     >
-                        Ativos
+                        Ganhos
                     </button>
                     <button
                         onClick={() => onStatusFilterChange('Perdido')}

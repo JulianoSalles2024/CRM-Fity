@@ -156,7 +156,7 @@ export function useAppState() {
     const [minimizedLeads, setMinimizedLeads] = useLocalStorage<Id[]>('crm-minimizedLeads', []);
     const [minimizedColumns, setMinimizedColumns] = useLocalStorage<Id[]>('crm-minimizedColumns', []);
     const [listSelectedTags, setListSelectedTags] = useState<Tag[]>([]);
-    const [listStatusFilter, setListStatusFilter] = useState<'all' | 'Ativo' | 'Perdido'>('all');
+    const [listStatusFilter, setListStatusFilter] = useState<'all' | 'Ganho' | 'Perdido'>('all');
     const [selectedGroupForView, setSelectedGroupForView] = useState<Id | null>(null);
 
     const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => setNotification({ message, type }), []);
@@ -277,7 +277,7 @@ export function useAppState() {
                 const statusMatch = listStatusFilter === 'all' ||
                     (listStatusFilter === 'Perdido'
                         ? getLeadComputedStatus(lead, columns.find(c => c.id === lead.columnId)?.type) === 'perdido'
-                        : lead.status === listStatusFilter);
+                        : lead.status === 'GANHO');
                 const tagMatch = listSelectedTags.length === 0 || listSelectedTags.every(st => lead.tags.some(lt => lt.id === st.id));
                 return statusMatch && tagMatch;
             });

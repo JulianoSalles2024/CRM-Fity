@@ -62,8 +62,8 @@ interface LeadListViewProps {
     allTags: Tag[];
     selectedTags: Tag[];
     onSelectedTagsChange: React.Dispatch<React.SetStateAction<Tag[]>>;
-    statusFilter: 'all' | 'Ativo' | 'Perdido';
-    onStatusFilterChange: (status: 'all' | 'Ativo' | 'Perdido') => void;
+    statusFilter: 'all' | 'Ganho' | 'Perdido';
+    onStatusFilterChange: (status: 'all' | 'Ganho' | 'Perdido') => void;
     onExportPDF: () => void;
     onOpenCreateLeadModal: () => void;
     onOpenCreateTaskModal: () => void;
