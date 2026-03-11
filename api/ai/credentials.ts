@@ -68,7 +68,7 @@ export default async function handler(req: any, res: any) {
           .select('ai_api_key')
           .eq('organization_id', ctx.companyId)   // companyId do JWT
           .eq('ai_provider', provider)
-          .single();
+          .maybeSingle();
 
         if (!existing?.ai_api_key) {
           throw new AppError(400, 'API key é obrigatória.');
