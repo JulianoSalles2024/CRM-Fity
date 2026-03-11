@@ -1,14 +1,14 @@
 import React from 'react';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { ProfileView } from '@/src/features/profile';
-import KanbanBoard from '@/components/KanbanBoard';
+import KanbanBoard from '@/src/features/leads/KanbanBoard';
 import Painel360 from '@/src/features/dashboard/Painel360';
 import Dashboard from '@/src/features/dashboard/Dashboard';
 import SettingsPage from '@/src/features/settings/SettingsPage';
 import ActivitiesView from '@/src/features/tasks/ActivitiesView';
 import CalendarPage from '@/src/features/tasks/CalendarPage';
 import ReportsPage from '@/src/features/reports/ReportsPage';
-import LeadListView from '@/components/LeadListView';
+import LeadListView from '@/src/features/leads/LeadListView';
 import ChatView from '@/components/ChatView';
 import GroupsView from '@/src/features/groups/GroupsView';
 import GroupsDashboard from '@/src/features/dashboard/GroupsDashboard';
@@ -16,7 +16,7 @@ import IntegrationsPage from '@/src/features/settings/IntegrationsPage';
 import NotificationsView from '@/src/features/notifications/NotificationsView';
 import PlaybookSettings from '@/src/features/playbooks/PlaybookSettings';
 import PrintableLeadsReport from '@/src/features/reports/PrintableLeadsReport';
-import RecoveryView from '@/components/RecoveryView';
+import RecoveryView from '@/src/features/leads/RecoveryView';
 import InboxView from '@/components/InboxView';
 
 interface AppRouterProps {

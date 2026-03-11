@@ -12,15 +12,15 @@ import Header from '@/components/Header';
 
 // Modal components
 import LeadDetailSlideover from '@/src/features/activities/LeadDetailSlideover';
-import CreateEditLeadModal from '@/components/CreateEditLeadModal';
+import CreateEditLeadModal from '@/src/features/leads/CreateEditLeadModal';
 import CreateEditTaskModal from '@/src/features/tasks/CreateEditTaskModal';
 import CreateEditGroupModal from '@/src/features/groups/CreateEditGroupModal';
 import PlaybookModal from '@/src/features/playbooks/PlaybookModal';
-import LostLeadModal from '@/components/LostLeadModal';
+import LostLeadModal from '@/src/features/leads/LostLeadModal';
 import SdrBotModal from '@/components/SdrBotModal';
 import SdrAssistantChat from '@/components/SdrAssistantChat';
 import OnboardingModal from '@/src/components/onboarding/OnboardingModal';
-import CreateBoardModal from '@/components/CreateBoardModal';
+import CreateBoardModal from '@/src/features/leads/CreateBoardModal';
 import Notification from '@/src/features/notifications/Notification';
 
 export default function RootLayout() {
