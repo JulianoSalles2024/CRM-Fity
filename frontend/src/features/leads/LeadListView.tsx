@@ -95,7 +95,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
     const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
-    const PAGE_SIZE = 8;
+    const PAGE_SIZE = 5;
     const [currentPage, setCurrentPage] = useState(1);
 
     // Reset para página 1 ao mudar busca ou ordenação
