@@ -93,6 +93,8 @@ const LeadListView: React.FC<LeadListViewProps> = ({
     const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending'});
     const [searchQuery, setSearchQuery] = useState('');
     const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
     const PAGE_SIZE = 8;
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -167,6 +169,29 @@ const LeadListView: React.FC<LeadListViewProps> = ({
             direction = 'descending';
         }
         setSortConfig({ key, direction });
+    };
+
+    // --- SELECTION LOGIC ---
+    const toggleSelect = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
+    const isAllOnPageSelected = paginatedLeads.length > 0 && paginatedLeads.every(l => selectedIds.has(l.id as string));
+    const toggleSelectAll = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (isAllOnPageSelected) {
+                paginatedLeads.forEach(l => next.delete(l.id as string));
+            } else {
+                paginatedLeads.forEach(l => next.add(l.id as string));
+            }
+            return next;
+        });
     };
 
     // --- CSV EXPORT LOGIC ---
@@ -249,9 +274,9 @@ const LeadListView: React.FC<LeadListViewProps> = ({
     const topPaddingHeight = virtualRange.start * ROW_HEIGHT;
     const bottomPaddingHeight = Math.max(0, (paginatedLeads.length - (virtualRange.end + 1)) * ROW_HEIGHT);
 
-    // 5 blocks for admin (identity / status+value / pipeline+owner / activity / actions),
-    // 4 for non-admin (no pipeline block).
-    const numberOfColumns = currentUserRole === 'admin' ? 5 : 4;
+    // checkbox + 5 blocks admin (identity / status+value / pipeline+owner / activity / actions)
+    // checkbox + 4 blocks non-admin (no pipeline block)
+    const numberOfColumns = currentUserRole === 'admin' ? 6 : 5;
     // --- END VIRTUALIZATION LOGIC ---
     
     const TableHeader: React.FC<{ sortKey: SortableKeys; label: string; className?: string }> = ({ sortKey, label, className }) => {
@@ -259,7 +284,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
         const isAscending = isActive && sortConfig?.direction === 'ascending';
 
         return (
-            <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap ${className} ${isActive ? 'text-white' : 'text-slate-400'}`}>
+            <th className={`px-4 py-3 text-left text-xs font-medium tracking-wide whitespace-nowrap ${className} ${isActive ? 'text-white' : 'text-slate-400'}`}>
                 <button className="flex items-center gap-1 group" onClick={() => requestSort(sortKey)}>
                     {label}
                     <span className={isActive ? 'opacity-100' : 'opacity-50 group-hover:opacity-100 transition-opacity'}>
@@ -292,6 +317,29 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                 onSearchChange={setSearchQuery}
             />
             <FlatCard className="overflow-hidden flex-1 flex flex-col p-0">
+
+                {/* ── Action bar — visível quando há seleção ────────── */}
+                {selectedIds.size > 0 && (
+                    <div className="px-4 py-2.5 bg-blue-600/10 border-b border-blue-500/20 flex items-center gap-4 flex-shrink-0">
+                        <span className="text-sm text-blue-300 font-medium">
+                            {selectedIds.size} contato{selectedIds.size !== 1 ? 's' : ''} selecionado{selectedIds.size !== 1 ? 's' : ''}
+                        </span>
+                        <button
+                            onClick={() => setSelectedIds(new Set())}
+                            className="text-xs text-slate-400 hover:text-white transition-colors"
+                        >
+                            Limpar seleção
+                        </button>
+                        <button
+                            onClick={() => setShowBulkDeleteModal(true)}
+                            className="ml-auto flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-red-600/20 text-red-400 hover:bg-red-600/30 hover:text-red-300 border border-red-500/20 transition-colors"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Excluir selecionados
+                        </button>
+                    </div>
+                )}
+
                 {sortedLeads.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-64">
                         <h3 className="text-lg font-semibold text-slate-300">Nenhum {viewType === 'Clientes' ? 'cliente' : 'lead'} encontrado</h3>
@@ -302,10 +350,20 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                         <table className="min-w-full divide-y divide-slate-700" style={{ borderSpacing: 0 }}>
                             <thead className="bg-slate-900/50 sticky top-0 z-10">
                                 <tr>
+                                    <th className="px-4 py-3 w-10">
+                                        <input
+                                            type="checkbox"
+                                            checked={isAllOnPageSelected}
+                                            onChange={() => {}}
+                                            onClick={toggleSelectAll}
+                                            className="w-4 h-4 rounded accent-blue-500 cursor-pointer"
+                                            title="Selecionar todos"
+                                        />
+                                    </th>
                                     <TableHeader sortKey="name" label="Lead" />
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">Status / Valor</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 tracking-wide whitespace-nowrap">Status / Valor</th>
                                     {currentUserRole === 'admin' && (
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">Pipeline</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 tracking-wide whitespace-nowrap">Pipeline</th>
                                     )}
                                     <TableHeader sortKey="createdAt" label="Atividade" />
                                     <th className="px-4 py-3 w-20" />
@@ -319,6 +377,17 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                 )}
                                 {virtualLeads.map(lead => (
                                     <tr key={lead.id} onClick={() => onLeadClick(lead)} className="group hover:bg-slate-800/50 cursor-pointer transition-colors duration-150">
+
+                                        {/* ── Checkbox ────────────────────────────────────── */}
+                                        <td className="px-4 py-4 w-10 align-top" onClick={e => e.stopPropagation()}>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.has(lead.id as string)}
+                                                onChange={() => {}}
+                                                onClick={e => toggleSelect(lead.id as string, e)}
+                                                className="w-4 h-4 rounded accent-blue-500 cursor-pointer mt-0.5"
+                                            />
+                                        </td>
 
                                         {/* ── Bloco 1: Identidade ─────────────────────────── */}
                                         <td className="px-4 py-4 w-64">
@@ -458,6 +527,28 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                     onConfirm={() => {
                         onDeleteLead(leadToDelete.id as string);
                         setLeadToDelete(null);
+                    }}
+                />
+            )}
+
+            {showBulkDeleteModal && (
+                <ConfirmDeleteModal
+                    title="Excluir contatos em massa"
+                    message={
+                        <div className="flex flex-col gap-2">
+                            <p>Tem certeza que deseja excluir <strong className="text-white">{selectedIds.size} contato{selectedIds.size !== 1 ? 's' : ''}</strong>?</p>
+                            <p className="text-red-400/90 text-xs mt-1">
+                                Todos os negócios vinculados também serão excluídos. Esta ação não pode ser desfeita.
+                            </p>
+                        </div>
+                    }
+                    confirmText="Excluir"
+                    confirmVariant="danger"
+                    onClose={() => setShowBulkDeleteModal(false)}
+                    onConfirm={() => {
+                        selectedIds.forEach(id => onDeleteLead(id));
+                        setSelectedIds(new Set());
+                        setShowBulkDeleteModal(false);
                     }}
                 />
             )}
