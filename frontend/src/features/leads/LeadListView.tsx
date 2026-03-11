@@ -248,13 +248,9 @@ const LeadListView: React.FC<LeadListViewProps> = ({
     const topPaddingHeight = virtualRange.start * ROW_HEIGHT;
     const bottomPaddingHeight = Math.max(0, (paginatedLeads.length - (virtualRange.end + 1)) * ROW_HEIGHT);
 
-    const numberOfColumns = useMemo(() => {
-        const isAdmin = currentUserRole === 'admin';
-        return 1
-            + Object.values(listDisplaySettings).filter(Boolean).length
-            + (isAdmin ? 2 - (listDisplaySettings.showTags ? 1 : 0) : 0);
-            // admin: +2 (Pipeline + Criado por), -1 se showTags estava ligado (Tags fica oculta)
-    }, [listDisplaySettings, currentUserRole]);
+    // 4 blocks for admin (identity / status+value / pipeline+owner / activity),
+    // 3 for non-admin (no pipeline block).
+    const numberOfColumns = currentUserRole === 'admin' ? 4 : 3;
     // --- END VIRTUALIZATION LOGIC ---
     
     const TableHeader: React.FC<{ sortKey: SortableKeys; label: string; className?: string }> = ({ sortKey, label, className }) => {
@@ -305,23 +301,12 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                         <table className="min-w-full divide-y divide-slate-700" style={{ borderSpacing: 0 }}>
                             <thead className="bg-slate-900/50 sticky top-0 z-10">
                                 <tr>
-                                    <TableHeader sortKey="name" label="Nome" />
-                                    {listDisplaySettings.showStatus && <TableHeader sortKey="status" label="Status" />}
-                                    {listDisplaySettings.showValue && <TableHeader sortKey="value" label="Valor" />}
-                                    {listDisplaySettings.showEmail && <TableHeader sortKey="email" label="Email" />}
-                                    {listDisplaySettings.showPhone && <TableHeader sortKey="phone" label="Telefone" />}
-                                    {currentUserRole === 'admin'
-                                        ? <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 tracking-wider whitespace-nowrap">Pipeline</th>
-                                        : listDisplaySettings.showTags && <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Tags</th>
-                                    }
-                                    {listDisplaySettings.showCreatedAt && <TableHeader sortKey="createdAt" label="Criação" />}
-                                    {listDisplaySettings.showLastActivity && <TableHeader sortKey="lastActivity" label="Última Atividade" />}
-                                    {listDisplaySettings.showAssignedTo && <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">Responsável</th>}
+                                    <TableHeader sortKey="name" label="Lead" />
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">Status / Valor</th>
                                     {currentUserRole === 'admin' && (
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 tracking-wider whitespace-nowrap">
-                                            Criado por
-                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">Pipeline</th>
                                     )}
+                                    <TableHeader sortKey="createdAt" label="Atividade" />
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-700 relative">
@@ -332,76 +317,84 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                 )}
                                 {virtualLeads.map(lead => (
                                     <tr key={lead.id} onClick={() => onLeadClick(lead)} className="hover:bg-slate-800/50 cursor-pointer transition-colors duration-150">
-                                        <td className="px-4 py-3">
+
+                                        {/* ── Bloco 1: Identidade ─────────────────────────── */}
+                                        <td className="px-4 py-4 w-64">
                                             <div className="flex items-center gap-3 min-w-0">
-                                                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${getAvatarColor(lead.name ?? '')}`}>
+                                                <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${getAvatarColor(lead.name ?? '')}`}>
                                                     {(lead.name ?? '?').charAt(0).toUpperCase()}
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="text-sm font-semibold text-white truncate leading-snug">{lead.name}</div>
                                                     <div className="text-xs text-slate-500 truncate leading-snug mt-0.5">{lead.email || lead.company || '—'}</div>
+                                                    {listDisplaySettings.showPhone && lead.phone && (
+                                                        <div className="text-xs text-slate-600 truncate leading-snug mt-0.5">{lead.phone}</div>
+                                                    )}
+                                                    {currentUserRole !== 'admin' && listDisplaySettings.showTags && lead.tags.length > 0 && (
+                                                        <div className="flex flex-wrap gap-1 mt-1.5">
+                                                            {lead.tags.map(tag => <TagPill key={tag.id} tag={tag} />)}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>
-                                        {listDisplaySettings.showStatus && (
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <div className="flex items-center">
-                                                    {(() => {
-                                                        const s = getLeadComputedStatus(lead, columnTypeMap[lead.columnId]);
-                                                        const b = STATUS_BADGE[s];
-                                                        return (
-                                                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${b.classes}`}>
-                                                                <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT_COLOR[s]}`} />
-                                                                {b.label}
-                                                            </span>
-                                                        );
-                                                    })()}
+
+                                        {/* ── Bloco 2: Status + Valor ─────────────────────── */}
+                                        <td className="px-4 py-4 whitespace-nowrap align-top">
+                                            <div className="flex flex-col gap-2">
+                                                {(() => {
+                                                    const s = getLeadComputedStatus(lead, columnTypeMap[lead.columnId]);
+                                                    const b = STATUS_BADGE[s];
+                                                    return (
+                                                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border w-fit ${b.classes}`}>
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT_COLOR[s]}`} />
+                                                            {b.label}
+                                                        </span>
+                                                    );
+                                                })()}
+                                                <span className="text-sm font-semibold text-white tabular-nums">
+                                                    {currencyFormatter.format(lead.value)}
+                                                </span>
+                                            </div>
+                                        </td>
+
+                                        {/* ── Bloco 3: Pipeline + Criado por (admin) ──────── */}
+                                        {currentUserRole === 'admin' && (
+                                            <td className="px-4 py-4 whitespace-nowrap align-top">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-sm text-slate-300 truncate leading-snug">
+                                                        {boards.find(b => b.id === lead.boardId)?.name ?? '—'}
+                                                    </span>
+                                                    <span className="text-xs text-slate-500 leading-snug">
+                                                        {users.find(u => u.id === lead.ownerId)?.name
+                                                            ? `por ${users.find(u => u.id === lead.ownerId)?.name}`
+                                                            : '—'}
+                                                    </span>
+                                                    {listDisplaySettings.showAssignedTo && (
+                                                        <span className="text-xs text-slate-600 leading-snug">
+                                                            {users.find(u => u.id === lead.assignedTo)?.name
+                                                                ? `resp. ${users.find(u => u.id === lead.assignedTo)?.name}`
+                                                                : ''}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </td>
                                         )}
-                                        {listDisplaySettings.showValue && (
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <span className="text-sm font-semibold text-white tabular-nums">{currencyFormatter.format(lead.value)}</span>
-                                            </td>
-                                        )}
-                                        {listDisplaySettings.showEmail && (
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400 truncate max-w-xs">{lead.email || '—'}</td>
-                                        )}
-                                        {listDisplaySettings.showPhone && (
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">{lead.phone || '—'}</td>
-                                        )}
-                                        {currentUserRole === 'admin'
-                                            ? <td className="px-4 py-3 whitespace-nowrap">
-                                                <span className="text-sm text-slate-300">{boards.find(b => b.id === lead.boardId)?.name ?? '—'}</span>
-                                              </td>
-                                            : listDisplaySettings.showTags && (
-                                                <td className="px-4 py-3 whitespace-nowrap">
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {lead.tags.map(tag => <TagPill key={tag.id} tag={tag} />)}
-                                                    </div>
-                                                </td>
-                                              )
-                                        }
-                                        {listDisplaySettings.showCreatedAt && (
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">{formatDate(lead.createdAt)}</td>
-                                        )}
-                                        {listDisplaySettings.showLastActivity && (
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">
-                                                {lead.lastActivityTimestamp
-                                                    ? `${getActivityLabel(lead.lastActivityType)} — ${formatRelativeTime(lead.lastActivityTimestamp)}`
-                                                    : 'Sem atividade'}
-                                            </td>
-                                        )}
-                                        {listDisplaySettings.showAssignedTo && (
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">
-                                                {users.find(u => u.id === lead.assignedTo)?.name ?? '—'}
-                                            </td>
-                                        )}
-                                        {currentUserRole === 'admin' && (
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-400">
-                                                {users.find(u => u.id === lead.ownerId)?.name ?? '—'}
-                                            </td>
-                                        )}
+
+                                        {/* ── Bloco 4: Criação + Última atividade ─────────── */}
+                                        <td className="px-4 py-4 whitespace-nowrap align-top">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-xs text-slate-400 tabular-nums leading-snug">
+                                                    {formatDate(lead.createdAt)}
+                                                </span>
+                                                <span className="text-xs text-slate-500 leading-snug">
+                                                    {lead.lastActivityTimestamp
+                                                        ? `${getActivityLabel(lead.lastActivityType)} — ${formatRelativeTime(lead.lastActivityTimestamp)}`
+                                                        : 'Sem atividade'}
+                                                </span>
+                                            </div>
+                                        </td>
+
                                     </tr>
                                 ))}
                                 {bottomPaddingHeight > 0 && (
