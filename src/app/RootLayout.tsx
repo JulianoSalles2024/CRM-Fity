@@ -13,7 +13,7 @@ import Header from '@/components/Header';
 // Modal components
 import LeadDetailSlideover from '@/components/LeadDetailSlideover';
 import CreateEditLeadModal from '@/components/CreateEditLeadModal';
-import CreateEditTaskModal from '@/components/CreateEditTaskModal';
+import CreateEditTaskModal from '@/src/features/tasks/CreateEditTaskModal';
 import CreateEditGroupModal from '@/components/CreateEditGroupModal';
 import PlaybookModal from '@/components/PlaybookModal';
 import LostLeadModal from '@/components/LostLeadModal';
