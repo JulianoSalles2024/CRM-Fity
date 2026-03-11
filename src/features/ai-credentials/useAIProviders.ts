@@ -1,16 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AICredential, AIProviderId, ConnectionStatus } from './aiProviders.types';
+import { AICredential, AIProviderId } from './aiProviders.types';
 import { aiProvidersService } from './aiProviders.service';
-import { MODELS_REGISTRY } from './models.registry';
 import { useAuth } from '@/src/features/auth/AuthContext';
+
+const safeError = (...args: unknown[]) => console.error(...args);
 
 export const useAIProviders = () => {
   const { companyId } = useAuth();
 
   const [credentials, setCredentials] = useState<Record<AIProviderId, AICredential>>({
-    openai: { provider: 'openai', apiKey: '', model: 'gpt-5-mini', status: 'not_configured' },
-    gemini: { provider: 'gemini', apiKey: '', model: 'gemini-2.5-flash', status: 'not_configured' },
-    anthropic: { provider: 'anthropic', apiKey: '', model: 'claude-sonnet-4.5', status: 'not_configured' },
+    openai:    { provider: 'openai',    apiKey: '', model: 'gpt-5-mini',          status: 'not_configured' },
+    gemini:    { provider: 'gemini',    apiKey: '', model: 'gemini-2.5-flash',     status: 'not_configured' },
+    anthropic: { provider: 'anthropic', apiKey: '', model: 'claude-sonnet-4.5',   status: 'not_configured' },
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -21,13 +22,9 @@ export const useAIProviders = () => {
     }
     try {
       setIsLoading(true);
-      const data = await aiProvidersService.getCredentials(companyId);
-
-      // Merge with defaults to ensure all providers are present
-      setCredentials(prev => ({
-        ...prev,
-        ...data
-      }));
+      // organizationId removido — o serviço usa o JWT para derivar o companyId no servidor.
+      const data = await aiProvidersService.getCredentials();
+      setCredentials(prev => ({ ...prev, ...data }));
     } catch (error) {
       safeError('Error loading credentials:', error);
     } finally {
@@ -42,15 +39,15 @@ export const useAIProviders = () => {
   const updateCredential = (provider: AIProviderId, updates: Partial<AICredential>) => {
     setCredentials(prev => ({
       ...prev,
-      [provider]: { ...prev[provider], ...updates }
+      [provider]: { ...prev[provider], ...updates },
     }));
   };
 
   const saveCredential = async (provider: AIProviderId) => {
-    if (!companyId) return;
     try {
       const credential = credentials[provider];
-      await aiProvidersService.saveCredential(credential, companyId);
+      // organizationId removido — o servidor deriva do JWT.
+      await aiProvidersService.saveCredential(credential);
       alert('Configurações salvas com sucesso!');
     } catch (error) {
       safeError('Error saving credential:', error);
@@ -72,19 +69,16 @@ export const useAIProviders = () => {
       const result = await aiProvidersService.testConnection(
         provider,
         credential.model,
-        credential.apiKey
+        credential.apiKey,
       );
+      updateCredential(provider, { status: result.success ? 'connected' : 'invalid' });
 
-      updateCredential(provider, { 
-        status: result.success ? 'connected' : 'invalid'
-      });
-      
       if (result.success) {
         alert(result.message);
       } else {
         alert(`Falha no teste: ${result.message}`);
       }
-      
+
       return result;
     } catch (error: any) {
       updateCredential(provider, { status: 'invalid' });
@@ -94,9 +88,9 @@ export const useAIProviders = () => {
   };
 
   const disconnectCredential = async (provider: AIProviderId) => {
-    if (!companyId) return;
     try {
-      await aiProvidersService.disconnectCredential(provider, companyId);
+      // organizationId removido — o servidor deriva do JWT.
+      await aiProvidersService.disconnectCredential(provider);
       updateCredential(provider, { apiKey: '', status: 'not_configured' });
     } catch (error) {
       safeError('Error disconnecting credential:', error);
@@ -112,6 +106,6 @@ export const useAIProviders = () => {
     saveCredential,
     testConnection,
     disconnectCredential,
-    refresh: loadCredentials
+    refresh: loadCredentials,
   };
 };
