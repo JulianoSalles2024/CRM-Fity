@@ -4,7 +4,7 @@ import App from '@/App';
 import { AppProviders } from './providers';
 import { InstallProvider } from '@/src/features/install/context/InstallContext';
 import InstallRouter from '@/src/features/install/InstallRouter';
-import InvitePage, { InvalidTokenPage } from '@/src/pages/InvitePage';
+import InvitePage, { InvalidTokenPage } from '@/src/features/auth/InvitePage';
 
 function InviteRoute() {
     const { token } = useParams<{ token: string }>();

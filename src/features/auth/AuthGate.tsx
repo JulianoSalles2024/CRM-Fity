@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from './AuthContext';
 import { supabaseUrl } from '@/src/lib/supabase';
-import AuthPage from '@/components/AuthPage';
+import AuthPage from './AuthPage';
 import DevSupabaseSwitcher from './DevSupabaseSwitcher';
 
 const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
