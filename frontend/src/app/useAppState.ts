@@ -468,7 +468,7 @@ export function useAppState() {
             probability: calculateProbabilityForStage(columnId, columns),
             lostReason: reason,
             reactivationDate: reactivationDate ? new Date(reactivationDate).toISOString() : undefined,
-            status: 'ENCERRADO',
+            status: reactivationDate ? 'PERDIDO' : 'ENCERRADO',
         };
         try {
             await updateLead(lead.id, updates);
