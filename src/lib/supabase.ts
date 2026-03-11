@@ -36,10 +36,6 @@ if (supabaseAnonKey === 'NOT_CONFIGURED') {
   safeError('[Supabase] ⚠️  VITE_SUPABASE_ANON_KEY não configurada.');
 }
 
-const source = installConfig ? 'localStorage (install)' : 'env var';
-console.log(`[Supabase] URL (${source}):`, supabaseUrl || '(vazio)');
-console.log('[Supabase] AnonKey configured:', supabaseAnonKey !== 'NOT_CONFIGURED');
-
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey,
