@@ -1,7 +1,7 @@
 import { safeError } from '@/src/utils/logger';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Bot, Send, User, Building, DollarSign, Sparkles, FileText, Loader2, MessageSquare, Inbox, FileClock, CheckCircle2, XCircle, MessageCircle as OpenIcon, ChevronDown, Phone, CheckCheck, ChevronRight, ChevronLeft, Mail, Instagram, MessageSquare as WhatsAppIcon } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
+import { createAIService } from '@/src/services/ai';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Lead, ChatConversation, ChatMessage, User as UserType, Id, ChatConversationStatus, ChatChannel } from '@/types';
 
@@ -165,13 +165,9 @@ const ChatView: React.FC<ChatViewProps> = ({ conversations, messages, leads, cur
         setAiSuggestion('');
 
         try {
-            if (!process.env.API_KEY) throw new Error("API Key for Gemini is not configured.");
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt
-            });
-            setAiSuggestion(response.text);
+            const aiService = createAIService('');
+            const text = await aiService.generate(prompt);
+            setAiSuggestion(text);
         } catch(e) {
             safeError(e);
             setAiSuggestion("Ocorreu um erro ao contatar a IA. Verifique sua chave de API.");

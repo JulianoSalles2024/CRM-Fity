@@ -1,6 +1,7 @@
 import { testProviderConnection } from '../_utils.js';
 import { requireAuth } from '../_lib/auth.js';
 import { AppError, AuthError, apiError } from '../_lib/errors.js';
+import { isRateLimited } from '../_lib/rateLimit.js';
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
@@ -9,7 +10,12 @@ export default async function handler(req: any, res: any) {
 
   try {
     // ── 1. Autenticação obrigatória ───────────────────────────
-    await requireAuth(req);   // garante sessão válida; ctx não é necessário aqui
+    const ctx = await requireAuth(req);
+
+    // ── 2. Rate limiting — 20 req/min por usuário ─────────────
+    if (isRateLimited(ctx.userId)) {
+      return res.status(429).json({ error: 'Limite de requisições atingido. Tente novamente em 1 minuto.' });
+    }
 
     const { provider, model, apiKey } = req.body;
 

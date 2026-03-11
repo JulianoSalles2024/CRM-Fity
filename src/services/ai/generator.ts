@@ -52,7 +52,6 @@ async function generateGoogle(prompt: string, config: AIConfig): Promise<string>
 async function generateOpenAI(prompt: string, config: AIConfig): Promise<string> {
     const openai = new OpenAI({
         apiKey: config.apiKey,
-        dangerouslyAllowBrowser: true // Required for client-side usage
     });
 
     const completion = await openai.chat.completions.create({
@@ -66,7 +65,6 @@ async function generateOpenAI(prompt: string, config: AIConfig): Promise<string>
 async function generateAnthropic(prompt: string, config: AIConfig): Promise<string> {
     const anthropic = new Anthropic({
         apiKey: config.apiKey,
-        dangerouslyAllowBrowser: true // Required for client-side usage
     });
 
     const message = await anthropic.messages.create({

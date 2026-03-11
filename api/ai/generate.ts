@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { supabaseAdmin } from '../_lib/supabase.js';
 import { requireAuth } from '../_lib/auth.js';
 import { AppError, apiError } from '../_lib/errors.js';
+import { isRateLimited } from '../_lib/rateLimit.js';
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
@@ -13,6 +14,11 @@ export default async function handler(req: any, res: any) {
   try {
     // ── 1. Autenticação — companyId vem do JWT, nunca do body ─
     const ctx = await requireAuth(req);
+
+    // ── 2. Rate limiting — 20 req/min por usuário ─────────────
+    if (isRateLimited(ctx.userId)) {
+      return res.status(429).json({ error: 'Limite de requisições atingido. Tente novamente em 1 minuto.' });
+    }
 
     const { prompt, systemInstruction } = req.body;
 
