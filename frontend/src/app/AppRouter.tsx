@@ -171,6 +171,8 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                   users={users}
                   boards={boards}
                   onLeadClick={setSelectedLead}
+                  onEditLead={(lead: any) => { setEditingLead(lead); setCreateLeadModalOpen(true); }}
+                  onDeleteLead={handleDeleteLead}
                   viewType="Leads"
                   listDisplaySettings={listDisplaySettings}
                   onUpdateListSettings={setListDisplaySettings}
@@ -192,6 +194,8 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
                   users={users}
                   boards={boards}
                   onLeadClick={setSelectedLead}
+                  onEditLead={(lead: any) => { setEditingLead(lead); setCreateLeadModalOpen(true); }}
+                  onDeleteLead={handleDeleteLead}
                   viewType="Clientes"
                   listDisplaySettings={listDisplaySettings}
                   onUpdateListSettings={setListDisplaySettings}

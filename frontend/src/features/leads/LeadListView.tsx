@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { Lead, ColumnData, Tag, ListDisplaySettings, User, Board } from '@/types';
-import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown, Pencil, Trash2 } from 'lucide-react';
 import LeadListHeader from './LeadListHeader';
 import FlatCard from '@/components/ui/FlatCard';
 import { getLeadComputedStatus, STATUS_BADGE, STATUS_DOT_COLOR } from '@/src/lib/leadStatus';
 import { useAuth } from '@/src/features/auth/AuthContext';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 
 function getActivityLabel(type?: string | null): string {
     switch (type) {
@@ -33,13 +34,8 @@ function formatRelativeTime(ts: string | null | undefined): string {
     return `há ${days} dia${days !== 1 ? 's' : ''}`;
 }
 
-// ── Avatar helpers (visual only) ─────────────────────────────
-const AVATAR_COLORS = [
-    'bg-blue-700', 'bg-violet-700', 'bg-emerald-700',
-    'bg-amber-700', 'bg-rose-700',  'bg-cyan-700',
-];
-const getAvatarColor = (name: string) =>
-    AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AVATAR_COLORS.length];
+// ── Avatar helper — fixed blue to match platform accent ──────
+const getAvatarColor = (_name: string) => 'bg-blue-600';
 
 const TagPill: React.FC<{ tag: Tag }> = ({ tag }) => (
     <span 
@@ -58,6 +54,8 @@ interface LeadListViewProps {
     users: User[];
     boards: Board[];
     onLeadClick: (lead: Lead) => void;
+    onEditLead: (lead: Lead) => void;
+    onDeleteLead: (id: string) => void;
     viewType: 'Leads' | 'Clientes';
     listDisplaySettings: ListDisplaySettings;
     onUpdateListSettings: (newSettings: ListDisplaySettings) => void;
@@ -77,6 +75,8 @@ const LeadListView: React.FC<LeadListViewProps> = ({
     users,
     boards,
     onLeadClick,
+    onEditLead,
+    onDeleteLead,
     viewType,
     listDisplaySettings,
     onUpdateListSettings,
@@ -92,6 +92,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
     const { currentUserRole } = useAuth();
     const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending'});
     const [searchQuery, setSearchQuery] = useState('');
+    const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
     const PAGE_SIZE = 8;
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -248,9 +249,9 @@ const LeadListView: React.FC<LeadListViewProps> = ({
     const topPaddingHeight = virtualRange.start * ROW_HEIGHT;
     const bottomPaddingHeight = Math.max(0, (paginatedLeads.length - (virtualRange.end + 1)) * ROW_HEIGHT);
 
-    // 4 blocks for admin (identity / status+value / pipeline+owner / activity),
-    // 3 for non-admin (no pipeline block).
-    const numberOfColumns = currentUserRole === 'admin' ? 4 : 3;
+    // 5 blocks for admin (identity / status+value / pipeline+owner / activity / actions),
+    // 4 for non-admin (no pipeline block).
+    const numberOfColumns = currentUserRole === 'admin' ? 5 : 4;
     // --- END VIRTUALIZATION LOGIC ---
     
     const TableHeader: React.FC<{ sortKey: SortableKeys; label: string; className?: string }> = ({ sortKey, label, className }) => {
@@ -307,6 +308,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider whitespace-nowrap">Pipeline</th>
                                     )}
                                     <TableHeader sortKey="createdAt" label="Atividade" />
+                                    <th className="px-4 py-3 w-20" />
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-700 relative">
@@ -316,7 +318,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                     </tr>
                                 )}
                                 {virtualLeads.map(lead => (
-                                    <tr key={lead.id} onClick={() => onLeadClick(lead)} className="hover:bg-slate-800/50 cursor-pointer transition-colors duration-150">
+                                    <tr key={lead.id} onClick={() => onLeadClick(lead)} className="group hover:bg-slate-800/50 cursor-pointer transition-colors duration-150">
 
                                         {/* ── Bloco 1: Identidade ─────────────────────────── */}
                                         <td className="px-4 py-4 w-64">
@@ -395,6 +397,26 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                             </div>
                                         </td>
 
+                                        {/* ── Bloco 5: Ações ──────────────────────────────── */}
+                                        <td className="px-3 py-4 whitespace-nowrap align-top w-20">
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={e => { e.stopPropagation(); onEditLead(lead); }}
+                                                    className="p-1.5 rounded-md text-slate-500 hover:text-blue-400 hover:bg-slate-700/60 transition-colors"
+                                                    title="Editar"
+                                                >
+                                                    <Pencil className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={e => { e.stopPropagation(); setLeadToDelete(lead); }}
+                                                    className="p-1.5 rounded-md text-slate-500 hover:text-red-400 hover:bg-slate-700/60 transition-colors"
+                                                    title="Excluir"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        </td>
+
                                     </tr>
                                 ))}
                                 {bottomPaddingHeight > 0 && (
@@ -425,6 +447,20 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                     </div>
                 )}
             </FlatCard>
+
+            {leadToDelete && (
+                <ConfirmDeleteModal
+                    title="Excluir Lead"
+                    message={<>Tem certeza que deseja excluir o lead <strong className="text-white">{leadToDelete.name}</strong>? Esta ação não pode ser desfeita.</>}
+                    confirmText="Excluir"
+                    confirmVariant="danger"
+                    onClose={() => setLeadToDelete(null)}
+                    onConfirm={() => {
+                        onDeleteLead(leadToDelete.id as string);
+                        setLeadToDelete(null);
+                    }}
+                />
+            )}
         </div>
     );
 };
