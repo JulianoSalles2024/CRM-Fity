@@ -1,0 +1,1 @@
+ALTER TABLE public.leads ALTER COLUMN owner_id DROP NOT NULL;

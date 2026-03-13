@@ -1,0 +1,485 @@
+{
+  "name": "WF-01-WA-INBOUND",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wa-inbound",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a0000001-0000-0000-0000-000000000001",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "wa-inbound"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"ok\": true }",
+        "options": {}
+      },
+      "id": "a0000001-0000-0000-0000-000000000002",
+      "name": "Respond 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ── Node 3: Validate Payload ──────────────────────────────────────────────\n// Accepts Evolution API webhook payload, filters out non-message events,\n// fromMe=true, group messages, and missing required fields.\n\nconst body = ($input.first().json.body !== undefined)\n  ? $input.first().json.body\n  : $input.first().json;\n\nconst eventType = (body.event || body.type || '').toLowerCase();\nconst validPrefixes = ['messages.upsert', 'message_received', 'message'];\nconst isValidEvent = validPrefixes.some(function(p) { return eventType.includes(p); });\n\nif (!isValidEvent) {\n  return [{ json: { valid: false, reason: 'not_message_event', event_type: eventType } }];\n}\n\nconst data  = body.data || body;\nconst key   = data.key || (data.message && data.message.key) || {};\nconst msg   = data.message || data;\n\nif (key.fromMe === true) {\n  return [{ json: { valid: false, reason: 'from_me' } }];\n}\n\nconst remoteJid         = key.remoteJid  || '';\nconst instanceName      = body.instance  || body.instanceName || '';\nconst externalMessageId = key.id         || '';\n\nif (!remoteJid || !instanceName || !externalMessageId) {\n  return [{ json: { valid: false, reason: 'missing_required_fields' } }];\n}\n\n// Skip group messages — remove this block if you want to handle groups\nif (remoteJid.endsWith('@g.us')) {\n  return [{ json: { valid: false, reason: 'group_message_skipped' } }];\n}\n\nconst contactIdentifier = remoteJid.replace(/@.*$/, '');\n\nlet contentType = 'text';\nlet contentText = null;\nlet mediaUrl    = null;\nlet caption     = null;\n\nif (msg.conversation) {\n  contentText = msg.conversation;\n} else if (msg.extendedTextMessage && msg.extendedTextMessage.text) {\n  contentText = msg.extendedTextMessage.text;\n} else if (msg.imageMessage) {\n  contentType = 'image';\n  mediaUrl    = msg.imageMessage.url     || null;\n  caption     = msg.imageMessage.caption || null;\n} else if (msg.audioMessage) {\n  contentType = 'audio';\n  mediaUrl    = msg.audioMessage.url || null;\n} else if (msg.documentMessage) {\n  contentType = 'document';\n  mediaUrl    = msg.documentMessage.url   || null;\n  caption     = msg.documentMessage.title || null;\n} else if (msg.videoMessage) {\n  contentType = 'video';\n  mediaUrl    = msg.videoMessage.url     || null;\n  caption     = msg.videoMessage.caption || null;\n} else {\n  contentType = 'unknown';\n}\n\nconst contactName = data.pushName || data.notifyName || null;\nconst ts          = data.messageTimestamp;\nconst sentAt      = ts ? new Date(Number(ts) * 1000).toISOString() : new Date().toISOString();\n\nreturn [{\n  json: {\n    valid:                true,\n    instance_name:        instanceName,\n    external_message_id:  externalMessageId,\n    contact_identifier:   contactIdentifier,\n    contact_name:         contactName,\n    contact_jid:          remoteJid,\n    content_type:         contentType,\n    content_text:         contentText,\n    media_url:            mediaUrl,\n    caption:              caption,\n    sent_at:              sentAt,\n    raw_body:             body\n  }\n}];"
+      },
+      "id": "a0000001-0000-0000-0000-000000000003",
+      "name": "Code - Validate Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "cond-valid-01",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equal", "rightType": "any" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "a0000001-0000-0000-0000-000000000004",
+      "name": "IF - Is Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/channel_connections",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Accept",        "value": "application/json" }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "external_id", "value": "=eq.{{ $('Code - Validate Payload').first().json.instance_name }}" },
+            { "name": "is_active",   "value": "eq.true" },
+            { "name": "select",      "value": "id,company_id,channel,external_id,settings" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a0000001-0000-0000-0000-000000000005",
+      "name": "HTTP - Lookup Channel Connection",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 180]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ── Node 6: Extract Connection ───────────────────────────────────────────\n// PostgREST returns an array. Extract the first row or flag as not found.\n\nconst items = $input.all();\nlet connection = null;\n\nfor (var i = 0; i < items.length; i++) {\n  var item = items[i].json;\n  if (Array.isArray(item) && item.length > 0) {\n    connection = item[0];\n    break;\n  } else if (item && item.id) {\n    connection = item;\n    break;\n  }\n}\n\nif (!connection || !connection.id || !connection.company_id) {\n  return [{ json: { found: false } }];\n}\n\nreturn [{\n  json: {\n    found:      true,\n    id:         connection.id,\n    company_id: connection.company_id,\n    channel:    connection.channel,\n    external_id: connection.external_id\n  }\n}];"
+      },
+      "id": "a0000001-0000-0000-0000-000000000006",
+      "name": "Code - Extract Connection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "cond-conn-01",
+              "leftValue": "={{ $json.found }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equal", "rightType": "any" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "a0000001-0000-0000-0000-000000000007",
+      "name": "IF - Connection Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1440, 180]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ── Node 8: Normalize to Canonical Event ─────────────────────────────────\n// Merges validated payload + connection data into the canonical event JSON.\n// Optionally validates HMAC signature if EVOLUTION_WEBHOOK_SECRET is set.\n\nconst validated = $('Code - Validate Payload').first().json;\nconst conn      = $input.first().json;\n\n// ── Optional HMAC validation ─────────────────────────────────────────────\nconst secret = $env.EVOLUTION_WEBHOOK_SECRET || '';\nif (secret) {\n  let headers = {};\n  try { headers = $('Webhook Trigger').first().json.headers || {}; } catch(e) {}\n  const sig = headers['x-evolution-signature'] || headers['x-hub-signature-256'] || '';\n  if (!sig) {\n    throw new Error('HMAC secret configured but no signature header received');\n  }\n  const crypto   = require('crypto');\n  const rawBody  = JSON.stringify(validated.raw_body);\n  const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(rawBody).digest('hex');\n  if (sig !== expected) {\n    throw new Error('Invalid webhook signature — possible spoofed request');\n  }\n}\n\nconst canonicalEvent = {\n  event_id:              validated.external_message_id + '_' + conn.company_id,\n  source:                'evolution_api',\n  channel:               'whatsapp',\n  instance_name:         validated.instance_name,\n  channel_connection_id: conn.id,\n  company_id:            conn.company_id,\n  direction:             'inbound',\n  external_message_id:   validated.external_message_id,\n  contact_identifier:    validated.contact_identifier,\n  contact_name:          validated.contact_name,\n  contact_jid:           validated.contact_jid,\n  content_type:          validated.content_type,\n  content_text:          validated.content_text,\n  media_url:             validated.media_url,\n  caption:               validated.caption,\n  sent_at:               validated.sent_at,\n  raw_payload:           validated.raw_body\n};\n\nreturn [{ json: canonicalEvent }];"
+      },
+      "id": "a0000001-0000-0000-0000-000000000008",
+      "name": "Code - Normalize to Canonical Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1680, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/webhook_events",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=representation,resolution=ignore-duplicates" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source",      "value": "evolution_api"
+            },
+            {
+              "name": "external_id", "value": "={{ $json.external_message_id }}"
+            },
+            {
+              "name": "company_id",  "value": "={{ $json.company_id }}"
+            },
+            {
+              "name": "payload",     "value": "={{ JSON.stringify($json.raw_payload) }}"
+            },
+            {
+              "name": "status",      "value": "received"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a0000001-0000-0000-0000-000000000009",
+      "name": "HTTP - Register Webhook Event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1920, 180]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ── Node 10: Check Duplicate ─────────────────────────────────────────────\n// PostgREST with resolution=ignore-duplicates returns [] on conflict.\n// If result is empty → duplicate → stop pipeline.\n\nconst items = $input.all();\nlet isDuplicate = true;\n\nfor (var i = 0; i < items.length; i++) {\n  var item = items[i].json;\n  if (Array.isArray(item) && item.length > 0) {\n    isDuplicate = false;\n    break;\n  } else if (item && item.id) {\n    isDuplicate = false;\n    break;\n  }\n}\n\n// Pass the canonical event forward together with the duplicate flag\nconst canonical = $('Code - Normalize to Canonical Event').first().json;\n\nreturn [{ json: Object.assign({}, canonical, { is_duplicate: isDuplicate }) }];"
+      },
+      "id": "a0000001-0000-0000-0000-000000000010",
+      "name": "Code - Check Duplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "cond-dup-01",
+              "leftValue": "={{ $json.is_duplicate }}",
+              "rightValue": false,
+              "operator": { "type": "boolean", "operation": "equal", "rightType": "any" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "a0000001-0000-0000-0000-000000000011",
+      "name": "IF - Not Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2400, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/rpc/resolve_or_create_lead",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"p_company_id\":   \"{{ $json.company_id }}\",\n  \"p_channel\":      \"whatsapp\",\n  \"p_identifier\":   \"{{ $json.contact_identifier }}\",\n  \"p_contact_name\": \"{{ $json.contact_name }}\"\n}",
+        "options": {}
+      },
+      "id": "a0000001-0000-0000-0000-000000000012",
+      "name": "HTTP - RPC resolve_or_create_lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2640, 60]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/rpc/resolve_or_create_conversation",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"p_company_id\":               \"{{ $('Code - Normalize to Canonical Event').first().json.company_id }}\",\n  \"p_channel_connection_id\":    \"{{ $('Code - Normalize to Canonical Event').first().json.channel_connection_id }}\",\n  \"p_channel\":                  \"whatsapp\",\n  \"p_contact_identifier\":       \"{{ $('Code - Normalize to Canonical Event').first().json.contact_identifier }}\",\n  \"p_contact_name\":             \"{{ $('Code - Normalize to Canonical Event').first().json.contact_name }}\",\n  \"p_lead_id\":                  \"{{ $input.first().json.lead_id }}\"\n}",
+        "options": {}
+      },
+      "id": "a0000001-0000-0000-0000-000000000013",
+      "name": "HTTP - RPC resolve_or_create_conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2880, 60]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/rpc/insert_message",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"p_company_id\":          \"{{ $('Code - Normalize to Canonical Event').first().json.company_id }}\",\n  \"p_conversation_id\":     \"{{ $input.first().json.conversation_id }}\",\n  \"p_external_message_id\": \"{{ $('Code - Normalize to Canonical Event').first().json.external_message_id }}\",\n  \"p_direction\":           \"inbound\",\n  \"p_sender_type\":         \"lead\",\n  \"p_content\":             \"{{ $('Code - Normalize to Canonical Event').first().json.content_text }}\",\n  \"p_content_type\":        \"{{ $('Code - Normalize to Canonical Event').first().json.content_type }}\",\n  \"p_sent_at\":             \"{{ $('Code - Normalize to Canonical Event').first().json.sent_at }}\",\n  \"p_metadata\":            {}\n}",
+        "options": {}
+      },
+      "id": "a0000001-0000-0000-0000-000000000014",
+      "name": "HTTP - RPC insert_message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3120, 60]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/webhook_events",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type",  "value": "application/json" }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "external_id",
+              "value": "=eq.{{ $('Code - Normalize to Canonical Event').first().json.external_message_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{ \"status\": \"processed\" }",
+        "options": {}
+      },
+      "id": "a0000001-0000-0000-0000-000000000015",
+      "name": "HTTP - Mark Webhook Processed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3360, 60]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "cond-newconv-01",
+              "leftValue": "={{ $('HTTP - RPC resolve_or_create_conversation').first().json.is_new }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equal", "rightType": "any" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "a0000001-0000-0000-0000-000000000016",
+      "name": "IF - Is New Conversation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [3600, 60]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/notifications",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"company_id\":\"{{ $('Code - Normalize to Canonical Event').first().json.company_id }}\",\"recipient_user_id\":\"5fe7ae00-d465-48d2-aca5-404ea48058d4\",\"type\":\"new_conversation\",\"title\":\"Nova conversa via WhatsApp\",\"message\":\"{{ $('Code - Normalize to Canonical Event').first().json.contact_identifier }} iniciou uma conversa\",\"entity_type\":\"conversation\",\"entity_id\":\"{{ $('HTTP - RPC resolve_or_create_conversation').first().json[0].conversation_id }}\",\"is_read\":false}",
+        "options": {}
+      },
+      "id": "a0000001-0000-0000-0000-000000000017",
+      "name": "HTTP - Create Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3840, -60]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          { "node": "Respond 200 OK", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Respond 200 OK": {
+      "main": [
+        [
+          { "node": "Code - Validate Payload", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Code - Validate Payload": {
+      "main": [
+        [
+          { "node": "IF - Is Valid?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "IF - Is Valid?": {
+      "main": [
+        [
+          { "node": "HTTP - Lookup Channel Connection", "type": "main", "index": 0 }
+        ],
+        []
+      ]
+    },
+    "HTTP - Lookup Channel Connection": {
+      "main": [
+        [
+          { "node": "Code - Extract Connection", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Code - Extract Connection": {
+      "main": [
+        [
+          { "node": "IF - Connection Found?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "IF - Connection Found?": {
+      "main": [
+        [
+          { "node": "Code - Normalize to Canonical Event", "type": "main", "index": 0 }
+        ],
+        []
+      ]
+    },
+    "Code - Normalize to Canonical Event": {
+      "main": [
+        [
+          { "node": "HTTP - Register Webhook Event", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "HTTP - Register Webhook Event": {
+      "main": [
+        [
+          { "node": "Code - Check Duplicate", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Code - Check Duplicate": {
+      "main": [
+        [
+          { "node": "IF - Not Duplicate?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "IF - Not Duplicate?": {
+      "main": [
+        [
+          { "node": "HTTP - RPC resolve_or_create_lead", "type": "main", "index": 0 }
+        ],
+        []
+      ]
+    },
+    "HTTP - RPC resolve_or_create_lead": {
+      "main": [
+        [
+          { "node": "HTTP - RPC resolve_or_create_conversation", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "HTTP - RPC resolve_or_create_conversation": {
+      "main": [
+        [
+          { "node": "HTTP - RPC insert_message", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "HTTP - RPC insert_message": {
+      "main": [
+        [
+          { "node": "HTTP - Mark Webhook Processed", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "HTTP - Mark Webhook Processed": {
+      "main": [
+        [
+          { "node": "IF - Is New Conversation?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "IF - Is New Conversation?": {
+      "main": [
+        [
+          { "node": "HTTP - Create Notification", "type": "main", "index": 0 }
+        ],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "meta": {
+    "templateCreatedBy": "NextSale CRM — Checkpoint 04-B",
+    "instanceId": ""
+  }
+}

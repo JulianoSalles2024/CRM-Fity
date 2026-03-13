@@ -11,6 +11,7 @@ export const VIEW_PATHS: Record<string, string> = {
     'Painel360': '/painel360',
     'Recuperação': '/recuperacao',
     'Conversas': '/conversas',
+    'Omnichannel': '/omnichannel',
     'Integrações': '/integracoes',
     'Notificações': '/notificacoes',
     'Configurações': '/configuracoes',

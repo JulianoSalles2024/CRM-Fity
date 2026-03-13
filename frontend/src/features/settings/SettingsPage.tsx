@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 const SETTINGS_TAB_PATHS: Record<string, string> = {
     'Pipelines':               '/configuracoes/pipelines',
     'Estágios':                '/configuracoes/estagios',
+    'Automações':              '/configuracoes/automacoes',
     'Equipe':                  '/configuracoes/equipe',
     'Inteligência Artificial': '/configuracoes/inteligencia-artificial',
     'Credenciais de IA':       '/configuracoes/credenciais-ia',
@@ -13,7 +14,7 @@ const SETTINGS_PATH_TABS: Record<string, string> = Object.fromEntries(
     Object.entries(SETTINGS_TAB_PATHS).map(([k, v]) => [v, k])
 );
 import { User, ColumnData, Id, Playbook } from '@/types';
-import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit, Bell, Webhook, MessageSquare, Loader2, BookOpen, Bot, Users, Columns } from 'lucide-react';
+import { User as UserIcon, Settings, SlidersHorizontal, ToyBrick, GripVertical, Trash2, PlusCircle, Upload, Edit, Bell, Webhook, MessageSquare, Loader2, BookOpen, Bot, Users, Columns, Zap } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { DndContext, closestCenter, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -25,6 +26,7 @@ import NotificationSettings from '@/src/features/notifications/NotificationSetti
 import PlaybookSettings from '@/src/features/playbooks/PlaybookSettings';
 import IntegrationsPage from './IntegrationsPage';
 import TeamSettings from './TeamSettings';
+import SettingsInactiveActions from './SettingsInactiveActions';
 import { AIHubView } from '@/src/features/ai/AIHubView';
 import { AIProvidersPage } from '@/src/features/ai-credentials/AIProvidersPage';
 import { Key } from 'lucide-react';
@@ -373,8 +375,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         // Regra: quem NÃO pode gerenciar time => Seller
         if (!currentPermissions.canManageTeam) {
             return [
-                { name: 'Pipelines', icon: Columns },
-                { name: 'Estágios', icon: Settings },
+                { name: 'Pipelines',  icon: Columns },
+                { name: 'Estágios',   icon: Settings },
+                { name: 'Automações', icon: Zap },
             ];
         }
 
@@ -385,6 +388,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             ...(currentPermissions.canManageCredentials ? [{ name: 'Credenciais de IA', icon: Key }] : []),
            // ...(currentPermissions.canManagePreferences ? [{ name: 'Preferências', icon: SlidersHorizontal }] : []),
             ...(currentPermissions.canManageIntegrations ? [{ name: 'Integrações', icon: Webhook }] : []),
+            { name: 'Automações', icon: Zap },
            // { name: 'Notificações', icon: Bell },
         ];
     }, [currentPermissions]);
@@ -443,6 +447,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 {activeTab === 'Credenciais de IA' && <AIProvidersPage />}
               {/*  {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />} */}
                 {activeTab === 'Integrações' && <IntegrationsPage showNotification={() => { }} />}
+                {activeTab === 'Automações' && <SettingsInactiveActions />}
               {/*  {activeTab === 'Notificações' && <NotificationSettings />} */}
             </div>
         </div>

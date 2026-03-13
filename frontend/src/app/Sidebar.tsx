@@ -14,6 +14,7 @@ import {
   Bell,
   HelpCircle,
   MessageSquare,
+  Inbox as InboxIcon,
   ToyBrick,
   BookOpen,
   ArchiveRestore,
@@ -90,6 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { icon: ClipboardList, label: 'Tarefas' },
     { icon: BarChart, label: 'Relatórios' },
     { icon: ArchiveRestore, label: 'Recuperação' },
+    { icon: InboxIcon, label: 'Omnichannel' },
     { icon: MessageSquare, label: 'Chat' },
     { icon: Users, label: 'Grupos' },
     // { icon: ToyBrick, label: 'Integrações' }, // Removed: moved to Settings

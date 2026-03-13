@@ -30,6 +30,18 @@ export function useLeads(companyId: string | null) {
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
 
+  // Realtime: atualiza lista quando lead é inserido/atualizado/deletado externamente (ex: omnichannel n8n)
+  useEffect(() => {
+    if (!companyId) return;
+    const channel = supabase
+      .channel('leads-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads', filter: `company_id=eq.${companyId}` }, () => {
+        fetchLeads();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [companyId, fetchLeads]);
+
   // company_id is NOT sent — the enforce_company_id() trigger stamps it server-side.
   // .select() is intentionally omitted: the SELECT policy (tenant_isolation) blocks
   // reading back the row immediately after INSERT because company_id is set by trigger,

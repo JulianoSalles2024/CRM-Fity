@@ -18,6 +18,7 @@ import PlaybookSettings from '@/src/features/playbooks/PlaybookSettings';
 import PrintableLeadsReport from '@/src/features/reports/PrintableLeadsReport';
 import RecoveryView from '@/src/features/leads/RecoveryView';
 import InboxView from '@/src/features/chat/InboxView';
+import { InboxPage } from '@/src/features/inbox/InboxPage';
 
 interface AppRouterProps {
   activeView: string;
@@ -233,6 +234,8 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
             onDeleteLead={handleDeleteLead}
             onLeadClick={handleCardClick}
         />;
+    case 'Omnichannel':
+      return <InboxPage />;
     case 'Chat':
         return <ChatView
             conversations={conversations} messages={messages} leads={filteredLeads} currentUser={localUser}

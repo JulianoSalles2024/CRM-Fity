@@ -1,0 +1,301 @@
+{
+  "name": "WF-03-FOLLOWUP-INACTIVITY",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "c0000003-0000-0000-0000-000000000001",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/rpc/get_pending_followups",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Content-Type",  "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={}",
+        "options": {}
+      },
+      "id": "c0000003-0000-0000-0000-000000000002",
+      "name": "HTTP - RPC get_pending_followups",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ── Node 3: Unpack RPC array ─────────────────────────────────────────────\n// PostgREST retorna a TABLE como um array JSON no body.\n// Se vazio → retorna item de skip para a branch FALSE do IF.\n// Se preenchido → retorna cada conversa como item separado.\n\nconst raw = $input.first().json;\nconst arr = Array.isArray(raw) ? raw : [];\n\nif (!arr.length) {\n  return [{ json: { skip: true, count: 0 } }];\n}\n\nreturn arr.map(function(item) {\n  return {\n    json: {\n      skip:                 false,\n      conversation_id:      item.conversation_id,\n      company_id:           item.company_id,\n      contact_identifier:   item.contact_identifier,\n      contact_name:         item.contact_name,\n      agent_name:           item.agent_name,\n      company_name:         item.company_name,\n      instance_name:        item.instance_name,\n      prompt_rule:          item.prompt_rule,\n      next_followup_step:   item.next_followup_step,\n      conversation_history: item.conversation_history || []\n    }\n  };\n});"
+      },
+      "id": "c0000003-0000-0000-0000-000000000003",
+      "name": "Code - Unpack Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "cond-skip-01",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": false,
+              "operator": { "type": "boolean", "operation": "equal", "rightType": "any" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "c0000003-0000-0000-0000-000000000004",
+      "name": "IF - Has Pending?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {},
+      "id": "c0000003-0000-0000-0000-000000000005",
+      "name": "No Operation",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [960, 480]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://crm-fity.vercel.app/api/ai/followup/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Worker-Secret", "value": "nxs-wf03-8f2c7e1d9a4b6f3c5d8e2a1b7c9f4d6e" },
+            { "name": "Content-Type",    "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"company_id\":           \"{{ $json.company_id }}\",\n  \"prompt_rule\":          \"{{ $json.prompt_rule }}\",\n  \"contact_name\":         \"{{ $json.contact_name }}\",\n  \"agent_name\":           \"{{ $json.agent_name }}\",\n  \"company_name\":         \"{{ $json.company_name }}\",\n  \"conversation_history\": {{ JSON.stringify($json.conversation_history) }}\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "c0000003-0000-0000-0000-000000000006",
+      "name": "HTTP - AI Generate Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "cond-text-01",
+              "leftValue": "={{ $json.generated_text }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "c0000003-0000-0000-0000-000000000007",
+      "name": "IF - Has Generated Text?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1200, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://easypanel.julianosalles.com.br/message/sendText/{{ $('Code - Unpack Items').item.json.instance_name }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",       "value": "4DD73F0CC46E-407C-B70D-48C9175EC89B" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Code - Unpack Items').item.json.contact_identifier }}\",\n  \"textMessage\": {\n    \"text\": \"{{ $('HTTP - AI Generate Message').item.json.generated_text }}\"\n  },\n  \"options\": {\n    \"delay\": 1200,\n    \"presence\": \"composing\"\n  }\n}",
+        "options": {}
+      },
+      "id": "c0000003-0000-0000-0000-000000000008",
+      "name": "HTTP - Evolution sendText",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1440, 60]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/conversations?id=eq.{{ $('Code - Unpack Items').item.json.conversation_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"current_followup_step\": {{ $('Code - Unpack Items').item.json.next_followup_step }},\n  \"last_followup_sent_at\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {}
+      },
+      "id": "c0000003-0000-0000-0000-000000000009",
+      "name": "HTTP - Supabase Update Step",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1680, 60]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"company_id\":      \"{{ $('Code - Unpack Items').item.json.company_id }}\",\n  \"conversation_id\": \"{{ $('Code - Unpack Items').item.json.conversation_id }}\",\n  \"direction\":       \"outbound\",\n  \"sender_type\":     \"bot\",\n  \"content\":         \"{{ $('HTTP - AI Generate Message').item.json.generated_text }}\",\n  \"content_type\":    \"text\",\n  \"status\":          \"sent\"\n}",
+        "options": {}
+      },
+      "id": "c0000003-0000-0000-0000-000000000010",
+      "name": "HTTP - Supabase Insert Bot Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1920, 60]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"company_id\":      \"{{ $('Code - Unpack Items').item.json.company_id }}\",\n  \"conversation_id\": \"{{ $('Code - Unpack Items').item.json.conversation_id }}\",\n  \"direction\":       null,\n  \"sender_type\":     \"system\",\n  \"content\":         \"⚠️ Follow-up automático falhou no Passo {{ $('Code - Unpack Items').item.json.next_followup_step }}: IA não retornou mensagem.\",\n  \"content_type\":    \"text\",\n  \"status\":          null\n}",
+        "options": {}
+      },
+      "id": "c0000003-0000-0000-0000-000000000011",
+      "name": "HTTP - Supabase Insert Error Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1440, 360]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          { "node": "HTTP - RPC get_pending_followups", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "HTTP - RPC get_pending_followups": {
+      "main": [
+        [
+          { "node": "Code - Unpack Items", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Code - Unpack Items": {
+      "main": [
+        [
+          { "node": "IF - Has Pending?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "IF - Has Pending?": {
+      "main": [
+        [
+          { "node": "HTTP - AI Generate Message", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "No Operation", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "HTTP - AI Generate Message": {
+      "main": [
+        [
+          { "node": "IF - Has Generated Text?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "IF - Has Generated Text?": {
+      "main": [
+        [
+          { "node": "HTTP - Evolution sendText", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "HTTP - Supabase Insert Error Log", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "HTTP - Evolution sendText": {
+      "main": [
+        [
+          { "node": "HTTP - Supabase Update Step", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "HTTP - Supabase Update Step": {
+      "main": [
+        [
+          { "node": "HTTP - Supabase Insert Bot Message", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "pinData": {},
+  "staticData": null,
+  "meta": {
+    "templateCreatedBy": "NextSales CRM — Automações v1 — Follow-up por Inatividade",
+    "instanceId": ""
+  }
+}

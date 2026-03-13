@@ -42,7 +42,7 @@ const Header: React.FC<HeaderProps> = ({
   }, []);
 
   return (
-    <header className="flex-shrink-0 bg-transparent px-6 h-20 flex items-center justify-end z-30">
+    <header className="flex-shrink-0 bg-transparent px-6 h-20 flex items-center justify-end z-[200]">
       {/* Right Side - Actions */}
       <div className="flex items-center gap-3">
         {/* SDR Bot Button */}
