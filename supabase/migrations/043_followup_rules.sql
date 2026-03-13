@@ -78,29 +78,31 @@ CREATE INDEX IF NOT EXISTS idx_conversations_followup
 
 ALTER TABLE followup_rules ENABLE ROW LEVEL SECURITY;
 
--- SELECT: qualquer membro autenticado da empresa pode ler
+DROP POLICY IF EXISTS "followup_rules: members can select" ON followup_rules;
 CREATE POLICY "followup_rules: members can select"
   ON followup_rules FOR SELECT
   USING (company_id = my_company_id());
 
--- INSERT: apenas autenticados da mesma empresa
+DROP POLICY IF EXISTS "followup_rules: members can insert" ON followup_rules;
 CREATE POLICY "followup_rules: members can insert"
   ON followup_rules FOR INSERT
   WITH CHECK (company_id = my_company_id());
 
--- UPDATE: apenas quem criou a regra ou admin (RLS simples — admin via service_role no scheduler)
+DROP POLICY IF EXISTS "followup_rules: owner can update" ON followup_rules;
 CREATE POLICY "followup_rules: owner can update"
   ON followup_rules FOR UPDATE
   USING (company_id = my_company_id())
   WITH CHECK (company_id = my_company_id());
 
--- DELETE: apenas quem criou a regra (service_role bypassa para o scheduler)
+DROP POLICY IF EXISTS "followup_rules: owner can delete" ON followup_rules;
 CREATE POLICY "followup_rules: owner can delete"
   ON followup_rules FOR DELETE
   USING (company_id = my_company_id());
 
 -- ─── 6. Unique constraint: evita duplicidade de ordem por empresa ─────────────
 
+ALTER TABLE followup_rules
+  DROP CONSTRAINT IF EXISTS uq_followup_rules_company_order;
 ALTER TABLE followup_rules
   ADD CONSTRAINT uq_followup_rules_company_order
   UNIQUE (company_id, sequence_order);
