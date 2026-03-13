@@ -278,6 +278,36 @@
     {
       "parameters": {
         "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type",  "value": "application/json" },
+            { "name": "Prefer",        "value": "return=minimal" }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "id", "value": "=eq.{{ $('HTTP - RPC resolve_or_create_conversation').first().json.conversation_id }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{ \"current_followup_step\": 0, \"last_followup_sent_at\": null }",
+        "options": {}
+      },
+      "id": "a0000001-0000-0000-0000-000000000018",
+      "name": "HTTP - Reset Followup Step",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3340, 60]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
         "url": "={{ $env.SUPABASE_URL }}/rest/v1/webhook_events",
         "sendHeaders": true,
         "headerParameters": {
@@ -449,6 +479,13 @@
       ]
     },
     "HTTP - RPC insert_message": {
+      "main": [
+        [
+          { "node": "HTTP - Reset Followup Step", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "HTTP - Reset Followup Step": {
       "main": [
         [
           { "node": "HTTP - Mark Webhook Processed", "type": "main", "index": 0 }
