@@ -45,9 +45,9 @@
           "conditions": [
             {
               "id": "cond-valid-01",
-              "leftValue": "={{ $json.valid }}",
-              "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equal", "rightType": "any" }
+              "leftValue": "={{ $json.contact_identifier }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty", "singleValue": true }
             }
           ],
           "combinator": "and"
@@ -105,9 +105,9 @@
           "conditions": [
             {
               "id": "cond-conn-01",
-              "leftValue": "={{ $json.found }}",
-              "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equal", "rightType": "any" }
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty", "singleValue": true }
             }
           ],
           "combinator": "and"
@@ -174,7 +174,7 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// ── Node 10: Check Duplicate ─────────────────────────────────────────────\n// PostgREST with resolution=ignore-duplicates returns [] on conflict.\n// If result is empty → duplicate → stop pipeline.\n\nconst items = $input.all();\nlet isDuplicate = true;\n\nfor (var i = 0; i < items.length; i++) {\n  var item = items[i].json;\n  if (Array.isArray(item) && item.length > 0) {\n    isDuplicate = false;\n    break;\n  } else if (item && item.id) {\n    isDuplicate = false;\n    break;\n  }\n}\n\n// Pass the canonical event forward together with the duplicate flag\nconst canonical = $('Code - Normalize to Canonical Event').first().json;\n\nreturn [{ json: Object.assign({}, canonical, { is_duplicate: isDuplicate }) }];"
+        "jsCode": "// ── Node 10: Check Duplicate ─────────────────────────────────────────────\n// PostgREST with resolution=ignore-duplicates returns [] on conflict.\n// If result is empty → duplicate → stop pipeline.\n// Returns canonical event when unique, or { skip_reason: 'duplicate' } when dup.\n\nconst items = $input.all();\nlet isDuplicate = true;\n\nfor (var i = 0; i < items.length; i++) {\n  var item = items[i].json;\n  if (Array.isArray(item) && item.length > 0) {\n    isDuplicate = false;\n    break;\n  } else if (item && item.id) {\n    isDuplicate = false;\n    break;\n  }\n}\n\nif (isDuplicate) {\n  return [{ json: { skip_reason: 'duplicate' } }];\n}\n\n// Not duplicate — pass canonical event forward\nconst canonical = $('Code - Normalize to Canonical Event').first().json;\nreturn [{ json: canonical }];"
       },
       "id": "a0000001-0000-0000-0000-000000000010",
       "name": "Code - Check Duplicate",
@@ -189,9 +189,9 @@
           "conditions": [
             {
               "id": "cond-dup-01",
-              "leftValue": "={{ $json.is_duplicate }}",
-              "rightValue": false,
-              "operator": { "type": "boolean", "operation": "equal", "rightType": "any" }
+              "leftValue": "={{ $json.external_message_id }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty", "singleValue": true }
             }
           ],
           "combinator": "and"
