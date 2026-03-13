@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/features/auth/AuthContext';
 
@@ -54,19 +54,26 @@ export function useConversations(statusFilter: ConversationStatus | null = null,
 
   useEffect(() => { fetchConversations(); }, [fetchConversations]);
 
+  // Ref sempre aponta para a versão mais recente de fetchConversations
+  // sem ser dependência do effect de subscription — evita loop e gap de canal
+  const fetchConversationsRef = useRef(fetchConversations);
+  useEffect(() => { fetchConversationsRef.current = fetchConversations; }, [fetchConversations]);
+
+  // Canal nomeado com companyId para evitar colisão no React 18 Strict Mode
+  // Reconecta apenas quando companyId muda — não quando filtros ou search mudam
   useEffect(() => {
     if (!companyId) return;
     const channel = supabase
-      .channel('omni-conversations-realtime')
+      .channel(`omni-conversations-realtime-${companyId}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'conversations',
         filter: `company_id=eq.${companyId}`,
-      }, () => fetchConversations())
+      }, () => fetchConversationsRef.current())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [companyId, fetchConversations]);
+  }, [companyId]);
 
   return { conversations, loading, refetch: fetchConversations };
 }

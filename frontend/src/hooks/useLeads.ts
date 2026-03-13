@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import type { Lead, Id } from '@/types';
 import { mapLeadFromDb, mapLeadToDb } from '@/src/lib/mappers';
@@ -22,7 +22,6 @@ export function useLeads(companyId: string | null) {
       .eq('is_archived', false)
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
-    // — DIAGNÓSTICO TEMPORÁRIO — remover após validação
     safeLog('DEBUG useLeads rows returned from DB:', data?.length ?? 0);
     if (!error) setLeads((data ?? []).map(mapLeadFromDb));
     setLoading(false);
@@ -30,17 +29,23 @@ export function useLeads(companyId: string | null) {
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
 
-  // Realtime: atualiza lista quando lead é inserido/atualizado/deletado externamente (ex: omnichannel n8n)
+  // Ref sempre aponta para a versão mais recente de fetchLeads
+  // sem ser dependência do effect de subscription — evita loop e gap de canal
+  const fetchLeadsRef = useRef(fetchLeads);
+  useEffect(() => { fetchLeadsRef.current = fetchLeads; }, [fetchLeads]);
+
+  // Realtime: canal nomeado com companyId para evitar colisão no React 18 Strict Mode
+  // Reconecta apenas quando companyId muda — não quando fetchLeads muda de referência
   useEffect(() => {
     if (!companyId) return;
     const channel = supabase
-      .channel('leads-realtime')
+      .channel(`leads-realtime-${companyId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'leads', filter: `company_id=eq.${companyId}` }, () => {
-        fetchLeads();
+        fetchLeadsRef.current();
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [companyId, fetchLeads]);
+  }, [companyId]);
 
   // company_id is NOT sent — the enforce_company_id() trigger stamps it server-side.
   // .select() is intentionally omitted: the SELECT policy (tenant_isolation) blocks
