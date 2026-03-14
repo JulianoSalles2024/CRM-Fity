@@ -40,7 +40,7 @@ export function useLeads(companyId: string | null) {
     if (!companyId) return;
     const channel = supabase
       .channel(`leads-realtime-${companyId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads', filter: `company_id=eq.${companyId}` }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
         fetchLeadsRef.current();
       })
       .subscribe();
