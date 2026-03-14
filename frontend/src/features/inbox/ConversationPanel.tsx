@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageCircle, Phone, UserCheck, CheckCircle, Loader2, AlertCircle, X, RefreshCw } from 'lucide-react';
+import { MessageCircle, Phone, UserCheck, CheckCircle, Loader2, AlertCircle, X, RefreshCw, RefreshCcw } from 'lucide-react';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { useAppContext } from '@/src/app/AppContext';
@@ -32,8 +32,23 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
   const { user, companyId, currentUserRole } = useAuth();
   const { localUser } = useAppContext();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isReopening, setIsReopening] = useState(false);
+  const [reopenError, setReopenError] = useState<string | null>(null);
   const { sendMessage, isSending, sendError, clearError } = useSendMessage();
   const { messages, loading: messagesLoading, addOptimisticMessage } = useMessages(conversation?.id ?? null);
+
+  const reopenConversation = async () => {
+    if (!conversation || !companyId || !user) return;
+    setIsReopening(true);
+    setReopenError(null);
+    const { error } = await supabase
+      .from('conversations')
+      .update({ status: 'in_progress', assignee_id: user.id })
+      .eq('id', conversation.id)
+      .eq('company_id', companyId);
+    if (error) setReopenError('Não foi possível reabrir a conversa. Tente novamente.');
+    setIsReopening(false);
+  };
 
   const canUpdate =
     currentUserRole === 'admin' ||
@@ -148,6 +163,31 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
 
       {/* Messages */}
       <MessageList messages={messages} loading={messagesLoading} />
+
+      {/* Reabrir conversa — aparece apenas quando resolved */}
+      {conversation.status === 'resolved' && (
+        <div className="flex-shrink-0 flex flex-col items-center gap-2 px-4 py-3 border-t border-slate-800 bg-[#0B1220]">
+          {reopenError && (
+            <div className="w-full flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+              <span className="flex-1 text-xs text-red-300">{reopenError}</span>
+              <button onClick={() => setReopenError(null)} aria-label="Fechar erro" className="text-red-400 hover:text-red-300">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+          <button
+            onClick={reopenConversation}
+            disabled={isReopening}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-blue-500/50 text-blue-400 hover:bg-blue-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+          >
+            {isReopening
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : <RefreshCcw className="w-4 h-4" />}
+            Reabrir conversa
+          </button>
+        </div>
+      )}
 
       {/* Banner de erro de envio */}
       {sendError && (
