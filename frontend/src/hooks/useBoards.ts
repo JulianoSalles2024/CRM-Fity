@@ -180,6 +180,22 @@ export function useBoards(companyId: string | null) {
     return true;
   }, [fetchBoards]);
 
+  /** Atualiza campos de IA do board (ai_enabled, ai_prompt, ai_methodology). */
+  const updateBoardAI = useCallback(async (
+    boardId: string,
+    data: { ai_enabled: boolean; ai_prompt: string | null; ai_methodology: string | null },
+  ): Promise<boolean> => {
+    const { error } = await supabase
+      .from('boards')
+      .update(data)
+      .eq('id', boardId);
+    if (error) {
+      safeError('updateBoardAI error:', error);
+      return false;
+    }
+    return true;
+  }, []);
+
   return {
     boards,
     setBoards,
@@ -190,5 +206,6 @@ export function useBoards(companyId: string | null) {
     createBoard,
     saveBoardStages,
     deleteBoard,
+    updateBoardAI,
   };
 }
