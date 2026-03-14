@@ -1,5 +1,5 @@
 {
-  "name": "WF-01-WA-INBOUND - V5(storage)",
+  "name": "WF-01-WA-INBOUND - NextSale - V2",
   "nodes": [
     {
       "parameters": {
@@ -118,19 +118,6 @@
       "position": [
         -2160,
         240
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "// ── Code - Resolve Media URL ──────────────────────────────────────────────\n// Requires 'Webhook Base64' enabled in Evolution API.\n// The base64-encoded media arrives directly in the webhook payload under\n// data.message.{type}Message.base64 — no extra API call needed.\n// Steps:\n//   1. Read base64 + mimetype from raw_payload\n//   2. Upload binary to Supabase Storage bucket 'inbox-media'\n//   3. Return canonical event with media_url = permanent public URL\n// Falls back to original media_url on any error (never breaks the pipeline).\n\nconst canonical = $input.first().json;\n\nconst SUPABASE_URL = 'https://fhkhamwrfwtacwydukvb.supabase.co';\nconst SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY';\nconst BUCKET      = 'inbox-media';\n\nconst mediaTypes = ['image', 'audio', 'video', 'document'];\nif (!mediaTypes.includes(canonical.content_type) || !canonical.media_url) {\n  return [{ json: canonical }];\n}\n\ntry {\n  // Step 1: Extract base64 from webhook payload\n  const data         = canonical.raw_payload.data || canonical.raw_payload;\n  const msg          = data.message || {};\n  const mediaMsgKey  = `${canonical.content_type}Message`;\n  const mediaMsg     = msg[mediaMsgKey] || {};\n  const base64       = mediaMsg.base64;\n  const mime         = mediaMsg.mimetype || 'application/octet-stream';\n\n  if (!base64) return [{ json: canonical }];\n\n  // Step 2: Determine file extension\n  const extMap = {\n    'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',\n    'audio/ogg': 'ogg', 'audio/mpeg': 'mp3', 'audio/mp4': 'm4a', 'audio/aac': 'aac',\n    'audio/ogg; codecs=opus': 'ogg',\n    'video/mp4': 'mp4', 'video/3gpp': '3gp', 'video/webm': 'webm',\n    'application/pdf': 'pdf',\n  };\n  const ext         = extMap[mime] || (mime.split('/')[1] || 'bin').split(';')[0].trim();\n  const storagePath = `${canonical.company_id}/${canonical.external_message_id}.${ext}`;\n\n  // Step 3: Upload to Supabase Storage\n  const binary    = Buffer.from(base64, 'base64');\n  const uploadRes = await fetch(\n    `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${storagePath}`,\n    {\n      method: 'POST',\n      headers: {\n        'Authorization': `Bearer ${SUPABASE_KEY}`,\n        'Content-Type': mime,\n        'x-upsert': 'true',\n      },\n      body: binary,\n    }\n  );\n\n  if (!uploadRes.ok) return [{ json: canonical }];\n\n  // Step 4: Permanent public URL\n  const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${storagePath}`;\n  return [{ json: { ...canonical, media_url: publicUrl } }];\n\n} catch (_) {\n  return [{ json: canonical }];\n}"
-      },
-      "id": "a2b3c4d5-e6f7-8901-bcde-f01234567892",
-      "name": "Code - Resolve Media URL",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -2040,
-        340
       ]
     },
     {
@@ -312,7 +299,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"p_company_id\":          \"{{ $('Code - Normalize to Canonical Event').first().json.company_id }}\",\n  \"p_conversation_id\":     \"{{ $input.first().json.conversation_id }}\",\n  \"p_external_message_id\": \"{{ $('Code - Normalize to Canonical Event').first().json.external_message_id }}\",\n  \"p_direction\":           \"inbound\",\n  \"p_sender_type\":         \"lead\",\n  \"p_content\":             \"{{ $('Code - Normalize to Canonical Event').first().json.content_text }}\",\n  \"p_content_type\":        \"{{ $('Code - Normalize to Canonical Event').first().json.content_type }}\",\n  \"p_sent_at\":             \"{{ $('Code - Normalize to Canonical Event').first().json.sent_at }}\",\n  \"p_media_url\":           \"{{ $('Code - Resolve Media URL').first().json.media_url }}\",\n  \"p_metadata\":            {}\n}",
+        "jsonBody": "={\n  \"p_company_id\":          \"{{ $('Code - Normalize to Canonical Event').first().json.company_id }}\",\n  \"p_conversation_id\":     \"{{ $input.first().json.conversation_id }}\",\n  \"p_external_message_id\": \"{{ $('Code - Normalize to Canonical Event').first().json.external_message_id }}\",\n  \"p_direction\":           \"inbound\",\n  \"p_sender_type\":         \"lead\",\n  \"p_content\":             \"{{ $('Code - Normalize to Canonical Event').first().json.content_text }}\",\n  \"p_content_type\":        \"{{ $('Code - Normalize to Canonical Event').first().json.content_type }}\",\n  \"p_sent_at\":             \"{{ $('Code - Normalize to Canonical Event').first().json.sent_at }}\",\n  \"p_metadata\":            {}\n}",
         "options": {}
       },
       "id": "cf7d6c45-a315-41a5-bfc8-27b432d0ac11",
@@ -321,54 +308,6 @@
       "typeVersion": 4.2,
       "position": [
         -720,
-        128
-      ]
-    },
-    {
-      "parameters": {
-        "method": "PATCH",
-        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/conversations",
-        "sendQuery": true,
-        "queryParameters": {
-          "parameters": [
-            {
-              "name": "id",
-              "value": "=eq.{{ $('HTTP - RPC resolve_or_create_conversation').first().json.conversation_id }}"
-            }
-          ]
-        },
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "apikey",
-              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
-            },
-            {
-              "name": "Authorization",
-              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            },
-            {
-              "name": "Prefer",
-              "value": "return=minimal"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "{ \"current_followup_step\": 0, \"last_followup_sent_at\": null }",
-        "options": {}
-      },
-      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-      "name": "HTTP - Reset Followup Step",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -480,
         128
       ]
     },
@@ -412,7 +351,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -240,
+        -480,
         128
       ]
     },
@@ -644,27 +583,6 @@
       ],
       "id": "fc571339-d6aa-421d-8ebf-ec96bae005d4",
       "name": "Is New Conversation?"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://n8n.julianosalles.com.br/webhook/ai-agent",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"conversation_id\": \"{{ $input.first().json.conversation_id }}\",\n  \"company_id\":      \"{{ $('Code - Normalize to Canonical Event').first().json.company_id }}\",\n  \"content_text\":    \"{{ $('Code - Normalize to Canonical Event').first().json.content_text }}\",\n  \"content_type\":    \"{{ $('Code - Normalize to Canonical Event').first().json.content_type }}\"\n}",
-        "options": {
-          "timeout": 3000
-        }
-      },
-      "id": "a1b2c3d4-0099-4000-8000-000000000099",
-      "name": "HTTP - Trigger AI Agent",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -720,
-        340
-      ],
-      "continueOnFail": true
     }
   ],
   "pinData": {},
@@ -702,17 +620,6 @@
         ]
       ]
     },
-    "IF - Is Valid?.": {
-      "main": [
-        [
-          {
-            "node": "HTTP - Lookup Channel Connection",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "HTTP - Lookup Channel Connection": {
       "main": [
         [
@@ -735,29 +642,7 @@
         ]
       ]
     },
-    "IF - Connection Found?": {
-      "main": [
-        [
-          {
-            "node": "Code - Normalize to Canonical Event",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Code - Normalize to Canonical Event": {
-      "main": [
-        [
-          {
-            "node": "Code - Resolve Media URL",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code - Resolve Media URL": {
       "main": [
         [
           {
@@ -790,17 +675,6 @@
         ]
       ]
     },
-    "IF - Not Duplicate?": {
-      "main": [
-        [
-          {
-            "node": "HTTP - RPC resolve_or_create_lead",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "HTTP - RPC resolve_or_create_lead": {
       "main": [
         [
@@ -827,22 +701,6 @@
       "main": [
         [
           {
-            "node": "HTTP - Reset Followup Step",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "HTTP - Trigger AI Agent",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "HTTP - Reset Followup Step": {
-      "main": [
-        [
-          {
             "node": "HTTP - Mark Webhook Processed",
             "type": "main",
             "index": 0
@@ -855,6 +713,39 @@
         [
           {
             "node": "Is New Conversation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Valid?.": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Lookup Channel Connection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Connection Found?": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize to Canonical Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Not Duplicate?": {
+      "main": [
+        [
+          {
+            "node": "HTTP - RPC resolve_or_create_lead",
             "type": "main",
             "index": 0
           }
@@ -878,7 +769,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "6b2cd3e4-f5a6-7890-cdef-012345678902",
+  "versionId": "4fbaef34-bcba-4e59-b0f0-aff4206ddfbb",
   "meta": {
     "instanceId": "c3733f9c85f0461c0399c4bc0fba364bdfa3fecaafb3cd654abc5afe90d2cf63"
   },
