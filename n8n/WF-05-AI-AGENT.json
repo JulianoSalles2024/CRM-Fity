@@ -12,10 +12,7 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [
-        0,
-        300
-      ],
+      "position": [0, 300],
       "webhookId": "ai-agent"
     },
     {
@@ -28,28 +25,18 @@
       "name": "Respond 200 OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [
-        260,
-        160
-      ]
+      "position": [260, 160]
     },
     {
       "parameters": {
         "conditions": {
-          "options": {
-            "caseSensitive": false,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
           "conditions": [
             {
               "id": "cond-text-only",
               "leftValue": "={{ $json.body.content_type }}",
               "rightValue": "text",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
+              "operator": { "type": "string", "operation": "equals" }
             }
           ],
           "combinator": "and"
@@ -60,41 +47,28 @@
       "name": "IF - Is Text?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [
-        520,
-        300
-      ]
+      "position": [520, 300]
     },
     {
       "parameters": {
-        "jsCode": "// ── Code - Fetch Board Config ────────────────────────────────────────────\n// Recebe conversation_id + company_id, percorre:\n//   conversations → leads → board_stages → boards\n// Retorna ai_enabled, ai_prompt, instance_name, phone para o agente.\n\nconst body   = $input.first().json.body ?? $input.first().json;\nconst { conversation_id, company_id, content_text, content_type } = body;\n\nconst SUPA_URL = 'https://fhkhamwrfwtacwydukvb.supabase.co';\nconst SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY';\nconst headers = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` };\n\n// 1. Conversa → lead_id + channel_connection_id\nconst convRes  = await fetch(`${SUPA_URL}/rest/v1/conversations?id=eq.${conversation_id}&company_id=eq.${company_id}&select=lead_id,channel_connection_id`, { headers });\nconst convData = await convRes.json();\nif (!convData.length) return [{ json: { ai_enabled: false, error: 'conversation_not_found' } }];\nconst { lead_id, channel_connection_id } = convData[0];\n\n// 2. Lead → column_id + phone\nconst leadRes  = await fetch(`${SUPA_URL}/rest/v1/leads?id=eq.${lead_id}&company_id=eq.${company_id}&select=column_id,phone,name`, { headers });\nconst leadData = await leadRes.json();\nif (!leadData.length) return [{ json: { ai_enabled: false, error: 'lead_not_found' } }];\nconst { column_id, phone, name: lead_name } = leadData[0];\n\n// 3. Stage → board_id\nconst stageRes  = await fetch(`${SUPA_URL}/rest/v1/board_stages?id=eq.${column_id}&select=board_id`, { headers });\nconst stageData = await stageRes.json();\nif (!stageData.length) return [{ json: { ai_enabled: false, error: 'stage_not_found' } }];\nconst { board_id } = stageData[0];\n\n// 4. Board → ai_enabled + ai_prompt\nconst boardRes  = await fetch(`${SUPA_URL}/rest/v1/boards?id=eq.${board_id}&company_id=eq.${company_id}&select=ai_enabled,ai_prompt`, { headers });\nconst boardData = await boardRes.json();\nif (!boardData.length) return [{ json: { ai_enabled: false, error: 'board_not_found' } }];\nconst { ai_enabled, ai_prompt } = boardData[0];\n\n// 5. Channel connection → instance_name\nconst connRes  = await fetch(`${SUPA_URL}/rest/v1/channel_connections?id=eq.${channel_connection_id}&select=instance`, { headers });\nconst connData = await connRes.json();\nconst instance_name = connData[0]?.instance || '';\n\nreturn [{\n  json: {\n    conversation_id,\n    company_id,\n    content_text,\n    content_type,\n    lead_id,\n    phone,\n    lead_name,\n    ai_enabled,\n    ai_prompt,\n    instance_name\n  }\n}];"
+        "jsCode": "const axios = require('axios');\n\nconst raw = $input.first().json;\nconst body = raw.body ?? raw;\nconst { conversation_id, company_id, content_text, content_type } = body;\n\nconst SUPA_URL = 'https://fhkhamwrfwtacwydukvb.supabase.co';\nconst SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY';\nconst H = { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY };\nconst get = async (q) => (await axios.get(SUPA_URL + '/rest/v1/' + q, { headers: H })).data;\n\nconst convData = await get('conversations?id=eq.' + conversation_id + '&company_id=eq.' + company_id + '&select=lead_id,channel_connection_id');\nif (!convData.length) return [{ json: { ai_enabled: false, error: 'conversation_not_found' } }];\nconst { lead_id, channel_connection_id } = convData[0];\n\nconst leadData = await get('leads?id=eq.' + lead_id + '&company_id=eq.' + company_id + '&select=column_id,phone,name');\nif (!leadData.length) return [{ json: { ai_enabled: false, error: 'lead_not_found' } }];\nconst { column_id, phone, name: lead_name } = leadData[0];\n\nconst stageData = await get('board_stages?id=eq.' + column_id + '&select=board_id');\nif (!stageData.length) return [{ json: { ai_enabled: false, error: 'stage_not_found' } }];\nconst { board_id } = stageData[0];\n\nconst boardData = await get('boards?id=eq.' + board_id + '&company_id=eq.' + company_id + '&select=ai_enabled,ai_prompt');\nif (!boardData.length) return [{ json: { ai_enabled: false, error: 'board_not_found' } }];\nconst { ai_enabled, ai_prompt } = boardData[0];\n\nconst connData = await get('channel_connections?id=eq.' + channel_connection_id + '&select=instance');\nconst instance_name = (connData[0] && connData[0].instance) || '';\n\nreturn [{ json: { conversation_id, company_id, content_text, content_type, lead_id, phone, lead_name, ai_enabled, ai_prompt, instance_name } }];"
       },
       "id": "a1b2c3d4-0004-4000-8000-000000000004",
       "name": "Code - Fetch Board Config",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        780,
-        300
-      ]
+      "position": [780, 300]
     },
     {
       "parameters": {
         "conditions": {
-          "options": {
-            "caseSensitive": false,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
           "conditions": [
             {
               "id": "cond-ai-enabled",
               "leftValue": "={{ $json.ai_enabled }}",
               "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "true"
-              }
+              "operator": { "type": "boolean", "operation": "true" }
             }
           ],
           "combinator": "and"
@@ -105,79 +79,45 @@
       "name": "IF - AI Enabled?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [
-        1040,
-        300
-      ]
+      "position": [1040, 300]
     },
     {
       "parameters": {
-        "jsCode": "// ── Code - Run Agent ─────────────────────────────────────────────────────\n// 1. Busca histórico de mensagens\n// 2. Chama OpenAI\n// 3. Envia resposta via Evolution API\n// 4. Insere mensagem no Supabase (sender_type = 'agent')\n\nconst config = $('Code - Fetch Board Config').first().json;\nconst { conversation_id, company_id, ai_prompt, instance_name, phone, content_text } = config;\n\nconst SUPA_URL  = 'https://fhkhamwrfwtacwydukvb.supabase.co';\nconst SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY';\nconst EVO_URL   = 'https://easypanel.julianosalles.com.br';\nconst EVO_KEY   = '4DD73F0CC46E-407C-B70D-48C9175EC89B';\nconst OPENAI_KEY = 'sk-CONFIGURE_SUA_CHAVE_OPENAI_AQUI'; // ← substitua pela sua chave OpenAI\n\nconst supaHeaders = {\n  'apikey': SUPA_KEY,\n  'Authorization': `Bearer ${SUPA_KEY}`,\n  'Content-Type': 'application/json'\n};\n\n// 1. Buscar histórico (últimas 8 mensagens, mais recentes primeiro)\nconst histRes  = await fetch(`${SUPA_URL}/rest/v1/messages?conversation_id=eq.${conversation_id}&company_id=eq.${company_id}&order=sent_at.desc&limit=8`, { headers: supaHeaders });\nconst histData = await histRes.json();\n\n// Montar histórico (sem a última msg, que é a atual — já está em content_text)\nconst chatHistory = (Array.isArray(histData) ? histData : [])\n  .slice(1)          // pula a mensagem mais recente (já está em content_text)\n  .reverse()         // ordem cronológica\n  .map(m => ({\n    role: m.sender_type === 'lead' ? 'user' : 'assistant',\n    content: (m.content || '').trim()\n  }))\n  .filter(m => m.content);\n\nconst systemPrompt = (ai_prompt || '').trim() ||\n  'Você é um assistente de vendas profissional e cordial. Responda sempre em português brasileiro de forma clara e objetiva.';\n\n// 2. Chamar OpenAI\nconst aiRes = await fetch('https://api.openai.com/v1/chat/completions', {\n  method: 'POST',\n  headers: {\n    'Authorization': `Bearer ${OPENAI_KEY}`,\n    'Content-Type': 'application/json'\n  },\n  body: JSON.stringify({\n    model: 'gpt-4o-mini',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      ...chatHistory,\n      { role: 'user', content: content_text }\n    ],\n    max_tokens: 500,\n    temperature: 0.7\n  })\n});\nconst aiData = await aiRes.json();\nconst aiText = aiData.choices?.[0]?.message?.content?.trim();\n\nif (!aiText) {\n  return [{ json: { ok: false, error: 'openai_no_response', detail: aiData } }];\n}\n\n// 3. Enviar via Evolution API\nconst instanceEncoded = encodeURIComponent(instance_name);\nawait fetch(`${EVO_URL}/message/sendText/${instanceEncoded}`, {\n  method: 'POST',\n  headers: { 'apikey': EVO_KEY, 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    number: `${phone}@s.whatsapp.net`,\n    text: aiText\n  })\n});\n\n// 4. Inserir mensagem do agente no Supabase\nawait fetch(`${SUPA_URL}/rest/v1/rpc/insert_message`, {\n  method: 'POST',\n  headers: supaHeaders,\n  body: JSON.stringify({\n    p_company_id:          company_id,\n    p_conversation_id:     conversation_id,\n    p_external_message_id: `agent-${Date.now()}`,\n    p_direction:           'outbound',\n    p_sender_type:         'agent',\n    p_content:             aiText,\n    p_content_type:        'text',\n    p_sent_at:             new Date().toISOString(),\n    p_media_url:           null,\n    p_metadata:            {}\n  })\n});\n\nreturn [{ json: { ok: true, ai_response: aiText } }];"
+        "jsCode": "const axios = require('axios');\n\nconst config = $('Code - Fetch Board Config').first().json;\nconst { conversation_id, company_id, ai_prompt, instance_name, phone, content_text } = config;\n\nconst SUPA_URL = 'https://fhkhamwrfwtacwydukvb.supabase.co';\nconst SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY';\nconst EVO_URL = 'https://easypanel.julianosalles.com.br';\nconst EVO_KEY = '4DD73F0CC46E-407C-B70D-48C9175EC89B';\nconst OPENAI_KEY = 'sk-CONFIGURE_SUA_CHAVE_OPENAI_AQUI';\n\nconst supaH = { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json' };\n\nconst histRes = await axios.get(SUPA_URL + '/rest/v1/messages?conversation_id=eq.' + conversation_id + '&company_id=eq.' + company_id + '&order=sent_at.desc&limit=8', { headers: supaH });\nconst histData = histRes.data;\n\nconst chatHistory = (Array.isArray(histData) ? histData : [])\n  .slice(1).reverse()\n  .map(function(m) { return { role: m.sender_type === 'lead' ? 'user' : 'assistant', content: (m.content || '').trim() }; })\n  .filter(function(m) { return m.content; });\n\nconst systemPrompt = (ai_prompt || '').trim() || 'Voce e um assistente de vendas profissional e cordial. Responda sempre em portugues brasileiro.';\n\nconst messages = [{ role: 'system', content: systemPrompt }].concat(chatHistory).concat([{ role: 'user', content: content_text }]);\nconst aiRes = await axios.post('https://api.openai.com/v1/chat/completions', { model: 'gpt-4o-mini', messages: messages, max_tokens: 500, temperature: 0.7 }, { headers: { Authorization: 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' } });\n\nconst choice = aiRes.data.choices && aiRes.data.choices[0];\nconst aiText = choice && choice.message && choice.message.content ? choice.message.content.trim() : null;\nif (!aiText) return [{ json: { ok: false, error: 'openai_no_response', detail: aiRes.data } }];\n\nconst instanceEncoded = encodeURIComponent(instance_name);\nawait axios.post(EVO_URL + '/message/sendText/' + instanceEncoded, { number: phone + '@s.whatsapp.net', text: aiText }, { headers: { apikey: EVO_KEY, 'Content-Type': 'application/json' } });\n\nawait axios.post(SUPA_URL + '/rest/v1/rpc/insert_message', { p_company_id: company_id, p_conversation_id: conversation_id, p_external_message_id: 'agent-' + Date.now(), p_direction: 'outbound', p_sender_type: 'agent', p_content: aiText, p_content_type: 'text', p_sent_at: new Date().toISOString(), p_media_url: null, p_metadata: {} }, { headers: supaH });\n\nreturn [{ json: { ok: true, ai_response: aiText } }];"
       },
       "id": "a1b2c3d4-0006-4000-8000-000000000006",
       "name": "Code - Run Agent",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        1300,
-        300
-      ]
+      "position": [1300, 300]
     }
   ],
   "connections": {
     "Webhook Trigger": {
       "main": [
         [
-          {
-            "node": "Respond 200 OK",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "IF - Is Text?",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "Respond 200 OK", "type": "main", "index": 0 },
+          { "node": "IF - Is Text?",  "type": "main", "index": 0 }
         ]
       ]
     },
     "IF - Is Text?": {
       "main": [
-        [
-          {
-            "node": "Code - Fetch Board Config",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{ "node": "Code - Fetch Board Config", "type": "main", "index": 0 }]
       ]
     },
     "Code - Fetch Board Config": {
       "main": [
-        [
-          {
-            "node": "IF - AI Enabled?",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{ "node": "IF - AI Enabled?", "type": "main", "index": 0 }]
       ]
     },
     "IF - AI Enabled?": {
       "main": [
-        [
-          {
-            "node": "Code - Run Agent",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{ "node": "Code - Run Agent", "type": "main", "index": 0 }]
       ]
     }
   },
-  "settings": {
-    "executionOrder": "v1"
-  },
+  "settings": { "executionOrder": "v1" },
   "staticData": null,
   "pinData": {}
 }
