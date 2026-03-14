@@ -651,7 +651,7 @@
         "url": "https://n8n.julianosalles.com.br/webhook/ai-agent",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"conversation_id\": \"{{ $input.first().json.conversation_id }}\",\n  \"company_id\":      \"{{ $('Code - Normalize to Canonical Event').first().json.company_id }}\",\n  \"content_text\":    \"{{ $('Code - Normalize to Canonical Event').first().json.content_text }}\",\n  \"content_type\":    \"{{ $('Code - Normalize to Canonical Event').first().json.content_type }}\"\n}",
+        "jsonBody": "={\n  \"conversation_id\": \"{{ $('HTTP - RPC resolve_or_create_conversation').first().json.conversation_id }}\",\n  \"company_id\":      \"{{ $('Code - Normalize to Canonical Event').first().json.company_id }}\",\n  \"content_text\":    \"{{ $('Code - Normalize to Canonical Event').first().json.content_text }}\",\n  \"content_type\":    \"{{ $('Code - Normalize to Canonical Event').first().json.content_type }}\"\n}",
         "options": {
           "timeout": 3000
         }
