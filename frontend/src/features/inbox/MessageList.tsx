@@ -1,14 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
-import { useMessages } from './hooks/useMessages';
+import type { OmniMessage } from './hooks/useMessages';
 
 interface MessageListProps {
-  conversationId: string;
+  messages: OmniMessage[];
+  loading: boolean;
 }
 
-export const MessageList: React.FC<MessageListProps> = ({ conversationId }) => {
-  const { messages, loading } = useMessages(conversationId);
+export const MessageList: React.FC<MessageListProps> = ({ messages, loading }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/features/auth/AuthContext';
 
@@ -19,7 +19,7 @@ export interface OmniMessage {
 }
 
 export function useMessages(conversationId: string | null) {
-  const { companyId } = useAuth();
+  const { companyId, user } = useAuth();
   const [messages, setMessages] = useState<OmniMessage[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -38,6 +38,10 @@ export function useMessages(conversationId: string | null) {
 
   useEffect(() => { fetchMessages(); }, [fetchMessages]);
 
+  // Ref para evitar stale closure no callback do realtime
+  const fetchMessagesRef = useRef(fetchMessages);
+  useEffect(() => { fetchMessagesRef.current = fetchMessages; }, [fetchMessages]);
+
   useEffect(() => {
     if (!conversationId) return;
     const channel = supabase
@@ -48,11 +52,40 @@ export function useMessages(conversationId: string | null) {
         table: 'messages',
         filter: `conversation_id=eq.${conversationId}`,
       }, (payload) => {
-        setMessages(prev => [...prev, payload.new as OmniMessage]);
+        const incoming = payload.new as OmniMessage;
+        setMessages(prev => {
+          // Evita duplicar se update otimista já inseriu uma msg com mesmo id temporário
+          const alreadyExists = prev.some(m => m.id === incoming.id);
+          if (alreadyExists) return prev;
+          // Remove o placeholder otimista (id começa com 'optimistic-') e adiciona a real
+          const withoutOptimistic = prev.filter(m => !m.id.startsWith('optimistic-') || m.content !== incoming.content);
+          return [...withoutOptimistic, incoming];
+        });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [conversationId]);
 
-  return { messages, loading };
+  // Optimistic update: mostra a mensagem imediatamente ao enviar, antes do webhook retornar
+  const addOptimisticMessage = useCallback((content: string) => {
+    if (!conversationId || !companyId || !user) return;
+    const optimistic: OmniMessage = {
+      id: `optimistic-${Date.now()}`,
+      company_id: companyId,
+      conversation_id: conversationId,
+      external_message_id: null,
+      direction: 'outbound',
+      sender_type: 'agent',
+      sender_id: user.id,
+      content,
+      content_type: 'text',
+      status: 'sending',
+      metadata: {},
+      sent_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, optimistic]);
+  }, [conversationId, companyId, user]);
+
+  return { messages, loading, addOptimisticMessage };
 }

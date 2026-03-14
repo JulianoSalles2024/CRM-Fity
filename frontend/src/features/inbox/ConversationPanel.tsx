@@ -7,6 +7,7 @@ import type { OmniConversation, ConversationStatus } from './hooks/useConversati
 import { MessageList } from './MessageList';
 import { MessageComposer } from './components/MessageComposer';
 import { useSendMessage } from './hooks/useSendMessage';
+import { useMessages } from './hooks/useMessages';
 
 const STATUS_LABEL: Record<string, string> = {
   waiting:     'Em espera',
@@ -32,6 +33,7 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
   const { localUser } = useAppContext();
   const [isUpdating, setIsUpdating] = useState(false);
   const { sendMessage, isSending, sendError, clearError } = useSendMessage();
+  const { messages, loading: messagesLoading, addOptimisticMessage } = useMessages(conversation?.id ?? null);
 
   const canUpdate =
     currentUserRole === 'admin' ||
@@ -145,7 +147,7 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
       </div>
 
       {/* Messages */}
-      <MessageList conversationId={conversation.id} />
+      <MessageList messages={messages} loading={messagesLoading} />
 
       {/* Banner de erro de envio */}
       {sendError && (
@@ -162,7 +164,10 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
         conversationId={conversation.id}
         conversationStatus={conversation.status}
         canSend={canUpdate && conversation.status === 'in_progress' && !isSending}
-        onSendMessage={(text) => sendMessage(conversation.id, text, conversation.contact_identifier)}
+        onSendMessage={(text) => {
+          addOptimisticMessage(text);
+          sendMessage(conversation.id, text, conversation.contact_identifier);
+        }}
       />
     </div>
   );
