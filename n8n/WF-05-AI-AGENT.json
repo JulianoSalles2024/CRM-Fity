@@ -25,7 +25,7 @@
       "name": "Respond 200 OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [260, 160]
+      "position": [280, 140]
     },
     {
       "parameters": {
@@ -47,17 +47,135 @@
       "name": "IF - Is Text?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [520, 300]
+      "position": [280, 300]
     },
     {
       "parameters": {
-        "jsCode": "const https = require('https');\n\nfunction httpsRequest(url, options, body) {\n  return new Promise(function(resolve, reject) {\n    const parsed = new URL(url);\n    const opts = Object.assign({ hostname: parsed.hostname, path: parsed.pathname + parsed.search, method: options.method || 'GET' }, options);\n    const req = https.request(opts, function(res) {\n      let data = '';\n      res.on('data', function(c) { data += c; });\n      res.on('end', function() { try { resolve(JSON.parse(data)); } catch(e) { resolve(data); } });\n    });\n    req.on('error', reject);\n    if (body) req.write(typeof body === 'string' ? body : JSON.stringify(body));\n    req.end();\n  });\n}\n\nconst raw = $input.first().json;\nconst body = raw.body != null ? raw.body : raw;\nconst { conversation_id, company_id, content_text, content_type } = body;\n\nconst SUPA_HOST = 'fhkhamwrfwtacwydukvb.supabase.co';\nconst SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY';\nconst supaHeaders = { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY };\n\nconst get = function(path) {\n  return httpsRequest('https://' + SUPA_HOST + '/rest/v1/' + path, { headers: supaHeaders });\n};\n\nconst convData = await get('conversations?id=eq.' + conversation_id + '&company_id=eq.' + company_id + '&select=lead_id,channel_connection_id');\nif (!convData.length) return [{ json: { ai_enabled: false, error: 'conversation_not_found' } }];\nconst { lead_id, channel_connection_id } = convData[0];\n\nconst leadData = await get('leads?id=eq.' + lead_id + '&company_id=eq.' + company_id + '&select=column_id,phone,name');\nif (!leadData.length) return [{ json: { ai_enabled: false, error: 'lead_not_found' } }];\nconst { column_id, phone, name: lead_name } = leadData[0];\n\nconst stageData = await get('board_stages?id=eq.' + column_id + '&select=board_id');\nif (!stageData.length) return [{ json: { ai_enabled: false, error: 'stage_not_found' } }];\nconst { board_id } = stageData[0];\n\nconst boardData = await get('boards?id=eq.' + board_id + '&company_id=eq.' + company_id + '&select=ai_enabled,ai_prompt');\nif (!boardData.length) return [{ json: { ai_enabled: false, error: 'board_not_found' } }];\nconst { ai_enabled, ai_prompt } = boardData[0];\n\nconst connData = await get('channel_connections?id=eq.' + channel_connection_id + '&select=instance');\nconst instance_name = (connData[0] && connData[0].instance) || '';\n\nreturn [{ json: { conversation_id, company_id, content_text, content_type, lead_id, phone, lead_name, ai_enabled, ai_prompt, instance_name } }];"
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/conversations",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "id",         "value": "=eq.{{ $('Webhook Trigger').first().json.body.conversation_id }}" },
+            { "name": "company_id", "value": "=eq.{{ $('Webhook Trigger').first().json.body.company_id }}" },
+            { "name": "select",     "value": "lead_id,channel_connection_id" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" }
+          ]
+        },
+        "options": {}
       },
       "id": "a1b2c3d4-0004-4000-8000-000000000004",
-      "name": "Code - Fetch Board Config",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [780, 300]
+      "name": "HTTP - Get Conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [560, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/leads",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "id",         "value": "=eq.{{ $('HTTP - Get Conversation').first().json[0].lead_id }}" },
+            { "name": "company_id", "value": "=eq.{{ $('Webhook Trigger').first().json.body.company_id }}" },
+            { "name": "select",     "value": "column_id,phone,name" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0005-4000-8000-000000000005",
+      "name": "HTTP - Get Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [840, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/board_stages",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "id",     "value": "=eq.{{ $('HTTP - Get Lead').first().json[0].column_id }}" },
+            { "name": "select", "value": "board_id" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0006-4000-8000-000000000006",
+      "name": "HTTP - Get Stage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/boards",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "id",         "value": "=eq.{{ $('HTTP - Get Stage').first().json[0].board_id }}" },
+            { "name": "company_id", "value": "=eq.{{ $('Webhook Trigger').first().json.body.company_id }}" },
+            { "name": "select",     "value": "ai_enabled,ai_prompt" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0007-4000-8000-000000000007",
+      "name": "HTTP - Get Board",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1400, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/channel_connections",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "id",     "value": "=eq.{{ $('HTTP - Get Conversation').first().json[0].channel_connection_id }}" },
+            { "name": "select", "value": "instance" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0008-4000-8000-000000000008",
+      "name": "HTTP - Get Connection",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1680, 300]
     },
     {
       "parameters": {
@@ -66,7 +184,7 @@
           "conditions": [
             {
               "id": "cond-ai-enabled",
-              "leftValue": "={{ $json.ai_enabled }}",
+              "leftValue": "={{ $('HTTP - Get Board').first().json[0].ai_enabled }}",
               "rightValue": true,
               "operator": { "type": "boolean", "operation": "true" }
             }
@@ -75,45 +193,181 @@
         },
         "options": {}
       },
-      "id": "a1b2c3d4-0005-4000-8000-000000000005",
+      "id": "a1b2c3d4-0009-4000-8000-000000000009",
       "name": "IF - AI Enabled?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1040, 300]
+      "position": [1960, 300]
     },
     {
       "parameters": {
-        "jsCode": "const https = require('https');\n\nfunction httpsRequest(url, options, body) {\n  return new Promise(function(resolve, reject) {\n    const parsed = new URL(url);\n    const opts = Object.assign({ hostname: parsed.hostname, path: parsed.pathname + parsed.search, method: options.method || 'GET' }, options);\n    const req = https.request(opts, function(res) {\n      let data = '';\n      res.on('data', function(c) { data += c; });\n      res.on('end', function() { try { resolve(JSON.parse(data)); } catch(e) { resolve(data); } });\n    });\n    req.on('error', reject);\n    if (body) req.write(typeof body === 'string' ? body : JSON.stringify(body));\n    req.end();\n  });\n}\n\nconst config = $('Code - Fetch Board Config').first().json;\nconst { conversation_id, company_id, ai_prompt, instance_name, phone, content_text } = config;\n\nconst SUPA_HOST = 'fhkhamwrfwtacwydukvb.supabase.co';\nconst SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY';\nconst EVO_HOST  = 'easypanel.julianosalles.com.br';\nconst EVO_KEY   = '4DD73F0CC46E-407C-B70D-48C9175EC89B';\nconst OPENAI_KEY = 'sk-CONFIGURE_SUA_CHAVE_OPENAI_AQUI';\n\nconst supaH = { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json' };\n\nconst histData = await httpsRequest('https://' + SUPA_HOST + '/rest/v1/messages?conversation_id=eq.' + conversation_id + '&company_id=eq.' + company_id + '&order=sent_at.desc&limit=8', { headers: supaH });\n\nconst chatHistory = (Array.isArray(histData) ? histData : [])\n  .slice(1).reverse()\n  .map(function(m) { return { role: m.sender_type === 'lead' ? 'user' : 'assistant', content: (m.content || '').trim() }; })\n  .filter(function(m) { return m.content; });\n\nconst systemPrompt = (ai_prompt || '').trim() || 'Voce e um assistente de vendas profissional e cordial. Responda sempre em portugues brasileiro.';\nconst messages = [{ role: 'system', content: systemPrompt }].concat(chatHistory).concat([{ role: 'user', content: content_text }]);\n\nconst aiBody = JSON.stringify({ model: 'gpt-4o-mini', messages: messages, max_tokens: 500, temperature: 0.7 });\nconst aiData = await httpsRequest('https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { Authorization: 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(aiBody) } }, aiBody);\n\nconst choice = aiData.choices && aiData.choices[0];\nconst aiText = choice && choice.message && choice.message.content ? choice.message.content.trim() : null;\nif (!aiText) return [{ json: { ok: false, error: 'openai_no_response', detail: aiData } }];\n\nconst instanceEncoded = encodeURIComponent(instance_name);\nconst evoBody = JSON.stringify({ number: phone + '@s.whatsapp.net', text: aiText });\nawait httpsRequest('https://' + EVO_HOST + '/message/sendText/' + instanceEncoded, { method: 'POST', headers: { apikey: EVO_KEY, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(evoBody) } }, evoBody);\n\nconst insBody = JSON.stringify({ p_company_id: company_id, p_conversation_id: conversation_id, p_external_message_id: 'agent-' + Date.now(), p_direction: 'outbound', p_sender_type: 'agent', p_content: aiText, p_content_type: 'text', p_sent_at: new Date().toISOString(), p_media_url: null, p_metadata: {} });\nawait httpsRequest('https://' + SUPA_HOST + '/rest/v1/rpc/insert_message', { method: 'POST', headers: Object.assign({ 'Content-Length': Buffer.byteLength(insBody) }, supaH) }, insBody);\n\nreturn [{ json: { ok: true, ai_response: aiText } }];"
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/messages",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "conversation_id", "value": "=eq.{{ $('Webhook Trigger').first().json.body.conversation_id }}" },
+            { "name": "company_id",      "value": "=eq.{{ $('Webhook Trigger').first().json.body.company_id }}" },
+            { "name": "order",           "value": "sent_at.desc" },
+            { "name": "limit",           "value": "8" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" }
+          ]
+        },
+        "options": {}
       },
-      "id": "a1b2c3d4-0006-4000-8000-000000000006",
-      "name": "Code - Run Agent",
+      "id": "a1b2c3d4-0010-4000-8000-000000000010",
+      "name": "HTTP - Get History",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhook = $('Webhook Trigger').first().json.body;\nconst content_text = webhook.content_text;\n\nconst boardArr = $('HTTP - Get Board').first().json;\nconst ai_prompt = (boardArr[0] && boardArr[0].ai_prompt) ? boardArr[0].ai_prompt.trim() : '';\nconst systemPrompt = ai_prompt || 'Voce e um assistente de vendas profissional e cordial. Responda sempre em portugues brasileiro.';\n\nconst histArr = $('HTTP - Get History').first().json;\nconst chatHistory = (Array.isArray(histArr) ? histArr : [])\n  .slice(1).reverse()\n  .map(function(m) { return { role: m.sender_type === 'lead' ? 'user' : 'assistant', content: (m.content || '').trim() }; })\n  .filter(function(m) { return m.content; });\n\nconst messages = [{ role: 'system', content: systemPrompt }]\n  .concat(chatHistory)\n  .concat([{ role: 'user', content: content_text }]);\n\nreturn [{ json: { model: 'gpt-4o-mini', messages: messages, max_tokens: 500, temperature: 0.7 } }];"
+      },
+      "id": "a1b2c3d4-0011-4000-8000-000000000011",
+      "name": "Code - Build OpenAI Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1300, 300]
+      "position": [2520, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer sk-CONFIGURE_SUA_CHAVE_OPENAI_AQUI" },
+            { "name": "Content-Type",  "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0012-4000-8000-000000000012",
+      "name": "HTTP - Call OpenAI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2800, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://easypanel.julianosalles.com.br/message/sendText/{{ encodeURIComponent($('HTTP - Get Connection').first().json[0].instance) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",       "value": "4DD73F0CC46E-407C-B70D-48C9175EC89B" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('HTTP - Get Lead').first().json[0].phone }}@s.whatsapp.net\",\n  \"text\":   \"{{ $('HTTP - Call OpenAI').first().json.choices[0].message.content }}\"\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0013-4000-8000-000000000013",
+      "name": "HTTP - Send WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3080, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/rpc/insert_message",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey",        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY" },
+            { "name": "Content-Type",  "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"p_company_id\":          \"{{ $('Webhook Trigger').first().json.body.company_id }}\",\n  \"p_conversation_id\":     \"{{ $('Webhook Trigger').first().json.body.conversation_id }}\",\n  \"p_external_message_id\": \"agent-{{ Date.now() }}\",\n  \"p_direction\":           \"outbound\",\n  \"p_sender_type\":         \"agent\",\n  \"p_content\":             \"{{ $('HTTP - Call OpenAI').first().json.choices[0].message.content }}\",\n  \"p_content_type\":        \"text\",\n  \"p_sent_at\":             \"{{ new Date().toISOString() }}\",\n  \"p_media_url\":           null,\n  \"p_metadata\":            {}\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0014-4000-8000-000000000014",
+      "name": "HTTP - Insert Agent Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3360, 300]
     }
   ],
   "connections": {
     "Webhook Trigger": {
       "main": [
         [
-          { "node": "Respond 200 OK", "type": "main", "index": 0 },
-          { "node": "IF - Is Text?",  "type": "main", "index": 0 }
+          { "node": "Respond 200 OK",  "type": "main", "index": 0 },
+          { "node": "IF - Is Text?",   "type": "main", "index": 0 }
         ]
       ]
     },
     "IF - Is Text?": {
       "main": [
-        [{ "node": "Code - Fetch Board Config", "type": "main", "index": 0 }]
+        [{ "node": "HTTP - Get Conversation", "type": "main", "index": 0 }]
       ]
     },
-    "Code - Fetch Board Config": {
+    "HTTP - Get Conversation": {
+      "main": [
+        [{ "node": "HTTP - Get Lead", "type": "main", "index": 0 }]
+      ]
+    },
+    "HTTP - Get Lead": {
+      "main": [
+        [{ "node": "HTTP - Get Stage", "type": "main", "index": 0 }]
+      ]
+    },
+    "HTTP - Get Stage": {
+      "main": [
+        [
+          { "node": "HTTP - Get Board",      "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "HTTP - Get Board": {
+      "main": [
+        [{ "node": "HTTP - Get Connection", "type": "main", "index": 0 }]
+      ]
+    },
+    "HTTP - Get Connection": {
       "main": [
         [{ "node": "IF - AI Enabled?", "type": "main", "index": 0 }]
       ]
     },
     "IF - AI Enabled?": {
       "main": [
-        [{ "node": "Code - Run Agent", "type": "main", "index": 0 }]
+        [{ "node": "HTTP - Get History", "type": "main", "index": 0 }]
+      ]
+    },
+    "HTTP - Get History": {
+      "main": [
+        [{ "node": "Code - Build OpenAI Payload", "type": "main", "index": 0 }]
+      ]
+    },
+    "Code - Build OpenAI Payload": {
+      "main": [
+        [{ "node": "HTTP - Call OpenAI", "type": "main", "index": 0 }]
+      ]
+    },
+    "HTTP - Call OpenAI": {
+      "main": [
+        [{ "node": "HTTP - Send WhatsApp", "type": "main", "index": 0 }]
+      ]
+    },
+    "HTTP - Send WhatsApp": {
+      "main": [
+        [{ "node": "HTTP - Insert Agent Message", "type": "main", "index": 0 }]
       ]
     }
   },
