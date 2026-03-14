@@ -14,7 +14,7 @@ function formatTime(dateStr: string | null): string {
 const STATUS_CONFIG = {
   waiting:     { label: 'Em espera',      color: 'bg-yellow-500' },
   in_progress: { label: 'Em atendimento', color: 'bg-blue-500' },
-  resolved:    { label: 'Resolvido',      color: 'bg-green-500' },
+  resolved:    { label: 'Encerrado',      color: 'bg-green-500' },
   blocked:     { label: 'Bloqueado',      color: 'bg-red-500' },
 };
 

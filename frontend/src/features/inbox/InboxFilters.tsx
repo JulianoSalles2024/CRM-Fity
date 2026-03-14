@@ -10,7 +10,7 @@ const FILTERS: Filter[] = [
   { label: 'Todos', value: null },
   { label: 'Em espera', value: 'waiting' },
   { label: 'Em atendimento', value: 'in_progress' },
-  { label: 'Resolvidos', value: 'resolved' },
+  { label: 'Encerrados', value: 'resolved' },
 ];
 
 interface InboxFiltersProps {

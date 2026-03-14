@@ -12,7 +12,7 @@ import { useMessages } from './hooks/useMessages';
 const STATUS_LABEL: Record<string, string> = {
   waiting:     'Em espera',
   in_progress: 'Em atendimento',
-  resolved:    'Resolvido',
+  resolved:    'Encerrado',
   blocked:     'Bloqueado',
 };
 
@@ -144,7 +144,7 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
               className="flex items-center gap-1.5 px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
             >
               {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
-              Resolver
+              Encerrar
             </button>
           )}
 
