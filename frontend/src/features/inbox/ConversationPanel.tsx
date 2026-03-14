@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { MessageCircle, Phone, UserCheck, CheckCircle, Loader2, AlertCircle, X, RefreshCw, RefreshCcw } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { MessageCircle, Phone, UserCheck, CheckCircle, Loader2, AlertCircle, X, RefreshCw, RefreshCcw, MoreVertical, Trash2, ShieldBan, Eraser } from 'lucide-react';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { useAppContext } from '@/src/app/AppContext';
@@ -8,6 +8,7 @@ import { MessageList } from './MessageList';
 import { MessageComposer } from './components/MessageComposer';
 import { useSendMessage } from './hooks/useSendMessage';
 import { useMessages } from './hooks/useMessages';
+import { useConversationActions } from './hooks/useConversationActions';
 
 const STATUS_LABEL: Record<string, string> = {
   waiting:     'Em espera',
@@ -28,6 +29,8 @@ interface ConversationPanelProps {
   onStatusChange: (conversationId: string, newStatus: ConversationStatus) => void;
 }
 
+type ConfirmAction = 'clear' | 'block' | 'delete' | null;
+
 export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversation, onStatusChange }) => {
   const { user, companyId, currentUserRole } = useAuth();
   const { localUser } = useAppContext();
@@ -36,6 +39,56 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
   const [reopenError, setReopenError] = useState<string | null>(null);
   const { sendMessage, isSending, sendError, clearError } = useSendMessage();
   const { messages, loading: messagesLoading, addOptimisticMessage } = useMessages(conversation?.id ?? null);
+
+  // ── Menu de ações (⋯) ────────────────────────────────────────────────────
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const { clearMessages, blockContact, deleteConversation, isLoading: isActing, error: actionError } = useConversationActions(
+    conversation?.id ?? null,
+    conversation?.lead_id ?? null,
+  );
+
+  // Fecha menu ao clicar fora
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleConfirm = async () => {
+    let ok = false;
+    if (confirmAction === 'clear')  ok = await clearMessages();
+    if (confirmAction === 'block')  ok = await blockContact();
+    if (confirmAction === 'delete') ok = await deleteConversation();
+    if (ok) {
+      setConfirmAction(null);
+      if (confirmAction === 'delete') onStatusChange(conversation!.id, 'resolved'); // remove da lista
+    }
+  };
+
+  const CONFIRM_CONFIG: Record<NonNullable<ConfirmAction>, { title: string; description: string; confirmLabel: string; danger: boolean }> = {
+    clear: {
+      title: 'Limpar mensagens',
+      description: 'Isso apagará todo o histórico desta conversa. A conversa permanece na lista, mas sem mensagens. Esta ação não pode ser desfeita.',
+      confirmLabel: 'Limpar histórico',
+      danger: true,
+    },
+    block: {
+      title: 'Bloquear contato',
+      description: 'O contato será bloqueado. A conversa ficará com status "Bloqueado" e o lead marcado internamente. O WF-03 não enviará mais follow-ups para este contato.',
+      confirmLabel: 'Bloquear',
+      danger: true,
+    },
+    delete: {
+      title: 'Apagar conversa',
+      description: 'A conversa e todas as mensagens serão apagadas permanentemente. Esta ação não pode ser desfeita.',
+      confirmLabel: 'Apagar conversa',
+      danger: true,
+    },
+  };
 
   const reopenConversation = async () => {
     if (!conversation || !companyId || !user) return;
@@ -158,8 +211,85 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
               Retornar Agente
             </button>
           )}
+
+          {/* Menu ⋯ */}
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen(p => !p)}
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+              title="Mais ações"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-1 w-48 bg-[#0B1220] border border-slate-700 rounded-xl shadow-xl z-20 py-1 overflow-hidden">
+                <button
+                  onClick={() => { setMenuOpen(false); setConfirmAction('clear'); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-800 transition-colors"
+                >
+                  <Eraser className="w-4 h-4 text-slate-400" />
+                  Limpar mensagens
+                </button>
+                <button
+                  onClick={() => { setMenuOpen(false); setConfirmAction('block'); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-800 transition-colors"
+                >
+                  <ShieldBan className="w-4 h-4 text-slate-400" />
+                  Bloquear contato
+                </button>
+                <div className="my-1 border-t border-slate-800" />
+                <button
+                  onClick={() => { setMenuOpen(false); setConfirmAction('delete'); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Apagar conversa
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Modal de confirmação */}
+      {confirmAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0B1220] border border-slate-800 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+            <h3 className="text-base font-semibold text-white mb-2">
+              {CONFIRM_CONFIG[confirmAction].title}
+            </h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-5">
+              {CONFIRM_CONFIG[confirmAction].description}
+            </p>
+
+            {actionError && (
+              <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <span className="text-xs text-red-300">{actionError}</span>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmAction(null)}
+                disabled={isActing}
+                className="px-4 py-2 text-sm text-slate-300 border border-slate-700 hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirm}
+                disabled={isActing}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {isActing && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {CONFIRM_CONFIG[confirmAction].confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <MessageList messages={messages} loading={messagesLoading} />
