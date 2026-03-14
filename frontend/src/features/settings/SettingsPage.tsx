@@ -314,38 +314,35 @@ const BoardsAISettings: React.FC<{ boards: Board[] }> = ({ boards }) => {
 
     return (
         <>
-            <FlatCard className="p-0">
-                <div className="p-6 border-b border-white/10">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                            <Bot className="w-5 h-5 text-blue-400" />
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-semibold text-white">Agente de IA por Pipeline</h2>
-                            <p className="text-sm text-slate-400 mt-0.5">Configure o comportamento do agente para cada pipeline. As configurações são globais e afetam todos os sellers.</p>
-                        </div>
+            <FlatCard className="p-6 space-y-5">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                        <Bot className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-bold text-white">Agente de IA por Pipeline</h2>
+                        <p className="text-xs text-slate-400">Configurações globais — afetam todos os sellers da empresa</p>
                     </div>
                 </div>
-                <div className="p-6 space-y-3">
+
+                <div className="space-y-2">
                     {boards.map(board => (
-                        <GlassSection key={board.id} className="flex items-center justify-between p-4">
-                            <div className="flex items-center gap-4">
-                                <div className="w-8 h-8 rounded-lg bg-[#0B1220] border border-white/5 flex items-center justify-center">
-                                    <Columns className="w-4 h-4 text-slate-400" />
-                                </div>
+                        <div key={board.id} className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-colors">
+                            <div className="flex items-center gap-3">
+                                <Columns className="w-4 h-4 text-slate-500 shrink-0" />
                                 <div>
-                                    <h3 className="font-medium text-white">{board.name}</h3>
+                                    <p className="text-sm font-medium text-white">{board.name}</p>
                                     <p className="text-xs text-slate-500">{board.columns.length} estágios</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setSelectedBoard(board)}
-                                className="flex items-center gap-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors"
+                                className="flex items-center gap-1.5 text-xs font-semibold text-blue-400 hover:text-blue-300 px-3 py-1.5 rounded-lg hover:bg-blue-500/10 transition-colors whitespace-nowrap"
                             >
-                                <Bot className="w-4 h-4" />
-                                Configurar Agente
+                                <Bot className="w-3.5 h-3.5" />
+                                Configurar
                             </button>
-                        </GlassSection>
+                        </div>
                     ))}
                 </div>
             </FlatCard>
