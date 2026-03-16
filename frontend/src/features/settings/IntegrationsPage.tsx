@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    ToyBrick, KeyRound, Webhook as WebhookIcon, FileCode, Server, Copy, BookOpen, Settings, Eye, EyeOff, RefreshCw, 
-    Lock, ShieldCheck, Gauge, GitBranch, Download, AlertTriangle, ChevronRight, Check, List, FileJson2, Database, BarChartHorizontal, Plus, MoreVertical, Trash2, ChevronLeft, LogIn, LogOut, HelpCircle, ChevronDown
+import {
+    ToyBrick, KeyRound, Webhook as WebhookIcon, FileCode, Server, Copy, BookOpen, Settings, Eye, EyeOff, RefreshCw,
+    Lock, ShieldCheck, Gauge, GitBranch, Download, AlertTriangle, ChevronRight, Check, List, FileJson2, Database, BarChartHorizontal, Plus, MoreVertical, Trash2, ChevronLeft, LogIn, LogOut, HelpCircle, ChevronDown,
+    Wifi, Activity, Cpu, Box, ArrowRight, Layers, Globe, Zap,
 } from 'lucide-react';
+import ConexoesTab from './tabs/ConexoesTab';
+import EventosTab from './tabs/EventosTab';
 import { AnimatePresence, motion } from 'framer-motion';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 
@@ -684,6 +687,128 @@ const ApiRestTab: React.FC<ApiRestTabProps> = ({ showNotification }) => {
 };
 
 
+// --- MCP Tab ---
+
+const McpTab: React.FC = () => {
+    const services = [
+        { name: 'Evolution API', type: 'WhatsApp Gateway', envKey: 'EVOLUTION_API_URL', status: 'active', icon: MessageCircle ?? Cpu },
+        { name: 'n8n Webhooks', type: 'Automation Engine', envKey: 'N8N_OUTBOUND_WEBHOOK_URL', status: 'active', icon: GitBranch },
+        { name: 'Supabase', type: 'Database & Realtime', envKey: 'VITE_SUPABASE_URL', status: 'active', icon: Database },
+        { name: 'OpenAI', type: 'LLM Provider', envKey: 'OPENAI_API_KEY', status: 'configured', icon: Cpu },
+    ];
+
+    const tools = [
+        { name: 'get_lead_info', desc: 'Retorna dados completos de um lead por ID ou telefone', ready: true },
+        { name: 'update_lead_stage', desc: 'Move lead para outra etapa do pipeline', ready: true },
+        { name: 'create_task', desc: 'Cria tarefa associada a um lead', ready: true },
+        { name: 'send_message', desc: 'Envia mensagem via canal conectado', ready: true },
+        { name: 'get_pipeline_summary', desc: 'Retorna resumo do pipeline para o agente de IA', ready: false },
+        { name: 'schedule_followup', desc: 'Agenda follow-up automático', ready: false },
+    ];
+
+    return (
+        <div className="space-y-8">
+            {/* Header */}
+            <div className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-violet-500/8 to-blue-500/5 border border-violet-500/15">
+                <div className="p-3 rounded-xl bg-violet-500/15 border border-violet-500/20">
+                    <Layers className="w-6 h-6 text-violet-400" />
+                </div>
+                <div>
+                    <h3 className="text-base font-bold text-white mb-1">Model Context Protocol (MCP)</h3>
+                    <p className="text-sm text-slate-400 leading-relaxed max-w-2xl">
+                        O MCP padroniza como agentes de IA interagem com o NextSales. Em vez de chamadas ad-hoc,
+                        cada ferramenta é um contrato tipado — o agente sabe exatamente o que pode fazer, com quais
+                        parâmetros e quais garantias de isolamento por <code className="text-violet-400">company_id</code>.
+                    </p>
+                </div>
+            </div>
+
+            {/* Service Registry */}
+            <div>
+                <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Globe className="w-4 h-4" /> Serviços Registrados
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {services.map(({ name, type, envKey, status, icon: Icon }) => (
+                        <div key={name} className="flex items-center gap-3 p-4 rounded-xl bg-[#0B1220] border border-white/6">
+                            <div className="p-2 rounded-lg bg-white/5">
+                                <Icon className="w-4 h-4 text-slate-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-semibold text-white">{name}</span>
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${status === 'active' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20'}`}>
+                                        {status}
+                                    </span>
+                                </div>
+                                <div className="text-xs text-slate-500">{type}</div>
+                                <div className="text-[10px] font-mono text-slate-600 mt-0.5">{envKey}</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Tool Registry */}
+            <div>
+                <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Zap className="w-4 h-4" /> Ferramentas MCP disponíveis
+                </h4>
+                <div className="space-y-2">
+                    {tools.map(({ name, desc, ready }) => (
+                        <div key={name} className="flex items-center gap-3 p-3 rounded-xl bg-[#0B1220] border border-white/5">
+                            <div className={`w-2 h-2 rounded-full shrink-0 ${ready ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+                            <code className="text-xs text-violet-400 font-mono w-48 shrink-0">{name}</code>
+                            <span className="text-xs text-slate-400 flex-1">{desc}</span>
+                            <span className={`text-[10px] font-bold ${ready ? 'text-emerald-400' : 'text-slate-600'}`}>
+                                {ready ? 'pronto' : 'em breve'}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Webhook Routing */}
+            <div>
+                <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <ArrowRight className="w-4 h-4" /> Roteamento de Webhooks
+                </h4>
+                <div className="p-4 rounded-xl bg-[#0B1220] border border-white/5">
+                    <div className="flex items-center gap-3 flex-wrap text-xs">
+                        {[
+                            { label: 'Evolution API', color: 'text-emerald-400 bg-emerald-500/10' },
+                            { label: '→', color: 'text-slate-600' },
+                            { label: 'n8n WF-01', color: 'text-blue-400 bg-blue-500/10' },
+                            { label: '→', color: 'text-slate-600' },
+                            { label: 'resolve_or_create_lead()', color: 'text-violet-400 bg-violet-500/10' },
+                            { label: '→', color: 'text-slate-600' },
+                            { label: 'resolve_or_create_conversation()', color: 'text-violet-400 bg-violet-500/10' },
+                            { label: '→', color: 'text-slate-600' },
+                            { label: 'WF-05 AI Agent', color: 'text-amber-400 bg-amber-500/10' },
+                        ].map(({ label, color }, i) => (
+                            label === '→'
+                                ? <span key={i} className="text-slate-600 font-bold">{label}</span>
+                                : <span key={i} className={`px-2 py-0.5 rounded-md font-mono font-medium ${color}`}>{label}</span>
+                        ))}
+                    </div>
+                    <p className="text-[11px] text-slate-600 mt-3">
+                        O <code className="text-slate-500">company_id</code> é propagado em cada etapa via tenant guard nas RPCs (SECURITY DEFINER).
+                        Nenhum payload de uma empresa pode ser processado no contexto de outra.
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Avoid import error for MessageCircle used inside McpTab
+const MessageCircle = ({ className }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+);
+
+
 // --- Main Component ---
 
 interface IntegrationsPageProps {
@@ -694,6 +819,8 @@ const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ showNotification })
     const [activeTab, setActiveTab] = useState('API Keys');
 
     const mainTabs = [
+        { name: 'Conexões', icon: Wifi },
+        { name: 'Eventos', icon: Activity },
         { name: 'API Keys', icon: KeyRound },
         { name: 'Webhooks', icon: WebhookIcon },
         { name: 'API REST', icon: FileCode },
@@ -728,10 +855,12 @@ const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ showNotification })
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 -mr-4 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
-                 {activeTab === 'API Keys' && <ApiKeysTab showNotification={showNotification} />}
-                 {activeTab === 'Webhooks' && <WebhooksTab showNotification={showNotification} />}
-                 {activeTab === 'API REST' && <ApiRestTab showNotification={showNotification} />}
-                 {activeTab === 'MCP Server' && <div className="text-center py-20 text-zinc-500">MCP Server - Em breve...</div>}
+                 {activeTab === 'Conexões'  && <ConexoesTab showNotification={showNotification} />}
+                 {activeTab === 'Eventos'   && <EventosTab  showNotification={showNotification} />}
+                 {activeTab === 'API Keys'  && <ApiKeysTab  showNotification={showNotification} />}
+                 {activeTab === 'Webhooks'  && <WebhooksTab showNotification={showNotification} />}
+                 {activeTab === 'API REST'  && <ApiRestTab  showNotification={showNotification} />}
+                 {activeTab === 'MCP Server' && <McpTab />}
             </div>
         </div>
     );
