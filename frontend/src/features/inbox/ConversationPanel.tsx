@@ -113,9 +113,14 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
     if (!conversation || !companyId || !canUpdate) return;
     setIsUpdating(true);
 
+    const updateData: any = { status: newStatus };
+    if (newStatus === 'waiting') {
+      updateData.assignee_id = null;
+    }
+
     const { error } = await supabase
       .from('conversations')
-      .update({ status: newStatus })
+      .update(updateData)
       .eq('id', conversation.id)
       .eq('company_id', companyId);
 
@@ -127,6 +132,8 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
           ? `${userName} reabriu a conversa`
           : newStatus === 'in_progress'
           ? `${userName} assumiu o atendimento`
+          : newStatus === 'waiting'
+          ? `${userName} devolveu o atendimento para o agente`
           : 'Conversa marcada como resolvida';
 
       await supabase.from('messages').insert({
@@ -193,14 +200,26 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
           )}
 
           {canUpdate && conversation.status === 'in_progress' && (
-            <button
-              onClick={() => updateStatus('resolved')}
-              disabled={isUpdating}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
-            >
-              {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
-              Encerrar
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => updateStatus('waiting')}
+                disabled={isUpdating}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors border border-slate-600"
+                title="Devolver atendimento para o Agente de IA"
+              >
+                {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                Voltar para Agente
+              </button>
+              
+              <button
+                onClick={() => updateStatus('resolved')}
+                disabled={isUpdating}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
+              >
+                {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                Encerrar
+              </button>
+            </div>
           )}
 
           {canUpdate && conversation.status === 'resolved' && (
