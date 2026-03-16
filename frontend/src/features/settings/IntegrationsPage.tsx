@@ -821,7 +821,7 @@ interface IntegrationsPageProps {
 }
 
 const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ showNotification }) => {
-    const [activeTab, setActiveTab] = useState('API Keys');
+    const [activeTab, setActiveTab] = useState('Conexões');
     const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
 
     const mainTabs = [
