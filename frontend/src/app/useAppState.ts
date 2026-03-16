@@ -81,7 +81,7 @@ export function useAppState() {
     const { activities, createActivity } = useActivities(companyId);
     const { tasks, createTask, createManyTasks, updateTask: updateTaskInDb, deleteTask: deleteTaskInDb, deleteManyTasks } = useTasks(companyId);
     const { users, refetch: refetchUsers } = useUsers(companyId);
-    const { boards, setBoards, activeBoardId, setActiveBoardId, createBoard, saveBoardStages, deleteBoard } = useBoards(companyId);
+    const { boards, setBoards, activeBoardId, setActiveBoardId, createBoard, saveBoardStages, deleteBoard, loading: boardsLoading } = useBoards(companyId);
 
     const activeBoard = useMemo(() => boards.find(b => b.id === activeBoardId) ?? boards[0], [boards, activeBoardId]);
     const columns = activeBoard?.columns ?? [];
@@ -724,7 +724,7 @@ export function useAppState() {
         activities, createActivity,
         tasks, createTask, createManyTasks, updateTaskInDb, deleteTaskInDb, deleteManyTasks,
         users, refetchUsers,
-        boards, setBoards, activeBoardId, setActiveBoardId, createBoard, saveBoardStages, deleteBoard,
+        boards, setBoards, activeBoardId, setActiveBoardId, createBoard, saveBoardStages, deleteBoard, boardsLoading,
         columns, setColumns, activeBoard,
         // data
         tags, createTag, updateTag: updateTagInDb, deleteTag,

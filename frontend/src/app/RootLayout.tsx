@@ -5,6 +5,8 @@ import { AnimatePresence } from 'framer-motion';
 import { useAppContext } from './AppContext';
 import { VIEW_PATHS } from './viewPaths';
 import { AppRouter } from '@/src/app/AppRouter';
+import { useAuth } from '@/src/features/auth/AuthContext';
+import PipelineOnboarding from '@/src/features/onboarding/PipelineOnboarding';
 
 // Layout components
 import Sidebar from '@/src/app/Sidebar';
@@ -25,7 +27,15 @@ import Notification from '@/src/features/notifications/Notification';
 
 export default function RootLayout() {
     const ctx = useAppContext();
+    const { currentUserRole, isRoleReady } = useAuth();
     const navigate = useNavigate();
+
+    // Seller sem pipeline → tela de onboarding gamificada
+    const showPipelineOnboarding =
+        isRoleReady &&
+        !ctx.boardsLoading &&
+        currentUserRole === 'seller' &&
+        (ctx.boards ?? []).length === 0;
 
     // Sync URL with activeView state — preserve sub-paths (e.g. /painel360/vendedores)
     useEffect(() => {
@@ -114,6 +124,32 @@ export default function RootLayout() {
         handleImportBoards: ctx.handleImportBoards,
         onUpdateUsers: ctx.onUpdateUsers,
     };
+
+    if (showPipelineOnboarding) {
+        return (
+            <>
+                <PipelineOnboarding
+                    onCreatePipeline={() => ctx.setCreateBoardModalOpen(true)}
+                    userName={ctx.localUser?.name}
+                />
+                {/* CreateBoardModal disponível mesmo na onboarding */}
+                <CreateBoardModal
+                    isOpen={ctx.isCreateBoardModalOpen}
+                    onClose={() => ctx.setCreateBoardModalOpen(false)}
+                    onCreateBoard={ctx.handleCreateBoard}
+                />
+                <AnimatePresence>
+                    {ctx.notification && (
+                        <Notification
+                            message={ctx.notification.message}
+                            type={ctx.notification.type}
+                            onClose={() => ctx.setNotification(null)}
+                        />
+                    )}
+                </AnimatePresence>
+            </>
+        );
+    }
 
     return (
         <div className="flex h-screen text-zinc-800 dark:text-gray-300">
