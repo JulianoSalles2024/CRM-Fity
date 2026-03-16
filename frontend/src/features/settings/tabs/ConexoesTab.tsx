@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  MessageCircle, Wifi, WifiOff, Loader2, RefreshCw, Plus,
+  MessageCircle, Wifi, WifiOff, Loader2, RefreshCw,
   QrCode, CheckCircle2, AlertCircle, Clock, ChevronDown, ChevronUp,
-  Shield, Zap, ExternalLink, Copy, Info, PhoneOff,
+  Shield, Zap, ExternalLink, Copy, Info, PhoneOff, Trash2,
 } from 'lucide-react';
 import { useChannelConnections, ChannelConnection } from '@/src/hooks/useChannelConnections';
 import { useAuth } from '@/src/features/auth/AuthContext';
@@ -54,9 +54,10 @@ interface ConnCardProps {
   onHealthCheck: (id: string) => void;
   checking: boolean;
   showNotification: (msg: string, type: 'success' | 'error' | 'info') => void;
+  onDisconnect?: () => void;
 }
 
-const ConnCard: React.FC<ConnCardProps> = ({ conn, onHealthCheck, checking, showNotification }) => {
+const ConnCard: React.FC<ConnCardProps> = ({ conn, onHealthCheck, checking, showNotification, onDisconnect }) => {
   const [expanded, setExpanded] = useState(false);
   const channelCls = CHANNEL_COLOR[conn.channel] ?? 'text-slate-400 bg-slate-500/10 border-slate-500/20';
   const evoState: EvoState = checking ? 'checking' : (conn.evolutionState as EvoState) ?? 'unknown';
@@ -112,6 +113,17 @@ const ConnCard: React.FC<ConnCardProps> = ({ conn, onHealthCheck, checking, show
             >
               <RefreshCw className={`w-3 h-3 ${checking ? 'animate-spin' : ''}`} />
               Verificar
+            </button>
+          )}
+
+          {/* Disconnect individual */}
+          {conn.channel === 'whatsapp' && onDisconnect && (
+            <button
+              onClick={onDisconnect}
+              title="Desconectar esta instância"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 transition-all"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           )}
 
@@ -216,9 +228,20 @@ interface ConexoesTabProps {
 }
 
 const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConnect }) => {
-  const { companyId, user } = useAuth();
-  const { connections, loading, refetch, updateLocalState } = useChannelConnections(companyId);
-  const myConnectionExists = connections.some((c: any) => c.owner_id === user?.id);
+  const { companyId, user, currentUserRole } = useAuth();
+  const { connections, loading, refetch, updateLocalState } = useChannelConnections(
+    companyId,
+    { userId: user?.id, role: currentUserRole ?? undefined }
+  );
+
+  // Identifica se uma conexão pertence ao usuário logado.
+  // Fallback por external_id caso owner_id ainda seja null (migration 057 pendente).
+  const myExtPrefix = user?.id ? `ns_${user.id.replace(/-/g, '').slice(0, 8)}` : null;
+  const isMyConnection = (c: ChannelConnection) =>
+    (c.owner_id && c.owner_id === user?.id) ||
+    (myExtPrefix && c.external_id === myExtPrefix);
+
+  const myConnectionExists = connections.some(isMyConnection);
   const [checkingIds, setCheckingIds] = useState<Set<string>>(new Set());
   const [lastCheck, setLastCheck] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -251,6 +274,25 @@ const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConne
       setCheckingIds(new Set());
     }
   }, [connections, updateLocalState, showNotification]);
+
+  const handleDisconnectById = useCallback(async (connectionId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/channels/disconnect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({ connectionId }),
+      });
+      if (!res.ok) throw new Error('Falha ao desconectar');
+      showNotification('Conexão removida com sucesso.', 'success');
+      refetch();
+    } catch {
+      showNotification('Erro ao desconectar. Tente novamente.', 'error');
+    }
+  }, [showNotification, refetch]);
 
   const handleDisconnect = useCallback(async () => {
     setDisconnecting(true);
@@ -378,6 +420,11 @@ const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConne
               onHealthCheck={handleHealthCheck}
               checking={checkingIds.has(conn.id)}
               showNotification={showNotification}
+              onDisconnect={
+                currentUserRole === 'admin' || isMyConnection(conn)
+                  ? () => handleDisconnectById(conn.id)
+                  : undefined
+              }
             />
           ))}
         </AnimatePresence>

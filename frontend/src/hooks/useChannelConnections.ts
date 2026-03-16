@@ -4,6 +4,7 @@ import { supabase } from '@/src/lib/supabase';
 export interface ChannelConnection {
   id: string;
   company_id: string;
+  owner_id: string | null;
   channel: 'whatsapp' | 'email' | 'instagram' | 'telegram' | 'webchat';
   name: string;
   status: 'active' | 'inactive' | 'error';
@@ -17,18 +18,27 @@ export interface ChannelConnection {
   lastHealthCheck?: string;
 }
 
-export function useChannelConnections(companyId: string | null) {
+export function useChannelConnections(
+  companyId: string | null,
+  options?: { userId?: string; role?: string }
+) {
   const [connections, setConnections] = useState<ChannelConnection[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
     if (!companyId) { setConnections([]); setLoading(false); return; }
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from('channel_connections')
       .select('*')
-      .eq('company_id', companyId)
-      .order('created_at', { ascending: true });
+      .eq('company_id', companyId);
+
+    // Sellers veem apenas a própria conexão
+    if (options?.role && options.role !== 'admin' && options?.userId) {
+      query = query.eq('owner_id', options.userId);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: true });
 
     if (!error && data) {
       setConnections(data as ChannelConnection[]);

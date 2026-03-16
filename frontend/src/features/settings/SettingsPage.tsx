@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 const SETTINGS_TAB_PATHS: Record<string, string> = {
     'Pipelines':               '/configuracoes/pipelines',
     'Estágios':                '/configuracoes/estagios',
-    'Automações':              '/configuracoes/automacoes',
+    'Follow Up':               '/configuracoes/automacoes',
     'Equipe':                  '/configuracoes/equipe',
     'Inteligência Artificial': '/configuracoes/inteligencia-artificial',
     'Agente de IA':            '/configuracoes/agente-ia',
@@ -433,7 +433,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             return [
                 { name: 'Pipelines',  icon: Columns },
                 { name: 'Estágios',   icon: Settings },
-                { name: 'Automações', icon: Zap },
+                { name: 'Integrações', icon: Webhook },
+                { name: 'Follow Up', icon: Zap },
             ];
         }
 
@@ -445,7 +446,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             ...(currentPermissions.canManageCredentials ? [{ name: 'Credenciais de IA', icon: Key }] : []),
            // ...(currentPermissions.canManagePreferences ? [{ name: 'Preferências', icon: SlidersHorizontal }] : []),
             ...(currentPermissions.canManageIntegrations ? [{ name: 'Integrações', icon: Webhook }] : []),
-            { name: 'Automações', icon: Zap },
+            { name: 'Follow Up', icon: Zap },
            // { name: 'Notificações', icon: Bell },
         ];
     }, [currentPermissions]);
@@ -505,7 +506,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 {activeTab === 'Credenciais de IA' && <AIProvidersPage />}
               {/*  {activeTab === 'Preferências' && <PlaceholderTab title="Preferências" />} */}
                 {activeTab === 'Integrações' && <IntegrationsPage showNotification={() => { }} />}
-                {activeTab === 'Automações' && <SettingsInactiveActions />}
+                {activeTab === 'Follow Up' && <SettingsInactiveActions />}
               {/*  {activeTab === 'Notificações' && <NotificationSettings />} */}
             </div>
         </div>
