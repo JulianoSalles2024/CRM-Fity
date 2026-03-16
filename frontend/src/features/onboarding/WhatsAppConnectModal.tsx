@@ -305,9 +305,13 @@ const WhatsAppConnectModal: React.FC<Props> = ({ onClose, onConnected, userName 
                 <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20">
                   <AlertCircle className="w-8 h-8 text-red-400" />
                 </div>
-                <div className="text-center">
+                <div className="text-center space-y-2 w-full">
                   <p className="text-white font-medium">Não foi possível conectar</p>
-                  <p className="text-xs text-slate-500 mt-1 max-w-xs">{errorMsg}</p>
+                  {errorMsg && (
+                    <div className="mx-auto max-w-xs px-3 py-2 rounded-lg bg-red-500/8 border border-red-500/15 text-left">
+                      <p className="text-xs text-red-300 leading-relaxed break-words">{errorMsg}</p>
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={startConnect}

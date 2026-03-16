@@ -43,9 +43,12 @@ async function handleConnect(req: any, res: any) {
       .maybeSingle();
 
     if (existing) {
-      const qr = await fetchQR(evolutionUrl, apiKey, instanceName);
-      return res.status(200).json({ instanceName, ...qr, alreadyRegistered: true });
+      // Já registrado no banco — busca QR fresco para reconexão
+      const qr = await fetchQRWithRetry(evolutionUrl, apiKey, existing.external_id ?? instanceName);
+      return res.status(200).json({ instanceName: existing.external_id ?? instanceName, ...qr, alreadyRegistered: true });
     }
+
+    console.log(`[connect] Criando instância: ${instanceName} | webhook: ${n8nWebhook || '(vazio)'}`);
 
     const createRes = await fetch(`${evolutionUrl}/instance/create`, {
       method: 'POST',
@@ -54,7 +57,7 @@ async function handleConnect(req: any, res: any) {
         instanceName,
         integration: 'WHATSAPP-BAILEYS',
         qrcode: true,
-        webhook: n8nWebhook,
+        webhook: n8nWebhook || undefined,
         webhook_by_events: false,
         webhook_base64: true,
         events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED', 'SEND_MESSAGE'],
@@ -62,32 +65,55 @@ async function handleConnect(req: any, res: any) {
       signal: AbortSignal.timeout(12000),
     });
 
+    const createBody = await createRes.json().catch(() => ({}));
+    console.log(`[connect] Evolution create status: ${createRes.status}`, JSON.stringify(createBody).slice(0, 300));
+
     let base64: string | null = null;
     let code: string | null   = null;
 
     if (createRes.ok) {
-      const created = await createRes.json().catch(() => ({}));
-      base64 = created?.qrcode?.base64 ?? created?.base64 ?? null;
-      code   = created?.qrcode?.code   ?? created?.code   ?? null;
+      base64 = createBody?.qrcode?.base64 ?? createBody?.base64 ?? null;
+      code   = createBody?.qrcode?.code   ?? createBody?.code   ?? null;
+    } else if (createRes.status === 403 || createRes.status === 401) {
+      // API Key inválida ou sem permissão — falha explícita
+      throw new AppError(502, `Evolution API rejeitou a requisição (${createRes.status}): verifique a EVOLUTION_API_KEY.`);
     }
+    // Status 4xx diferente de 401/403 geralmente significa instância já existe — tenta QR direto
+
     if (!base64) {
-      const qr = await fetchQR(evolutionUrl, apiKey, instanceName);
+      // Aguarda até 2s para a instância ficar pronta antes de buscar QR
+      await new Promise(r => setTimeout(r, 1500));
+      const qr = await fetchQRWithRetry(evolutionUrl, apiKey, instanceName);
       base64 = qr.base64;
       code   = qr.code;
+    }
+
+    if (!base64) {
+      throw new AppError(502, 'QR code não foi gerado pela Evolution API. Verifique se a instância está ativa no painel.');
     }
 
     return res.status(200).json({ instanceName, base64, code, alreadyRegistered: false });
   } catch (err) { return apiError(res, err); }
 }
 
-async function fetchQR(evolutionUrl: string, apiKey: string, instanceName: string) {
-  try {
-    const r = await fetch(`${evolutionUrl}/instance/connect/${encodeURIComponent(instanceName)}`,
-      { headers: { apikey: apiKey }, signal: AbortSignal.timeout(8000) });
-    if (!r.ok) return { base64: null, code: null };
-    const d = await r.json();
-    return { base64: d?.base64 ?? d?.qrcode?.base64 ?? null, code: d?.code ?? d?.qrcode?.code ?? null };
-  } catch { return { base64: null, code: null }; }
+async function fetchQRWithRetry(evolutionUrl: string, apiKey: string, instanceName: string, attempts = 3) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const r = await fetch(`${evolutionUrl}/instance/connect/${encodeURIComponent(instanceName)}`,
+        { headers: { apikey: apiKey }, signal: AbortSignal.timeout(8000) });
+      if (r.ok) {
+        const d = await r.json();
+        const base64 = d?.base64 ?? d?.qrcode?.base64 ?? null;
+        const code   = d?.code   ?? d?.qrcode?.code   ?? null;
+        console.log(`[fetchQR] attempt ${i + 1} — base64: ${base64 ? 'ok' : 'null'}`);
+        if (base64) return { base64, code };
+      }
+    } catch (e: any) {
+      console.log(`[fetchQR] attempt ${i + 1} error: ${e?.message}`);
+    }
+    if (i < attempts - 1) await new Promise(r => setTimeout(r, 1500));
+  }
+  return { base64: null, code: null };
 }
 
 /* ── instance-state ──────────────────────────────────────────────────── */
