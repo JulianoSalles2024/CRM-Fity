@@ -679,7 +679,7 @@
                                          "url":  "https://n8n.julianosalles.com.br/webhook/ai-agent",
                                          "sendBody":  true,
                                          "specifyBody":  "json",
-                                         "jsonBody":  "{\n  \"conversation_id\": \"{{ $(\u0027HTTP - RPC resolve_or_create_conversation\u0027).first().json.conversation_id }}\",\n  \"company_id\":      \"{{ $(\u0027Code - Normalize to Canonical Event\u0027).first().json.company_id }}\",\n  \"content_text\":    \"{{ $(\u0027Code - Normalize to Canonical Event\u0027).first().json.content_text }}\",\n  \"content_type\":    \"{{ $(\u0027Code - Normalize to Canonical Event\u0027).first().json.content_type }}\",\n  \"phone\":           \"{{ $(\u0027Code - Normalize to Canonical Event\u0027).first().json.contact_identifier }}\"\n}",
+                                         "jsonBody":  "={\n  \"conversation_id\": \"{{ $(\u0027HTTP - RPC resolve_or_create_conversation\u0027).first().json.conversation_id }}\",\n  \"company_id\":      \"{{ $(\u0027Code - Normalize to Canonical Event\u0027).first().json.company_id }}\",\n  \"content_text\":    \"{{ $(\u0027Code - Normalize to Canonical Event\u0027).first().json.content_text }}\",\n  \"content_type\":    \"{{ $(\u0027Code - Normalize to Canonical Event\u0027).first().json.content_type }}\",\n  \"phone\":           \"{{ $(\u0027Code - Normalize to Canonical Event\u0027).first().json.contact_identifier }}\"\n}",
                                          "options":  {
                                                          "timeout":  3000
                                                      }
