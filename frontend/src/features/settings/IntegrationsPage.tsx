@@ -2,28 +2,15 @@ import React, { useState, useEffect } from 'react';
 import {
     ToyBrick, KeyRound, Webhook as WebhookIcon, FileCode, Server, Copy, BookOpen, Settings, Eye, EyeOff, RefreshCw,
     Lock, ShieldCheck, Gauge, GitBranch, Download, AlertTriangle, ChevronRight, Check, List, FileJson2, Database, BarChartHorizontal, Plus, MoreVertical, Trash2, ChevronLeft, LogIn, LogOut, HelpCircle, ChevronDown,
-    Wifi, Activity, Cpu, Box, ArrowRight, Layers, Globe, Zap,
+    Wifi, Activity, Cpu, Box, ArrowRight, Layers, Globe, Zap, Loader2, ToggleLeft, ToggleRight,
 } from 'lucide-react';
 import ConexoesTab from './tabs/ConexoesTab';
 import EventosTab from './tabs/EventosTab';
 import { AnimatePresence, motion } from 'framer-motion';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
-
-// --- Types ---
-interface ApiKey {
-  id: string;
-  name: string;
-  key: string;
-  createdAt: string;
-  lastUsed: string | null;
-}
-
-interface OutgoingWebhook {
-  id: string;
-  url: string;
-  events: string[];
-  createdAt: string;
-}
+import { useAuth } from '@/src/features/auth/AuthContext';
+import { useApiKeys, ApiKey } from './hooks/useApiKeys';
+import { useOutgoingWebhooks, OutgoingWebhook } from './hooks/useOutgoingWebhooks';
 
 
 // --- Reusable Components ---
@@ -123,21 +110,21 @@ const CreateApiKeyModal: React.FC<{ onClose: () => void, onCreate: (name: string
     );
 };
 
-const ShowNewApiKeyModal: React.FC<{ apiKey: ApiKey, onClose: () => void, onCopy: () => void }> = ({ apiKey, onClose, onCopy }) => {
+const ShowNewApiKeyModal: React.FC<{ plainKey: string; keyName: string; onClose: () => void; onCopy: () => void }> = ({ plainKey, keyName, onClose, onCopy }) => {
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center backdrop-blur-sm" onClick={onClose}>
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
                 className="bg-zinc-800 rounded-lg shadow-xl w-full max-w-lg border border-zinc-700" onClick={e => e.stopPropagation()}>
                 <div className="p-6">
                     <h2 className="text-xl font-bold text-white">Chave de API Criada</h2>
-                    <p className="text-sm text-zinc-400 mt-1">Sua nova chave para "{apiKey.name}" foi gerada. Copie-a e guarde em um local seguro.</p>
+                    <p className="text-sm text-zinc-400 mt-1">Sua nova chave para "{keyName}" foi gerada. Copie-a e guarde em um local seguro.</p>
                     <div className="p-3 my-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg text-sm text-yellow-300 flex items-start gap-3">
                         <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
                         <span>Esta chave secreta <strong className="text-yellow-200">não será exibida novamente</strong>.</span>
                     </div>
                     <div className="flex items-center gap-2 p-3 bg-zinc-900 border border-zinc-700 rounded-md font-mono text-blue-300">
-                        <span className="flex-1 truncate">{apiKey.key}</span>
-                        <button onClick={onCopy} className="p-2 text-zinc-300 hover:text-white hover:bg-zinc-700 rounded-md"><Copy className="w-4 h-4"/></button>
+                        <span className="flex-1 truncate text-sm">{plainKey}</span>
+                        <button onClick={onCopy} className="p-2 text-zinc-300 hover:text-white hover:bg-zinc-700 rounded-md shrink-0"><Copy className="w-4 h-4"/></button>
                     </div>
                 </div>
                 <div className="p-4 bg-zinc-900/30 border-t border-zinc-700 flex justify-end">
@@ -150,37 +137,38 @@ const ShowNewApiKeyModal: React.FC<{ apiKey: ApiKey, onClose: () => void, onCopy
 
 
 const ApiKeysTab: React.FC<{ showNotification: (msg: string, type: 'success' | 'error' | 'info') => void }> = ({ showNotification }) => {
-    const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+    const { companyId } = useAuth();
+    const { keys, loading, create, revoke } = useApiKeys(companyId);
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
-    const [newlyCreatedKey, setNewlyCreatedKey] = useState<ApiKey | null>(null);
+    const [newKeyData, setNewKeyData] = useState<{ plainKey: string; keyName: string } | null>(null);
     const [keyToRevoke, setKeyToRevoke] = useState<ApiKey | null>(null);
-    const [visibleKeyId, setVisibleKeyId] = useState<string | null>(null);
+    const [creating, setCreating] = useState(false);
 
     const handleCopy = (text: string, subject: string) => {
         navigator.clipboard.writeText(text);
         showNotification(`${subject} copiado!`, 'success');
     };
 
-    const handleCreateKey = (name: string) => {
-        const newKey: ApiKey = {
-            id: `key_${Date.now()}`,
-            name,
-            key: `sk_live_${Math.random().toString(36).substring(2, 22)}${Math.random().toString(36).substring(2, 22)}`,
-            createdAt: new Date().toISOString(),
-            lastUsed: null,
-        };
-        setApiKeys(prev => [...prev, newKey]);
-        setNewlyCreatedKey(newKey);
-        setCreateModalOpen(false);
+    const handleCreateKey = async (name: string) => {
+        setCreating(true);
+        try {
+            const plainKey = await create(name);
+            setNewKeyData({ plainKey, keyName: name });
+            setCreateModalOpen(false);
+        } catch {
+            showNotification('Erro ao criar chave. Tente novamente.', 'error');
+        } finally {
+            setCreating(false);
+        }
     };
 
-    const handleRevokeKey = () => {
+    const handleRevokeKey = async () => {
         if (!keyToRevoke) return;
-        setApiKeys(prev => prev.filter(k => k.id !== keyToRevoke.id));
+        await revoke(keyToRevoke.id);
         setKeyToRevoke(null);
         showNotification(`Chave "${keyToRevoke.name}" revogada com sucesso.`, 'success');
     };
-    
+
     const formatDate = (dateString: string | null) => {
         if (!dateString) return 'Nunca';
         return new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -190,26 +178,28 @@ const ApiKeysTab: React.FC<{ showNotification: (msg: string, type: 'success' | '
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <InfoCard icon={Lock} title="Bearer Authentication" description="Formato padrão da indústria para autenticação segura e stateless." />
-                <InfoCard icon={ShieldCheck} title="SHA-256 Hash" description="Armazenamento seguro no banco de dados para proteger suas chaves." />
+                <InfoCard icon={ShieldCheck} title="SHA-256 Hash" description="Armazenamento seguro: apenas o hash da chave fica no banco." />
                 <InfoCard icon={Gauge} title="Rate Limiting" description="100 requisições/minuto para garantir a estabilidade da plataforma." />
             </div>
             <div className="p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300">
                 <strong className="text-white">Autenticação Bearer:</strong> Use suas chaves no formato <code className="bg-zinc-900 px-1 py-0.5 rounded-md text-blue-300">Authorization: Bearer sk_live_...</code>
             </div>
-             <div className="p-3 bg-yellow-900/30 border border-yellow-700/50 rounded-lg text-sm text-yellow-300 flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                <div>
-                    <strong className="text-yellow-200">Migrando de X-API-Key?</strong> O header <code className="bg-yellow-900/50 px-1 py-0.5 rounded-md">X-API-KEY</code> foi descontinuado. Use apenas <code className="bg-yellow-900/50 px-1 py-0.5 rounded-md">Authorization: Bearer</code> em todas as suas integrações.
-                </div>
-            </div>
             <Section icon={KeyRound} title="Gerenciar API Keys" actions={
-                <button onClick={() => setCreateModalOpen(true)} className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
+                <button
+                    onClick={() => setCreateModalOpen(true)}
+                    disabled={creating}
+                    className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60"
+                >
                     <Plus className="w-4 h-4" /> Nova Chave
                 </button>
             }>
                 <p className="text-sm text-zinc-400 mb-4">Gere e revogue chaves de autenticação para suas integrações. As chaves funcionam em todos os endpoints (API REST, Webhooks, MCP).</p>
 
-                {apiKeys.length === 0 ? (
+                {loading ? (
+                    <div className="flex justify-center py-10">
+                        <Loader2 className="w-6 h-6 text-zinc-500 animate-spin" />
+                    </div>
+                ) : keys.length === 0 ? (
                     <div className="text-center py-10">
                         <KeyRound className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
                         <h3 className="font-semibold text-white">Nenhuma API Key gerada ainda</h3>
@@ -217,28 +207,25 @@ const ApiKeysTab: React.FC<{ showNotification: (msg: string, type: 'success' | '
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {apiKeys.map(apiKey => (
-                             <div key={apiKey.id} className="bg-zinc-900/50 p-4 rounded-lg border border-zinc-700 flex flex-col md:flex-row md:items-center gap-4">
+                        {keys.map(apiKey => (
+                            <div key={apiKey.id} className="bg-zinc-900/50 p-4 rounded-lg border border-zinc-700 flex flex-col md:flex-row md:items-center gap-4">
                                 <div className="flex-1">
                                     <p className="font-semibold text-white">{apiKey.name}</p>
                                     <div className="flex items-center gap-2 mt-1 font-mono text-sm text-zinc-400">
-                                        {visibleKeyId === apiKey.id ? apiKey.key : `sk_live_...${apiKey.key.substring(apiKey.key.length - 4)}`}
-                                        <button onClick={() => setVisibleKeyId(visibleKeyId === apiKey.id ? null : apiKey.id)} className="p-1 hover:text-white">
-                                            {visibleKeyId === apiKey.id ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
-                                        </button>
-                                        <button onClick={() => handleCopy(apiKey.key, 'Chave API')} className="p-1 hover:text-white">
+                                        <span>{apiKey.key_preview}</span>
+                                        <button onClick={() => handleCopy(apiKey.key_preview, 'Preview da chave')} className="p-1 hover:text-white">
                                             <Copy className="w-4 h-4"/>
                                         </button>
                                     </div>
                                 </div>
                                 <div className="text-xs text-zinc-500 flex-1 md:text-center">
-                                    <span className="font-semibold text-zinc-400">Criada em:</span> {formatDate(apiKey.createdAt)}
+                                    <span className="font-semibold text-zinc-400">Criada em:</span> {formatDate(apiKey.created_at)}
                                 </div>
                                 <div className="text-xs text-zinc-500 flex-1 md:text-center">
-                                     <span className="font-semibold text-zinc-400">Ãšltimo uso:</span> {formatDate(apiKey.lastUsed)}
+                                    <span className="font-semibold text-zinc-400">Último uso:</span> {formatDate(apiKey.last_used_at)}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                     <button onClick={() => setKeyToRevoke(apiKey)} className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 px-3 py-1.5 rounded-md hover:bg-red-900/30 transition-colors">
+                                    <button onClick={() => setKeyToRevoke(apiKey)} className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 px-3 py-1.5 rounded-md hover:bg-red-900/30 transition-colors">
                                         <Trash2 className="w-4 h-4"/> Revogar
                                     </button>
                                 </div>
@@ -247,10 +234,17 @@ const ApiKeysTab: React.FC<{ showNotification: (msg: string, type: 'success' | '
                     </div>
                 )}
             </Section>
-            
+
             <AnimatePresence>
                 {isCreateModalOpen && <CreateApiKeyModal onClose={() => setCreateModalOpen(false)} onCreate={handleCreateKey} />}
-                {newlyCreatedKey && <ShowNewApiKeyModal apiKey={newlyCreatedKey} onClose={() => setNewlyCreatedKey(null)} onCopy={() => handleCopy(newlyCreatedKey.key, 'Nova chave API')} />}
+                {newKeyData && (
+                    <ShowNewApiKeyModal
+                        plainKey={newKeyData.plainKey}
+                        keyName={newKeyData.keyName}
+                        onClose={() => setNewKeyData(null)}
+                        onCopy={() => handleCopy(newKeyData.plainKey, 'Chave API')}
+                    />
+                )}
                 {keyToRevoke && (
                     <ConfirmDeleteModal
                         onClose={() => setKeyToRevoke(null)} onConfirm={handleRevokeKey}
@@ -305,15 +299,16 @@ const AccordionItem: React.FC<{
 };
 
 const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 'error' | 'info') => void }> = ({ showNotification }) => {
+    const { companyId } = useAuth();
+    const { webhooks, loading: whLoading, add: addWebhook, remove: removeWebhook } = useOutgoingWebhooks(companyId);
     const [activeSubTab, setActiveSubTab] = useState('Entrada');
     const [openAccordion, setOpenAccordion] = useState<string | null>(null);
     const webhookUrl = 'https://lxcjwmvclbfqizwtxpxy.supabase.co/functions/v1/webhook-receiver';
-    
-    // State for Outgoing Webhooks
-    const [outgoingWebhooks, setOutgoingWebhooks] = useState<OutgoingWebhook[]>([]);
-    const [newWebhookUrl, setNewWebhookUrl] = useState('https://seu-servidor.com/webhook');
-    
-    const availableEvents = {
+
+    const [newWebhookUrl, setNewWebhookUrl] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    const availableEvents: Record<string, string> = {
         'lead.created': 'Lead Criado',
         'lead.updated': 'Lead Atualizado',
         'lead.stage_changed': 'Lead Mudou de Estágio',
@@ -321,11 +316,11 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
         'contact.created': 'Cliente Criado',
         'activity.completed': 'Atividade Concluída',
     };
-    
+
     const [selectedEvents, setSelectedEvents] = useState<Record<string, boolean>>(
         Object.keys(availableEvents).reduce((acc, key) => ({ ...acc, [key]: false }), {})
     );
-    
+
     const [webhookToRevoke, setWebhookToRevoke] = useState<OutgoingWebhook | null>(null);
 
     const handleCopy = (text: string, subject: string) => {
@@ -336,8 +331,8 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
     const handleEventToggle = (eventKey: string) => {
         setSelectedEvents(prev => ({...prev, [eventKey]: !prev[eventKey]}));
     };
-    
-    const handleAddWebhook = (e: React.FormEvent) => {
+
+    const handleAddWebhook = async (e: React.FormEvent) => {
         e.preventDefault();
         const activeEvents = Object.keys(selectedEvents).filter(key => selectedEvents[key]);
 
@@ -345,9 +340,7 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
             showNotification('Por favor, insira uma URL válida.', 'error');
             return;
         }
-        try {
-            new URL(newWebhookUrl);
-        } catch (_) {
+        try { new URL(newWebhookUrl); } catch {
             showNotification('A URL fornecida é inválida.', 'error');
             return;
         }
@@ -356,24 +349,24 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
             return;
         }
 
-        const newWebhook: OutgoingWebhook = {
-            id: `wh_${Date.now()}`,
-            url: newWebhookUrl,
-            events: activeEvents,
-            createdAt: new Date().toISOString(),
-        };
-
-        setOutgoingWebhooks(prev => [...prev, newWebhook]);
-        setNewWebhookUrl('https://seu-servidor.com/webhook');
-        setSelectedEvents(Object.keys(selectedEvents).reduce((acc, key) => ({...acc, [key]: false}), {}));
-        showNotification('Webhook adicionado com sucesso!', 'success');
+        setSaving(true);
+        try {
+            await addWebhook(newWebhookUrl.trim(), activeEvents);
+            setNewWebhookUrl('');
+            setSelectedEvents(Object.keys(availableEvents).reduce((acc, key) => ({...acc, [key]: false}), {}));
+            showNotification('Webhook adicionado com sucesso!', 'success');
+        } catch {
+            showNotification('Erro ao salvar webhook. Tente novamente.', 'error');
+        } finally {
+            setSaving(false);
+        }
     };
-    
-    const handleRevokeWebhook = () => {
+
+    const handleRevokeWebhook = async () => {
         if (!webhookToRevoke) return;
-        setOutgoingWebhooks(prev => prev.filter(wh => wh.id !== webhookToRevoke.id));
+        await removeWebhook(webhookToRevoke.id);
         setWebhookToRevoke(null);
-        showNotification(`Webhook revogado com sucesso.`, 'success');
+        showNotification('Webhook removido com sucesso.', 'success');
     };
 
     const curlExample = `curl -X POST https://.../v1/webhook-receiver \\
@@ -466,33 +459,44 @@ const WebhooksTab: React.FC<{ showNotification: (msg: string, type: 'success' | 
                                     ))}
                                 </div>
                             </div>
-                             <button type="submit" className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
-                                <Plus className="w-4 h-4" /> Adicionar Webhook
+                             <button type="submit" disabled={saving} className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60">
+                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                                {saving ? 'Salvando...' : 'Adicionar Webhook'}
                             </button>
                         </form>
                     </Section>
 
                     <Section icon={Settings} title="Webhooks Configurados">
-                        {outgoingWebhooks.length === 0 ? (
-                             <div className="text-center py-10">
+                        {whLoading ? (
+                            <div className="flex justify-center py-10">
+                                <Loader2 className="w-6 h-6 text-zinc-500 animate-spin" />
+                            </div>
+                        ) : webhooks.length === 0 ? (
+                            <div className="text-center py-10">
                                 <WebhookIcon className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
                                 <h3 className="font-semibold text-white">Nenhum webhook configurado ainda</h3>
                                 <p className="text-sm text-zinc-500 mt-1">Adicione um webhook para começar a receber eventos.</p>
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                {outgoingWebhooks.map(wh => (
+                                {webhooks.map(wh => (
                                     <div key={wh.id} className="bg-zinc-900/50 p-4 rounded-lg border border-zinc-700 flex flex-col md:flex-row md:items-center gap-4">
-                                        <div className="flex-1">
-                                            <p className="font-semibold text-white truncate font-mono text-sm">{wh.url}</p>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`w-2 h-2 rounded-full shrink-0 ${wh.is_active ? 'bg-emerald-400' : 'bg-zinc-500'}`} />
+                                                <p className="font-semibold text-white truncate font-mono text-sm">{wh.url}</p>
+                                            </div>
                                             <div className="flex flex-wrap gap-2 mt-2">
                                                 {wh.events.map(event => (
-                                                    <span key={event} className="px-2 py-0.5 text-xs font-medium rounded-full bg-zinc-700 text-zinc-300">{availableEvents[event as keyof typeof availableEvents] || event}</span>
+                                                    <span key={event} className="px-2 py-0.5 text-xs font-medium rounded-full bg-zinc-700 text-zinc-300">{availableEvents[event] || event}</span>
                                                 ))}
                                             </div>
                                         </div>
-                                         <button onClick={() => setWebhookToRevoke(wh)} className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 px-3 py-1.5 rounded-md hover:bg-red-900/30 transition-colors self-start md:self-center">
-                                            <Trash2 className="w-4 h-4"/> Revogar
+                                        <div className="text-xs text-zinc-600 shrink-0">
+                                            {new Date(wh.created_at).toLocaleDateString('pt-BR')}
+                                        </div>
+                                        <button onClick={() => setWebhookToRevoke(wh)} className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 px-3 py-1.5 rounded-md hover:bg-red-900/30 transition-colors self-start md:self-center shrink-0">
+                                            <Trash2 className="w-4 h-4"/> Remover
                                         </button>
                                     </div>
                                 ))}
