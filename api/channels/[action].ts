@@ -146,6 +146,7 @@ async function handleInstanceState(req: any, res: any) {
     const stateData = await stateRes.json();
     const state = stateData?.instance?.state ?? stateData?.state ?? 'unknown';
 
+    let code: string | null   = null;
     let base64: string | null = null;
     if (state !== 'open') {
       try {
@@ -153,12 +154,13 @@ async function handleInstanceState(req: any, res: any) {
           { headers: { apikey: apiKey }, signal: AbortSignal.timeout(6000) });
         if (qrRes.ok) {
           const qrData = await qrRes.json();
+          code   = qrData?.code   ?? qrData?.qrcode?.code   ?? null;
           base64 = qrData?.base64 ?? qrData?.qrcode?.base64 ?? null;
         }
       } catch { /* ignora */ }
     }
 
-    return res.status(200).json({ state, base64 });
+    return res.status(200).json({ state, code, base64 });
   } catch (err) { return apiError(res, err); }
 }
 
