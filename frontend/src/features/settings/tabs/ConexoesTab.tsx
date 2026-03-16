@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageCircle, Wifi, WifiOff, Loader2, RefreshCw, Plus,
@@ -248,6 +248,16 @@ const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConne
       setCheckingIds(new Set());
     }
   }, [connections, updateLocalState, showNotification]);
+
+  const autoCheckedRef = useRef(false);
+
+  // Auto-verifica ao montar, uma única vez quando as conexões carregam
+  useEffect(() => {
+    if (!loading && connections.length > 0 && !autoCheckedRef.current) {
+      autoCheckedRef.current = true;
+      handleHealthCheck();
+    }
+  }, [loading, connections.length, handleHealthCheck]);
 
   if (loading) {
     return (
