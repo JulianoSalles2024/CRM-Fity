@@ -170,18 +170,20 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                 />
                             ))}
                         </div>
-                        <DragOverlay>
+                        <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)' }}>
                             {activeLead ? (
-                                <Card 
-                                    lead={activeLead} 
-                                    displaySettings={cardDisplaySettings}
-                                    users={users}
-                                    tasks={tasks}
-                                    onSelect={() => {}}
-                                    isSelected={false}
-                                    minimizedLeads={minimizedLeads}
-                                    onToggleLeadMinimize={onToggleLeadMinimize}
-                                />
+                                <div className="rotate-[1.5deg] scale-[1.03] drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
+                                    <Card
+                                        lead={activeLead}
+                                        displaySettings={cardDisplaySettings}
+                                        users={users}
+                                        tasks={tasks}
+                                        onSelect={() => {}}
+                                        isSelected={false}
+                                        minimizedLeads={minimizedLeads}
+                                        onToggleLeadMinimize={onToggleLeadMinimize}
+                                    />
+                                </div>
                             ) : null}
                         </DragOverlay>
                     </DndContext>
@@ -189,48 +191,73 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     <FlatCard className="overflow-hidden">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-slate-950 border-b border-slate-800">
-                                    <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Lead</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Empresa</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Estágio</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Valor</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Responsável</th>
+                                <tr className="bg-[#050c18]/95 border-b border-white/5">
+                                    <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Lead</th>
+                                    <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Empresa</th>
+                                    <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Estágio</th>
+                                    <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Valor</th>
+                                    <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Responsável</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-800">
-                                {displayLeads.map(lead => (
-                                    <tr 
-                                        key={lead.id} 
-                                        onClick={() => onSelectLead(lead)}
-                                        className={`hover:bg-slate-800/50 cursor-pointer transition-colors ${selectedLeadId === lead.id ? 'bg-blue-900/20' : ''}`}
-                                    >
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-3">
-                                                <img src={lead.avatarUrl} alt="" className="w-8 h-8 rounded-full" />
-                                                <span className="text-sm font-medium text-white">{lead.name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-slate-400">{lead.company}</td>
-                                        <td className="px-4 py-3">
-                                            <span className="px-2 py-1 rounded text-[10px] font-bold uppercase bg-slate-800 text-slate-300">
-                                                {columns.find(c => c.id === lead.columnId)?.title}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-white">
-                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(lead.value)}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white">
-                                                    {users.find(u => u.id === lead.assignedTo)?.name.substring(0, 2).toUpperCase() || '??'}
+                            <tbody className="divide-y divide-white/[0.04]">
+                                {displayLeads.map(lead => {
+                                    const col = columns.find(c => c.id === lead.columnId);
+                                    return (
+                                        <tr
+                                            key={lead.id}
+                                            onClick={() => onSelectLead(lead)}
+                                            className={`group hover:bg-white/[0.03] cursor-pointer transition-colors border-l-2 ${
+                                                selectedLeadId === lead.id
+                                                    ? 'bg-blue-900/10 border-l-blue-500/60'
+                                                    : 'border-l-transparent hover:border-l-blue-500/30'
+                                            }`}
+                                        >
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div
+                                                        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ring-1 ring-white/10 flex-shrink-0"
+                                                        style={{ background: 'linear-gradient(135deg, #1e40af, #2563eb)' }}
+                                                    >
+                                                        {(lead.name ?? '?').charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-sm font-semibold text-white">{lead.name}</span>
+                                                        {lead.company && <div className="text-xs text-slate-500 mt-0.5">{lead.company}</div>}
+                                                    </div>
                                                 </div>
-                                                <span className="text-sm text-slate-400">
-                                                    {users.find(u => u.id === lead.assignedTo)?.name || 'Não atribuído'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-slate-400">{lead.company || '—'}</td>
+                                            <td className="px-4 py-3">
+                                                <span
+                                                    className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border"
+                                                    style={{
+                                                        color: col?.color ?? '#94a3b8',
+                                                        borderColor: `${col?.color ?? '#94a3b8'}40`,
+                                                        backgroundColor: `${col?.color ?? '#94a3b8'}12`,
+                                                    }}
+                                                >
+                                                    {col?.title ?? '—'}
                                                 </span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm font-bold text-emerald-400 tabular-nums">
+                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(lead.value)}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div
+                                                        className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-white/10"
+                                                        style={{ background: 'linear-gradient(135deg, #1e40af, #2563eb)' }}
+                                                    >
+                                                        {users.find(u => u.id === lead.assignedTo)?.name.substring(0, 2).toUpperCase() || '??'}
+                                                    </div>
+                                                    <span className="text-sm text-slate-400">
+                                                        {users.find(u => u.id === lead.assignedTo)?.name || 'Não atribuído'}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </FlatCard>

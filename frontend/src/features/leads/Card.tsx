@@ -45,7 +45,6 @@ const Card: React.FC<CardProps> = ({ lead, columnType, displaySettings, users, t
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.5 : 1,
     };
     
     const assignedUser = users.find(u => u.id === lead.assignedTo);
@@ -102,10 +101,14 @@ const Card: React.FC<CardProps> = ({ lead, columnType, displaySettings, users, t
             onClick={onSelect}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className="touch-none"
+            className={`touch-none transition-all duration-150 ${isDragging ? 'opacity-40 scale-[0.97]' : ''}`}
         >
             <GlassCard
-                className={`cursor-grab active:cursor-grabbing hover:shadow-lg hover:shadow-blue-500/10 dark:hover:shadow-blue-500/20 transition-all duration-150 ${isMinimized ? 'p-3' : 'px-3 py-2.5'} ${isSelected ? 'border-blue-500 ring-1 ring-blue-500/40' : 'border-white/10 hover:border-blue-500'}`}
+                className={`cursor-grab active:cursor-grabbing transition-all duration-150 ${isMinimized ? 'p-3' : 'px-3 py-2.5'} ${
+                    isSelected
+                        ? 'border-blue-400/70 ring-2 ring-blue-400/20 shadow-lg shadow-blue-500/15'
+                        : 'border-white/8 hover:border-white/22 hover:shadow-md hover:shadow-black/40'
+                }`}
             >
                 <div className="flex justify-between items-center gap-2">
                      <div className="flex items-center gap-1.5 flex-1 min-w-0">
@@ -131,26 +134,30 @@ const Card: React.FC<CardProps> = ({ lead, columnType, displaySettings, users, t
                         {isHovered && !isMinimized && lead.phone && (
                             <button
                                 onClick={handleWhatsAppClick}
-                                className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-green-500/10 dark:hover:bg-green-500/20 hover:text-green-500 dark:hover:text-green-400 transition-colors"
+                                className="p-1 rounded-full text-slate-500 hover:bg-emerald-500/15 hover:text-emerald-400 transition-colors"
                                 title="Abrir conversa no WhatsApp"
                             >
                                 <MessageCircle className="w-4 h-4" />
                             </button>
                         )}
                         {(isHovered || isMinimized) && (
-                            <button 
+                            <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onToggleLeadMinimize(lead.id);
                                 }}
-                                className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+                                className="p-1 rounded-full text-slate-500 hover:bg-white/8 hover:text-white transition-colors"
                                 title={isMinimized ? "Expandir card" : "Minimizar card"}
                             >
                                 {isMinimized ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                             </button>
                         )}
                         {displaySettings.showAssignedTo && assignedUser && (
-                            <div title={assignedUser.name} className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-xs text-slate-600 dark:text-white ring-1 ring-white dark:ring-slate-900">
+                            <div
+                                title={assignedUser.name}
+                                className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs text-white ring-1 ring-white/10"
+                                style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' }}
+                            >
                                  {assignedUser.name.split(' ').map(n => n[0]).join('')}
                             </div>
                         )}
@@ -185,14 +192,14 @@ const Card: React.FC<CardProps> = ({ lead, columnType, displaySettings, users, t
 
 
                                 {displaySettings.showValue && (
-                                    <p className="text-sm font-semibold text-teal-700 dark:text-teal-400 flex items-center gap-2">
-                                        <DollarSign className="w-3.5 h-3.5 flex-shrink-0" />
+                                    <p className="text-sm font-bold text-emerald-400 flex items-center gap-1.5">
+                                        <DollarSign className="w-3.5 h-3.5 flex-shrink-0 opacity-70" />
                                         {currencyFormatter.format(lead.value)}
                                     </p>
                                 )}
-                                
-                                {displaySettings.showEmail && <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 truncate"><Mail className="w-3.5 h-3.5 flex-shrink-0" /> {lead.email || 'N/A'}</p>}
-                                {displaySettings.showPhone && <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2"><Phone className="w-3.5 h-3.5 flex-shrink-0" /> {lead.phone || 'N/A'}</p>}
+
+                                {displaySettings.showEmail && <p className="text-xs text-slate-400 flex items-center gap-2 truncate"><Mail className="w-3.5 h-3.5 flex-shrink-0 text-slate-500" /> {lead.email || 'N/A'}</p>}
+                                {displaySettings.showPhone && <p className="text-xs text-slate-400 flex items-center gap-2"><Phone className="w-3.5 h-3.5 flex-shrink-0 text-slate-500" /> {lead.phone || 'N/A'}</p>}
 
                                 {displaySettings.showTags && lead.tags.length > 0 && (
                                      <div className="flex flex-wrap gap-1.5 items-center">
@@ -208,7 +215,7 @@ const Card: React.FC<CardProps> = ({ lead, columnType, displaySettings, users, t
                                     </div>
                                 )}
 
-                                <div className="border-t border-white/10 pt-1.5 mt-1 text-[11px] text-slate-400 dark:text-slate-500 space-y-1">
+                                <div className="border-t border-white/8 pt-1.5 mt-1 text-[11px] text-slate-500 space-y-1">
                                      {displaySettings.showCreatedAt && lead.createdAt && (
                                         <div className="flex items-center gap-2">
                                             <Clock className="w-3 h-3 flex-shrink-0" />

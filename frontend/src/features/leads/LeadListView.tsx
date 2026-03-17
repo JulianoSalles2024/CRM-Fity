@@ -284,7 +284,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
         const isAscending = isActive && sortConfig?.direction === 'ascending';
 
         return (
-            <th className={`px-4 py-3 text-left text-xs font-semibold tracking-wide whitespace-nowrap ${className} ${isActive ? 'text-white' : 'text-slate-400'}`}>
+            <th className={`px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase whitespace-nowrap ${className} ${isActive ? 'text-white' : 'text-slate-500'}`}>
                 <button className="flex items-center gap-1 group" onClick={() => requestSort(sortKey)}>
                     {label}
                     <span className={isActive ? 'opacity-100' : 'opacity-50 group-hover:opacity-100 transition-opacity'}>
@@ -347,8 +347,8 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                     </div>
                 ) : (
                     <div ref={scrollContainerRef} onScroll={onScroll} className="overflow-auto h-full">
-                        <table className="min-w-full divide-y divide-slate-700" style={{ borderSpacing: 0 }}>
-                            <thead className="bg-slate-900 sticky top-0 z-10">
+                        <table className="min-w-full divide-y divide-white/5" style={{ borderSpacing: 0 }}>
+                            <thead className="bg-[#050c18]/95 backdrop-blur-sm sticky top-0 z-10">
                                 <tr>
                                     <th className="px-4 py-3 w-10">
                                         <input
@@ -361,22 +361,22 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                         />
                                     </th>
                                     <TableHeader sortKey="name" label="Lead" />
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 tracking-wide whitespace-nowrap">Status / Valor</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap">Status / Valor</th>
                                     {currentUserRole === 'admin' && (
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 tracking-wide whitespace-nowrap">Pipeline</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap">Pipeline</th>
                                     )}
                                     <TableHeader sortKey="createdAt" label="Atividade" />
                                     <th className="px-4 py-3 w-20" />
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-700 relative">
+                            <tbody className="divide-y divide-white/[0.04] relative">
                                 {topPaddingHeight > 0 && (
                                     <tr style={{ height: topPaddingHeight }}>
                                         <td colSpan={numberOfColumns} />
                                     </tr>
                                 )}
                                 {virtualLeads.map(lead => (
-                                    <tr key={lead.id} onClick={() => onLeadClick(lead)} className="group hover:bg-slate-800/50 cursor-pointer transition-colors duration-150">
+                                    <tr key={lead.id} onClick={() => onLeadClick(lead)} className="group hover:bg-white/[0.03] cursor-pointer transition-colors duration-150 border-l-2 border-l-transparent hover:border-l-blue-500/40">
 
                                         {/* ── Checkbox ────────────────────────────────────── */}
                                         <td className="px-4 py-4 w-10 align-top" onClick={e => e.stopPropagation()}>
@@ -392,7 +392,10 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                         {/* ── Bloco 1: Identidade ─────────────────────────── */}
                                         <td className="px-4 py-4 w-64">
                                             <div className="flex items-center gap-3 min-w-0">
-                                                <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${getAvatarColor(lead.name ?? '')}`}>
+                                                <div
+                                                    className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ring-1 ring-white/10"
+                                                    style={{ background: 'linear-gradient(135deg, #1e40af, #2563eb)' }}
+                                                >
                                                     {(lead.name ?? '?').charAt(0).toUpperCase()}
                                                 </div>
                                                 <div className="min-w-0">
@@ -423,7 +426,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                                         </span>
                                                     );
                                                 })()}
-                                                <span className="text-sm font-semibold text-white tabular-nums">
+                                                <span className="text-sm font-bold text-emerald-400 tabular-nums">
                                                     {currencyFormatter.format(lead.value)}
                                                 </span>
                                             </div>
@@ -468,17 +471,17 @@ const LeadListView: React.FC<LeadListViewProps> = ({
 
                                         {/* ── Bloco 5: Ações ──────────────────────────────── */}
                                         <td className="px-3 py-4 whitespace-nowrap align-top w-20">
-                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white/5 rounded-lg p-0.5 w-fit">
                                                 <button
                                                     onClick={e => { e.stopPropagation(); onEditLead(lead); }}
-                                                    className="p-1.5 rounded-md text-slate-500 hover:text-blue-400 hover:bg-slate-700/60 transition-colors"
+                                                    className="p-1.5 rounded-md text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
                                                     title="Editar"
                                                 >
                                                     <Pencil className="w-3.5 h-3.5" />
                                                 </button>
                                                 <button
                                                     onClick={e => { e.stopPropagation(); setLeadToDelete(lead); }}
-                                                    className="p-1.5 rounded-md text-slate-500 hover:text-red-400 hover:bg-slate-700/60 transition-colors"
+                                                    className="p-1.5 rounded-md text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                                                     title="Excluir"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
@@ -498,21 +501,26 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                     </div>
                 )}
                 {totalPages > 1 && (
-                    <div className="px-4 py-3 border-t border-slate-800 flex items-center justify-center gap-1">
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                            <button
-                                key={page}
-                                onClick={() => setCurrentPage(page)}
-                                disabled={page === currentPage}
-                                className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                                    page === currentPage
-                                        ? 'bg-slate-700 text-white cursor-default'
-                                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                                }`}
-                            >
-                                {page}
-                            </button>
-                        ))}
+                    <div className="px-4 py-3 border-t border-white/5 flex items-center justify-between flex-shrink-0">
+                        <span className="text-xs text-slate-600">
+                            {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, sortedLeads.length)} de {sortedLeads.length}
+                        </span>
+                        <div className="flex items-center gap-1">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                <button
+                                    key={page}
+                                    onClick={() => setCurrentPage(page)}
+                                    disabled={page === currentPage}
+                                    className={`w-7 h-7 rounded-md text-xs font-medium transition-colors ${
+                                        page === currentPage
+                                            ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 cursor-default'
+                                            : 'text-slate-500 hover:text-white hover:bg-white/8'
+                                    }`}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 )}
             </FlatCard>

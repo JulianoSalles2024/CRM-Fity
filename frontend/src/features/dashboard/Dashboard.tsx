@@ -208,13 +208,14 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
         const dataKey = data.labels.join(',');
-        const svgW = 1000, svgH = 190;
-        const pad = { top: 10, right: 42, bottom: 28, left: 52 };
+        const svgW = 1000, svgH = 197;
+        const pad = { top: 16, right: 48, bottom: 32, left: 72 };
         const cW = svgW - pad.left - pad.right;
         const cH = svgH - pad.top - pad.bottom;
 
         const maxRev   = Math.max(...data.datasets[0].data, 1);
         const maxCount = Math.max(...data.datasets[1].data, ...data.datasets[2].data, 5);
+        const isEmpty  = data.datasets.every(ds => ds.data.every(v => v === 0));
 
         const yRev   = (v: number) => cH - (v / maxRev)   * cH;
         const yCount = (v: number) => cH - (v / maxCount) * cH;
@@ -236,14 +237,26 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                 return `${acc} C ${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${p2.x},${p2.y}`;
             }, '');
 
-        const revPath  = makePath(pts.map(p => ({ x: p.x, y: p.revenue  })));
-        const nlPath   = makePath(pts.map(p => ({ x: p.x, y: p.newLeads })));
-        const chPath   = makePath(pts.map(p => ({ x: p.x, y: p.churn    })));
+        const revPath = makePath(pts.map(p => ({ x: p.x, y: p.revenue  })));
+        const nlPath  = makePath(pts.map(p => ({ x: p.x, y: p.newLeads })));
+        const chPath  = makePath(pts.map(p => ({ x: p.x, y: p.churn    })));
+
+        const brlCompact = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 });
+        const brlFull    = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+
+        const totals = data.datasets.map(ds => ds.data.reduce((a, b) => a + b, 0));
+
+        const SERIES = [
+            { key: 'revenue',  color: '#22c55e', label: 'Receita',     gradId: 'td-rev', value: (i: number) => brlFull.format(data.datasets[0].data[i]) },
+            { key: 'newLeads', color: '#3b82f6', label: 'Novos Leads', gradId: 'td-nl',  value: (i: number) => String(data.datasets[1].data[i]) },
+            { key: 'churn',    color: '#f43f5e', label: 'Churn',       gradId: 'td-ch',  value: (i: number) => String(data.datasets[2].data[i]) },
+        ] as const;
 
         const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
             if (!svgRef.current) return;
             const rect = svgRef.current.getBoundingClientRect();
-            const mx = e.clientX - rect.left - pad.left;
+            const scaleX = svgW / rect.width;
+            const mx = (e.clientX - rect.left) * scaleX - pad.left;
             const idx = Math.round(mx / (cW / (data.labels.length - 1 || 1)));
             if (idx >= 0 && idx < data.labels.length) {
                 setHoveredIndex(idx);
@@ -252,95 +265,195 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         };
 
         return (
-            <div className="relative flex flex-col w-full">
-                <div className="w-full">
-                    <svg ref={svgRef} width="100%" viewBox={`0 0 ${svgW} ${svgH}`} onMouseMove={onMove} onMouseLeave={() => { setHoveredIndex(null); setTooltipPos(null); }}>
+            <div className="flex flex-col w-full gap-4">
+                {/* Legend / totals */}
+                <div className="flex items-center gap-5 flex-wrap px-1">
+                    {SERIES.map((s, i) => (
+                        <div key={s.key} className="flex items-center gap-2.5">
+                            <div className="relative flex items-center justify-center w-5 h-5">
+                                <div className="absolute w-5 h-5 rounded-full opacity-15" style={{ backgroundColor: s.color }} />
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+                            </div>
+                            <div className="flex flex-col leading-none gap-0.5">
+                                <span className="text-[10px] text-slate-500 uppercase tracking-widest">{s.label}</span>
+                                <span className="text-xs font-bold text-slate-200 tabular-nums">
+                                    {s.key === 'revenue' ? brlCompact.format(totals[i]) : totals[i]}
+                                </span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Chart */}
+                <div className="relative w-full">
+                    <svg
+                        ref={svgRef}
+                        width="100%"
+                        viewBox={`0 0 ${svgW} ${svgH}`}
+                        onMouseMove={onMove}
+                        onMouseLeave={() => { setHoveredIndex(null); setTooltipPos(null); }}
+                        className="cursor-crosshair"
+                    >
                         <defs>
-                            {data.datasets.map(ds => (
-                                <linearGradient key={ds.label} id={`td-grad-${ds.label.replace(/\s+/g, '-')}`} x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%"   stopColor={ds.color} stopOpacity={0.25} />
-                                    <stop offset="100%" stopColor={ds.color} stopOpacity={0} />
-                                </linearGradient>
-                            ))}
+                            <linearGradient id="td-rev" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%"   stopColor="#22c55e" stopOpacity={0.28} />
+                                <stop offset="70%"  stopColor="#22c55e" stopOpacity={0.05} />
+                                <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+                            </linearGradient>
+                            <linearGradient id="td-nl" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%"   stopColor="#3b82f6" stopOpacity={0.22} />
+                                <stop offset="70%"  stopColor="#3b82f6" stopOpacity={0.04} />
+                                <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                            </linearGradient>
+                            <linearGradient id="td-ch" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%"   stopColor="#f43f5e" stopOpacity={0.18} />
+                                <stop offset="70%"  stopColor="#f43f5e" stopOpacity={0.03} />
+                                <stop offset="100%" stopColor="#f43f5e" stopOpacity={0} />
+                            </linearGradient>
+                            <linearGradient id="td-hline" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%"   stopColor="white" stopOpacity={0} />
+                                <stop offset="25%"  stopColor="white" stopOpacity={0.12} />
+                                <stop offset="75%"  stopColor="white" stopOpacity={0.12} />
+                                <stop offset="100%" stopColor="white" stopOpacity={0} />
+                            </linearGradient>
                         </defs>
+
                         <g transform={`translate(${pad.left},${pad.top})`}>
+                            {/* Grid lines + left axis (BRL) */}
                             {[...Array(5)].map((_, i) => (
                                 <g key={i}>
-                                    <line x1={0} y1={i * cH / 4} x2={cW} y2={i * cH / 4} stroke="#1e293b" strokeWidth="1" strokeDasharray="3 3" />
-                                    <text x={-10} y={i * cH / 4 + 5} fill="#64748b" textAnchor="end" fontSize="11">{currencyFormatter.format(maxRev * (1 - i / 4)).replace(/\.00$/, '')}</text>
+                                    <line
+                                        x1={0} y1={i * cH / 4} x2={cW} y2={i * cH / 4}
+                                        stroke="rgba(255,255,255,0.04)" strokeWidth="1"
+                                    />
+                                    <text
+                                        x={-10} y={i * cH / 4 + 4}
+                                        fill="#475569" textAnchor="end" fontSize="10"
+                                    >
+                                        {brlCompact.format(maxRev * (1 - i / 4))}
+                                    </text>
                                 </g>
                             ))}
-                            {[...Array(6)].map((_, i) => (
-                                <text key={i} x={cW + 10} y={i * cH / 5 + 5} fill="#64748b" textAnchor="start" fontSize="11">{Math.round(maxCount * (1 - i / 5))}</text>
+                            {/* Right axis (counts) */}
+                            {[0, 1, 2, 3, 4].map(i => (
+                                <text key={i}
+                                    x={cW + 10} y={i * cH / 4 + 4}
+                                    fill="#475569" textAnchor="start" fontSize="10"
+                                >
+                                    {Math.round(maxCount * (1 - i / 4))}
+                                </text>
                             ))}
+
                             <AnimatePresence mode="wait">
                                 <motion.g
                                     key={dataKey}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.18, ease: 'easeInOut' }}
+                                    transition={{ duration: 0.2 }}
                                 >
+                                    {/* X labels */}
                                     {data.labels.map((label, i) => (
-                                        <text key={label} x={pts[i].x} y={cH + 22} fill="#64748b" textAnchor="middle" fontSize="11">{label}</text>
+                                        <text key={label} x={pts[i].x} y={cH + 24}
+                                            fill="#475569" textAnchor="middle" fontSize="10">
+                                            {label}
+                                        </text>
                                     ))}
 
-                                    <path d={`${revPath} L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Receita)" />
-                                    <path d={`${chPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Churn)" />
-                                    <path d={`${nlPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-grad-Novos-Leads)" />
+                                    {/* Area fills */}
+                                    <path d={`${revPath} L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-rev)" />
+                                    <path d={`${nlPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-nl)" />
+                                    <path d={`${chPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-ch)" />
 
-                                    <path d={revPath} fill="none" stroke="#22c55e" strokeWidth="1.5" />
-                                    <path d={chPath}  fill="none" stroke="#ef4444" strokeWidth="1.5" />
-                                    <path d={nlPath}  fill="none" stroke="#3b82f6" strokeWidth="1.5" />
+                                    {/* Spline lines */}
+                                    <path d={revPath} fill="none" stroke="#22c55e" strokeWidth="2"   strokeLinecap="round" />
+                                    <path d={nlPath}  fill="none" stroke="#3b82f6" strokeWidth="2"   strokeLinecap="round" />
+                                    <path d={chPath}  fill="none" stroke="#f43f5e" strokeWidth="1.5" strokeLinecap="round" />
                                 </motion.g>
                             </AnimatePresence>
 
+                            {/* Hover layer */}
                             <AnimatePresence>
                                 {hoveredIndex !== null && (
-                                    <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                                        <line x1={pts[hoveredIndex].x} y1={0} x2={pts[hoveredIndex].x} y2={cH} stroke="#334155" strokeWidth="1" strokeDasharray="3 3" />
-                                        <circle cx={pts[hoveredIndex].x} cy={pts[hoveredIndex].revenue}  r="5" fill="#22c55e" stroke="#0f172a" strokeWidth="2" />
-                                        <circle cx={pts[hoveredIndex].x} cy={pts[hoveredIndex].newLeads} r="5" fill="#3b82f6" stroke="#0f172a" strokeWidth="2" />
-                                        <circle cx={pts[hoveredIndex].x} cy={pts[hoveredIndex].churn}    r="5" fill="#ef4444" stroke="#0f172a" strokeWidth="2" />
+                                    <motion.g
+                                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.08 }}
+                                    >
+                                        {/* Hairline */}
+                                        <line
+                                            x1={pts[hoveredIndex].x} y1={0}
+                                            x2={pts[hoveredIndex].x} y2={cH}
+                                            stroke="url(#td-hline)" strokeWidth="1.5"
+                                        />
+                                        {/* Dots: outer glow ring + inner solid */}
+                                        {([
+                                            { y: pts[hoveredIndex].revenue,  color: '#22c55e' },
+                                            { y: pts[hoveredIndex].newLeads, color: '#3b82f6' },
+                                            { y: pts[hoveredIndex].churn,    color: '#f43f5e' },
+                                        ] as const).map(({ y, color }) => (
+                                            <g key={color}>
+                                                <circle cx={pts[hoveredIndex].x} cy={y} r="10" fill={color} fillOpacity={0.1} />
+                                                <circle cx={pts[hoveredIndex].x} cy={y} r="5"  fill={color} stroke="#0b1220" strokeWidth="1.5" />
+                                            </g>
+                                        ))}
                                     </motion.g>
                                 )}
                             </AnimatePresence>
+
+                            {/* Empty state */}
+                            {isEmpty && (
+                                <g>
+                                    <text x={cW / 2} y={cH / 2 - 8}
+                                        fill="#334155" textAnchor="middle" fontSize="13" fontWeight="600">
+                                        Sem dados no período selecionado
+                                    </text>
+                                    <text x={cW / 2} y={cH / 2 + 12}
+                                        fill="#1e293b" textAnchor="middle" fontSize="11">
+                                        Mova negócios no pipeline para ver a tendência
+                                    </text>
+                                </g>
+                            )}
                         </g>
                     </svg>
 
+                    {/* Tooltip */}
                     <AnimatePresence>
                         {hoveredIndex !== null && tooltipPos && (
                             <motion.div
-                                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                                style={{ left: tooltipPos.x, top: tooltipPos.y, transform: 'translate(-50%, -110%)' }}
-                                className="absolute p-3 bg-slate-900/95 backdrop-blur-sm border border-slate-700 rounded-lg shadow-xl pointer-events-none z-10"
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 6 }}
+                                transition={{ duration: 0.1 }}
+                                style={{
+                                    left: tooltipPos.x,
+                                    top: tooltipPos.y,
+                                    transform: 'translate(-50%, calc(-100% - 14px))',
+                                }}
+                                className="absolute pointer-events-none z-20 min-w-[158px]"
                             >
-                                <p className="font-bold text-white text-center mb-2 text-sm">{data.labels[hoveredIndex]}</p>
-                                <div className="space-y-1 text-sm">
-                                    {data.datasets.map(ds => (
-                                        <div key={ds.label} className="flex justify-between items-center gap-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ds.color }} />
-                                                <span className="text-slate-400">{ds.label}:</span>
+                                <div className="bg-[#0b1220]/95 backdrop-blur-xl border border-white/8 rounded-xl shadow-2xl overflow-hidden">
+                                    <div className="px-3 py-2 border-b border-white/5 bg-white/[0.02]">
+                                        <p className="text-[11px] font-semibold text-slate-300 text-center tracking-wide">
+                                            {data.labels[hoveredIndex]}
+                                        </p>
+                                    </div>
+                                    <div className="px-3 py-2.5 space-y-1.5">
+                                        {SERIES.map(s => (
+                                            <div key={s.key} className="flex items-center justify-between gap-4">
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                                                    <span className="text-[10px] text-slate-500">{s.label}</span>
+                                                </div>
+                                                <span className="text-[11px] font-bold tabular-nums" style={{ color: s.color }}>
+                                                    {s.value(hoveredIndex)}
+                                                </span>
                                             </div>
-                                            <span className="font-semibold text-white">
-                                                {ds.label === 'Receita' ? currencyFormatter.format(ds.data[hoveredIndex]) : ds.data[hoveredIndex]}
-                                            </span>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </div>
-
-                <div className="flex justify-center items-center gap-6 pt-3">
-                    {data.datasets.map(ds => (
-                        <div key={ds.label} className="flex items-center gap-2 text-sm">
-                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ds.color }} />
-                            <span className="text-slate-300">{ds.label}</span>
-                        </div>
-                    ))}
                 </div>
             </div>
         );
