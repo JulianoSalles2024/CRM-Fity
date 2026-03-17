@@ -11,6 +11,7 @@ export interface FollowupRule {
   id:                 string;
   company_id:         string;
   created_by:         string | null;
+  role_scope:         'admin' | 'seller';
   delay_value:        number;
   delay_unit:         DelayUnit;
   prompt:             string;
@@ -33,12 +34,13 @@ export function useFollowupRules() {
   // ── Fetch ──────────────────────────────────────────────────────────────────
 
   const fetchRules = useCallback(async () => {
-    if (!companyId) return;
+    if (!companyId || !user) return;
     setIsLoading(true);
     const { data, error } = await supabase
       .from('followup_rules')
       .select('*')
       .eq('company_id', companyId)
+      .eq('created_by', user.id)          // exibe apenas as regras do usuário logado
       .order('sequence_order', { ascending: true });
 
     if (error) {
@@ -48,7 +50,7 @@ export function useFollowupRules() {
       setError(null);
     }
     setIsLoading(false);
-  }, [companyId]);
+  }, [companyId, user?.id]);
 
   useEffect(() => { fetchRules(); }, [fetchRules]);
 
@@ -61,6 +63,7 @@ export function useFollowupRules() {
     const { error } = await supabase.from('followup_rules').insert({
       company_id:         companyId,
       created_by:         user.id,
+      role_scope:         'seller',       // regra pessoal do vendedor
       delay_value:        1,
       delay_unit:         'hours',
       prompt:             '',
@@ -108,7 +111,8 @@ export function useFollowupRules() {
       .from('followup_rules')
       .delete()
       .eq('id', id)
-      .eq('company_id', companyId!);
+      .eq('company_id', companyId!)
+      .eq('created_by', user!.id);        // garante que seller só deleta suas próprias regras
 
     if (!error) {
       const remaining = rules.filter(r => r.id !== id);

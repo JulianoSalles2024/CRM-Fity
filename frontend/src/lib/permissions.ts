@@ -25,7 +25,7 @@ export const PERMISSIONS: Record<AppRole, Permissions> = {
     canViewReports: false,
     canManageTeam: false,
     canManageCredentials: false,
-    canManageIntegrations: false,
+    canManageIntegrations: true,
     canManagePreferences: false,
     canManagePipeline: false,
   },

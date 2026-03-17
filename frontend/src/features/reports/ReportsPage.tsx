@@ -399,27 +399,74 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
             </div>
             
             <FlatCard className="p-5">
-                <h3 className="font-semibold text-white mb-3">Funil de Conversão</h3>
-                <div className="space-y-2.5">
-                    {reportData.funnelData.map((stage) => {
+                <div className="flex items-center justify-between mb-5">
+                    <h3 className="font-semibold text-white">Funil de Conversão</h3>
+                    <span className="text-xs text-slate-500 tabular-nums">
+                        {reportData.funnelData.reduce((s, d) => s + d.count, 0)} leads total
+                    </span>
+                </div>
+                <div className="space-y-0.5">
+                    {reportData.funnelData.map((stage, idx) => {
                         const maxCount = Math.max(...reportData.funnelData.map((s) => s.count), 1);
                         const percentage = (stage.count / maxCount) * 100;
+                        const prevStage = idx > 0 ? reportData.funnelData[idx - 1] : null;
+                        const retention = prevStage && prevStage.count > 0
+                            ? Math.round((stage.count / prevStage.count) * 100)
+                            : null;
                         return (
-                            <div key={stage.id} className="flex items-center gap-3">
-                                <p className="text-sm text-slate-400 w-28 truncate" title={stage.title}>{stage.title}</p>
-                                <div className="flex-1 bg-slate-800 rounded-full h-4 relative">
+                            <React.Fragment key={stage.id}>
+                                {/* Drop-off indicator */}
+                                {retention !== null && (
+                                    <div className="flex items-center gap-2 py-1 pl-[120px]">
+                                        <div className="w-px h-2.5 bg-slate-700/80 ml-0.5" />
+                                        <span className={`text-[10px] font-medium tracking-wide ${
+                                            retention >= 70 ? 'text-emerald-400/80' :
+                                            retention >= 40 ? 'text-amber-400/80' : 'text-red-400/80'
+                                        }`}>
+                                            ▼ {retention}% avançaram
+                                        </span>
+                                    </div>
+                                )}
+                                {/* Stage row */}
+                                <div className="flex items-center gap-3 group py-0.5">
+                                    {/* Label */}
+                                    <div className="flex items-center gap-2 w-28 shrink-0">
+                                        <span className="w-2 h-2 rounded-full shrink-0 ring-2 ring-offset-1 ring-offset-[#0B1220]"
+                                            style={{ backgroundColor: stage.color, ringColor: `${stage.color}40` }} />
+                                        <p className="text-xs text-slate-400 truncate group-hover:text-slate-200 transition-colors duration-150"
+                                            title={stage.title}>
+                                            {stage.title}
+                                        </p>
+                                    </div>
+                                    {/* Bar track */}
+                                    <div className="flex-1 h-7 bg-slate-800/70 rounded-lg overflow-hidden">
+                                        <motion.div
+                                            initial={{ width: 0, opacity: 0 }}
+                                            animate={{ width: `${Math.max(percentage, stage.count > 0 ? 2 : 0)}%`, opacity: 1 }}
+                                            transition={{ duration: 0.75, delay: idx * 0.07, ease: [0.16, 1, 0.3, 1] }}
+                                            className="h-full rounded-lg relative overflow-hidden"
+                                            style={{
+                                                background: `linear-gradient(90deg, ${stage.color}DD 0%, ${stage.color}88 100%)`,
+                                                boxShadow: `0 0 18px ${stage.color}35`,
+                                            }}
+                                        >
+                                            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent" />
+                                            <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-black/10 to-transparent" />
+                                        </motion.div>
+                                    </div>
+                                    {/* Count badge */}
                                     <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${percentage}%` }}
-                                        transition={{ duration: 0.5, ease: 'easeOut' }}
-                                        className="h-4 rounded-full flex items-center"
-                                        style={{ backgroundColor: stage.color }}
-                                    />
-                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-white text-xs font-semibold mix-blend-difference">
-                                        {stage.count}
-                                    </span>
+                                        initial={{ opacity: 0, x: -6 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ duration: 0.4, delay: idx * 0.07 + 0.35 }}
+                                        className="w-12 shrink-0 flex justify-end"
+                                    >
+                                        <span className="text-sm font-bold tabular-nums" style={{ color: stage.color }}>
+                                            {stage.count}
+                                        </span>
+                                    </motion.div>
                                 </div>
-                            </div>
+                            </React.Fragment>
                         );
                     })}
                 </div>

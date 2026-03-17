@@ -255,7 +255,7 @@ export const SettingsInactiveActions: React.FC = () => {
             className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-4 h-4" />
-            Adicionar Regra
+            Follow Up
           </button>
         </div>
 
@@ -287,7 +287,7 @@ export const SettingsInactiveActions: React.FC = () => {
             <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
               <Clock className="w-10 h-10 text-slate-700" />
               <p className="text-sm text-slate-500">Nenhuma regra configurada.</p>
-              <p className="text-xs text-slate-600">Clique em "Adicionar Regra" para criar o primeiro follow-up automático.</p>
+              <p className="text-xs text-slate-600">Clique em "+ Follow Up" para criar o primeiro follow-up automático.</p>
             </div>
           )}
 

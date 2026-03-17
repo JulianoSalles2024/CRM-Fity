@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/src/lib/supabase';
 
 export interface ChannelConnection {
@@ -25,7 +25,11 @@ export function useChannelConnections(
   const [connections, setConnections] = useState<ChannelConnection[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetch = useCallback(async () => {
+  // useRef para evitar stale closure no callback do Realtime
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+
+  const fetchConnections = useCallback(async () => {
     if (!companyId) { setConnections([]); setLoading(false); return; }
     setLoading(true);
     let query = supabase
@@ -34,37 +38,47 @@ export function useChannelConnections(
       .eq('company_id', companyId);
 
     // Sellers veem apenas a própria conexão
-    if (options?.role && options.role !== 'admin' && options?.userId) {
-      query = query.eq('owner_id', options.userId);
+    const opts = optionsRef.current;
+    if (opts?.role && opts.role !== 'admin' && opts?.userId) {
+      query = query.eq('owner_id', opts.userId);
     }
 
     const { data, error } = await query.order('created_at', { ascending: true });
-
-    if (!error && data) {
-      setConnections(data as ChannelConnection[]);
-    }
+    if (!error && data) setConnections(data as ChannelConnection[]);
     setLoading(false);
-  }, [companyId]);
+  }, [companyId]); // companyId é a única dependência real
 
-  useEffect(() => { fetch(); }, [fetch]);
+  // Fetch inicial
+  useEffect(() => { fetchConnections(); }, [fetchConnections]);
 
-  // Realtime
+  // Realtime — usa fetchRef para nunca ter stale closure
+  const fetchRef = useRef(fetchConnections);
+  fetchRef.current = fetchConnections;
+
   useEffect(() => {
     if (!companyId) return;
+
+    const channelName = `channel_connections:${companyId}`;
     const sub = supabase
-      .channel('channel_connections_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'channel_connections',
-      }, () => fetch())
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'channel_connections',
+          filter: `company_id=eq.${companyId}`,
+        },
+        () => fetchRef.current()
+      )
       .subscribe();
+
     return () => { supabase.removeChannel(sub); };
-  }, [companyId, fetch]);
+  }, [companyId]); // só recria quando companyId muda
 
   const updateLocalState = useCallback((id: string, patch: Partial<ChannelConnection>) => {
     setConnections(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c));
   }, []);
 
-  return { connections, loading, refetch: fetch, updateLocalState };
+  return { connections, loading, refetch: fetchConnections, updateLocalState };
 }

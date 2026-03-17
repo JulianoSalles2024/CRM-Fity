@@ -33,7 +33,6 @@ app.get("/api/opportunities/list", (req, res) => listOpportunitiesHandler(req as
 app.get("/api/health", (req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
 
 app.all("/api/channels/:action", (req, res) => {
-  req.query.action = req.params.action;
   return channelsHandler(req as any, res as any);
 });
 app.all("/api/api-keys", (req, res) => apiKeysHandler(req as any, res as any));

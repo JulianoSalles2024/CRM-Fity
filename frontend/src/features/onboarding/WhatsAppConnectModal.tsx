@@ -68,6 +68,12 @@ const WhatsAppConnectModal: React.FC<Props> = ({ onClose, onConnected, userName 
       const data = await res.json();
       setInstanceName(data.instanceName);
 
+      // Instância já conectada (ex: usuário re-abriu o modal) — registra direto
+      if (data.alreadyConnected) {
+        await registerConnection(data.instanceName);
+        return;
+      }
+
       if (data.code || data.base64) {
         applyQR(data.code ?? null, data.base64 ?? null);
         setStep('qr');
@@ -139,14 +145,20 @@ const WhatsAppConnectModal: React.FC<Props> = ({ onClose, onConnected, userName 
     setStep('connected');
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      await fetch('/api/channels/register', {
+      const res = await fetch('/api/channels/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
         body: JSON.stringify({ instanceName: name }),
       });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error ?? `Registro falhou (HTTP ${res.status})`);
+      }
       setTimeout(() => { onConnected(); }, 2200);
-    } catch {
-      setTimeout(() => { onConnected(); }, 2200);
+    } catch (err: any) {
+      setRegistering(false);
+      setErrorMsg(err?.message ?? 'Erro ao registrar conexão no banco.');
+      setStep('error');
     }
   };
 

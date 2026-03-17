@@ -7,7 +7,7 @@ import { AppError, apiError } from '../_lib/errors.js';
    Vercel maps each [action] segment to this function.
 ───────────────────────────────────────────────────────────────────────── */
 export default async function handler(req: any, res: any) {
-  const action = req.query.action as string;
+  const action = (req.query.action ?? req.params?.action) as string;
   switch (action) {
     case 'connect':        return handleConnect(req, res);
     case 'instance-state': return handleInstanceState(req, res);
@@ -19,21 +19,57 @@ export default async function handler(req: any, res: any) {
   }
 }
 
+/* ── Helpers ─────────────────────────────────────────────────────────── */
+
+async function checkInstanceState(evolutionUrl: string, apiKey: string, instanceName: string): Promise<string> {
+  try {
+    const r = await fetch(
+      `${evolutionUrl}/instance/connectionState/${encodeURIComponent(instanceName)}`,
+      { headers: { apikey: apiKey }, signal: AbortSignal.timeout(6000) }
+    );
+    if (!r.ok) return 'unknown';
+    const d = await r.json();
+    return d?.instance?.state ?? d?.state ?? 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+async function fetchQRWithRetry(evolutionUrl: string, apiKey: string, instanceName: string, attempts = 3) {
+  const url = `${evolutionUrl}/instance/connect/${encodeURIComponent(instanceName)}`;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const r = await fetch(url, { headers: { apikey: apiKey }, signal: AbortSignal.timeout(8000) });
+      const rawText = await r.text().catch(() => '(falha ao ler body)');
+      if (r.ok) {
+        const d = (() => { try { return JSON.parse(rawText); } catch { return {}; } })();
+        const code   = d?.code   ?? d?.qrcode?.code   ?? null;
+        const base64 = d?.base64 ?? d?.qrcode?.base64 ?? null;
+        if (code || base64) return { code, base64 };
+      }
+    } catch { /* ignora */ }
+    if (i < attempts - 1) await new Promise(r => setTimeout(r, 1500));
+  }
+  return { base64: null, code: null };
+}
+
 /* ── connect ─────────────────────────────────────────────────────────── */
 async function handleConnect(req: any, res: any) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   try {
-    const ctx = await requireAuth(req);
-    const { userId, companyId } = ctx;
-
     const evolutionUrl = process.env.EVOLUTION_API_URL?.replace(/\/$/, '');
     const apiKey       = process.env.EVOLUTION_API_KEY;
     const n8nWebhook   = process.env.N8N_INBOUND_WEBHOOK_URL ?? '';
 
     if (!evolutionUrl || !apiKey) throw new AppError(500, 'Evolution API não configurada.');
 
-    const instanceName = `ns_${userId.replace(/-/g, '').slice(0, 8)}`;
+    const ctx = await requireAuth(req);
+    const { userId, companyId } = ctx;
+    const instanceName = `ns_${userId.replace(/-/g, '').slice(0, 20)}`;
 
+    console.log(`[connect] userId=${userId} role=${ctx.role} instanceName=${instanceName}`);
+
+    // Busca ESTRITAMENTE pelo owner_id do usuário logado — nunca vaza conexões de outros
     const { data: existing } = await supabaseAdmin
       .from('channel_connections')
       .select('id, external_id')
@@ -42,14 +78,25 @@ async function handleConnect(req: any, res: any) {
       .eq('channel', 'whatsapp')
       .maybeSingle();
 
+    console.log(`[connect] existing in DB: ${existing ? existing.id : 'none'}`);
+
     if (existing) {
-      // Já registrado no banco — busca QR fresco para reconexão
-      const qr = await fetchQRWithRetry(evolutionUrl, apiKey, existing.external_id ?? instanceName);
-      return res.status(200).json({ instanceName: existing.external_id ?? instanceName, ...qr, alreadyRegistered: true });
+      const existingName = existing.external_id ?? instanceName;
+      const state = await checkInstanceState(evolutionUrl, apiKey, existingName);
+      console.log(`[connect] Evolution state for ${existingName}: ${state}`);
+
+      if (state === 'open') {
+        return res.status(200).json({ instanceName: existingName, alreadyConnected: true });
+      }
+
+      const qr = await fetchQRWithRetry(evolutionUrl, apiKey, existingName);
+      if (qr.code || qr.base64) {
+        return res.status(200).json({ instanceName: existingName, ...qr, alreadyRegistered: true });
+      }
+      // Instância existe no banco mas Evolution não retornou QR — recria abaixo
     }
 
-    console.log(`[connect] Criando instância: ${instanceName} | webhook: ${n8nWebhook || '(vazio)'}`);
-
+    // Tenta criar a instância
     const createRes = await fetch(`${evolutionUrl}/instance/create`, {
       method: 'POST',
       headers: { apikey: apiKey, 'Content-Type': 'application/json' },
@@ -57,7 +104,6 @@ async function handleConnect(req: any, res: any) {
         instanceName,
         integration: 'WHATSAPP-BAILEYS',
         qrcode: true,
-        // Estrutura correta conforme docs Evolution API v2
         ...(n8nWebhook ? {
           webhook: {
             url: n8nWebhook,
@@ -70,56 +116,75 @@ async function handleConnect(req: any, res: any) {
       signal: AbortSignal.timeout(12000),
     });
 
-    const createBody = await createRes.json().catch(() => ({}));
-    console.log(`[connect] Evolution create status: ${createRes.status}`, JSON.stringify(createBody).slice(0, 400));
+    const createBody = await createRes.text().catch(() => '');
+    console.log(`[connect] create status=${createRes.status} body=${createBody.slice(0, 200)}`);
 
     if (createRes.status === 401) {
       throw new AppError(502, `EVOLUTION_API_KEY inválida ou sem permissão (401).`);
     }
 
-    // 403 = instância já existe na Evolution ("already in use") → ok, segue para fetchQR
-    // 200/201 = criada com sucesso → também segue para fetchQR (create não retorna QR)
-    // Qualquer outro status → loga e segue
+    // 403 = instância fantasma na Evolution (registro CRM deletado mas Evolution não foi limpa)
+    // Solução: deletar a instância fantasma e recriar
+    if (createRes.status === 403) {
+      console.log(`[connect] 403 — instância fantasma detectada. Tentando limpar ${instanceName}...`);
+      try {
+        await fetch(`${evolutionUrl}/instance/delete/${encodeURIComponent(instanceName)}`, {
+          method: 'DELETE',
+          headers: { apikey: apiKey },
+          signal: AbortSignal.timeout(8000),
+        });
+        console.log(`[connect] instância fantasma deletada. Aguardando e recriando...`);
+      } catch (e) {
+        console.warn(`[connect] erro ao deletar fantasma:`, e);
+      }
 
-    // Docs confirmam: create NUNCA retorna QR — sempre buscar via /instance/connect
-    await new Promise(r => setTimeout(r, 2000)); // aguarda instância ficar pronta
+      await new Promise(r => setTimeout(r, 2000));
+
+      const retryRes = await fetch(`${evolutionUrl}/instance/create`, {
+        method: 'POST',
+        headers: { apikey: apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instanceName,
+          integration: 'WHATSAPP-BAILEYS',
+          qrcode: true,
+          ...(n8nWebhook ? {
+            webhook: {
+              url: n8nWebhook,
+              byEvents: false,
+              base64: true,
+              events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED', 'SEND_MESSAGE'],
+            },
+          } : {}),
+        }),
+        signal: AbortSignal.timeout(12000),
+      });
+      console.log(`[connect] retry create status=${retryRes.status}`);
+      if (!retryRes.ok && retryRes.status !== 201) {
+        throw new AppError(502, `Não foi possível recriar a instância após limpeza (status ${retryRes.status}).`);
+      }
+    }
+
+    // Aguarda instância ficar pronta
+    await new Promise(r => setTimeout(r, 2000));
+
+    const stateAfterCreate = await checkInstanceState(evolutionUrl, apiKey, instanceName);
+    console.log(`[connect] state after create: ${stateAfterCreate}`);
+
+    if (stateAfterCreate === 'open') {
+      return res.status(200).json({ instanceName, alreadyConnected: true });
+    }
 
     const qr = await fetchQRWithRetry(evolutionUrl, apiKey, instanceName);
 
     if (!qr.code && !qr.base64) {
-      const hint = createRes.status === 403
-        ? `Instância "${instanceName}" pode já existir na Evolution. Acesse o painel e delete-a manualmente, ou tente desconectar primeiro.`
-        : `Evolution retornou status ${createRes.status}. Verifique as configurações.`;
-      throw new AppError(502, hint);
+      throw new AppError(502, `QR Code não disponível para "${instanceName}". Verifique a Evolution API.`);
     }
 
     return res.status(200).json({ instanceName, base64: qr.base64, code: qr.code, alreadyRegistered: false });
-  } catch (err) { return apiError(res, err); }
-}
-
-async function fetchQRWithRetry(evolutionUrl: string, apiKey: string, instanceName: string, attempts = 3) {
-  for (let i = 0; i < attempts; i++) {
-    try {
-      const r = await fetch(`${evolutionUrl}/instance/connect/${encodeURIComponent(instanceName)}`,
-        { headers: { apikey: apiKey }, signal: AbortSignal.timeout(8000) });
-      if (r.ok) {
-        const d = await r.json();
-        // Evolution v2: { code: "raw-qr-string", pairingCode, count }
-        // Evolution v1/legacy: { base64: "data:image/png;base64,..." }
-        const code   = d?.code   ?? d?.qrcode?.code   ?? null;
-        const base64 = d?.base64 ?? d?.qrcode?.base64 ?? null;
-        console.log(`[fetchQR] attempt ${i + 1} — code: ${code ? 'ok' : 'null'} | base64: ${base64 ? 'ok' : 'null'}`);
-        if (code || base64) return { code, base64 };
-      } else {
-        const errBody = await r.text().catch(() => '');
-        console.log(`[fetchQR] attempt ${i + 1} — HTTP ${r.status} | body: ${errBody.slice(0, 200)}`);
-      }
-    } catch (e: any) {
-      console.log(`[fetchQR] attempt ${i + 1} error: ${e?.message}`);
-    }
-    if (i < attempts - 1) await new Promise(r => setTimeout(r, 1500));
+  } catch (err: any) {
+    console.error('[connect] erro:', err?.statusCode ?? err?.status ?? '?', err?.message ?? err);
+    return apiError(res, err);
   }
-  return { base64: null, code: null };
 }
 
 /* ── instance-state ──────────────────────────────────────────────────── */
@@ -174,13 +239,19 @@ async function handleRegister(req: any, res: any) {
     const apiKey       = process.env.EVOLUTION_API_KEY;
 
     if (evolutionUrl && apiKey) {
-      const stateRes = await fetch(
-        `${evolutionUrl}/instance/connectionState/${encodeURIComponent(instanceName)}`,
-        { headers: { apikey: apiKey }, signal: AbortSignal.timeout(6000) });
-      if (stateRes.ok) {
-        const sd = await stateRes.json();
-        const state = sd?.instance?.state ?? sd?.state ?? 'unknown';
-        if (state !== 'open') throw new AppError(400, `WhatsApp ainda não conectado (state: ${state}).`);
+      let state = await checkInstanceState(evolutionUrl, apiKey, instanceName);
+      console.log(`[register] userId=${userId} instanceName=${instanceName} state=${state}`);
+
+      // Se não 'open' na primeira checagem, aguarda 3s e tenta mais uma vez
+      // (evita falso-negativo por delay entre connect e register)
+      if (state !== 'open') {
+        await new Promise(r => setTimeout(r, 3000));
+        state = await checkInstanceState(evolutionUrl, apiKey, instanceName);
+        console.log(`[register] retry state=${state}`);
+      }
+
+      if (state !== 'open') {
+        throw new AppError(400, `WhatsApp ainda não conectado (state: ${state}). Escaneie o QR e tente novamente.`);
       }
     }
 
@@ -320,20 +391,32 @@ async function handleDisconnect(req: any, res: any) {
   try {
     const ctx = await requireAuth(req);
     const { userId, companyId } = ctx;
+    const { connectionId } = req.body ?? {};
 
     const evolutionUrl = process.env.EVOLUTION_API_URL?.replace(/\/$/, '');
     const apiKey       = process.env.EVOLUTION_API_KEY;
 
-    // Busca o external_id real da conexão do usuário (pode diferir do padrão ns_xxx)
+    // Admin pode desconectar qualquer instância pelo connectionId
+    // Seller só pode desconectar a própria
     const { data: conn } = await supabaseAdmin
       .from('channel_connections')
-      .select('id, external_id')
-      .eq('owner_id', userId)
+      .select('id, external_id, owner_id, channel')
       .eq('company_id', companyId)
-      .eq('channel', 'whatsapp')
+      .eq(
+        connectionId && ctx.role === 'admin' ? 'id' : 'owner_id',
+        connectionId && ctx.role === 'admin' ? connectionId : userId
+      )
       .maybeSingle();
 
-    // Tenta deletar instância na Evolution API — ignora erros (já pode não existir)
+    // Garante que seller não pode desconectar instância de outro usuário
+    // Fallback: instâncias com owner_id null são identificadas pelo padrão ns_{userId}
+    if (conn && ctx.role !== 'admin') {
+      const expectedExtId = `ns_${userId.replace(/-/g, '').slice(0, 20)}`;
+      const isOwner = conn.owner_id === userId || conn.external_id === expectedExtId;
+      if (!isOwner) return res.status(403).json({ error: 'Permissão insuficiente.' });
+    }
+
+    // Deleta instância na Evolution API
     if (evolutionUrl && apiKey && conn?.external_id) {
       try {
         await fetch(`${evolutionUrl}/instance/delete/${encodeURIComponent(conn.external_id)}`, {
@@ -341,16 +424,18 @@ async function handleDisconnect(req: any, res: any) {
           headers: { apikey: apiKey },
           signal: AbortSignal.timeout(8000),
         });
-      } catch { /* ignora erros de rede — garante limpeza local */ }
+      } catch { /* ignora */ }
     }
 
-    // Remove do banco — isolamento por owner_id + company_id
+    // Remove do banco
     const { error } = await supabaseAdmin
       .from('channel_connections')
       .delete()
-      .eq('owner_id', userId)
       .eq('company_id', companyId)
-      .eq('channel', 'whatsapp');
+      .eq(
+        connectionId && ctx.role === 'admin' ? 'id' : 'owner_id',
+        connectionId && ctx.role === 'admin' ? connectionId : userId
+      );
 
     if (error) throw new AppError(500, 'Erro ao remover conexão do banco.');
 

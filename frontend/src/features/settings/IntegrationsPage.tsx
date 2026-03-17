@@ -823,8 +823,9 @@ interface IntegrationsPageProps {
 const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ showNotification }) => {
     const [activeTab, setActiveTab] = useState('Conexões');
     const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
+    const { currentUserRole } = useAuth();
 
-    const mainTabs = [
+    const allTabs = [
         { name: 'Conexões', icon: Wifi },
         { name: 'Eventos', icon: Activity },
         { name: 'API Keys', icon: KeyRound },
@@ -832,6 +833,11 @@ const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ showNotification })
         { name: 'API REST', icon: FileCode },
         { name: 'MCP Server', icon: Server },
     ];
+
+    // Seller vê apenas a aba de Conexões (gerencia o próprio WhatsApp)
+    const mainTabs = currentUserRole === 'admin'
+        ? allTabs
+        : allTabs.filter(t => t.name === 'Conexões');
 
     return (
         <div className="flex flex-col gap-6 h-full">

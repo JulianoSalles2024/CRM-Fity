@@ -20,4 +20,10 @@ if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
 export const supabaseAdmin: SupabaseClient = createClient(
   process.env.SUPABASE_URL.trim(),
   process.env.SUPABASE_SERVICE_ROLE_KEY.trim(),
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
 );

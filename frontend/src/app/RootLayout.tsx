@@ -34,7 +34,14 @@ export default function RootLayout() {
     const navigate = useNavigate();
 
     const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
-    const [bannerDismissed, setBannerDismissed] = useState(false);
+    const bannerKey = user?.id ? `banner_wa_dismissed_${user.id}` : null;
+    const [bannerDismissed, setBannerDismissed] = useState<boolean>(() =>
+        bannerKey ? localStorage.getItem(bannerKey) === '1' : false
+    );
+    const dismissBanner = () => {
+        setBannerDismissed(true);
+        if (bannerKey) localStorage.setItem(bannerKey, '1');
+    };
 
     const { hasConnection, loading: connLoading, refetch: refetchConn } = useMyConnection(
         user?.id ?? null,
@@ -212,7 +219,7 @@ export default function RootLayout() {
                                 Conectar agora
                             </button>
                             <button
-                                onClick={() => setBannerDismissed(true)}
+                                onClick={dismissBanner}
                                 className="text-emerald-700 hover:text-emerald-500 transition-colors"
                             >
                                 <X className="w-4 h-4" />
@@ -370,7 +377,7 @@ export default function RootLayout() {
                         onClose={() => setWhatsappModalOpen(false)}
                         onConnected={() => {
                             setWhatsappModalOpen(false);
-                            setBannerDismissed(true);
+                            dismissBanner();
                             refetchConn();
                         }}
                         userName={ctx.localUser?.name}

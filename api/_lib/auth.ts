@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from './supabase.js';
 import { AuthError } from './errors.js';
 
@@ -13,14 +14,9 @@ export interface AuthContext {
 // Valida o JWT do header Authorization e retorna o contexto
 // seguro do usuário autenticado.
 //
-// Fluxo:
-//   1. Extrai o Bearer token do header
-//   2. Valida o token via supabase.auth.getUser() (verifica assinatura + expiração)
-//   3. Busca company_id e role do perfil no banco
-//   4. Retorna AuthContext — nunca confia em dados do request body
-//
-// Lança AuthError (401/403) se qualquer etapa falhar.
-// O chamador deve capturar via apiError() para resposta padronizada.
+// Usa um client Supabase por-requisição com o token do usuário
+// (abordagem correta para Supabase JS v2 — evita o bug
+// "Auth session missing!" do supabaseAdmin.auth.getUser(jwt)).
 //
 export async function requireAuth(req: any): Promise<AuthContext> {
   const raw = (
@@ -33,10 +29,22 @@ export async function requireAuth(req: any): Promise<AuthContext> {
     throw new AuthError(401, 'Token de autenticação obrigatório.');
   }
 
+  const supabaseUrl  = process.env.SUPABASE_URL!.trim();
+  const supabaseAnon = (process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY ?? '').trim();
+
+  if (!supabaseAnon) {
+    throw new AuthError(500, 'SUPABASE_ANON_KEY não configurada no servidor.');
+  }
+
+  const userClient = createClient(supabaseUrl, supabaseAnon, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth:   { persistSession: false, autoRefreshToken: false },
+  });
+
   const {
     data: { user },
     error: authError,
-  } = await supabaseAdmin.auth.getUser(token);
+  } = await userClient.auth.getUser();
 
   if (authError || !user) {
     throw new AuthError(401, 'Token inválido ou expirado.');
@@ -60,11 +68,6 @@ export async function requireAuth(req: any): Promise<AuthContext> {
 }
 
 // ── requireRole ───────────────────────────────────────────────
-//
-// Verifica se o usuário autenticado possui o role exigido.
-// Deve ser chamado APÓS requireAuth().
-// Lança AuthError(403) se o role for insuficiente.
-//
 export function requireRole(ctx: AuthContext, role: 'admin'): void {
   if (ctx.role !== role) {
     throw new AuthError(403, 'Permissão insuficiente.');
