@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageCircle, Wifi, WifiOff, Loader2, RefreshCw,
-  QrCode, Clock, Shield, Zap, ExternalLink, Copy,
+  QrCode, Clock, Shield, Zap, Copy,
   PhoneOff, Trash2, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { useChannelConnections, ChannelConnection } from '@/src/hooks/useChannelConnections';
@@ -150,18 +150,12 @@ const ConnCard: React.FC<ConnCardProps> = ({
           )}
         </div>
 
-        {/* QR warning (when disconnected) */}
-        {(evoState === 'close' || evoState === 'error') && conn.channel === 'whatsapp' && conn.config?.evolution_url && conn.external_id && (
-          <a
-            href={`${conn.config.evolution_url}/manager`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-[10px] text-amber-500/80 hover:text-amber-400 transition-colors"
-          >
+        {/* QR warning (when disconnected) — no infrastructure URLs exposed to client */}
+        {(evoState === 'close' || evoState === 'error') && conn.channel === 'whatsapp' && (
+          <div className="flex items-center gap-1.5 text-[10px] text-amber-500/70">
             <QrCode className="w-3 h-3 shrink-0" />
-            Abrir Evolution API
-            <ExternalLink className="w-2.5 h-2.5" />
-          </a>
+            Use o botão Reconectar para vincular novamente
+          </div>
         )}
       </div>
 

@@ -35,7 +35,11 @@ export function useConversations(statusFilter: ConversationStatus | null = null,
       .eq('company_id', companyId)
       .order('last_message_at', { ascending: false, nullsFirst: false });
 
-    if (currentUserRole !== 'admin' && user) {
+    // All roles (admin and seller) see only their own assigned conversations.
+    // RLS enforces this at the DB level too — this is the application-layer mirror.
+    // Admin sees unassigned conversations via RLS (assignee_id IS NULL), but
+    // their own assigned conversations via this filter.
+    if (user?.id) {
       query = query.eq('assignee_id', user.id);
     }
 
@@ -50,9 +54,12 @@ export function useConversations(statusFilter: ConversationStatus | null = null,
     const { data, error } = await query;
     if (!error && data) setConversations(data as OmniConversation[]);
     setLoading(false);
-  }, [companyId, currentUserRole, user, statusFilter, search]);
+  }, [companyId, user?.id, statusFilter, search]); // user?.id — not user object (prevents loop)
 
   useEffect(() => { fetchConversations(); }, [fetchConversations]);
+  // currentUserRole intentionally excluded from deps: the user.id dependency above
+  // already handles re-fetch when auth context changes. Including role would cause
+  // redundant fetches during the same auth session.
 
   // Ref sempre aponta para a versão mais recente de fetchConversations
   // sem ser dependência do effect de subscription — evita loop e gap de canal

@@ -203,7 +203,11 @@ async function handleInstanceState(req: any, res: any) {
     const stateRes = await fetch(`${evolutionUrl}/instance/connectionState/${instanceName}`,
       { headers: { apikey: apiKey }, signal: AbortSignal.timeout(6000) });
 
-    if (!stateRes.ok) return res.status(200).json({ state: 'error', base64: null });
+    if (!stateRes.ok) {
+      // 404 = instance not found = disconnected; other errors = actual failure
+      const state = stateRes.status === 404 ? 'close' : 'error';
+      return res.status(200).json({ state, base64: null });
+    }
 
     const stateData = await stateRes.json();
     const state = stateData?.instance?.state ?? stateData?.state ?? 'unknown';
@@ -284,11 +288,17 @@ async function handleHealth(req: any, res: any) {
     const ctx = await requireAuth(req);
     const { companyId } = ctx;
 
-    const { data: connections, error } = await supabaseAdmin
+    // Non-admins only see their own connections — prevents cross-seller data exposure
+    let query = supabaseAdmin
       .from('channel_connections')
-      .select('id, name, channel, external_id, status, config, is_active, updated_at')
+      .select('id, name, channel, external_id, status, owner_id, config, is_active, updated_at')
       .eq('company_id', companyId);
 
+    if (ctx.role !== 'admin') {
+      query = query.eq('owner_id', ctx.userId);
+    }
+
+    const { data: connections, error } = await query;
     if (error) throw new AppError(500, 'Erro ao buscar conexões.');
 
     const results = await Promise.all(
@@ -312,6 +322,9 @@ async function handleHealth(req: any, res: any) {
           if (r.ok) {
             const j = await r.json();
             base.evolution_state = j?.instance?.state ?? j?.state ?? 'unknown';
+          } else if (r.status === 404) {
+            // Instance not found in Evolution = effectively disconnected, not a technical error
+            base.evolution_state = 'close';
           } else {
             base.evolution_state = 'error';
             base.evolution_error = `Evolution API retornou ${r.status}`;
@@ -396,46 +409,47 @@ async function handleDisconnect(req: any, res: any) {
     const evolutionUrl = process.env.EVOLUTION_API_URL?.replace(/\/$/, '');
     const apiKey       = process.env.EVOLUTION_API_KEY;
 
-    // Admin pode desconectar qualquer instância pelo connectionId
-    // Seller só pode desconectar a própria
-    const { data: conn } = await supabaseAdmin
+    // Step 1: Find the target connection.
+    // When connectionId is provided, always resolve by id (works for admin and seller).
+    // When not provided, fall back to owner_id (seller disconnecting their own).
+    let findQuery = supabaseAdmin
       .from('channel_connections')
       .select('id, external_id, owner_id, channel')
-      .eq('company_id', companyId)
-      .eq(
-        connectionId && ctx.role === 'admin' ? 'id' : 'owner_id',
-        connectionId && ctx.role === 'admin' ? connectionId : userId
-      )
-      .maybeSingle();
+      .eq('company_id', companyId);
 
-    // Garante que seller não pode desconectar instância de outro usuário
-    // Fallback: instâncias com owner_id null são identificadas pelo padrão ns_{userId}
-    if (conn && ctx.role !== 'admin') {
-      const expectedExtId = `ns_${userId.replace(/-/g, '').slice(0, 20)}`;
-      const isOwner = conn.owner_id === userId || conn.external_id === expectedExtId;
-      if (!isOwner) return res.status(403).json({ error: 'Permissão insuficiente.' });
+    if (connectionId) {
+      findQuery = findQuery.eq('id', connectionId);
+    } else {
+      findQuery = findQuery.eq('owner_id', userId);
     }
 
-    // Deleta instância na Evolution API
-    if (evolutionUrl && apiKey && conn?.external_id) {
+    const { data: conn } = await findQuery.maybeSingle();
+
+    // Step 2: Ownership check — sellers can only touch their own connections.
+    if (conn && ctx.role !== 'admin' && conn.owner_id !== userId) {
+      return res.status(403).json({ error: 'Permissão insuficiente.' });
+    }
+
+    // If nothing was found there is nothing to clean up — return success silently.
+    if (!conn) return res.status(200).json({ ok: true });
+
+    // Step 3: Delete instance in Evolution API (fire-and-forget; already gone = fine).
+    if (evolutionUrl && apiKey && conn.external_id) {
       try {
         await fetch(`${evolutionUrl}/instance/delete/${encodeURIComponent(conn.external_id)}`, {
           method: 'DELETE',
           headers: { apikey: apiKey },
           signal: AbortSignal.timeout(8000),
         });
-      } catch { /* ignora */ }
+      } catch { /* ignore — Evolution may have already cleaned it up */ }
     }
 
-    // Remove do banco
+    // Step 4: Remove from DB by exact id — atomic, no ambiguity.
     const { error } = await supabaseAdmin
       .from('channel_connections')
       .delete()
       .eq('company_id', companyId)
-      .eq(
-        connectionId && ctx.role === 'admin' ? 'id' : 'owner_id',
-        connectionId && ctx.role === 'admin' ? connectionId : userId
-      );
+      .eq('id', conn.id);
 
     if (error) throw new AppError(500, 'Erro ao remover conexão do banco.');
 

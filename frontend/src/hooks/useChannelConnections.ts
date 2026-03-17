@@ -9,7 +9,6 @@ export interface ChannelConnection {
   name: string;
   status: 'active' | 'inactive' | 'error';
   external_id: string | null;
-  config: Record<string, any>;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -34,7 +33,8 @@ export function useChannelConnections(
     setLoading(true);
     let query = supabase
       .from('channel_connections')
-      .select('*')
+      // config excluded: api_key and evolution_url must not be exposed to the client
+      .select('id, company_id, owner_id, channel, name, status, external_id, is_active, created_at, updated_at')
       .eq('company_id', companyId);
 
     // Sellers veem apenas a própria conexão
@@ -44,12 +44,27 @@ export function useChannelConnections(
     }
 
     const { data, error } = await query.order('created_at', { ascending: true });
-    if (!error && data) setConnections(data as ChannelConnection[]);
+    if (!error && data) {
+      // Preserve local-only fields (evolutionState, lastHealthCheck) set by health-check,
+      // which are not persisted in the DB. Replacing the array would clear them on every
+      // Realtime re-fetch, causing "Sem status" flicker.
+      setConnections(prev => {
+        const prevMap = new Map(prev.map(c => [c.id, c]));
+        return (data as ChannelConnection[]).map(c => ({
+          ...c,
+          evolutionState: prevMap.get(c.id)?.evolutionState,
+          lastHealthCheck: prevMap.get(c.id)?.lastHealthCheck,
+        }));
+      });
+    }
     setLoading(false);
   }, [companyId]); // companyId é a única dependência real
 
-  // Fetch inicial
-  useEffect(() => { fetchConnections(); }, [fetchConnections]);
+  // Fetch inicial — also re-fetches when role/userId become available (auth context
+  // may load after companyId, causing the first fetch to run without the owner_id filter).
+  useEffect(() => {
+    fetchConnections();
+  }, [fetchConnections, options?.role, options?.userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Realtime — usa fetchRef para nunca ter stale closure
   const fetchRef = useRef(fetchConnections);
