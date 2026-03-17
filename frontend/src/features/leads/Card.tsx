@@ -2,8 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { DollarSign, Tag, Clock, TrendingUp, Mail, Phone, ChevronDown, ChevronUp, MessageCircle, BookOpen, ShieldCheck, ShieldX, AlertCircle, User } from 'lucide-react';
-import type { Lead, CardDisplaySettings, User as UserType, Id, Task, ColumnData } from '@/types';
+import { DollarSign, Tag, Clock, TrendingUp, Mail, Phone, ChevronDown, ChevronUp, MessageCircle, BookOpen, ShieldCheck, ShieldX, AlertCircle, User, Plus } from 'lucide-react';
+import type { Lead, CardDisplaySettings, User as UserType, Id, Task, ColumnData, Board } from '@/types';
 import { getLeadComputedStatus, STATUS_DOT_COLOR, STATUS_BADGE } from '@/src/lib/leadStatus';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { GlassCard } from '@/src/shared/components/GlassCard';
@@ -18,6 +18,8 @@ interface CardProps {
     isSelected: boolean;
     minimizedLeads: Id[];
     onToggleLeadMinimize: (leadId: Id) => void;
+    boards?: Board[];
+    onMoveToBoardClick?: (lead: Lead) => void;
 }
 
 const TagPill: React.FC<{ tag: { name: string, color: string } }> = ({ tag }) => (
@@ -29,7 +31,7 @@ const TagPill: React.FC<{ tag: { name: string, color: string } }> = ({ tag }) =>
     </span>
 );
 
-const Card: React.FC<CardProps> = ({ lead, columnType, displaySettings, users, tasks, onSelect, isSelected, minimizedLeads, onToggleLeadMinimize }) => {
+const Card: React.FC<CardProps> = ({ lead, columnType, displaySettings, users, tasks, onSelect, isSelected, minimizedLeads, onToggleLeadMinimize, boards, onMoveToBoardClick }) => {
     const {
         attributes,
         listeners,
@@ -131,6 +133,16 @@ const Card: React.FC<CardProps> = ({ lead, columnType, displaySettings, users, t
                     </div>
 
                     <div className="flex items-center gap-1 flex-shrink-0">
+                        {onMoveToBoardClick && boards && boards.filter(b => b.id !== lead.boardId).length > 0 && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onMoveToBoardClick(lead); }}
+                                className="flex items-center justify-center w-5 h-5 rounded-full border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/15 hover:border-emerald-400 transition-all"
+                                style={{ boxShadow: '0 0 6px rgba(52,211,153,0.35)' }}
+                                title="Mover para outro pipeline"
+                            >
+                                <Plus className="w-3 h-3" />
+                            </button>
+                        )}
                         {isHovered && !isMinimized && lead.phone && (
                             <button
                                 onClick={handleWhatsAppClick}

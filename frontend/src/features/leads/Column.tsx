@@ -3,7 +3,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from './Card';
-import type { ColumnData, Lead, User, CardDisplaySettings, Id, Task } from '@/types';
+import type { ColumnData, Lead, User, CardDisplaySettings, Id, Task, Board } from '@/types';
 import { PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import FlatCard from '@/components/ui/FlatCard';
 
@@ -20,6 +20,8 @@ interface ColumnProps {
     onToggleLeadMinimize: (leadId: Id) => void;
     minimizedColumns: Id[];
     onToggleColumnMinimize: (columnId: Id) => void;
+    boards?: Board[];
+    onMoveToBoardClick?: (lead: Lead) => void;
 }
 
 const contentVariants = {
@@ -27,7 +29,7 @@ const contentVariants = {
     visible: { opacity: 1, transition: { duration: 0.2, delay: 0.1 } },
 };
 
-const Column: React.FC<ColumnProps> = ({ column, leads, users, tasks, cardDisplaySettings, onSelectLead, selectedLeadId, onAddLead, minimizedLeads, onToggleLeadMinimize, minimizedColumns, onToggleColumnMinimize }) => {
+const Column: React.FC<ColumnProps> = ({ column, leads, users, tasks, cardDisplaySettings, onSelectLead, selectedLeadId, onAddLead, minimizedLeads, onToggleLeadMinimize, minimizedColumns, onToggleColumnMinimize, boards, onMoveToBoardClick }) => {
     const { setNodeRef, isOver } = useDroppable({ id: column.id, data: { type: 'Column', column } });
     
     const leadsInColumn = leads.filter(lead => lead.columnId === column.id && !lead.reactivationDate);
@@ -123,6 +125,8 @@ const Column: React.FC<ColumnProps> = ({ column, leads, users, tasks, cardDispla
                                                 isSelected={selectedLeadId === lead.id}
                                                 minimizedLeads={minimizedLeads}
                                                 onToggleLeadMinimize={onToggleLeadMinimize}
+                                                boards={boards}
+                                                onMoveToBoardClick={onMoveToBoardClick}
                                             />
                                         ))}
                                         {leadsInColumn.length === 0 && (

@@ -1,17 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { X, Bot, Zap, LayoutGrid, BookOpen, Code2, CheckCircle, Loader2, ExternalLink } from 'lucide-react';
+import { X, Bot, Zap, LayoutGrid, BookOpen, Code2, Layers, CheckCircle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/src/lib/supabase';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type Tab = 'auto' | 'templates' | 'learn' | 'advanced';
+type Tab = 'auto' | 'templates' | 'stages' | 'learn' | 'advanced';
 
 interface TemplateOption {
   id: string;
   label: string;
   description: string;
   prompt: string;
+}
+
+interface StageConfig {
+  id: string;
+  name: string;
+  color: string;
+  ai_prompt: string;
 }
 
 // ── Templates de metodologia ──────────────────────────────────────────────────
@@ -100,28 +107,50 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
   const [aiEnabled, setAiEnabled] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [prompt, setPrompt] = useState('');
+  const [stages, setStages] = useState<StageConfig[]>([]);
+  const [expandedStage, setExpandedStage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Carrega configuração atual do board
+  // Carrega configuração atual do board + stages
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from('boards')
-        .select('ai_enabled, ai_prompt, ai_methodology')
-        .eq('id', boardId)
-        .eq('company_id', companyId)
-        .maybeSingle();
+      const [boardRes, stagesRes] = await Promise.all([
+        supabase
+          .from('boards')
+          .select('ai_enabled, ai_prompt, ai_methodology')
+          .eq('id', boardId)
+          .eq('company_id', companyId)
+          .maybeSingle(),
+        supabase
+          .from('board_stages')
+          .select('id, name, color, ai_prompt')
+          .eq('board_id', boardId)
+          .eq('company_id', companyId)
+          .order('order', { ascending: true }),
+      ]);
 
-      if (data) {
-        setAiEnabled(data.ai_enabled ?? false);
-        setPrompt(data.ai_prompt ?? '');
-        setSelectedTemplate(data.ai_methodology ?? null);
-        if (data.ai_methodology) setActiveTab('templates');
-        else if (data.ai_prompt) setActiveTab('advanced');
+      if (boardRes.data) {
+        setAiEnabled(boardRes.data.ai_enabled ?? false);
+        setPrompt(boardRes.data.ai_prompt ?? '');
+        setSelectedTemplate(boardRes.data.ai_methodology ?? null);
+        if (boardRes.data.ai_methodology) setActiveTab('templates');
+        else if (boardRes.data.ai_prompt) setActiveTab('advanced');
       }
+
+      if (stagesRes.data) {
+        setStages(
+          stagesRes.data.map((s) => ({
+            id: s.id,
+            name: s.name,
+            color: s.color ?? '#6b7280',
+            ai_prompt: s.ai_prompt ?? '',
+          })),
+        );
+      }
+
       setIsLoading(false);
     };
     load();
@@ -133,11 +162,16 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
     setActiveTab('templates');
   };
 
+  const handleStagePromptChange = (stageId: string, value: string) => {
+    setStages((prev) => prev.map((s) => (s.id === stageId ? { ...s, ai_prompt: value } : s)));
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     setError(null);
 
-    const { error: err } = await supabase
+    // Salva board
+    const { error: boardErr } = await supabase
       .from('boards')
       .update({
         ai_enabled: aiEnabled,
@@ -147,21 +181,37 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
       .eq('id', boardId)
       .eq('company_id', companyId);
 
-    if (err) {
+    if (boardErr) {
       setError('Não foi possível salvar. Tente novamente.');
-    } else {
-      setSaved(true);
-      onSaved?.();
-      setTimeout(() => setSaved(false), 3000);
+      setIsSaving(false);
+      return;
     }
+
+    // Salva prompts dos estágios em paralelo
+    if (stages.length > 0) {
+      await Promise.all(
+        stages.map((s) =>
+          supabase
+            .from('board_stages')
+            .update({ ai_prompt: s.ai_prompt || null })
+            .eq('id', s.id)
+            .eq('company_id', companyId),
+        ),
+      );
+    }
+
+    setSaved(true);
+    onSaved?.();
+    setTimeout(() => setSaved(false), 3000);
     setIsSaving(false);
   };
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'auto', label: 'Automático', icon: <Zap className="w-3.5 h-3.5" /> },
-    { id: 'templates', label: 'Templates', icon: <LayoutGrid className="w-3.5 h-3.5" /> },
-    { id: 'learn', label: 'Aprender', icon: <BookOpen className="w-3.5 h-3.5" /> },
-    { id: 'advanced', label: 'Avançado', icon: <Code2 className="w-3.5 h-3.5" /> },
+    { id: 'auto',      label: 'Automático', icon: <Zap     className="w-3.5 h-3.5" /> },
+    { id: 'templates', label: 'Templates',  icon: <LayoutGrid className="w-3.5 h-3.5" /> },
+    { id: 'stages',    label: 'Por Estágio', icon: <Layers  className="w-3.5 h-3.5" /> },
+    { id: 'learn',     label: 'Aprender',   icon: <BookOpen className="w-3.5 h-3.5" /> },
+    { id: 'advanced',  label: 'Avançado',   icon: <Code2   className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -205,12 +255,12 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
         ) : (
           <>
             {/* Tabs */}
-            <div className="flex border-b border-white/5 px-6 pt-4 gap-1">
+            <div className="flex border-b border-white/5 px-6 pt-4 gap-1 overflow-x-auto">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-px ${
+                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-px whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'text-blue-400 border-blue-500 bg-blue-500/5'
                       : 'text-slate-500 border-transparent hover:text-slate-300'
@@ -294,6 +344,78 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                 </div>
               )}
 
+              {/* ── Por Estágio ─────────────────────────────────────── */}
+              {activeTab === 'stages' && (
+                <div className="space-y-3">
+                  <div className="bg-[#0F172A] border border-white/5 rounded-xl p-3">
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Configure uma instrução específica para cada etapa do funil.{' '}
+                      <span className="text-slate-300">Deixe em branco</span> para usar o prompt global do pipeline como fallback.
+                    </p>
+                  </div>
+
+                  {stages.length === 0 ? (
+                    <p className="text-xs text-slate-500 text-center py-6">
+                      Nenhum estágio encontrado neste pipeline.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {stages.map((stage, idx) => {
+                        const isOpen = expandedStage === stage.id;
+                        const hasPrompt = stage.ai_prompt.trim().length > 0;
+                        return (
+                          <div
+                            key={stage.id}
+                            className="bg-[#0F172A] border border-white/5 rounded-xl overflow-hidden"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setExpandedStage(isOpen ? null : stage.id)}
+                              className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                                  style={{ backgroundColor: stage.color }}
+                                />
+                                <span className="text-sm font-medium text-white">{stage.name}</span>
+                                <span className="text-xs text-slate-600">#{idx + 1}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {hasPrompt && (
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                                    Configurado
+                                  </span>
+                                )}
+                                <span className={`text-slate-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
+                                  ▾
+                                </span>
+                              </div>
+                            </button>
+
+                            {isOpen && (
+                              <div className="px-4 pb-4 space-y-2 border-t border-white/5">
+                                <label className="block text-xs font-medium text-slate-400 mt-3 mb-1.5">
+                                  Instrução para este estágio
+                                </label>
+                                <textarea
+                                  value={stage.ai_prompt}
+                                  onChange={(e) => handleStagePromptChange(stage.id, e.target.value)}
+                                  rows={5}
+                                  placeholder={`Ex: O lead chegou em "${stage.name}". Sua missão agora é...`}
+                                  className={`${inputCls} resize-none font-mono text-xs leading-relaxed`}
+                                />
+                                <p className="text-xs text-slate-600">{stage.ai_prompt.length} caracteres</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* ── Aprender ───────────────────────────────────────── */}
               {activeTab === 'learn' && (
                 <div className="space-y-4">
@@ -312,7 +434,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                     </div>
                   </div>
                   <div className="bg-[#0F172A] border border-white/5 rounded-xl p-4 space-y-3">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Você pode adicionar</p>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Você poderá adicionar</p>
                     {[
                       'PDFs e documentos de produto',
                       'Perguntas frequentes (FAQ)',
@@ -327,13 +449,12 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                       </div>
                     ))}
                   </div>
-                  <a
-                    href="/settings/knowledge"
-                    className="flex items-center justify-between w-full px-4 py-3 bg-[#0F172A] border border-white/5 rounded-xl text-sm text-blue-400 hover:bg-blue-500/5 hover:border-blue-500/20 transition-all group"
-                  >
-                    <span className="font-medium">Ir para Treinamento</span>
-                    <ExternalLink className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                  </a>
+                  <div className="flex items-center justify-between w-full px-4 py-3 bg-[#0F172A] border border-white/5 rounded-xl opacity-50 cursor-not-allowed">
+                    <span className="text-sm font-medium text-slate-400">Treinamento de documentos</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-700 text-slate-400 border border-white/10">
+                      Em breve
+                    </span>
+                  </div>
                 </div>
               )}
 
@@ -341,8 +462,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
               {activeTab === 'advanced' && (
                 <div className="space-y-3">
                   <p className="text-xs text-slate-500">
-                    Escreva instruções personalizadas para este pipeline. O prompt aqui substituirá
-                    qualquer template selecionado.
+                    Prompt global para este pipeline. Usado como fallback quando um estágio não tiver instrução própria.
                   </p>
                   <div>
                     <label className="block text-xs font-medium text-slate-400 mb-2">

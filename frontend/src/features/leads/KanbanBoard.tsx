@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import FlatCard from '@/components/ui/FlatCard';
+import { VercelAvatar } from '@/src/shared/components/VercelAvatar';
 import {
     DndContext,
     DragEndEvent,
@@ -18,6 +19,7 @@ import Card from './Card';
 import PipelineHeader from './PipelineHeader';
 import EditBoardModal from './EditBoardModal';
 import ExportImportModal from './ExportImportModal';
+import MoveToBoardModal from './MoveToBoardModal';
 import type { ColumnData, Lead, Id, User, CardDisplaySettings, Task, Board } from '@/types';
 
 interface KanbanBoardProps {
@@ -75,6 +77,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
     const [isEditBoardModalOpen, setIsEditBoardModalOpen] = useState(false);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const [movingLead, setMovingLead] = useState<Lead | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
     const columnIds = useMemo(() => columns.map(c => c.id), [columns]);
@@ -167,6 +170,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                     onToggleLeadMinimize={onToggleLeadMinimize}
                                     minimizedColumns={minimizedColumns}
                                     onToggleColumnMinimize={onToggleColumnMinimize}
+                                    boards={boards}
+                                    onMoveToBoardClick={setMovingLead}
                                 />
                             ))}
                         </div>
@@ -214,12 +219,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                         >
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-3">
-                                                    <div
-                                                        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ring-1 ring-white/10 flex-shrink-0"
-                                                        style={{ background: 'linear-gradient(135deg, #1e40af, #2563eb)' }}
-                                                    >
-                                                        {(lead.name ?? '?').charAt(0).toUpperCase()}
-                                                    </div>
+                                                    <VercelAvatar name={lead.name ?? '?'} size={32} />
                                                     <div>
                                                         <span className="text-sm font-semibold text-white">{lead.name}</span>
                                                         {lead.company && <div className="text-xs text-slate-500 mt-0.5">{lead.company}</div>}
@@ -244,12 +244,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2">
-                                                    <div
-                                                        className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-white/10"
-                                                        style={{ background: 'linear-gradient(135deg, #1e40af, #2563eb)' }}
-                                                    >
-                                                        {users.find(u => u.id === lead.assignedTo)?.name.substring(0, 2).toUpperCase() || '??'}
-                                                    </div>
+                                                    <VercelAvatar
+                                                        name={users.find(u => u.id === lead.assignedTo)?.name ?? 'Não atribuído'}
+                                                        size={24}
+                                                    />
                                                     <span className="text-sm text-slate-400">
                                                         {users.find(u => u.id === lead.assignedTo)?.name || 'Não atribuído'}
                                                     </span>
@@ -263,6 +261,15 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     </FlatCard>
                 )}
             </div>
+
+            {movingLead && (
+                <MoveToBoardModal
+                    lead={movingLead}
+                    boards={boards}
+                    currentBoardId={activeBoardId as string}
+                    onClose={() => setMovingLead(null)}
+                />
+            )}
 
             {isEditBoardModalOpen && activeBoard && (
                 <EditBoardModal

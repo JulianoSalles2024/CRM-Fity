@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { Lead, ColumnData, Tag, ListDisplaySettings, User, Board } from '@/types';
-import { ChevronUp, ChevronDown, ChevronsUpDown, Pencil, Trash2 } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown, Pencil, Trash2, Plus } from 'lucide-react';
 import LeadListHeader from './LeadListHeader';
+import MoveToBoardModal from './MoveToBoardModal';
 import FlatCard from '@/components/ui/FlatCard';
+import { VercelAvatar } from '@/src/shared/components/VercelAvatar';
 import { getLeadComputedStatus, STATUS_BADGE, STATUS_DOT_COLOR } from '@/src/lib/leadStatus';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
@@ -34,8 +36,6 @@ function formatRelativeTime(ts: string | null | undefined): string {
     return `há ${days} dia${days !== 1 ? 's' : ''}`;
 }
 
-// ── Avatar helper — fixed blue to match platform accent ──────
-const getAvatarColor = (_name: string) => 'bg-blue-600';
 
 const TagPill: React.FC<{ tag: Tag }> = ({ tag }) => (
     <span 
@@ -93,6 +93,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
     const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending'});
     const [searchQuery, setSearchQuery] = useState('');
     const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+    const [movingLead, setMovingLead] = useState<Lead | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
     const PAGE_SIZE = 5;
@@ -276,7 +277,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
 
     // checkbox + 5 blocks admin (identity / status+value / pipeline+owner / activity / actions)
     // checkbox + 4 blocks non-admin (no pipeline block)
-    const numberOfColumns = currentUserRole === 'admin' ? 6 : 5;
+    const numberOfColumns = 6;
     // --- END VIRTUALIZATION LOGIC ---
     
     const TableHeader: React.FC<{ sortKey: SortableKeys; label: string; className?: string }> = ({ sortKey, label, className }) => {
@@ -284,7 +285,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
         const isAscending = isActive && sortConfig?.direction === 'ascending';
 
         return (
-            <th className={`px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase whitespace-nowrap ${className} ${isActive ? 'text-white' : 'text-slate-500'}`}>
+            <th className={`px-4 py-3 text-left text-xs font-bold tracking-wider uppercase whitespace-nowrap ${className} ${isActive ? 'text-white' : 'text-slate-400'}`}>
                 <button className="flex items-center gap-1 group" onClick={() => requestSort(sortKey)}>
                     {label}
                     <span className={isActive ? 'opacity-100' : 'opacity-50 group-hover:opacity-100 transition-opacity'}>
@@ -361,10 +362,8 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                         />
                                     </th>
                                     <TableHeader sortKey="name" label="Lead" />
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap">Status / Valor</th>
-                                    {currentUserRole === 'admin' && (
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 tracking-wider uppercase whitespace-nowrap">Pipeline</th>
-                                    )}
+                                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 tracking-wider uppercase whitespace-nowrap">Status / Valor</th>
+                                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-400 tracking-wider uppercase whitespace-nowrap">Pipeline</th>
                                     <TableHeader sortKey="createdAt" label="Atividade" />
                                     <th className="px-4 py-3 w-20" />
                                 </tr>
@@ -392,12 +391,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                         {/* ── Bloco 1: Identidade ─────────────────────────── */}
                                         <td className="px-4 py-4 w-64">
                                             <div className="flex items-center gap-3 min-w-0">
-                                                <div
-                                                    className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ring-1 ring-white/10"
-                                                    style={{ background: 'linear-gradient(135deg, #1e40af, #2563eb)' }}
-                                                >
-                                                    {(lead.name ?? '?').charAt(0).toUpperCase()}
-                                                </div>
+                                                <VercelAvatar name={lead.name ?? '?'} size={36} />
                                                 <div className="min-w-0">
                                                     <div className="text-sm font-semibold text-white truncate leading-snug">{lead.name}</div>
                                                     <div className="text-xs text-slate-500 truncate leading-snug mt-0.5">{lead.email || lead.company || '—'}</div>
@@ -432,28 +426,28 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                             </div>
                                         </td>
 
-                                        {/* ── Bloco 3: Pipeline + Criado por (admin) ──────── */}
-                                        {currentUserRole === 'admin' && (
-                                            <td className="px-4 py-4 whitespace-nowrap align-top">
-                                                <div className="flex flex-col gap-1">
-                                                    <span className="text-sm text-slate-300 truncate leading-snug">
-                                                        {boards.find(b => b.id === lead.boardId)?.name ?? '—'}
-                                                    </span>
+                                        {/* ── Bloco 3: Pipeline (todos) + Criado por (admin) ── */}
+                                        <td className="px-4 py-4 whitespace-nowrap align-top">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-sm text-slate-300 truncate leading-snug">
+                                                    {boards.find(b => b.id === lead.boardId)?.name ?? '—'}
+                                                </span>
+                                                {currentUserRole === 'admin' && (
                                                     <span className="text-xs text-slate-500 leading-snug">
                                                         {users.find(u => u.id === lead.ownerId)?.name
                                                             ? `por ${users.find(u => u.id === lead.ownerId)?.name}`
                                                             : '—'}
                                                     </span>
-                                                    {listDisplaySettings.showAssignedTo && (
-                                                        <span className="text-xs text-slate-600 leading-snug">
-                                                            {users.find(u => u.id === lead.assignedTo)?.name
-                                                                ? `resp. ${users.find(u => u.id === lead.assignedTo)?.name}`
-                                                                : ''}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        )}
+                                                )}
+                                                {currentUserRole === 'admin' && listDisplaySettings.showAssignedTo && (
+                                                    <span className="text-xs text-slate-600 leading-snug">
+                                                        {users.find(u => u.id === lead.assignedTo)?.name
+                                                            ? `resp. ${users.find(u => u.id === lead.assignedTo)?.name}`
+                                                            : ''}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
 
                                         {/* ── Bloco 4: Criação + Última atividade ─────────── */}
                                         <td className="px-4 py-4 whitespace-nowrap align-top">
@@ -471,6 +465,17 @@ const LeadListView: React.FC<LeadListViewProps> = ({
 
                                         {/* ── Bloco 5: Ações ──────────────────────────────── */}
                                         <td className="px-3 py-4 whitespace-nowrap align-top w-20">
+                                            <div className="flex items-center gap-1">
+                                            {boards.filter(b => b.id !== lead.boardId).length > 0 && (
+                                                <button
+                                                    onClick={e => { e.stopPropagation(); setMovingLead(lead); }}
+                                                    className="flex items-center justify-center w-5 h-5 rounded-full border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/15 hover:border-emerald-400 transition-all flex-shrink-0"
+                                                    style={{ boxShadow: '0 0 6px rgba(52,211,153,0.35)' }}
+                                                    title="Mover para outro pipeline"
+                                                >
+                                                    <Plus className="w-3 h-3" />
+                                                </button>
+                                            )}
                                             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white/5 rounded-lg p-0.5 w-fit">
                                                 <button
                                                     onClick={e => { e.stopPropagation(); onEditLead(lead); }}
@@ -486,6 +491,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
+                                            </div>
                                             </div>
                                         </td>
 
@@ -524,6 +530,15 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                     </div>
                 )}
             </FlatCard>
+
+            {movingLead && (
+                <MoveToBoardModal
+                    lead={movingLead}
+                    boards={boards}
+                    currentBoardId={movingLead.boardId as string}
+                    onClose={() => setMovingLead(null)}
+                />
+            )}
 
             {leadToDelete && (
                 <ConfirmDeleteModal
