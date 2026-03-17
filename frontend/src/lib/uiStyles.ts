@@ -5,15 +5,15 @@
 export const ui = {
   /** Modal outer panel — dark background matching LeadDetailSlideover */
   modalContainer:
-    'bg-[#0B0E14] rounded-2xl shadow-2xl border border-slate-800 flex flex-col max-h-[90vh]',
+    'bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 flex flex-col max-h-[90vh]',
 
   /** Inner section card */
   card:
-    'bg-slate-900/30 border border-slate-800 rounded-2xl',
+    'bg-slate-950/40 border border-slate-800/50 rounded-2xl',
 
   /** Text input / textarea / select inner className */
   input:
-    'w-full bg-slate-900/50 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50',
+    'w-full bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50',
 
   /** Primary action button (save / create) */
   buttonPrimary:

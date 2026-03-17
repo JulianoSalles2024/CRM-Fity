@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import { Lead, User } from '@/types';
 import { Trophy, Users } from 'lucide-react';
 import FlatCard from '@/components/ui/FlatCard';
+import { VercelAvatar } from '@/src/shared/components/VercelAvatar';
 
 interface TopSellersProps {
     leads: Lead[];
@@ -121,10 +122,11 @@ const TopSellers: React.FC<TopSellersProps> = ({ leads, users, selectedPeriod })
                         <div key={seller.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-950/50 border border-slate-800/50 hover:border-slate-700 transition-colors">
                             <div className="flex items-center gap-3">
                                 <div className="relative">
-                                    <img
-                                        src={seller.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(seller.name)}&background=random`}
-                                        alt={seller.name}
-                                        className="w-10 h-10 rounded-full border-2 border-slate-800"
+                                    <VercelAvatar
+                                        name={seller.name}
+                                        src={seller.avatarUrl}
+                                        size={40}
+                                        className="border-2 border-slate-800"
                                     />
                                     <div className={`absolute -top-1 -left-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-lg
                                         ${index === 0 ? 'bg-amber-500' : index === 1 ? 'bg-slate-400' : 'bg-amber-700'}`}>

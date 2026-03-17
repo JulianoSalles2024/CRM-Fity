@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Plus, Clock, Trash2, Settings2, AlertTriangle, GripVertical,
+  Plus, Clock, Trash2, Settings2, AlertTriangle, ToggleLeft,
   Loader2, AlertCircle, TimerOff, CheckCircle2,
 } from 'lucide-react';
 import FlatCard from '@/components/ui/FlatCard';
@@ -36,8 +36,8 @@ const buildScheduleSummary = (rule: FollowupRule): string => {
 
 interface RuleCardProps {
   rule:           FollowupRule;
-  onLocalUpdate:  (updated: FollowupRule) => void;   // atualiza UI imediatamente
-  onSave:         (updated: FollowupRule) => void;   // persiste no Supabase
+  onLocalUpdate:  (updated: FollowupRule) => void;
+  onSave:         (updated: FollowupRule) => void;
   onDelete:       () => void;
   onOpenSchedule: () => void;
 }
@@ -45,11 +45,11 @@ interface RuleCardProps {
 const RuleCard: React.FC<RuleCardProps> = ({
   rule, onLocalUpdate, onSave, onDelete, onOpenSchedule,
 }) => {
-  // Delay value com estado local para evitar salvar a cada tecla
-  const [delayDraft, setDelayDraft] = useState(String(rule.delay_value));
+  const [delayDraft,  setDelayDraft]  = useState(String(rule.delay_value));
+  const [promptDraft, setPromptDraft] = useState(rule.prompt);
 
-  // Sincroniza se o pai atualizar a regra (ex: após fetch)
   useEffect(() => { setDelayDraft(String(rule.delay_value)); }, [rule.delay_value]);
+  useEffect(() => { setPromptDraft(rule.prompt); }, [rule.prompt]);
 
   const handleDelayBlur = () => {
     const val = Math.max(1, Number(delayDraft) || 1);
@@ -64,18 +64,17 @@ const RuleCard: React.FC<RuleCardProps> = ({
     onSave(updated);
   };
 
-  const handlePromptBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
-    const updated = { ...rule, prompt: e.target.value };
+  const handlePromptBlur = () => {
+    const updated = { ...rule, prompt: promptDraft };
     onLocalUpdate(updated);
     onSave(updated);
   };
 
   return (
-    <div className="bg-[#0B1220] border border-slate-800 rounded-2xl overflow-hidden">
+    <div className="bg-slate-900/40 border border-slate-800 rounded-2xl overflow-hidden">
 
       {/* Card Header */}
-      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-800 bg-[#0B0E14]">
-        <GripVertical className="w-4 h-4 text-slate-600 flex-shrink-0 cursor-grab" />
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-800 bg-slate-950/50">
         <Clock className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
 
         <span className="text-xs text-slate-400 whitespace-nowrap">
@@ -101,7 +100,7 @@ const RuleCard: React.FC<RuleCardProps> = ({
           ))}
         </select>
 
-        <span className="ml-auto text-xs font-medium text-slate-600 whitespace-nowrap">
+        <span className="ml-auto flex items-center px-2.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-bold tracking-wider whitespace-nowrap">
           Passo {rule.sequence_order}
         </span>
       </div>
@@ -113,7 +112,8 @@ const RuleCard: React.FC<RuleCardProps> = ({
             Prompt para a IA gerar a mensagem:
           </label>
           <textarea
-            defaultValue={rule.prompt}
+            value={promptDraft}
+            onChange={e => setPromptDraft(e.target.value)}
             onBlur={handlePromptBlur}
             rows={3}
             placeholder="Ex: O cliente parou de responder. Escreva uma mensagem amigável perguntando se ainda tem interesse, mencionando o produto discutido anteriormente."
@@ -130,7 +130,10 @@ const RuleCard: React.FC<RuleCardProps> = ({
               <Settings2 className="w-3.5 h-3.5" />
               Configurar Horários
             </button>
-            <span className="text-xs text-slate-500 truncate" title={buildScheduleSummary(rule)}>
+            <span
+              className="text-xs text-slate-500 leading-snug"
+              title={buildScheduleSummary(rule)}
+            >
               {buildScheduleSummary(rule)}
             </span>
           </div>
@@ -153,7 +156,6 @@ const RuleCard: React.FC<RuleCardProps> = ({
 export const SettingsInactiveActions: React.FC = () => {
   const { rules, isLoading, isSaving, error, addRule, updateRule, deleteRule } = useFollowupRules();
 
-  // Estado local para UI responsiva (espelha o banco)
   const [localRules, setLocalRules] = useState<FollowupRule[]>([]);
   useEffect(() => { setLocalRules(rules); }, [rules]);
 
@@ -173,7 +175,6 @@ export const SettingsInactiveActions: React.FC = () => {
   const [hoursDraft,  setHoursDraft]  = useState('48');
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Sincroniza estado local quando o banco carrega
   useEffect(() => {
     if (settings !== undefined) {
       const active = settings?.auto_close_hours != null;
@@ -255,14 +256,14 @@ export const SettingsInactiveActions: React.FC = () => {
             className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-4 h-4" />
-            Follow Up
+            Nova Regra
           </button>
         </div>
 
         {/* Body */}
         <div className="p-6 space-y-4">
 
-          {/* Erro de migration não aplicada */}
+          {/* Erro */}
           {error && (
             <div className="flex items-start gap-3 px-4 py-3.5 bg-red-500/5 border border-red-500/20 rounded-xl">
               <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
@@ -284,10 +285,21 @@ export const SettingsInactiveActions: React.FC = () => {
 
           {/* Lista vazia */}
           {!isLoading && !error && localRules.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
-              <Clock className="w-10 h-10 text-slate-700" />
-              <p className="text-sm text-slate-500">Nenhuma regra configurada.</p>
-              <p className="text-xs text-slate-600">Clique em "+ Follow Up" para criar o primeiro follow-up automático.</p>
+            <div className="flex flex-col items-center justify-center py-14 text-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-slate-800/60 border border-slate-700 flex items-center justify-center">
+                <Clock className="w-7 h-7 text-slate-500" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-slate-400">Nenhuma regra configurada.</p>
+                <p className="text-xs text-slate-500">Crie o primeiro passo da sequência de follow-up automático.</p>
+              </div>
+              <button
+                onClick={addRule}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 text-sm font-medium transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                Criar primeira regra
+              </button>
             </div>
           )}
 
@@ -394,9 +406,10 @@ export const SettingsInactiveActions: React.FC = () => {
 
           {/* Estado desativado */}
           {!isLoadingSettings && !enabled && (
-            <p className="text-xs text-slate-600 italic">
+            <div className="flex items-center gap-2 text-slate-400 text-sm">
+              <ToggleLeft className="w-4 h-4 text-slate-500" />
               Ative o toggle para configurar o encerramento automático.
-            </p>
+            </div>
           )}
 
           {/* Feedback de sucesso */}
@@ -407,8 +420,8 @@ export const SettingsInactiveActions: React.FC = () => {
             </div>
           )}
 
-          {/* Info box permanente */}
-          {!isLoadingSettings && (
+          {/* Info box — apenas quando habilitado */}
+          {!isLoadingSettings && enabled && (
             <div className="flex items-start gap-3 px-4 py-3.5 bg-amber-500/5 border border-amber-500/15 rounded-xl">
               <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-amber-300/80 leading-relaxed">

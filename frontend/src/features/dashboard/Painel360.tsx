@@ -1,6 +1,7 @@
 import { safeError } from '@/src/utils/logger';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { VercelAvatar } from '@/src/shared/components/VercelAvatar';
 import { Search, User, Trophy, Plus, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -357,10 +358,8 @@ const ScoreTab: React.FC<ScoreTabProps> = ({ sellers, onSelectSeller, companyId 
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative">
                                 <div className="flex items-center gap-4">
                                     <div className="relative">
-                                        <div className="w-16 h-16 rounded-full bg-amber-500/10 border-2 border-amber-500/40 flex items-center justify-center text-amber-400 text-2xl font-bold overflow-hidden">
-                                            {champion.avatarUrl
-                                                ? <img src={champion.avatarUrl} alt="" className="w-full h-full object-cover" />
-                                                : champion.name.charAt(0).toUpperCase()}
+                                        <div className="w-16 h-16 rounded-full bg-amber-500/10 border-2 border-amber-500/40 overflow-hidden">
+                                            <VercelAvatar name={champion.name} src={champion.avatarUrl} size={64} />
                                         </div>
                                         <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
                                             <span className="text-xs">🏆</span>
@@ -453,11 +452,7 @@ const ScoreTab: React.FC<ScoreTabProps> = ({ sellers, onSelectSeller, companyId 
                                         </div>
 
                                         {/* Avatar */}
-                                        <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 text-xs font-bold overflow-hidden flex-shrink-0">
-                                            {seller.avatarUrl
-                                                ? <img src={seller.avatarUrl} alt="" className="w-full h-full object-cover" />
-                                                : seller.name.charAt(0).toUpperCase()}
-                                        </div>
+                                        <VercelAvatar name={seller.name} src={seller.avatarUrl} size={32} />
 
                                         {/* Name + badges */}
                                         <div className="flex-1 min-w-0">
@@ -675,13 +670,7 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
                                             className="flex items-center justify-between p-4 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-blue-500/50 hover:bg-slate-900 transition-all group text-left"
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 font-bold border border-slate-700 overflow-hidden">
-                                                    {seller.avatarUrl ? (
-                                                        <img src={seller.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
-                                                    ) : (
-                                                        seller.name.substring(0, 2).toUpperCase()
-                                                    )}
-                                                </div>
+                                                <VercelAvatar name={seller.name} src={seller.avatarUrl} size={40} />
                                                 <div>
                                                     <h4 className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
                                                         {seller.name}

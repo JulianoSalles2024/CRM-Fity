@@ -122,9 +122,6 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ leads, onReactivateLead, on
                         <button onClick={handleExportCSV} className="flex items-center gap-2 text-sm text-slate-300 bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-md h-[36px]">
                             <Download className="w-4 h-4" /><span>CSV</span>
                         </button>
-                        <button onClick={() => onExportPDF(sortedLeads)} className="flex items-center gap-2 text-sm text-slate-300 bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-md h-[36px]">
-                            <Download className="w-4 h-4" /><span>PDF</span>
-                        </button>
                     </div>
                 </div>
 

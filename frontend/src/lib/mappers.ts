@@ -68,6 +68,7 @@ export function mapLeadToDb(lead: Partial<Lead>): Record<string, unknown> {
     won_at: 'wonAt' in lead ? (lead.wonAt ?? null) : undefined,
     lost_reason: 'lostReason' in lead ? (lead.lostReason ?? null) : undefined,
     reactivation_date: 'reactivationDate' in lead ? (lead.reactivationDate ?? null) : undefined,
+    group_info: 'groupInfo' in lead ? (lead.groupInfo ?? null) : undefined,
   });
 }
 

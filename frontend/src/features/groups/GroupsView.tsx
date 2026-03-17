@@ -1,37 +1,82 @@
-import { safeError } from '@/src/utils/logger';
-import React, { useMemo, useState, useEffect } from 'react';
-import { ChevronLeft, Download, Users, UserCheck, UserX, Goal, Sparkles, Loader2, Save, FileText, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { ChevronLeft, Download, Users, UserCheck, UserX, Goal, Trash2, Check, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { generateGroupAnalysis } from '@/api';
 import type { Lead, Id, GroupInfo, UpdateLeadData, Group, GroupAnalysis, CreateGroupAnalysisData, UpdateGroupAnalysisData } from '@/types';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
-import { GlassCard } from '@/src/shared/components/GlassCard';
 import { GlassSection } from '@/src/shared/components/GlassSection';
 import FlatCard from '@/components/ui/FlatCard';
 
 interface GroupsViewProps {
     group: Group;
+    groups: Group[];
     leads: Lead[];
     analysis: GroupAnalysis | null;
     onUpdateLead: (leadId: Id, updates: UpdateLeadData) => void;
     onBack: () => void;
+    onSelectGroup: (id: Id) => void;
     onCreateOrUpdateAnalysis: (data: CreateGroupAnalysisData | UpdateGroupAnalysisData, analysisId?: Id) => void;
     onDeleteAnalysis: (analysisId: Id) => void;
     showNotification: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
-const CheckboxCell: React.FC<{ checked: boolean; onChange: (checked: boolean) => void }> = ({ checked, onChange }) => (
-    <div className="flex items-center justify-center">
-        <input
-            type="checkbox"
-            checked={checked}
-            onChange={(e) => onChange(e.target.checked)}
-            className="h-5 w-5 rounded bg-slate-700 border-slate-600 text-violet-600 focus:ring-violet-500 focus:ring-offset-slate-800"
-        />
-    </div>
-);
+// ── Custom Checkbox ────────────────────────────────────────────────────────────
+interface CheckboxCellProps {
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+    variant?: 'default' | 'success' | 'danger';
+}
 
-const KpiCard: React.FC<{ icon: React.ElementType; title: string; value: string; colorClass: string; }> = ({ icon: Icon, title, value, colorClass }) => (
+const variantStyles = {
+    default: {
+        on:  'bg-sky-500 border-sky-400 shadow-[0_0_8px_rgba(14,165,233,0.5)]',
+        off: 'bg-slate-800 border-slate-700 hover:border-slate-500',
+    },
+    success: {
+        on:  'bg-emerald-500 border-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.45)]',
+        off: 'bg-slate-800 border-slate-700 hover:border-emerald-700',
+    },
+    danger: {
+        on:  'bg-red-500 border-red-400 shadow-[0_0_8px_rgba(239,68,68,0.45)]',
+        off: 'bg-slate-800 border-slate-700 hover:border-red-700',
+    },
+};
+
+const CheckboxCell: React.FC<CheckboxCellProps> = ({ checked, onChange, variant = 'default' }) => {
+    const styles = variantStyles[variant];
+    return (
+        <div className="flex items-center justify-center">
+            <button
+                type="button"
+                role="checkbox"
+                aria-checked={checked}
+                onClick={() => onChange(!checked)}
+                className={`
+                    relative w-5 h-5 rounded-md border transition-all duration-150 ease-in-out
+                    flex items-center justify-center cursor-pointer flex-shrink-0
+                    focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:ring-offset-1 focus:ring-offset-slate-900
+                    ${checked ? styles.on : styles.off}
+                `}
+            >
+                <AnimatePresence>
+                    {checked && (
+                        <motion.span
+                            key="check"
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{ duration: 0.12, ease: 'easeOut' }}
+                        >
+                            <Check className="w-3 h-3 text-white stroke-[3]" />
+                        </motion.span>
+                    )}
+                </AnimatePresence>
+            </button>
+        </div>
+    );
+};
+
+
+const KpiCard: React.FC<{ icon: React.ElementType; title: string; value: string; colorClass: string }> = ({ icon: Icon, title, value, colorClass }) => (
     <GlassSection className="flex items-center gap-4 transition-all duration-200 ease-in-out hover:bg-slate-700/50 hover:-translate-y-1">
         <div className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center ${colorClass.replace('text-', 'bg-')}/20`}>
             <Icon className={`w-5 h-5 ${colorClass}`} />
@@ -43,31 +88,41 @@ const KpiCard: React.FC<{ icon: React.ElementType; title: string; value: string;
     </GlassSection>
 );
 
-// A simple sanitizer to prevent XSS. For production, a robust library like DOMPurify is recommended.
-const sanitizeHTML = (htmlString: string): string => {
-    let sanitized = htmlString;
-    // Remove script tags and their content
-    sanitized = sanitized.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
-    // Remove on* event attributes. This covers onload, onerror, onclick, etc.
-    sanitized = sanitized.replace(/ on\w+=(?:"[^"]*"|'[^']*'|[^>\s]+)/gi, '');
-    // Remove javascript: from href/src
-    sanitized = sanitized.replace(/(href|src)=["']?javascript:/gi, '$1="about:blank"');
-    return sanitized;
-};
+// ── Table header cell ──────────────────────────────────────────────────────────
+const Th: React.FC<{ children: React.ReactNode; center?: boolean }> = ({ children, center }) => (
+    <th className={`px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap ${center ? 'text-center' : 'text-left'}`}>
+        {children}
+    </th>
+);
+
+// ── Date input ─────────────────────────────────────────────────────────────────
+const DateInput: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
+    <input
+        type="date"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-slate-300 placeholder-slate-600
+                   focus:outline-none focus:border-sky-500/60 focus:ring-1 focus:ring-sky-500/20
+                   transition-colors [color-scheme:dark]"
+    />
+);
 
 
-const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdateLead, onBack, onCreateOrUpdateAnalysis, onDeleteAnalysis, showNotification }) => {
-    const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
+// ── Main component ─────────────────────────────────────────────────────────────
+const GroupsView: React.FC<GroupsViewProps> = ({ group, groups, leads, analysis, onUpdateLead, onBack, onSelectGroup, onCreateOrUpdateAnalysis, onDeleteAnalysis, showNotification }) => {
     const [leadToRemove, setLeadToRemove] = useState<Lead | null>(null);
-    
-    type CurrentAnalysis = GroupAnalysis | { content: string; status: 'new' };
-    const [currentAnalysis, setCurrentAnalysis] = useState<CurrentAnalysis | null>(null);
-    const [isAnalysisMinimized, setIsAnalysisMinimized] = useState(false);
+    const [groupPickerOpen, setGroupPickerOpen] = useState(false);
+    const groupPickerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        setCurrentAnalysis(analysis);
-    }, [analysis]);
-    
+        const handler = (e: MouseEvent) => {
+            if (groupPickerRef.current && !groupPickerRef.current.contains(e.target as Node))
+                setGroupPickerOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
     const handleGroupInfoChange = (leadId: Id, field: keyof GroupInfo, value: any) => {
         const lead = leads.find(l => l.id === leadId);
         if (!lead) return;
@@ -82,157 +137,77 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
 
         let updatedGroupInfo: GroupInfo = { ...currentGroupInfo, [field]: value };
 
-        // Add logic for dependencies between fields
         if (field === 'isStillInGroup') {
-            if (value === true) { // If isStillInGroup is checked
+            if (value === true) {
                 updatedGroupInfo.churned = false;
                 updatedGroupInfo.exitDate = undefined;
-            } else { // If isStillInGroup is unchecked
+            } else {
                 updatedGroupInfo.churned = true;
-                if (!updatedGroupInfo.exitDate) {
-                    updatedGroupInfo.exitDate = new Date().toISOString();
-                }
+                if (!updatedGroupInfo.exitDate) updatedGroupInfo.exitDate = new Date().toISOString();
             }
         } else if (field === 'churned') {
-            if (value === true) { // If churned is checked
+            if (value === true) {
                 updatedGroupInfo.isStillInGroup = false;
-                if (!updatedGroupInfo.exitDate) {
-                    updatedGroupInfo.exitDate = new Date().toISOString();
-                }
-            } else { // If churned is unchecked
+                if (!updatedGroupInfo.exitDate) updatedGroupInfo.exitDate = new Date().toISOString();
+            } else {
                 updatedGroupInfo.isStillInGroup = true;
                 updatedGroupInfo.exitDate = undefined;
             }
         } else if (field === 'hasJoined') {
-            if (value === false) { // If they never joined, reset everything else
+            if (value === false) {
                 updatedGroupInfo = {
-                    hasJoined: false,
-                    isStillInGroup: false,
-                    hasOnboarded: false,
-                    onboardingCallDate: undefined,
-                    churned: false,
-                    exitDate: undefined,
-                    groupId: group.id
+                    hasJoined: false, isStillInGroup: false, hasOnboarded: false,
+                    onboardingCallDate: undefined, churned: false, exitDate: undefined, groupId: group.id,
                 };
-            } else if (!currentGroupInfo.hasJoined) { // If they just joined
+            } else if (!currentGroupInfo.hasJoined) {
                 updatedGroupInfo.isStillInGroup = true;
                 updatedGroupInfo.churned = false;
                 updatedGroupInfo.exitDate = undefined;
             }
         }
-        
+
         onUpdateLead(leadId, { groupInfo: updatedGroupInfo });
     };
 
     const formatDateForInput = (isoDate?: string) => {
         if (!isoDate) return '';
-        try {
-            return new Date(isoDate).toISOString().split('T')[0];
-        } catch (e) {
-            return '';
-        }
+        try { return new Date(isoDate).toISOString().split('T')[0]; } catch { return ''; }
     };
 
     const groupMetrics = useMemo(() => {
-        const totalJoined = leads.filter(l => l.groupInfo?.hasJoined).length;
+        const totalJoined    = leads.filter(l => l.groupInfo?.hasJoined).length;
         const currentMembers = leads.filter(l => l.groupInfo?.isStillInGroup).length;
         const totalOnboarded = leads.filter(l => l.groupInfo?.hasOnboarded).length;
-        const totalChurned = leads.filter(l => l.groupInfo?.churned).length;
-
+        const totalChurned   = leads.filter(l => l.groupInfo?.churned).length;
         const onboardingRate = totalJoined > 0 ? (totalOnboarded / totalJoined) * 100 : 0;
-        const churnRate = totalJoined > 0 ? (totalChurned / totalJoined) * 100 : 0;
-
+        const churnRate      = totalJoined > 0 ? (totalChurned   / totalJoined) * 100 : 0;
         return { currentMembers, onboardingRate, churnRate, totalJoined, totalOnboarded, totalChurned };
     }, [leads]);
 
-    const handleGenerateAnalysis = async () => {
-        setIsLoadingAnalysis(true);
-        setCurrentAnalysis(null);
-        
-        try {
-            const analysisText = await generateGroupAnalysis(group, groupMetrics, leads);
-            setCurrentAnalysis({ content: analysisText, status: 'new' });
-            setIsAnalysisMinimized(false);
-        } catch(e) {
-            safeError(e);
-            setCurrentAnalysis({ content: "Ocorreu um erro ao gerar a análise. Verifique se a chave de API do Gemini está configurada corretamente.", status: 'new' });
-            showNotification('Falha ao gerar análise. Verifique a configuração da sua chave de API.', 'error');
-        } finally {
-            setIsLoadingAnalysis(false);
-        }
-    };
-
-    const handleSaveAnalysis = (status: 'saved' | 'draft') => {
-        if (!currentAnalysis) return;
-        const analysisId = 'id' in currentAnalysis ? currentAnalysis.id : undefined;
-        
-        const data = {
-            groupId: group.id,
-            content: currentAnalysis.content,
-            status: status,
-        };
-
-        onCreateOrUpdateAnalysis(data, analysisId);
-    };
-
-    const handleDiscardAnalysis = () => {
-        if (currentAnalysis && 'id' in currentAnalysis) {
-            onDeleteAnalysis(currentAnalysis.id);
-        }
-        setCurrentAnalysis(null);
-    };
-
-
     const handleExportCSV = () => {
-        const headers = [
-            'Nome', 'Empresa', 'Email', 'Telefone', 
-            'Entrou no Grupo', 'Permanece no Grupo', 'Fechado', 
-            'Data Fechamento', 'Churn', 'Data de Saída'
-        ];
-
+        const headers = ['Nome', 'Empresa', 'Email', 'Telefone', 'Entrou no Grupo', 'Permanece no Grupo', 'Fechado', 'Data Fechamento', 'Churn', 'Data de Saída'];
         const escapeCsvCell = (cellData: any): string => {
             if (cellData == null) return '';
-            const stringData = String(cellData);
-            if (stringData.includes(',') || stringData.includes('"') || stringData.includes('\n')) {
-                return `"${stringData.replace(/"/g, '""')}"`;
-            }
-            return stringData;
+            const s = String(cellData);
+            return (s.includes(',') || s.includes('"') || s.includes('\n')) ? `"${s.replace(/"/g, '""')}"` : s;
         };
-
         const rows = leads.map(lead => {
-            // FIX: Initialize groupInfo with default values to prevent accessing properties on an empty object.
-            const groupInfo = lead.groupInfo || {
-                hasJoined: false,
-                isStillInGroup: false,
-                hasOnboarded: false,
-                onboardingCallDate: undefined,
-                churned: false,
-                exitDate: undefined,
-            };
-            const rowData = [
-                escapeCsvCell(lead.name),
-                escapeCsvCell(lead.company),
-                escapeCsvCell(lead.email || ''),
-                escapeCsvCell(lead.phone || ''),
-                groupInfo.hasJoined ? 'Sim' : 'Não',
-                groupInfo.isStillInGroup ? 'Sim' : 'Não',
-                groupInfo.hasOnboarded ? 'Sim' : 'Não',
-                groupInfo.onboardingCallDate ? new Date(groupInfo.onboardingCallDate).toLocaleDateString('pt-BR') : '',
-                groupInfo.churned ? 'Sim' : 'Não',
-                groupInfo.exitDate ? new Date(groupInfo.exitDate).toLocaleDateString('pt-BR') : '',
-            ];
-            return rowData.join(',');
+            const gi = lead.groupInfo || { hasJoined: false, isStillInGroup: false, hasOnboarded: false, onboardingCallDate: undefined, churned: false, exitDate: undefined };
+            return [
+                escapeCsvCell(lead.name), escapeCsvCell(lead.company),
+                escapeCsvCell(lead.email || ''), escapeCsvCell(lead.phone || ''),
+                gi.hasJoined ? 'Sim' : 'Não', gi.isStillInGroup ? 'Sim' : 'Não',
+                gi.hasOnboarded ? 'Sim' : 'Não',
+                gi.onboardingCallDate ? new Date(gi.onboardingCallDate).toLocaleDateString('pt-BR') : '',
+                gi.churned ? 'Sim' : 'Não',
+                gi.exitDate ? new Date(gi.exitDate).toLocaleDateString('pt-BR') : '',
+            ].join(',');
         });
-
         const csvString = '\uFEFF' + [headers.join(','), ...rows].join('\n');
         const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        const today = new Date().toISOString().split('T')[0];
-        const fileName = `membros_grupo_${group.name.replace(/\s+/g, '_')}_${today}.csv`;
-
-        link.setAttribute("href", url);
-        link.setAttribute("download", fileName);
+        const link = document.createElement('a');
+        link.setAttribute('href', URL.createObjectURL(blob));
+        link.setAttribute('download', `membros_grupo_${group.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -240,62 +215,84 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
 
     const handleConfirmRemove = () => {
         if (!leadToRemove) return;
-
         const lead = leads.find(l => l.id === leadToRemove.id);
-        if (lead && lead.groupInfo) {
-            const updatedGroupInfo: GroupInfo = {
-                ...lead.groupInfo,
-                isStillInGroup: false,
-                churned: true,
-                exitDate: new Date().toISOString(),
-            };
-            onUpdateLead(leadToRemove.id, { groupInfo: updatedGroupInfo });
+        if (lead?.groupInfo) {
+            onUpdateLead(leadToRemove.id, { groupInfo: { ...lead.groupInfo, isStillInGroup: false, churned: true, exitDate: new Date().toISOString() } });
         }
-        
         setLeadToRemove(null);
     };
-
 
     return (
         <>
             <div className="flex flex-col gap-6 h-full">
+
+                {/* ── Page header ─────────────────────────────────────────── */}
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <button onClick={onBack} className="p-2 rounded-full text-slate-400 hover:bg-slate-800 transition-colors">
-                            <ChevronLeft className="w-6 h-6 text-blue-500/70 hover:text-blue-500" />
+                    <div className="flex items-center gap-3 min-w-0">
+                        <button onClick={onBack} className="p-2 rounded-full text-slate-400 hover:bg-slate-800 transition-colors flex-shrink-0">
+                            <ChevronLeft className="w-5 h-5 text-blue-500/70 hover:text-blue-500" />
                         </button>
-                        <div>
-                            <h1 className="text-3xl font-bold text-white">Membros do Grupo: {group.name}</h1>
-                            <p className="text-slate-400">{group.description || 'Gerencie os membros deste grupo.'}</p>
+
+                        {/* Group picker */}
+                        <div className="relative min-w-0" ref={groupPickerRef}>
+                            <button
+                                onClick={() => setGroupPickerOpen(p => !p)}
+                                className="flex items-center gap-2 group"
+                            >
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-1.5">
+                                        <h1 className="text-2xl font-bold text-white truncate">{group.name}</h1>
+                                        <ChevronDown className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-150 ${groupPickerOpen ? 'rotate-180' : ''}`} />
+                                    </div>
+                                    <p className="text-sm text-slate-500 text-left">{group.description || 'Gerencie os membros deste grupo.'}</p>
+                                </div>
+                            </button>
+
+                            <AnimatePresence>
+                                {groupPickerOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                                        transition={{ duration: 0.12 }}
+                                        className="absolute top-full left-0 mt-2 w-64 bg-slate-900 border border-slate-700/80 rounded-xl shadow-xl z-20 py-1 overflow-hidden"
+                                    >
+                                        {groups.map(g => (
+                                            <button
+                                                key={g.id}
+                                                onClick={() => { onSelectGroup(g.id); setGroupPickerOpen(false); }}
+                                                className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm text-left transition-colors
+                                                    ${g.id === group.id
+                                                        ? 'bg-sky-500/10 text-sky-400'
+                                                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                                    }`}
+                                            >
+                                                <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0">
+                                                    <Users className="w-3.5 h-3.5 text-slate-400" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="font-medium truncate">{g.name}</p>
+                                                    {g.description && <p className="text-xs text-slate-500 truncate">{g.description}</p>}
+                                                </div>
+                                                {g.id === group.id && <Check className="w-3.5 h-3.5 text-sky-400 ml-auto flex-shrink-0" />}
+                                            </button>
+                                        ))}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <button 
-                            onClick={handleExportCSV}
-                            className="flex items-center gap-2 bg-slate-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-slate-600 transition-colors"
-                        >
-                            <Download className="w-4 h-4" />
-                            <span>Exportar CSV</span>
-                        </button>
-                        <button 
-                            onClick={handleGenerateAnalysis}
-                            disabled={isLoadingAnalysis}
-                            className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                            {isLoadingAnalysis ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <Sparkles className="w-4 h-4" />
-                            )}
-                            <span>{isLoadingAnalysis ? 'Analisando...' : 'Gerar Análise com IA'}</span>
-                        </button>
-                    </div>
+
+                    <button onClick={handleExportCSV} className="flex items-center gap-2 bg-slate-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-slate-600 transition-colors flex-shrink-0">
+                        <Download className="w-4 h-4" /><span>Exportar CSV</span>
+                    </button>
                 </div>
 
+                {/* ── KPI cards ───────────────────────────────────────────── */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <KpiCard icon={Users} title="Membros Atuais" value={groupMetrics.currentMembers.toString()} colorClass="text-violet-400" />
-                    <KpiCard icon={UserCheck} title="Fechado" value={`${groupMetrics.onboardingRate.toFixed(0)}%`} colorClass="text-green-400" />
-                    <KpiCard icon={UserX} title="Churn" value={`${groupMetrics.churnRate.toFixed(1)}%`} colorClass="text-red-400" />
+                    <KpiCard icon={Users}     title="Membros Atuais" value={groupMetrics.currentMembers.toString()} colorClass="text-violet-400" />
+                    <KpiCard icon={UserCheck} title="Fechado"        value={`${groupMetrics.onboardingRate.toFixed(0)}%`} colorClass="text-green-400" />
+                    <KpiCard icon={UserX}     title="Churn"          value={`${groupMetrics.churnRate.toFixed(1)}%`}      colorClass="text-red-400" />
                     {group.memberGoal ? (
                         <KpiCard icon={Goal} title="Meta" value={`${groupMetrics.currentMembers} / ${group.memberGoal}`} colorClass="text-blue-400" />
                     ) : (
@@ -303,121 +300,93 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                             <div className="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center bg-slate-700/50">
                                 <Goal className="w-5 h-5 text-slate-500" />
                             </div>
-                            <div>
-                                <p className="text-sm text-slate-400">Nenhuma meta definida</p>
-                            </div>
+                            <div><p className="text-sm text-slate-400">Nenhuma meta definida</p></div>
                         </GlassSection>
                     )}
                 </div>
-                
-                <AnimatePresence>
-                    {(isLoadingAnalysis || currentAnalysis) && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                        >
-                            <GlassCard className="p-6">
-                                <div className="flex justify-between items-center">
-                                    <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                                        <Sparkles className="w-5 h-5 text-violet-400" />
-                                        <span>
-                                            Análise da IA
-                                            {currentAnalysis && currentAnalysis.status !== 'new' && (
-                                                <span className="text-xs font-normal text-slate-400 ml-2 capitalize">({currentAnalysis.status === 'draft' ? 'Rascunho' : 'Salvo'})</span>
-                                            )}
-                                        </span>
-                                    </h2>
-                                    {currentAnalysis && !isLoadingAnalysis && (
-                                        <div className="flex items-center gap-1">
-                                            <button onClick={() => handleSaveAnalysis('saved')} title="Salvar" className="p-2 text-slate-400 hover:text-white rounded-md hover:bg-slate-700/50"><Save className="w-4 h-4" /></button>
-                                            <button onClick={() => handleSaveAnalysis('draft')} title="Salvar como Rascunho" className="p-2 text-slate-400 hover:text-white rounded-md hover:bg-slate-700/50"><FileText className="w-4 h-4" /></button>
-                                            <button onClick={handleDiscardAnalysis} title="Descartar" className="p-2 text-slate-400 hover:text-red-500 rounded-md hover:bg-slate-700/50"><Trash2 className="w-4 h-4" /></button>
-                                            <div className="w-px h-5 bg-slate-700 mx-1" />
-                                            <button onClick={() => setIsAnalysisMinimized(p => !p)} title={isAnalysisMinimized ? 'Expandir' : 'Minimizar'} className="p-2 text-slate-400 hover:text-white rounded-md hover:bg-slate-700/50">
-                                                {isAnalysisMinimized ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                                <AnimatePresence>
-                                    {!isAnalysisMinimized && (
-                                        <motion.div
-                                            key="analysis-content"
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: 'auto', opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            transition={{ duration: 0.3 }}
-                                            className="overflow-hidden"
-                                        >
-                                            <div className="pt-4">
-                                                {isLoadingAnalysis ? (
-                                                    <div className="flex items-center justify-center py-10">
-                                                        <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
-                                                    </div>
-                                                ) : (
-                                                    <div className="prose prose-invert prose-sm max-w-none text-slate-300 whitespace-pre-wrap"
-                                                        dangerouslySetInnerHTML={{ __html: sanitizeHTML(currentAnalysis ? currentAnalysis.content.replace(/## (.*?)\n/g, '<h3 class="text-white font-semibold mt-4 mb-2">$1</h3>').replace(/\* (.*?)\n/g, '<li class="ml-4">$1</li>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') : '') }}
-                                                    />
-                                                )}
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </GlassCard>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-                
+
+                {/* ── Members table ───────────────────────────────────────── */}
                 <FlatCard className="overflow-hidden flex-1 flex flex-col p-0">
                     <div className="overflow-auto h-full">
-                        <table className="min-w-full divide-y divide-slate-700">
-                            <thead className="bg-slate-900/50 sticky top-0 z-10">
+                        <table className="min-w-full">
+                            <thead className="bg-[#050c18]/95 backdrop-blur-sm sticky top-0 z-10 border-b border-white/5">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider w-1/5">Lead</th>
-                                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Entrou</th>
-                                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Permanece</th>
-                                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Fechado</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Data Fechamento</th>
-                                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Churn</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Data de Saída</th>
-                                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">Ações</th>
+                                    <Th>Lead</Th>
+                                    <Th center>Entrou</Th>
+                                    <Th center>Permanece</Th>
+                                    <Th center>Fechado</Th>
+                                    <Th>Data Fechamento</Th>
+                                    <Th center>Churn</Th>
+                                    <Th>Data de Saída</Th>
+                                    <Th center>Ações</Th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-700">
+                            <tbody className="divide-y divide-white/[0.04]">
                                 {leads.length > 0 ? leads.map(lead => {
-                                    const groupInfo = lead.groupInfo || {
-                                        hasJoined: false,
-                                        isStillInGroup: false,
-                                        hasOnboarded: false,
-                                        churned: false,
-                                        groupId: group.id
+                                    const gi = lead.groupInfo || {
+                                        hasJoined: false, isStillInGroup: false,
+                                        hasOnboarded: false, churned: false, groupId: group.id,
                                     };
                                     return (
-                                    <tr key={lead.id} className="hover:bg-slate-700/50 transition-colors duration-150">
-                                        <td className="px-4 py-3 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-white">{lead.name}</div>
-                                            <div className="text-sm text-slate-400">{lead.company}</div>
-                                        </td>
-                                        <td className="px-4 py-3 text-center"><CheckboxCell checked={!!groupInfo.hasJoined} onChange={val => handleGroupInfoChange(lead.id, 'hasJoined', val)} /></td>
-                                        <td className="px-4 py-3 text-center"><CheckboxCell checked={!!groupInfo.isStillInGroup} onChange={val => handleGroupInfoChange(lead.id, 'isStillInGroup', val)} /></td>
-                                        <td className="px-4 py-3 text-center"><CheckboxCell checked={!!groupInfo.hasOnboarded} onChange={val => handleGroupInfoChange(lead.id, 'hasOnboarded', val)} /></td>
-                                        <td className="px-4 py-3">
-                                            <input type="date" value={formatDateForInput(groupInfo.onboardingCallDate)} onChange={e => handleGroupInfoChange(lead.id, 'onboardingCallDate', e.target.valueAsDate?.toISOString())} className="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-violet-500" />
-                                        </td>
-                                        <td className="px-4 py-3 text-center"><CheckboxCell checked={!!groupInfo.churned} onChange={val => handleGroupInfoChange(lead.id, 'churned', val)} /></td>
-                                        <td className="px-4 py-3">
-                                            <input type="date" value={formatDateForInput(groupInfo.exitDate)} onChange={e => handleGroupInfoChange(lead.id, 'exitDate', e.target.valueAsDate?.toISOString())} className="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-violet-500" />
-                                        </td>
-                                        <td className="px-4 py-3 text-center">
-                                            <button onClick={() => setLeadToRemove(lead)} className="p-2 text-slate-400 hover:text-red-500 rounded-md hover:bg-slate-700/50" title={`Remover ${lead.name} do grupo`}>
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                )}) : (
+                                        <tr key={lead.id} className="group/row hover:bg-slate-800/30 transition-colors duration-100">
+
+                                            {/* Lead identity */}
+                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                <p className="text-sm font-semibold text-white">{lead.name}</p>
+                                                {lead.company && <p className="text-xs text-slate-500 mt-0.5">{lead.company}</p>}
+                                            </td>
+
+                                            {/* Entrou */}
+                                            <td className="px-4 py-3 text-center">
+                                                <CheckboxCell checked={!!gi.hasJoined} onChange={val => handleGroupInfoChange(lead.id, 'hasJoined', val)} variant="default" />
+                                            </td>
+
+                                            {/* Permanece */}
+                                            <td className="px-4 py-3 text-center">
+                                                <CheckboxCell checked={!!gi.isStillInGroup} onChange={val => handleGroupInfoChange(lead.id, 'isStillInGroup', val)} variant="success" />
+                                            </td>
+
+                                            {/* Fechado */}
+                                            <td className="px-4 py-3 text-center">
+                                                <CheckboxCell checked={!!gi.hasOnboarded} onChange={val => handleGroupInfoChange(lead.id, 'hasOnboarded', val)} variant="success" />
+                                            </td>
+
+                                            {/* Data Fechamento */}
+                                            <td className="px-4 py-3">
+                                                <DateInput
+                                                    value={formatDateForInput(gi.onboardingCallDate)}
+                                                    onChange={v => handleGroupInfoChange(lead.id, 'onboardingCallDate', v ? new Date(v).toISOString() : undefined)}
+                                                />
+                                            </td>
+
+                                            {/* Churn */}
+                                            <td className="px-4 py-3 text-center">
+                                                <CheckboxCell checked={!!gi.churned} onChange={val => handleGroupInfoChange(lead.id, 'churned', val)} variant="danger" />
+                                            </td>
+
+                                            {/* Data de Saída */}
+                                            <td className="px-4 py-3">
+                                                <DateInput
+                                                    value={formatDateForInput(gi.exitDate)}
+                                                    onChange={v => handleGroupInfoChange(lead.id, 'exitDate', v ? new Date(v).toISOString() : undefined)}
+                                                />
+                                            </td>
+
+                                            {/* Ações */}
+                                            <td className="px-4 py-3 text-center">
+                                                <button
+                                                    onClick={() => setLeadToRemove(lead)}
+                                                    title={`Remover ${lead.name} do grupo`}
+                                                    className="p-1.5 rounded-md text-slate-600 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover/row:opacity-100 transition-all duration-150"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                }) : (
                                     <tr>
-                                        <td colSpan={8} className="text-center py-10 text-slate-500">
+                                        <td colSpan={8} className="text-center py-16 text-slate-500 text-sm">
                                             Nenhum membro encontrado neste grupo.
                                         </td>
                                     </tr>
@@ -427,6 +396,7 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, leads, analysis, onUpdat
                     </div>
                 </FlatCard>
             </div>
+
             <AnimatePresence>
                 {leadToRemove && (
                     <ConfirmDeleteModal

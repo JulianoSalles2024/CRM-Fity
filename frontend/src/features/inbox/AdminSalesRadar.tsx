@@ -3,6 +3,7 @@ import { Radar } from 'lucide-react';
 import FlatCard from '@/components/ui/FlatCard';
 import type { User, Task, Lead } from '@/types';
 import type { OpportunityScore } from '@/src/hooks/useOpportunityScores';
+import { VercelAvatar } from '@/src/shared/components/VercelAvatar';
 
 interface AdminSalesRadarProps {
     users: User[];
@@ -75,9 +76,7 @@ const AdminSalesRadar: React.FC<AdminSalesRadarProps> = ({
                             <tr key={user.id} className="hover:bg-slate-800/30 transition-colors">
                                 <td className="px-5 py-3.5">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                                            {user.name.charAt(0).toUpperCase()}
-                                        </div>
+                                        <VercelAvatar name={user.name} src={user.avatarUrl} size={28} />
                                         <div className="min-w-0">
                                             <p className="text-sm font-medium text-white truncate">{user.name}</p>
                                             <p className="text-xs text-slate-500 truncate">{user.email}</p>

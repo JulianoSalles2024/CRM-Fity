@@ -1,6 +1,7 @@
 import { useAuth } from '@/src/features/auth/AuthContext';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Phone, Shield, Check, Save, User, AtSign, Lock, Pencil } from 'lucide-react';
+import { Phone, Shield, Check, Save, User, AtSign, Lock, Pencil, Mail } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ProfileAvatar } from './components/ProfileAvatar';
 import FlatCard from '@/components/ui/FlatCard';
 import { supabase } from '@/src/lib/supabase';
@@ -26,15 +27,16 @@ export const ProfileView: React.FC = () => {
       nickname: '',
       role: currentUserRole ? String(currentUserRole).toUpperCase() : 'USER',
       phone: '',
-      avatarUrl: 'https://i.pravatar.cc/150',
+      avatarUrl: '',
     }),
     [currentUserRole]
   );
 
   const [user, setUser] = useState<ProfileForm>(defaultProfile);
   const [editData, setEditData] = useState<ProfileForm>(defaultProfile);
-  const [previewUrl, setPreviewUrl] = useState<string>(defaultProfile.avatarUrl);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -42,7 +44,6 @@ export const ProfileView: React.FC = () => {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSaved, setPasswordSaved] = useState(false);
 
-  // 🔹 Carrega do Supabase (inclui name/avatar como fallback)
   useEffect(() => {
     const run = async () => {
       if (!authUser) return;
@@ -67,7 +68,6 @@ export const ProfileView: React.FC = () => {
         return;
       }
 
-      // fallback do nome: se não tiver first/last/nickname, tenta quebrar "name"
       const nameStr = (data?.name ?? '').trim();
       const fallbackFirst = nameStr ? nameStr.split(' ')[0] : '';
       const fallbackLast = nameStr ? nameStr.split(' ').slice(1).join(' ') : '';
@@ -77,7 +77,7 @@ export const ProfileView: React.FC = () => {
         lastName: data?.last_name ?? fallbackLast,
         nickname: data?.nickname ?? '',
         phone: data?.phone ?? '',
-        avatarUrl: data?.avatar_url ?? data?.avatar ?? defaultProfile.avatarUrl,
+        avatarUrl: data?.avatar_url ?? data?.avatar ?? '',
         role: currentUserRole ? String(currentUserRole).toUpperCase() : defaultProfile.role,
       };
 
@@ -102,34 +102,28 @@ export const ProfileView: React.FC = () => {
   };
 
   const handleRemoveAvatar = () => {
-    const defaultUrl = 'https://i.pravatar.cc/150';
-    setPreviewUrl(defaultUrl);
-    setEditData(prev => ({ ...prev, avatarUrl: defaultUrl }));
+    setPreviewUrl('');
+    setEditData(prev => ({ ...prev, avatarUrl: '' }));
   };
 
-  // 🔹 Salva no Supabase (ATUALIZA TAMBÉM name e avatar para a tela de Equipe refletir)
   const handleSave = async () => {
     if (!authUser) return;
+    setSaveError('');
 
     const roleToShow = currentUserRole ? String(currentUserRole).toUpperCase() : editData.role;
-
     const fullName = `${editData.firstName} ${editData.lastName}`.trim();
     const nameToSave = (editData.nickname?.trim() || fullName || '—').trim();
 
     const { data, error } = await supabase
       .from('profiles')
       .update({
-        // campos “novos”
         first_name: editData.firstName,
         last_name: editData.lastName,
         nickname: editData.nickname,
         phone: editData.phone,
         avatar_url: editData.avatarUrl,
-
-        // campos “legados” que a tela Equipe costuma usar
         name: nameToSave,
         avatar: editData.avatarUrl,
-
         updated_at: new Date().toISOString(),
       })
       .eq('id', authUser.id)
@@ -138,7 +132,8 @@ export const ProfileView: React.FC = () => {
 
     if (error) {
       safeError('[ProfileView] failed to save profile:', error);
-      return; // não fecha edição
+      setSaveError('Erro ao salvar. Tente novamente.');
+      return;
     }
 
     const savedProfile: ProfileForm = {
@@ -188,141 +183,174 @@ export const ProfileView: React.FC = () => {
   const handleCancel = () => {
     setEditData(user);
     setPreviewUrl(user.avatarUrl);
+    setSaveError('');
     setIsEditing(false);
   };
 
-  const inputClass = `w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all duration-200 ${
-    isEditing
-      ? 'bg-white/[0.04] border border-white/[0.08] focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500/40'
-      : 'bg-transparent border border-transparent cursor-default'
-  }`;
+  const inputClass = `w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all duration-200 bg-white/[0.04] border border-white/[0.08] focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500/40`;
+
+  const displayName = editData.nickname || `${editData.firstName} ${editData.lastName}`.trim() || '—';
+  const fullName = `${editData.firstName} ${editData.lastName}`.trim();
+  const showRealName = !!editData.nickname && !!fullName && editData.nickname !== fullName;
 
   return (
     <div className="max-w-3xl mx-auto py-10 px-6 space-y-6">
+
       {/* ── Card 1: User Info ──────────────────────────────── */}
-      <FlatCard className="relative rounded-2xl">
+      <FlatCard className="relative rounded-2xl overflow-hidden">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
-        <div className="flex items-center justify-between px-8 pt-8 pb-6 border-b border-white/[0.06]">
+        {/* Header */}
+        <div className={`flex items-center justify-between px-8 pt-8 ${isEditing ? 'pb-6 border-b border-white/[0.06]' : 'pb-8'}`}>
           <div className="flex items-center gap-5">
-            <div className={!isEditing ? 'pointer-events-none' : ''}>
-              <ProfileAvatar avatarUrl={previewUrl} onImageChange={handleImageChange} onRemove={handleRemoveAvatar} />
-            </div>
+            <ProfileAvatar
+              avatarUrl={previewUrl}
+              name={displayName}
+              onImageChange={handleImageChange}
+              onRemove={handleRemoveAvatar}
+              isEditing={isEditing}
+            />
             <div>
-              <h2 className="text-2xl font-bold text-white leading-tight">
-                {editData.nickname || `${editData.firstName} ${editData.lastName}`.trim()}
-              </h2>
-              <p className="text-sm text-slate-400 mt-0.5">
-                {(editData.firstName || editData.lastName) ? `${editData.firstName} ${editData.lastName}`.trim() : '—'}
-              </p>
+              <h2 className="text-2xl font-bold text-white leading-tight">{displayName}</h2>
+              {showRealName && (
+                <p className="text-sm text-slate-400 mt-0.5">{fullName}</p>
+              )}
               <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold uppercase tracking-wider">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                 {currentUserRole ? String(currentUserRole).toUpperCase() : editData.role}
               </span>
+
+              {/* Info de leitura: visível apenas fora do modo edição */}
+              {!isEditing && (authUser?.email || user.phone) && (
+                <div className="mt-3 space-y-1.5">
+                  {authUser?.email && (
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                      {authUser.email}
+                    </div>
+                  )}
+                  {user.phone && (
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <Phone className="w-3.5 h-3.5 flex-shrink-0" />
+                      {user.phone}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
           {!isEditing ? (
             <button
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2 text-sky-400 hover:text-sky-300 transition-colors"
+              className="flex items-center gap-2 text-sky-400 hover:text-sky-300 transition-colors self-start mt-1"
             >
               <Pencil className="w-4 h-4" />
               Editar
             </button>
           ) : (
-            <div className="flex items-center gap-3">
-              <button onClick={handleCancel} className="text-sm text-slate-500 hover:text-slate-300 transition-colors">
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg transition-all active:scale-[0.97] ${
-                  saved ? 'bg-emerald-500 shadow-emerald-500/20 text-white' : 'bg-sky-600 hover:bg-sky-500 shadow-sky-500/20 text-white'
-                }`}
-              >
-                {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                {saved ? 'Salvo!' : 'Salvar'}
-              </button>
+            <div className="flex flex-col items-end gap-2 self-start mt-1">
+              <div className="flex items-center gap-3">
+                <button onClick={handleCancel} className="text-sm text-slate-500 hover:text-slate-300 transition-colors">
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSave}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg transition-all active:scale-[0.97] ${
+                    saved ? 'bg-emerald-500 shadow-emerald-500/20 text-white' : 'bg-sky-600 hover:bg-sky-500 shadow-sky-500/20 text-white'
+                  }`}
+                >
+                  {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                  {saved ? 'Salvo!' : 'Salvar'}
+                </button>
+              </div>
+              {saveError && (
+                <p className="text-xs text-red-400">{saveError}</p>
+              )}
             </div>
           )}
         </div>
 
-        {/* Form fields (APENAS QUANDO EDITANDO) */}
-        {isEditing && (
-          <div className="px-8 py-7 space-y-5">
-            {/* Nome + Sobrenome */}
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-8 h-8 mt-1 rounded-lg bg-slate-700/50 flex items-center justify-center">
-                <User className="w-4 h-4 text-slate-400" />
+        {/* Form de edição — animado */}
+        <AnimatePresence>
+          {isEditing && (
+            <motion.div
+              key="edit-form"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="px-8 py-7 space-y-5"
+            >
+              {/* Nome + Sobrenome */}
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-8 h-8 mt-1 rounded-lg bg-slate-700/50 flex items-center justify-center">
+                  <User className="w-4 h-4 text-slate-400" />
+                </div>
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Nome</label>
+                    <input
+                      type="text"
+                      value={editData.firstName}
+                      onChange={e => setEditData({ ...editData, firstName: e.target.value })}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Sobrenome</label>
+                    <input
+                      type="text"
+                      value={editData.lastName}
+                      onChange={e => setEditData({ ...editData, lastName: e.target.value })}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Nome</label>
+
+              <div className="border-t border-white/[0.04]" />
+
+              {/* Apelido */}
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-8 h-8 mt-1 rounded-lg bg-slate-700/50 flex items-center justify-center">
+                  <AtSign className="w-4 h-4 text-slate-400" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Apelido</label>
                   <input
                     type="text"
-                    value={editData.firstName}
-                    onChange={e => setEditData({ ...editData, firstName: e.target.value })}
-                    disabled={!isEditing}
+                    value={editData.nickname}
+                    onChange={e => setEditData({ ...editData, nickname: e.target.value })}
                     className={inputClass}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Sobrenome</label>
+              </div>
+
+              <div className="border-t border-white/[0.04]" />
+
+              {/* Telefone */}
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-8 h-8 mt-1 rounded-lg bg-slate-700/50 flex items-center justify-center">
+                  <Phone className="w-4 h-4 text-slate-400" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Telefone</label>
                   <input
                     type="text"
-                    value={editData.lastName}
-                    onChange={e => setEditData({ ...editData, lastName: e.target.value })}
-                    disabled={!isEditing}
+                    value={editData.phone}
+                    onChange={e => setEditData({ ...editData, phone: e.target.value })}
                     className={inputClass}
                   />
                 </div>
               </div>
-            </div>
-
-            <div className="border-t border-white/[0.04]" />
-
-            {/* Apelido */}
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-8 h-8 mt-1 rounded-lg bg-slate-700/50 flex items-center justify-center">
-                <AtSign className="w-4 h-4 text-slate-400" />
-              </div>
-              <div className="flex-1 space-y-1">
-                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Apelido</label>
-                <input
-                  type="text"
-                  value={editData.nickname}
-                  onChange={e => setEditData({ ...editData, nickname: e.target.value })}
-                  disabled={!isEditing}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-
-            <div className="border-t border-white/[0.04]" />
-
-            {/* Telefone */}
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-8 h-8 mt-1 rounded-lg bg-slate-700/50 flex items-center justify-center">
-                <Phone className="w-4 h-4 text-slate-400" />
-              </div>
-              <div className="flex-1 space-y-1">
-                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Telefone</label>
-                <input
-                  type="text"
-                  value={editData.phone}
-                  onChange={e => setEditData({ ...editData, phone: e.target.value })}
-                  disabled={!isEditing}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </FlatCard>
 
       {/* ── Card 2: Security ──────────────────────────────── */}
-      <FlatCard className="relative rounded-2xl">
+      <FlatCard className="relative rounded-2xl overflow-hidden">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
         <div className="flex items-center justify-between px-8 py-6 border-b border-white/[0.06]">
@@ -348,7 +376,7 @@ export const ProfileView: React.FC = () => {
           </button>
         </div>
 
-        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showPasswordForm ? 'max-h-80' : 'max-h-0'}`}>
+        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showPasswordForm ? 'max-h-[400px]' : 'max-h-0'}`}>
           <div
             className={`px-8 pb-8 pt-6 border-t border-white/[0.06] space-y-4 transition-all duration-300 ease-in-out ${
               showPasswordForm ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
@@ -360,13 +388,13 @@ export const ProfileView: React.FC = () => {
                   Nova Senha
                 </label>
                 <input
-                id="new-password"
-                type="password"
-                placeholder="Mínimo 6 caracteres"
-                value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
-                className={inputClass}
-              />
+                  id="new-password"
+                  type="password"
+                  placeholder="Mínimo 6 caracteres"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className={inputClass}
+                />
               </div>
               <div className="space-y-1.5">
                 <label htmlFor="confirm-password" className="text-xs font-medium text-slate-500 uppercase tracking-wide">

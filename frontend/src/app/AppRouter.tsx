@@ -248,8 +248,10 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
             if (!group) { setSelectedGroupForView(null); return null; }
             return <GroupsView
                         group={group}
+                        groups={groups}
                         leads={groupLeads}
                         analysis={analysisForGroup}
+                        onSelectGroup={setSelectedGroupForView}
                         onUpdateLead={async (leadId: string, updates: any) => {
                             try {
                                 await updateLead(leadId, {

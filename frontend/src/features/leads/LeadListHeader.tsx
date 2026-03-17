@@ -115,7 +115,7 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
                 <div className="w-px h-6 bg-zinc-700"></div>
 
                 {/* Search */}
-                <div className="flex-1 relative">
+                <div className="w-1/3 relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <input
                         type="text"
@@ -127,7 +127,7 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 ml-auto">
                      <div className="relative z-50" ref={createMenuRef}>
                         <button
                             onClick={() => setCreateMenuOpen(prev => !prev)}
@@ -186,14 +186,6 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
                     >
                         <Download className="w-4 h-4" />
                         <span>Exportar CSV</span>
-                    </button>
-                    <button
-                        disabled
-                        title="Em breve"
-                        className="flex items-center gap-2 bg-slate-700/50 text-slate-500 px-3 py-1.5 rounded-md text-sm font-semibold cursor-not-allowed opacity-50"
-                    >
-                        <Download className="w-4 h-4" />
-                        <span>Exportar PDF</span>
                     </button>
                 </div>
             </div>
