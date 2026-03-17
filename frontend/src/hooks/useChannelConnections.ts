@@ -28,9 +28,11 @@ export function useChannelConnections(
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
-  const fetchConnections = useCallback(async () => {
+  const fetchConnections = useCallback(async (background = false) => {
     if (!companyId) { setConnections([]); setLoading(false); return; }
-    setLoading(true);
+    // Background re-fetches (triggered by Realtime) must NOT show the loading spinner —
+    // that would hide the cards on every DB event, causing the 1-second flicker.
+    if (!background) setLoading(true);
     let query = supabase
       .from('channel_connections')
       // config excluded: api_key and evolution_url must not be exposed to the client
@@ -84,7 +86,7 @@ export function useChannelConnections(
           table: 'channel_connections',
           filter: `company_id=eq.${companyId}`,
         },
-        () => fetchRef.current()
+        () => fetchRef.current(true) // background=true: no loading spinner on realtime events
       )
       .subscribe();
 
