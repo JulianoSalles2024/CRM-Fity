@@ -18,6 +18,7 @@ import {
   ToyBrick,
   BookOpen,
   ScanLine,
+  Bot,
 } from 'lucide-react';
 import { useAuth } from '@/src/features/auth/AuthContext';
 
@@ -90,6 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { icon: ClipboardList, label: 'Tarefas' },
     { icon: BarChart, label: 'Relatórios' },
     { icon: InboxIcon, label: 'Omnichannel' },
+    { icon: Bot, label: 'Agentes' },
     { icon: MessageSquare, label: 'Chat' },
     { icon: Users, label: 'Grupos' },
     // { icon: ToyBrick, label: 'Integrações' }, // Removed: moved to Settings
@@ -101,6 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (currentUserRole === 'admin' && item.label === 'Pipeline') return false;
     if (currentUserRole === 'admin' && item.label === 'Playbooks') return false;
     if (currentUserRole === 'admin' && item.label === 'Grupos') return false;
+    if (currentUserRole !== 'admin' && item.label === 'Agentes') return false;
     if (currentUserRole === 'admin' && item.label === 'Tarefas') return false;
     return true;
   });

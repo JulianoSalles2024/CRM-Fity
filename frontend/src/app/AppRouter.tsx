@@ -18,6 +18,7 @@ import PlaybookSettings from '@/src/features/playbooks/PlaybookSettings';
 import PrintableLeadsReport from '@/src/features/reports/PrintableLeadsReport';
 import InboxView from '@/src/features/chat/InboxView';
 import { InboxPage } from '@/src/features/inbox/InboxPage';
+import { AgentsPage } from '@/src/features/agents/AgentsPage';
 
 interface AppRouterProps {
   activeView: string;
@@ -230,6 +231,8 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
         return <ReportsPage leads={leads} columns={columns} tasks={tasks} activities={activities} boards={boards} />;
     case 'Omnichannel':
       return <InboxPage />;
+    case 'Agentes':
+      return <AgentsPage />;
     case 'Chat':
         return <ChatView
             conversations={conversations} messages={messages} leads={filteredLeads} currentUser={localUser}

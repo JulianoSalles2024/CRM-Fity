@@ -1,0 +1,176 @@
+import React, { useState } from 'react';
+import {
+  Zap, LayoutGrid, TrendingUp, BookOpen, Bot,
+} from 'lucide-react';
+import { useAgents } from './hooks/useAgents';
+import { useAgentPlaybooks } from './hooks/useAgentPlaybooks';
+import { AgentsCommandCenter } from './AgentsCommandCenter';
+import { AgentsList } from './AgentsList';
+import { AgentWizard } from './AgentWizard';
+import type { AIAgent } from './hooks/useAgents';
+
+type Tab = 'comando' | 'agentes' | 'playbooks' | 'analytics';
+
+const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
+  { id: 'comando',   label: 'Central de Comando', icon: Zap },
+  { id: 'agentes',   label: 'Meus Agentes',        icon: Bot },
+  { id: 'playbooks', label: 'Portfólio',            icon: BookOpen },
+  { id: 'analytics', label: 'Analytics',            icon: TrendingUp },
+];
+
+export const AgentsPage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<Tab>('agentes');
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [editingAgent, setEditingAgent] = useState<AIAgent | null>(null);
+
+  const { agents, loading, createAgent, updateAgent, toggleActive, archiveAgent } = useAgents();
+  const { playbooks, loading: pbLoading } = useAgentPlaybooks();
+
+  const handleCreateAgent = async (data: Parameters<typeof createAgent>[0]) => {
+    await createAgent(data);
+  };
+
+  const handleEditAgent = (agent: AIAgent) => {
+    setEditingAgent(agent);
+    // For now wizard handles create only; edit can be extended
+    setWizardOpen(true);
+  };
+
+  return (
+    <div className="flex flex-col h-full min-h-0 bg-[#060d18]">
+      {/* Page header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#0B1220]/80 backdrop-blur-sm flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
+            <Zap className="w-4 h-4 text-blue-400" />
+          </div>
+          <div>
+            <h1 className="text-sm font-bold text-white">Exército Comercial de IA</h1>
+            <p className="text-xs text-slate-500">
+              {agents.filter(a => a.is_active).length} agentes ativos de {agents.length} total
+            </p>
+          </div>
+        </div>
+
+        {/* Active agents pulse indicator */}
+        {agents.some(a => a.is_active) && (
+          <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Em operação
+          </div>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-1 px-6 py-2 border-b border-white/5 bg-[#0B1220]/60 flex-shrink-0">
+        {TABS.map(tab => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-all ${
+                activeTab === tab.id
+                  ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                  : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6">
+        {activeTab === 'comando' && (
+          <AgentsCommandCenter onSelectAgent={(id) => {
+            // Navigate to agent detail (future)
+          }} />
+        )}
+
+        {activeTab === 'agentes' && (
+          <AgentsList
+            agents={agents}
+            loading={loading}
+            onCreateAgent={() => { setEditingAgent(null); setWizardOpen(true); }}
+            onToggle={toggleActive}
+            onArchive={archiveAgent}
+            onEdit={handleEditAgent}
+            onSelectAgent={(agent) => {
+              // Future: open AgentDetail panel
+            }}
+          />
+        )}
+
+        {activeTab === 'playbooks' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-white">Portfólio de Playbooks</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Scripts, objeções e frameworks de qualificação</p>
+              </div>
+            </div>
+
+            {pbLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="bg-[#0B1220] border border-white/5 rounded-xl h-28 animate-pulse" />
+                ))}
+              </div>
+            ) : playbooks.length === 0 ? (
+              <div className="flex flex-col items-center py-16 text-slate-600">
+                <BookOpen className="w-10 h-10 mb-3" />
+                <p className="text-sm text-slate-500">Nenhum playbook criado</p>
+                <p className="text-xs text-slate-600 mt-1">Os playbooks são criados via Configurações → Playbooks</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {playbooks.map(pb => (
+                  <div key={pb.id} className="bg-[#0B1220] border border-white/5 rounded-xl p-4 hover:border-white/10 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="text-sm font-semibold text-white">{pb.name}</p>
+                        <p className="text-xs text-slate-500 mt-0.5 capitalize">
+                          {pb.function_type ?? 'genérico'} · {pb.qualification_framework.toUpperCase()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <span className="text-[10px] bg-slate-800/60 text-slate-400 px-2 py-0.5 rounded">
+                        {pb.opening_scripts.length} scripts
+                      </span>
+                      <span className="text-[10px] bg-slate-800/60 text-slate-400 px-2 py-0.5 rounded">
+                        {Object.keys(pb.objection_map).length} objeções
+                      </span>
+                      <span className="text-[10px] bg-slate-800/60 text-slate-400 px-2 py-0.5 rounded">
+                        {pb.qualification_questions.length} perguntas
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'analytics' && (
+          <div className="flex flex-col items-center py-20 text-slate-600">
+            <TrendingUp className="w-10 h-10 mb-3" />
+            <p className="text-sm text-slate-500 font-medium">Analytics avançado em breve</p>
+            <p className="text-xs text-slate-600 mt-1">Gráficos diários, funil por agente e análise de ROI</p>
+          </div>
+        )}
+      </div>
+
+      {/* Wizard */}
+      {wizardOpen && (
+        <AgentWizard
+          onClose={() => { setWizardOpen(false); setEditingAgent(null); }}
+          onSave={handleCreateAgent}
+        />
+      )}
+    </div>
+  );
+};
