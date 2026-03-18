@@ -4,7 +4,7 @@ import {
   Target, MessageSquare, DollarSign, RefreshCw,
   Database, Eye, Bot, Zap, FileText, RotateCcw,
 } from 'lucide-react';
-import type { AgentFunctionType, AgentTone, AgentInsert } from './hooks/useAgents';
+import type { AgentFunctionType, AgentTone, AgentInsert, AIAgent } from './hooks/useAgents';
 import { getDefaultPrompt } from './agentPrompts';
 
 const FUNCTION_OPTIONS: {
@@ -90,11 +90,38 @@ const defaultForm = (): FormData => ({
 interface Props {
   onClose: () => void;
   onSave: (data: AgentInsert) => Promise<void>;
+  editingAgent?: AIAgent | null;
 }
 
-export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState<FormData>(defaultForm);
+export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) => {
+  const isEditing = !!editingAgent;
+
+  const initialForm = (): FormData => {
+    if (!editingAgent) return defaultForm();
+    return {
+      name:             editingAgent.name,
+      function_type:    editingAgent.function_type,
+      tone:             editingAgent.tone,
+      avatar_icon:      editingAgent.avatar_icon,
+      avatar_color:     editingAgent.avatar_color,
+      niche:            editingAgent.niche,
+      client_type:      editingAgent.client_type,
+      monthly_goal:     editingAgent.monthly_goal,
+      goal_metric:      editingAgent.goal_metric,
+      channels:         editingAgent.channels,
+      lead_sources:     editingAgent.lead_sources,
+      work_hours_start: editingAgent.work_hours_start,
+      work_hours_end:   editingAgent.work_hours_end,
+      timezone:         editingAgent.timezone,
+      playbook_id:      editingAgent.playbook_id,
+      opening_script:   editingAgent.opening_script,
+      is_active:        editingAgent.is_active,
+      escalate_rules:   editingAgent.escalate_rules as FormData['escalate_rules'],
+    };
+  };
+
+  const [step, setStep] = useState(isEditing ? 1 : 0);
+  const [form, setForm] = useState<FormData>(initialForm);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [keywordInput, setKeywordInput] = useState('');
@@ -148,7 +175,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
               <Bot className="w-4 h-4 text-blue-400" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-white">Criar Agente</h2>
+              <h2 className="text-sm font-semibold text-white">{isEditing ? 'Editar Agente' : 'Criar Agente'}</h2>
               <p className="text-xs text-slate-500">{STEPS[step].desc}</p>
             </div>
           </div>
@@ -624,7 +651,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
                 {saving ? (
                   <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Salvando...</>
                 ) : (
-                  <><Zap className="w-4 h-4" /> Criar Agente</>
+                  <><Zap className="w-4 h-4" /> {isEditing ? 'Salvar Alterações' : 'Criar Agente'}</>
                 )}
               </button>
             )}

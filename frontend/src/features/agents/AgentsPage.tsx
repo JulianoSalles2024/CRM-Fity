@@ -26,13 +26,16 @@ export const AgentsPage: React.FC = () => {
   const { agents, loading, createAgent, updateAgent, toggleActive, archiveAgent } = useAgents();
   const { playbooks, loading: pbLoading } = useAgentPlaybooks();
 
-  const handleCreateAgent = async (data: Parameters<typeof createAgent>[0]) => {
-    await createAgent(data);
+  const handleSaveAgent = async (data: Parameters<typeof createAgent>[0]) => {
+    if (editingAgent) {
+      await updateAgent(editingAgent.id, data);
+    } else {
+      await createAgent(data);
+    }
   };
 
   const handleEditAgent = (agent: AIAgent) => {
     setEditingAgent(agent);
-    // For now wizard handles create only; edit can be extended
     setWizardOpen(true);
   };
 
@@ -168,7 +171,8 @@ export const AgentsPage: React.FC = () => {
       {wizardOpen && (
         <AgentWizard
           onClose={() => { setWizardOpen(false); setEditingAgent(null); }}
-          onSave={handleCreateAgent}
+          onSave={handleSaveAgent}
+          editingAgent={editingAgent}
         />
       )}
     </div>
