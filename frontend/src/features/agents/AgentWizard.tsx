@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import {
   X, ChevronRight, ChevronLeft, Check,
   Target, MessageSquare, DollarSign, RefreshCw,
-  Database, Eye, Bot, Zap,
+  Database, Eye, Bot, Zap, FileText, RotateCcw,
 } from 'lucide-react';
 import type { AgentFunctionType, AgentTone, AgentInsert } from './hooks/useAgents';
+import { getDefaultPrompt } from './agentPrompts';
 
 const FUNCTION_OPTIONS: {
   value: AgentFunctionType; label: string; desc: string; icon: React.ElementType; color: string;
@@ -48,6 +49,7 @@ const STEPS = [
   { label: 'Canais', desc: 'Onde vai atuar' },
   { label: 'Meta', desc: 'Objetivo mensal' },
   { label: 'Regras', desc: 'Escalação e limites' },
+  { label: 'Prompt', desc: 'Instruções do agente' },
 ];
 
 type FormData = Omit<AgentInsert, 'escalate_rules'> & {
@@ -99,6 +101,17 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
   const update = (patch: Partial<FormData>) => setForm(f => ({ ...f, ...patch }));
   const updateEscalate = (patch: Partial<FormData['escalate_rules']>) =>
     setForm(f => ({ ...f, escalate_rules: { ...f.escalate_rules, ...patch } }));
+
+  const resetPromptToDefault = () => {
+    const prompt = getDefaultPrompt(form.function_type, {
+      tone: form.tone,
+      niche: form.niche ?? undefined,
+      client_type: form.client_type,
+      max_followups: form.escalate_rules.max_followups,
+      min_ticket: form.escalate_rules.min_ticket_to_escalate,
+    });
+    update({ opening_script: prompt });
+  };
 
   const canNext = () => {
     if (step === 0) return !!form.function_type;
@@ -173,7 +186,16 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
                 return (
                   <button
                     key={fn.value}
-                    onClick={() => update({ function_type: fn.value })}
+                    onClick={() => {
+                      update({
+                        function_type: fn.value,
+                        opening_script: getDefaultPrompt(fn.value, {
+                          tone: form.tone,
+                          niche: form.niche ?? undefined,
+                          client_type: form.client_type,
+                        }),
+                      });
+                    }}
                     className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all ${
                       active
                         ? 'border-blue-500/40 bg-blue-500/5'
@@ -498,6 +520,61 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
                     <p className="text-xs text-slate-500">Se desativado, o agente fica em modo standby</p>
                   </div>
                 </label>
+              </div>
+            </div>
+          )}
+
+          {/* Step 5: Prompt */}
+          {step === 5 && (
+            <div className="space-y-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-blue-400" />
+                    Prompt do Agente
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Instruções que definem o comportamento. Pré-configurado para <strong className="text-slate-300">{FUNCTION_OPTIONS.find(f => f.value === form.function_type)?.label}</strong> — edite à vontade.
+                  </p>
+                </div>
+                <button
+                  onClick={resetPromptToDefault}
+                  title="Restaurar prompt padrão"
+                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-white px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors flex-shrink-0 ml-3"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Restaurar padrão
+                </button>
+              </div>
+
+              <div className="bg-[#0F172A] border border-white/8 rounded-xl overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5 bg-white/[0.02]">
+                  <div className="flex gap-1">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/50" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/50" />
+                  </div>
+                  <span className="text-[11px] text-slate-600 ml-1">system_prompt.txt</span>
+                </div>
+                <textarea
+                  value={form.opening_script ?? ''}
+                  onChange={e => update({ opening_script: e.target.value })}
+                  rows={14}
+                  spellCheck={false}
+                  className="w-full bg-transparent px-4 py-3 text-xs text-slate-300 font-mono leading-relaxed focus:outline-none resize-none"
+                  placeholder="Digite as instruções do agente..."
+                />
+              </div>
+
+              <div className="flex items-start gap-2 p-3 bg-blue-500/5 border border-blue-500/15 rounded-lg">
+                <Zap className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-slate-400">
+                  Variáveis substituídas pelo WF-07:{' '}
+                  <span className="font-mono text-slate-500">{`{company_name}`}</span> ·{' '}
+                  <span className="font-mono text-slate-500">{'{{tone}}'}</span> ·{' '}
+                  <span className="font-mono text-slate-500">{'{{niche}}'}</span> ·{' '}
+                  <span className="font-mono text-slate-500">{'{{objection_map}}'}</span>
+                </p>
               </div>
             </div>
           )}
