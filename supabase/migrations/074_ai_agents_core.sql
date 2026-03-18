@@ -105,7 +105,7 @@ ALTER TABLE public.ai_agents REPLICA IDENTITY FULL;
 
 CREATE INDEX IF NOT EXISTS idx_ai_agents_company_active
   ON public.ai_agents (company_id, is_active)
-  WHERE is_active = true AND is_archived = false;
+  WHERE is_active = true;
 
 
 -- ── 3. agent_lead_memory ────────────────────────────────────────────────────
