@@ -119,9 +119,9 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
     setIsUpdating(true);
 
     const updateData: any = { status: newStatus };
-    if (newStatus === 'waiting') {
-      updateData.assignee_id = null;
-    }
+    // Note: do NOT clear assignee_id when returning to 'waiting' — RLS blocks
+    // sellers from creating rows with assignee_id=null (only admins can do that).
+    // The seller stays linked to the conversation; status='waiting' disables the composer.
 
     const { error } = await supabase
       .from('conversations')
