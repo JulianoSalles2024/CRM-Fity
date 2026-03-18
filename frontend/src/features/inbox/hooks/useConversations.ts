@@ -13,6 +13,7 @@ export interface OmniConversation {
   contact_name: string | null;
   status: ConversationStatus;
   assignee_id: string | null;
+  ai_agent_id: string | null;
   last_message_at: string | null;
   last_message_preview: string | null;
   unread_count: number;
