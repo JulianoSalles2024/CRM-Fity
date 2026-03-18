@@ -99,7 +99,13 @@ export function useAgents() {
     if (!companyId) return null;
     const { data: created, error } = await supabase
       .from('ai_agents')
-      .insert({ ...data, company_id: companyId })
+      .insert({
+        ...data,
+        company_id: companyId,
+        // legacy columns from old schema — required to satisfy existing DB constraints
+        role_type: 'seller',
+        system_prompt: data.opening_script ?? '',
+      })
       .select()
       .single();
     if (error) throw error;

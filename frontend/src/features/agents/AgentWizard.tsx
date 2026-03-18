@@ -96,6 +96,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>(defaultForm);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [keywordInput, setKeywordInput] = useState('');
 
   const update = (patch: Partial<FormData>) => setForm(f => ({ ...f, ...patch }));
@@ -122,9 +123,14 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveError(null);
     try {
       await onSave(form as AgentInsert);
       onClose();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setSaveError(msg);
+      console.error('[AgentWizard] save error:', err);
     } finally {
       setSaving(false);
     }
@@ -229,7 +235,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
                   placeholder={`Ex: ${selectedFn?.label ?? 'Agente'} Pro`}
                   value={form.name}
                   onChange={e => update({ name: e.target.value })}
-                  className="w-full bg-[#0F172A] border border-white/8 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                  className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
                 />
               </div>
 
@@ -278,7 +284,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
                     placeholder="Ex: SaaS, Imóveis..."
                     value={form.niche ?? ''}
                     onChange={e => update({ niche: e.target.value })}
-                    className="w-full bg-[#0F172A] border border-white/8 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                    className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
                   />
                 </div>
                 <div>
@@ -286,7 +292,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
                   <select
                     value={form.client_type}
                     onChange={e => update({ client_type: e.target.value as 'low' | 'medium' | 'high' })}
-                    className="w-full bg-[#0F172A] border border-white/8 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                    className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50"
                   >
                     {CLIENT_TYPES.map(c => (
                       <option key={c.value} value={c.value}>{c.label}</option>
@@ -316,7 +322,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
                         className={`px-3 py-1.5 rounded-lg text-sm border transition-all capitalize ${
                           active
                             ? 'border-blue-500/40 bg-blue-500/10 text-blue-300'
-                            : 'border-white/8 text-slate-500 hover:border-white/15 hover:text-white'
+                            : 'border-white/10 text-slate-500 hover:border-white/15 hover:text-white'
                         }`}
                       >
                         {ch}
@@ -333,7 +339,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
                     type="time"
                     value={form.work_hours_start}
                     onChange={e => update({ work_hours_start: e.target.value })}
-                    className="w-full bg-[#0F172A] border border-white/8 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                    className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50"
                   />
                 </div>
                 <div>
@@ -342,7 +348,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
                     type="time"
                     value={form.work_hours_end}
                     onChange={e => update({ work_hours_end: e.target.value })}
-                    className="w-full bg-[#0F172A] border border-white/8 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                    className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50"
                   />
                 </div>
               </div>
@@ -352,7 +358,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
                 <select
                   value={form.timezone}
                   onChange={e => update({ timezone: e.target.value })}
-                  className="w-full bg-[#0F172A] border border-white/8 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                  className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50"
                 >
                   <option value="America/Sao_Paulo">America/Sao_Paulo (GMT-3)</option>
                   <option value="America/Manaus">America/Manaus (GMT-4)</option>
@@ -395,7 +401,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
                   placeholder="Ex: 50"
                   value={form.monthly_goal ?? ''}
                   onChange={e => update({ monthly_goal: e.target.value ? Number(e.target.value) : null })}
-                  className="w-full bg-[#0F172A] border border-white/8 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                  className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
                 />
               </div>
             </div>
@@ -413,7 +419,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
                   min={1} max={20}
                   value={form.escalate_rules.max_followups}
                   onChange={e => updateEscalate({ max_followups: Number(e.target.value) })}
-                  className="w-full bg-[#0F172A] border border-white/8 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                  className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50"
                 />
               </div>
 
@@ -429,7 +435,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
                   onChange={e => updateEscalate({
                     min_ticket_to_escalate: e.target.value ? Number(e.target.value) : null,
                   })}
-                  className="w-full bg-[#0F172A] border border-white/8 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                  className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
                 />
               </div>
 
@@ -451,7 +457,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
                         setKeywordInput('');
                       }
                     }}
-                    className="flex-1 bg-[#0F172A] border border-white/8 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                    className="flex-1 bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
                   />
                   <button
                     onClick={() => {
@@ -547,7 +553,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
                 </button>
               </div>
 
-              <div className="bg-[#0F172A] border border-white/8 rounded-xl overflow-hidden">
+              <div className="bg-[#0F172A] border border-white/10 rounded-xl overflow-hidden">
                 <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5 bg-white/[0.02]">
                   <div className="flex gap-1">
                     <div className="w-2.5 h-2.5 rounded-full bg-red-500/50" />
@@ -581,6 +587,11 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave }) => {
         </div>
 
         {/* Footer */}
+        {saveError && (
+          <div className="mx-6 mb-0 mt-0 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <p className="text-xs text-red-400">Erro ao salvar: {saveError}</p>
+          </div>
+        )}
         <div className="flex items-center justify-between px-6 py-4 border-t border-white/5">
           <button
             onClick={() => step > 0 ? setStep(s => s - 1) : onClose()}
