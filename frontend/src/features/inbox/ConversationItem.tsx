@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageCircle } from 'lucide-react';
+import { Bot } from 'lucide-react';
 import type { OmniConversation } from './hooks/useConversations';
 
 function formatTime(dateStr: string | null): string {
@@ -12,11 +12,27 @@ function formatTime(dateStr: string | null): string {
 }
 
 const STATUS_CONFIG = {
-  waiting:     { label: 'Em espera',      color: 'bg-yellow-500' },
-  in_progress: { label: 'Em atendimento', color: 'bg-blue-500' },
-  resolved:    { label: 'Encerrado',      color: 'bg-green-500' },
-  blocked:     { label: 'Bloqueado',      color: 'bg-red-500' },
+  waiting:     { label: 'Em espera',      dot: 'bg-yellow-400', pill: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
+  in_progress: { label: 'Em atendimento', dot: 'bg-blue-400',   pill: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+  resolved:    { label: 'Encerrado',      dot: 'bg-emerald-400', pill: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+  blocked:     { label: 'Bloqueado',      dot: 'bg-red-400',    pill: 'bg-red-500/10 text-red-400 border-red-500/20' },
 };
+
+const AVATAR_GRADIENTS = [
+  'from-blue-500 to-cyan-400',
+  'from-violet-500 to-purple-400',
+  'from-emerald-500 to-teal-400',
+  'from-orange-500 to-amber-400',
+  'from-rose-500 to-pink-400',
+  'from-indigo-500 to-blue-400',
+  'from-teal-500 to-emerald-400',
+  'from-fuchsia-500 to-violet-400',
+];
+
+function getAvatarGradient(name: string): string {
+  const code = (name.charCodeAt(0) || 0) + (name.charCodeAt(1) || 0);
+  return AVATAR_GRADIENTS[code % AVATAR_GRADIENTS.length];
+}
 
 interface ConversationItemProps {
   conversation: OmniConversation;
@@ -27,16 +43,22 @@ interface ConversationItemProps {
 export const ConversationItem: React.FC<ConversationItemProps> = ({ conversation, isActive, onClick }) => {
   const displayName = conversation.contact_name || conversation.contact_identifier;
   const status = STATUS_CONFIG[conversation.status] ?? STATUS_CONFIG.waiting;
+  const gradient = getAvatarGradient(displayName);
+  const isAiEscalated = conversation.status === 'in_progress' && conversation.ai_agent_id != null;
 
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-slate-800/60 transition-colors border-b border-slate-800/50 ${
-        isActive ? 'bg-slate-800/80 border-l-2 border-l-blue-500' : ''
+      className={`w-full text-left px-4 py-3 flex items-start gap-3 transition-all duration-150 border-b border-slate-800/50 border-l-2 ${
+        isAiEscalated
+          ? 'bg-amber-950/20 border-l-amber-500 animate-pulse-subtle'
+          : isActive
+          ? 'bg-blue-950/30 border-l-blue-500'
+          : 'hover:bg-slate-800/40 border-l-transparent'
       }`}
     >
-      {/* Avatar */}
-      <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0 text-white font-semibold text-sm">
+      {/* Avatar com gradiente */}
+      <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0 text-white font-bold text-sm shadow-lg`}>
         {displayName.charAt(0).toUpperCase()}
       </div>
 
@@ -57,9 +79,18 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({ conversation
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 mt-1">
-          <span className={`w-1.5 h-1.5 rounded-full ${status.color}`} />
-          <span className="text-[10px] text-slate-500">{status.label}</span>
+        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+          {isAiEscalated ? (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border bg-amber-500/15 text-amber-400 border-amber-500/30">
+              <Bot className="w-2.5 h-2.5" />
+              IA escalou → você
+            </span>
+          ) : (
+            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium border ${status.pill}`}>
+              <span className={`w-1 h-1 rounded-full ${status.dot}`} />
+              {status.label}
+            </span>
+          )}
           <span className="text-[10px] text-slate-600">· WhatsApp</span>
         </div>
       </div>

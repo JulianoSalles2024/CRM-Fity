@@ -21,6 +21,7 @@ import {
   Bot,
 } from 'lucide-react';
 import { useAuth } from '@/src/features/auth/AuthContext';
+import { useAiEscalationCount } from '@/src/features/inbox/hooks/useAiEscalationCount';
 
 interface SidebarProps {
   activeView: string;
@@ -35,7 +36,8 @@ const NavItem: React.FC<{
   isActive: boolean;
   isCollapsed: boolean;
   onClick: () => void;
-}> = ({ item, isActive, isCollapsed, onClick }) => (
+  badge?: number;
+}> = ({ item, isActive, isCollapsed, onClick, badge }) => (
   <a
     href="#"
     onClick={(e) => {
@@ -49,12 +51,24 @@ const NavItem: React.FC<{
         : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-900'
     } ${isCollapsed ? 'justify-center' : ''}`}
   >
-    <item.icon
-      className={`w-5 h-5 flex-shrink-0 transition-colors ${
-        isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'
-      }`}
-    />
-    {!isCollapsed && <span>{item.label}</span>}
+    <div className="relative flex-shrink-0">
+      <item.icon
+        className={`w-5 h-5 transition-colors ${
+          isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'
+        }`}
+      />
+      {badge != null && badge > 0 && isCollapsed && (
+        <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 rounded-full bg-amber-500 text-[9px] font-bold text-black flex items-center justify-center leading-none">
+          {badge > 9 ? '9+' : badge}
+        </span>
+      )}
+    </div>
+    {!isCollapsed && <span className="flex-1">{item.label}</span>}
+    {!isCollapsed && badge != null && badge > 0 && (
+      <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-[10px] font-bold text-black flex items-center justify-center">
+        {badge > 9 ? '9+' : badge}
+      </span>
+    )}
   </a>
 );
 
@@ -66,6 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   isChatEnabled,
 }) => {
   const { currentPermissions, currentUserRole, isRoleReady } = useAuth();
+  const aiEscalationCount = useAiEscalationCount();
 
   if (!isRoleReady) return null;
 
@@ -81,7 +96,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const mainNavItems = [
-    { icon: Inbox, label: 'Inbox' },
     { icon: LayoutDashboard, label: 'Dashboard' },
     { icon: ScanLine, label: 'Painel 360' },
     { icon: Columns, label: 'Pipeline' },
@@ -146,6 +160,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 isActive={activeView === item.originalKey}
                 onClick={() => onNavigate(item.originalKey)}
                 isCollapsed={isCollapsed}
+                badge={item.originalKey === 'Omnichannel' ? aiEscalationCount : undefined}
               />
             </li>
           ))}
