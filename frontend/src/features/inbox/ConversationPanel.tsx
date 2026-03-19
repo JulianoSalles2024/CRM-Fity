@@ -162,7 +162,7 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
     setIsAssigning(true);
     const { error } = await supabase
       .from('conversations')
-      .update({ ai_agent_id: agentId, status: agentId ? 'waiting' : conversation.status, assignee_id: agentId ? null : conversation.assignee_id })
+      .update({ ai_agent_id: agentId, status: agentId ? 'waiting' : conversation.status })
       .eq('id', conversation.id)
       .eq('company_id', companyId);
     if (!error) {
