@@ -1,0 +1,677 @@
+{
+  "name": "WF-08-AGENT-FOLLOWUP-V1",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## WF-08 — Agent Followup V1\n**Exército Comercial de IA — Follow-up Agendado**\n\nRoda a cada hora via cron.\nBusca todos os registros em `agent_lead_memory` com\n`next_action_at <= now()` e dispara WF-07 com\n`content_type = 'followup'`.\n\nO WF-07 sabe que é um follow-up e gera uma mensagem\nde retomada de contato com base no histórico do lead.\n\n**Env vars necessárias:**\n- SUPABASE_URL\n- SUPABASE_SERVICE_KEY\n- AGENT_EXECUTOR_WEBHOOK_URL",
+        "height": 240,
+        "width": 440,
+        "color": 5
+      },
+      "id": "wf08-note-001",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 * * * *"
+            }
+          ]
+        }
+      },
+      "id": "wf08-node-001",
+      "name": "Schedule - Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/agent_lead_memory",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "next_action_at",
+              "value": "=lte.{{ new Date().toISOString() }}"
+            },
+            {
+              "name": "status",
+              "value": "neq.converted"
+            },
+            {
+              "name": "select",
+              "value": "id,agent_id,lead_id,company_id,next_action_at,next_action,stage,notes"
+            },
+            {
+              "name": "limit",
+              "value": "50"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "wf08-node-002",
+      "name": "HTTP - Get Pending Followups",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Flatten the response (Supabase returns JSON array directly)\nconst raw = $input.all().map(i => i.json);\nconst memories = Array.isArray(raw[0]) ? raw[0] : raw;\n\nif (!memories || memories.length === 0 || !memories[0].id) {\n  return [];\n}\n\nreturn memories.map(m => ({ json: m }));"
+      },
+      "id": "wf08-node-003",
+      "name": "Code - Flatten Memories",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-pending",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wf08-node-004",
+      "name": "IF - Has Pending",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "wf08-node-005",
+      "name": "Loop - Memories",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        960,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/ai_agents",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "=eq.{{ $json.agent_id }}"
+            },
+            {
+              "name": "select",
+              "value": "id,name,company_id,function_type,tone,niche,channels,work_hours_start,work_hours_end,timezone,escalate_rules,monthly_goal,goal_metric,playbook_id,is_active"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "wf08-node-006",
+      "name": "HTTP - Get Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const memory = $('Loop - Memories').first().json;\nconst agentArr = $input.all().map(i => i.json);\nconst agent = Array.isArray(agentArr[0]) ? agentArr[0][0] : agentArr[0];\n\n// Guard: agent must exist and be active\nif (!agent || !agent.id || !agent.is_active) {\n  return [{ json: { _skip: true, reason: 'agent_inactive_or_missing', memory_id: memory.id } }];\n}\n\n// Check max followups (default 5)\nconst maxFollowups = memory.max_followups ?? (agent.escalate_rules?.max_followups) ?? 5;\nif ((memory.follow_up_count || 0) >= maxFollowups) {\n  return [{ json: { _skip: true, reason: 'max_followups_reached', memory_id: memory.id } }];\n}\n\n// Check work hours\nconst tz = agent.timezone || 'America/Sao_Paulo';\nconst now = new Date();\nconst formatter = new Intl.DateTimeFormat('en-US', {\n  timeZone: tz, hour: 'numeric', minute: 'numeric', hour12: false\n});\nconst parts = formatter.formatToParts(now);\nconst currentH = parseInt(parts.find(p => p.type === 'hour').value);\nconst currentM = parseInt(parts.find(p => p.type === 'minute').value);\nconst currentTime = currentH * 60 + currentM;\n\nconst parseTime = (t) => {\n  if (!t) return null;\n  const pts = t.toString().split(':');\n  return parseInt(pts[0]) * 60 + (parseInt(pts[1] || 0));\n};\nconst start = parseTime(agent.work_hours_start) ?? 8 * 60;\nconst end = parseTime(agent.work_hours_end) ?? 18 * 60;\n\nconst dayFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' });\nconst day = dayFormatter.format(now);\nconst isWeekday = !['Sat', 'Sun'].includes(day);\n\nif (!(currentTime >= start && currentTime < end && isWeekday)) {\n  return [{ json: { _skip: true, reason: 'outside_work_hours', memory_id: memory.id } }];\n}\n\nreturn [{ json: { _skip: false, memory } }];"
+      },
+      "id": "wf08-node-007",
+      "name": "Code - Validate Agent & Hours",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "should-run",
+              "leftValue": "={{ $json._skip }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wf08-node-008",
+      "name": "IF - Should Run",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/conversations",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "lead_id",
+              "value": "=eq.{{ $json.memory.lead_id }}"
+            },
+            {
+              "name": "company_id",
+              "value": "=eq.{{ $json.memory.company_id }}"
+            },
+            {
+              "name": "status",
+              "value": "neq.closed"
+            },
+            {
+              "name": "select",
+              "value": "id,lead_id,status,ai_agent_id"
+            },
+            {
+              "name": "order",
+              "value": "updated_at.desc"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "wf08-node-009",
+      "name": "HTTP - Get Conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const validation = $('Code - Validate Agent & Hours').first().json;\nconst memory = validation.memory;\n\nconst convArr = $input.all().map(i => i.json);\nconst conv = Array.isArray(convArr[0]) ? convArr[0][0] : convArr[0];\n\nif (!conv || !conv.id) {\n  return []; // No conversation — skip silently\n}\n\n// Build the WF-07 payload\nreturn [{\n  json: {\n    conversation_id: conv.id,\n    lead_id: memory.lead_id,\n    agent_id: memory.agent_id,\n    company_id: memory.company_id,\n    input_text: '',\n    content_type: 'followup',\n    _memory_id: memory.id,\n    _followup_count: memory.follow_up_count || 0,\n    _notes: memory.notes || ''\n  }\n}];"
+      },
+      "id": "wf08-node-010",
+      "name": "Code - Build WF07 Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-conv",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wf08-node-011",
+      "name": "IF - Has Conversation",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.julianosalles.com.br/webhook/agent-executor",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 5000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "wf08-node-012",
+      "name": "HTTP - Trigger WF-07",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/agent_lead_memory",
+        "method": "PATCH",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "=eq.{{ $('Code - Build WF07 Payload').first().json._memory_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"next_action_at\": null, \"last_contact_at\": \"{{ new Date().toISOString() }}\" }",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "wf08-node-013",
+      "name": "HTTP - Clear next_action_at",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2880,
+        40
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "wf08-node-014",
+      "name": "No Operation - Loop Back",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3120,
+        40
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "wf08-node-015",
+      "name": "No Operation - Skipped",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        320
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "wf08-node-016",
+      "name": "No Operation - No Pending",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        960,
+        400
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "wf08-node-017",
+      "name": "No Operation - No Conv",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2640,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule - Every Hour": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Get Pending Followups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Get Pending Followups": {
+      "main": [
+        [
+          {
+            "node": "Code - Flatten Memories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Flatten Memories": {
+      "main": [
+        [
+          {
+            "node": "IF - Has Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Has Pending": {
+      "main": [
+        [
+          {
+            "node": "Loop - Memories",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation - No Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop - Memories": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Get Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "HTTP - Get Agent": {
+      "main": [
+        [
+          {
+            "node": "Code - Validate Agent & Hours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Validate Agent & Hours": {
+      "main": [
+        [
+          {
+            "node": "IF - Should Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Should Run": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Get Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation - Skipped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation - Skipped": {
+      "main": [
+        [
+          {
+            "node": "Loop - Memories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Get Conversation": {
+      "main": [
+        [
+          {
+            "node": "Code - Build WF07 Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build WF07 Payload": {
+      "main": [
+        [
+          {
+            "node": "IF - Has Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Has Conversation": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Trigger WF-07",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation - No Conv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation - No Conv": {
+      "main": [
+        [
+          {
+            "node": "Loop - Memories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Trigger WF-07": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Clear next_action_at",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Clear next_action_at": {
+      "main": [
+        [
+          {
+            "node": "No Operation - Loop Back",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation - Loop Back": {
+      "main": [
+        [
+          {
+            "node": "Loop - Memories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    "exercito-comercial",
+    "agents",
+    "followup"
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2026-03-18T00:00:00.000Z",
+  "versionId": "wf08-v1"
+}
