@@ -84,8 +84,8 @@ function getDateRange(period: Period): { start: string; end: string } {
     }
 
     return {
-        start: startDate.toISOString(),
-        end:   endDate.toISOString(),
+        start: toLocalDateStr(startDate),
+        end:   toLocalDateStr(endDate),
     };
 }
 
@@ -99,24 +99,24 @@ function getPrevDateRange(period: Period): { start: string; end: string } {
     switch (period) {
         case 'hoje':
             return {
-                start: new Date(y, mo, d - 1, 0, 0, 0, 0).toISOString(),
-                end:   new Date(y, mo, d - 1, 23, 59, 59, 999).toISOString(),
+                start: toLocalDateStr(new Date(y, mo, d - 1)),
+                end:   toLocalDateStr(new Date(y, mo, d - 1)),
             };
         case 'semana':
             return {
-                start: new Date(y, mo, d - 13, 0, 0, 0, 0).toISOString(),
-                end:   new Date(y, mo, d - 7, 23, 59, 59, 999).toISOString(),
+                start: toLocalDateStr(new Date(y, mo, d - 13)),
+                end:   toLocalDateStr(new Date(y, mo, d - 7)),
             };
         case 'ano':
             return {
-                start: new Date(y - 1, 0, 1, 0, 0, 0, 0).toISOString(),
-                end:   new Date(y - 1, 11, 31, 23, 59, 59, 999).toISOString(),
+                start: toLocalDateStr(new Date(y - 1, 0, 1)),
+                end:   toLocalDateStr(new Date(y - 1, 11, 31)),
             };
         case 'mes':
         default:
             return {
-                start: new Date(y, mo - 1, 1, 0, 0, 0, 0).toISOString(),
-                end:   new Date(y, mo, 0, 23, 59, 59, 999).toISOString(),
+                start: toLocalDateStr(new Date(y, mo - 1, 1)),
+                end:   toLocalDateStr(new Date(y, mo, 0)),
             };
     }
 }
