@@ -47,6 +47,7 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
   const [assignAgentOpen, setAssignAgentOpen] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
+  const [assignSuccess, setAssignSuccess] = useState(false);
   const { agents } = useAgents();
   const activeAgents = agents.filter(a => a.is_active && !a.is_archived);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -177,9 +178,10 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
         content_type: 'text',
       });
       onStatusChange(conversation.id, agentId ? 'waiting' : conversation.status);
+      setAssignSuccess(true);
+      setTimeout(() => { setAssignSuccess(false); setAssignAgentOpen(false); }, 1200);
     }
     setIsAssigning(false);
-    setAssignAgentOpen(false);
   };
 
   if (!conversation) {
@@ -369,9 +371,14 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
                 </button>
               ))}
             </div>
-            {isAssigning && (
+            {isAssigning && !assignSuccess && (
               <div className="flex items-center justify-center gap-2 mt-3 text-slate-400 text-sm">
                 <Loader2 className="w-4 h-4 animate-spin" /> Atribuindo...
+              </div>
+            )}
+            {assignSuccess && (
+              <div className="flex items-center justify-center gap-2 mt-3 text-green-400 text-sm font-medium">
+                <CheckCircle className="w-4 h-4" /> Agente atribuído com sucesso!
               </div>
             )}
           </div>
