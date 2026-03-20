@@ -108,7 +108,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     { icon: InboxIcon, label: 'Omnichannel' },
     { icon: Bot, label: 'Agentes' },
     { icon: MessageSquare, label: 'Chat' },
-    { icon: Users, label: 'Grupos' },
     { icon: Users2, label: 'Comunidade' },
     // { icon: ToyBrick, label: 'Integrações' }, // Removed: moved to Settings
   ].filter((item) => {
@@ -118,7 +117,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (currentUserRole !== 'admin' && item.label === 'Painel 360') return false;
     if (currentUserRole === 'admin' && item.label === 'Pipeline') return false;
     if (currentUserRole === 'admin' && item.label === 'Playbooks') return false;
-    if (currentUserRole === 'admin' && item.label === 'Grupos') return false;
     if (currentUserRole !== 'admin' && item.label === 'Agentes') return false;
     if (currentUserRole === 'admin' && item.label === 'Tarefas') return false;
     return true;

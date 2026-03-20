@@ -244,8 +244,42 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
       return <InboxPage />;
     case 'Agentes':
       return <AgentsPage />;
-    case 'Comunidade':
-      return <CommunityPage />;
+    case 'Comunidade': {
+      const gruposNode = selectedGroupForView ? (() => {
+        const group = groups.find((g: any) => g.id === selectedGroupForView);
+        const groupLeads = leads.filter((l: any) => l.groupInfo?.groupId === selectedGroupForView);
+        if (!group) { setSelectedGroupForView(null); return null; }
+        return <GroupsView
+          group={group}
+          groups={groups}
+          leads={groupLeads}
+          analysis={analysisForGroup}
+          onSelectGroup={setSelectedGroupForView}
+          onUpdateLead={async (leadId: string, updates: any) => {
+            try {
+              await updateLead(leadId, { ...updates, lastActivityTimestamp: new Date().toISOString(), lastActivityType: 'edited' });
+              if (selectedLead?.id === leadId) setSelectedLead((prev: any) => prev ? { ...prev, ...updates } : prev);
+              createActivityLog(leadId, 'note', 'Informações de grupo do lead atualizadas.');
+              showNotification('Informações de grupo atualizadas.', 'success');
+            } catch { showNotification('Erro ao atualizar lead.', 'error'); }
+          }}
+          onBack={() => setSelectedGroupForView(null)}
+          onCreateOrUpdateAnalysis={handleCreateOrUpdateGroupAnalysis}
+          onDeleteAnalysis={handleDeleteGroupAnalysis}
+          showNotification={showNotification}
+        />;
+      })() : <GroupsDashboard
+        groups={groups}
+        leads={leads}
+        onSelectGroup={setSelectedGroupForView}
+        onAddGroup={() => { setEditingGroup(null); setGroupModalOpen(true); }}
+        onEditGroup={(group: any) => { setEditingGroup(group); setGroupModalOpen(true); }}
+        onDeleteGroup={handleDeleteGroup}
+      />;
+      return <CommunityPage gruposContent={gruposNode} />;
+    }
+    case 'Grupos':
+      return null;
     case 'Chat':
         return <ChatView
             conversations={conversations} messages={messages} leads={filteredLeads} currentUser={localUser}
