@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Columns,
@@ -20,9 +20,23 @@ import {
   BookOpen,
   ScanLine,
   Bot,
+  LifeBuoy,
 } from 'lucide-react';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { useAiEscalationCount } from '@/src/features/inbox/hooks/useAiEscalationCount';
+import { supabase } from '@/src/lib/supabase';
+
+function useSupportTicketCount() {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    supabase
+      .from('support_tickets')
+      .select('id', { count: 'exact', head: true })
+      .in('status', ['open', 'reopened'])
+      .then(({ count: c }) => setCount(c ?? 0));
+  }, []);
+  return count;
+}
 
 interface SidebarProps {
   activeView: string;
@@ -82,6 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { currentPermissions, currentUserRole, isRoleReady } = useAuth();
   const aiEscalationCount = useAiEscalationCount();
+  const supportTicketCount = useSupportTicketCount();
 
   if (!isRoleReady) return null;
 
@@ -107,6 +122,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { icon: BarChart, label: 'Relatórios' },
     { icon: InboxIcon, label: 'Omnichannel' },
     { icon: Bot, label: 'Agentes' },
+    { icon: LifeBuoy, label: 'Suporte' },
     { icon: MessageSquare, label: 'Chat' },
     { icon: Users2, label: 'Comunidade' },
     // { icon: ToyBrick, label: 'Integrações' }, // Removed: moved to Settings
@@ -160,7 +176,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                 isActive={activeView === item.originalKey}
                 onClick={() => onNavigate(item.originalKey)}
                 isCollapsed={isCollapsed}
-                badge={item.originalKey === 'Omnichannel' ? aiEscalationCount : undefined}
+                badge={
+                  item.originalKey === 'Omnichannel' ? aiEscalationCount :
+                  item.originalKey === 'Suporte' && currentUserRole === 'admin' ? supportTicketCount :
+                  undefined
+                }
               />
             </li>
           ))}

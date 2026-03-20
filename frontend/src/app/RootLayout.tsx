@@ -27,6 +27,7 @@ import SdrAssistantChat from '@/src/features/ai/SdrAssistantChat';
 import OnboardingModal from '@/src/components/onboarding/OnboardingModal';
 import CreateBoardModal from '@/src/features/leads/CreateBoardModal';
 import Notification from '@/src/features/notifications/Notification';
+import { HelpWidget } from '@/src/features/support';
 
 export default function RootLayout() {
     const ctx = useAppContext();
@@ -353,6 +354,9 @@ export default function RootLayout() {
             </AnimatePresence>
 
             <OnboardingModal onOpenCreateBoard={() => ctx.setCreateBoardModalOpen(true)} />
+
+            {/* Widget de Suporte — flutuante em toda a plataforma */}
+            <HelpWidget />
 
             <CreateBoardModal
                 isOpen={ctx.isCreateBoardModalOpen}

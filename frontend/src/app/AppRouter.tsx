@@ -20,6 +20,7 @@ import PrintableLeadsReport from '@/src/features/reports/PrintableLeadsReport';
 import InboxView from '@/src/features/chat/InboxView';
 import { InboxPage } from '@/src/features/inbox/InboxPage';
 import { AgentsPage } from '@/src/features/agents/AgentsPage';
+import SupportPage from '@/src/features/support/SupportPage';
 import CommunityPage from '@/src/features/community/CommunityPage';
 
 interface AppRouterProps {
@@ -244,6 +245,8 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
       return <InboxPage />;
     case 'Agentes':
       return <AgentsPage />;
+    case 'Suporte':
+      return <SupportPage />;
     case 'Comunidade': {
       const gruposNode = selectedGroupForView ? (() => {
         const group = groups.find((g: any) => g.id === selectedGroupForView);
