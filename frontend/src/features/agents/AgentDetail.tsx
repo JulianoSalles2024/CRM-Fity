@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import {
   X, RefreshCw, MessageSquare, TrendingUp, Target,
   Database, Eye, DollarSign, Bot, Clock, Zap,
@@ -82,7 +83,7 @@ export const AgentDetail: React.FC<AgentDetailProps> = ({ agent, onClose }) => {
 
   const initials = agent.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
-  return (
+  return ReactDOM.createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -299,6 +300,7 @@ export const AgentDetail: React.FC<AgentDetailProps> = ({ agent, onClose }) => {
           animation: slide-in-right 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
       `}</style>
-    </>
+    </>,
+    document.body
   );
 };
