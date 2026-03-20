@@ -172,8 +172,6 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
           onToggleLeadMinimize={(leadId: any) => setMinimizedLeads((p: any[]) => (p || []).includes(leadId) ? (p || []).filter(id => id !== leadId) : [...(p || []), leadId])}
           minimizedColumns={minimizedColumns}
           onToggleColumnMinimize={(colId: any) => setMinimizedColumns((p: any[]) => (p || []).includes(colId) ? (p || []).filter(id => id !== colId) : [...(p || []), colId])}
-          isPlaybookActionEnabled={!!selectedLeadForPlaybook}
-          onApplyPlaybookClick={() => setPlaybookModalOpen(true)}
           boards={boards}
           activeBoardId={activeBoardId}
           onSelectBoard={setActiveBoardId}
