@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { User, InviteLink, UserRole } from '@/types';
 import { Users, UserPlus, Copy, Check, Trash2, Shield, Loader2, Ban, RefreshCw, Archive } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -28,6 +28,47 @@ interface TeamSettingsProps {
     currentUser: User;
     onUpdateUsers: (users: User[]) => void;
 }
+
+// ── Reusable sliding-pill tab bar ─────────────────────────────────────────────
+const SlidingPillTabs: React.FC<{
+    tabs: { v: string; l: string; badge?: number }[];
+    active: string;
+    onChange: (v: string) => void;
+}> = ({ tabs, active, onChange }) => {
+    const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    const [pill, setPill] = useState({ left: 0, width: 0 });
+
+    const measure = () => {
+        const idx = tabs.findIndex(t => t.v === active);
+        const el = btnRefs.current[idx];
+        if (el) setPill({ left: el.offsetLeft, width: el.offsetWidth });
+    };
+
+    useEffect(() => { measure(); }, [active]);
+    useEffect(() => { measure(); }, []);
+
+    return (
+        <div className="relative flex items-center bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
+            <div
+                className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out pointer-events-none"
+                style={{ left: pill.left, width: pill.width }}
+            />
+            {tabs.map(({ v, l, badge }, i) => (
+                <button
+                    key={v}
+                    ref={el => { btnRefs.current[i] = el; }}
+                    onClick={() => onChange(v)}
+                    className={`relative z-10 flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-lg transition-colors duration-200 whitespace-nowrap ${
+                        active === v ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                >
+                    {l}
+                    {!!badge && <span className="text-xs opacity-60">({badge})</span>}
+                </button>
+            ))}
+        </div>
+    );
+};
 
 const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdateUsers }) => {
     const { currentPermissions, currentUserRole, companyId } = useAuth();
@@ -344,43 +385,28 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
 
             {/* Tabs + Role Filter */}
             <div className="flex items-center justify-between gap-6">
-                <div className="flex gap-1">
-                    {([
-                        { v: 'active',   l: 'Ativos',     count: activeMembers.length    },
-                        { v: 'archived', l: 'Arquivados',  count: archivedMembers.length  },
-                        { v: 'goals',    l: 'Metas',       count: 0                       },
-                    ] as { v: 'active' | 'archived' | 'goals'; l: string; count: number }[]).map(({ v, l, count }) => (
-                        <button
-                            key={v}
-                            onClick={() => { setActiveTab(v); setCurrentPage(1); }}
-                            className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-all border ${
-                                activeTab === v
-                                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                    : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
-                            }`}
-                        >
-                            {l}
-                            {count > 0 && <span className="text-xs opacity-60">({count})</span>}
-                        </button>
-                    ))}
-                </div>
+                {/* Ativos / Arquivados / Metas — sliding pill */}
+                <SlidingPillTabs
+                    tabs={[
+                        { v: 'active',   l: 'Ativos',    badge: activeMembers.length   },
+                        { v: 'archived', l: 'Arquivados', badge: archivedMembers.length },
+                        { v: 'goals',    l: 'Metas'                                     },
+                    ]}
+                    active={activeTab}
+                    onChange={v => { setActiveTab(v as typeof activeTab); setCurrentPage(1); }}
+                />
 
+                {/* Todos / Admin / Vendedores — sliding pill */}
                 {activeTab === 'active' && (
-                    <div className="flex gap-1">
-                        {(['all', 'admin', 'seller'] as const).map(filter => (
-                            <button
-                                key={filter}
-                                onClick={() => { setRoleFilter(filter); setCurrentPage(1); }}
-                                className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-all border ${
-                                    roleFilter === filter
-                                        ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                        : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
-                                }`}
-                            >
-                                {filter === 'all' ? 'Todos' : filter === 'admin' ? 'Admin' : 'Vendedores'}
-                            </button>
-                        ))}
-                    </div>
+                    <SlidingPillTabs
+                        tabs={[
+                            { v: 'all',    l: 'Todos'     },
+                            { v: 'admin',  l: 'Admin'     },
+                            { v: 'seller', l: 'Vendedores'},
+                        ]}
+                        active={roleFilter}
+                        onChange={v => { setRoleFilter(v as typeof roleFilter); setCurrentPage(1); }}
+                    />
                 )}
             </div>
 
