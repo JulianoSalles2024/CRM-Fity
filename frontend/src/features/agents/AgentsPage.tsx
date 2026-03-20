@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Zap, LayoutGrid, TrendingUp, BookOpen, Bot,
@@ -33,6 +33,58 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'playbooks', label: 'Portfólio',            icon: BookOpen },
   { id: 'analytics', label: 'Analytics',            icon: TrendingUp },
 ];
+
+// ── Sliding-pill tab bar ──────────────────────────────────────────────────────
+const TabBar: React.FC<{ activeTab: Tab; onTabChange: (t: Tab) => void }> = ({
+  activeTab, onTabChange,
+}) => {
+  const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [pill, setPill] = useState({ left: 0, width: 0 });
+
+  useEffect(() => {
+    const idx = TABS.findIndex(t => t.id === activeTab);
+    const el = btnRefs.current[idx];
+    if (el) setPill({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [activeTab]);
+
+  // measure on first render
+  useEffect(() => {
+    const idx = TABS.findIndex(t => t.id === activeTab);
+    const el = btnRefs.current[idx];
+    if (el) setPill({ left: el.offsetLeft, width: el.offsetWidth });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="flex items-center px-6 py-2 border-b border-white/5 bg-[#0B1220]/60 flex-shrink-0">
+      <div className="relative flex items-center bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
+        {/* sliding pill */}
+        <div
+          className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out pointer-events-none"
+          style={{ left: pill.left, width: pill.width }}
+        />
+        {TABS.map((tab, i) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              ref={el => { btnRefs.current[i] = el; }}
+              onClick={() => onTabChange(tab.id)}
+              className={`relative z-10 flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-lg transition-colors duration-200 whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'text-blue-400'
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 export const AgentsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -90,38 +142,7 @@ export const AgentsPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center px-6 py-2 border-b border-white/5 bg-[#0B1220]/60 flex-shrink-0">
-        {(() => {
-          const activeIdx = TABS.findIndex(t => t.id === activeTab);
-          const W = 156;
-          return (
-            <div className="relative flex items-center gap-0 bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
-              <div
-                className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out"
-                style={{ width: W, left: `calc(${activeIdx} * ${W}px + 4px)` }}
-              />
-              {TABS.map(tab => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    style={{ width: W }}
-                    className={`relative z-10 flex items-center justify-center gap-1.5 py-1.5 text-sm rounded-lg transition-colors duration-200 ${
-                      activeTab === tab.id
-                        ? 'text-blue-400'
-                        : 'text-slate-500 hover:text-slate-300'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })()}
-      </div>
+      <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
