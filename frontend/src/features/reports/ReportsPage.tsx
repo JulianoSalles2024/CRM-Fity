@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Lead, ColumnData, Task, Activity, User } from '@/types';
 import type { Board } from '@/types';
-import { RefreshCw, Download, Users, Target, DollarSign, AlertTriangle, Layers } from 'lucide-react';
+import { RefreshCw, Download, Users, Target, DollarSign, AlertTriangle, Layers, ArrowLeft } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import FlatCard from '@/components/ui/FlatCard';
 
@@ -42,6 +42,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
     const [selectedBoardId, setSelectedBoardId] = useState<'all' | string>('all');
     const [topLeadsPage, setTopLeadsPage] = useState(1);
     const TOP_LEADS_PAGE_SIZE = 2;
+    const [selectedSellerId, setSelectedSellerId] = useState<string | null>(null);
 
     // Derive columns and leads for the selected pipeline
     const activeColumns = useMemo(() => {
@@ -199,12 +200,64 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
         };
     }, [boardFilteredLeads, activeColumns, chartViewMode]);
 
-     const columnMap = useMemo(() => {
+    const columnMap = useMemo(() => {
         return activeColumns.reduce((acc, col) => {
             acc[col.id] = {title: col.title, color: col.color};
             return acc;
         }, {} as Record<string, {title: string, color: string}>);
     }, [activeColumns]);
+
+    // ── Avatar helpers ────────────────────────────────────────────────────────
+    const AVATAR_PALETTE = [
+        ['#3b82f6', '#8b5cf6'], ['#8b5cf6', '#ec4899'], ['#10b981', '#06b6d4'],
+        ['#f59e0b', '#ef4444'], ['#ef4444', '#f97316'], ['#06b6d4', '#3b82f6'],
+        ['#6366f1', '#8b5cf6'], ['#ec4899', '#f59e0b'],
+    ];
+    const getAvatarGradient = (name: string) => {
+        const [c1, c2] = AVATAR_PALETTE[name.charCodeAt(0) % AVATAR_PALETTE.length];
+        return `linear-gradient(135deg, ${c1}, ${c2})`;
+    };
+    const getInitials = (name: string) => {
+        const parts = name.trim().split(' ');
+        return parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase();
+    };
+
+    // ── Seller stats for cards grid ───────────────────────────────────────────
+    const sellerStats = useMemo(() => {
+        const wonColIds = new Set(activeColumns.filter(c => c.type === 'won').map(c => c.id));
+        const lostColIds = new Set(activeColumns.filter(c => c.type === 'lost').map(c => c.id));
+        return users.map(user => {
+            const userLeads = filteredLeads.filter(l => l.ownerId === user.id);
+            if (userLeads.length === 0) return null;
+            const wonLeads = userLeads.filter(l => wonColIds.has(l.columnId));
+            const activeLeads = userLeads.filter(l => !wonColIds.has(l.columnId) && !lostColIds.has(l.columnId));
+            const totalValue = userLeads.reduce((sum, l) => sum + l.value, 0);
+            const conversionRate = userLeads.length > 0 ? Math.round((wonLeads.length / userLeads.length) * 100) : 0;
+            const stageCounts = activeColumns
+                .filter(c => !wonColIds.has(c.id) && !lostColIds.has(c.id))
+                .map(col => ({ id: col.id, title: col.title, color: col.color, count: userLeads.filter(l => l.columnId === col.id).length }))
+                .filter(s => s.count > 0)
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 3);
+            const totalStageCount = stageCounts.reduce((sum, s) => sum + s.count, 0);
+            return {
+                user,
+                totalLeads: userLeads.length,
+                wonLeads: wonLeads.length,
+                activeLeads: activeLeads.length,
+                totalValue,
+                conversionRate,
+                stageDistribution: stageCounts.map(s => ({ ...s, pct: totalStageCount > 0 ? Math.round((s.count / totalStageCount) * 100) : 0 })),
+            };
+        }).filter(Boolean) as { user: User; totalLeads: number; wonLeads: number; activeLeads: number; totalValue: number; conversionRate: number; stageDistribution: { id: string; title: string; color: string; count: number; pct: number }[] }[];
+    }, [filteredLeads, activeColumns, users]);
+
+    // ── Funnel filtered by selected seller ────────────────────────────────────
+    const selectedSellerFunnelData = useMemo(() => {
+        if (!selectedSellerId) return null;
+        const sellerLeads = filteredLeads.filter(l => l.ownerId === selectedSellerId);
+        return activeColumns.map(col => ({ ...col, count: sellerLeads.filter(l => l.columnId === col.id).length }));
+    }, [selectedSellerId, filteredLeads, activeColumns]);
     
     const PerformanceChart = ({ data }: { data: typeof timeSeriesData }) => {
         const svgRef = useRef<SVGSVGElement>(null);
@@ -369,7 +422,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                         <Layers className="w-4 h-4 text-slate-400 flex-shrink-0" />
                         <select
                             value={selectedBoardId}
-                            onChange={e => setSelectedBoardId(e.target.value)}
+                            onChange={e => { setSelectedBoardId(e.target.value); setSelectedSellerId(null); }}
                             className="bg-slate-800 text-sm text-slate-200 focus:outline-none cursor-pointer"
                         >
                             <option value="all" className="bg-slate-800 text-slate-200">Geral (todos os pipelines)</option>
@@ -403,77 +456,175 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
             </div>
             
             <FlatCard className="p-5">
-                <div className="flex items-center justify-between mb-5">
-                    <h3 className="font-semibold text-white">Funil de Conversão</h3>
-                    <span className="text-xs text-slate-500 tabular-nums">
-                        {reportData.funnelData.reduce((s, d) => s + d.count, 0)} leads total
-                    </span>
-                </div>
-                <div className="space-y-0.5">
-                    {reportData.funnelData.map((stage, idx) => {
-                        const maxCount = Math.max(...reportData.funnelData.map((s) => s.count), 1);
-                        const percentage = (stage.count / maxCount) * 100;
-                        const prevStage = idx > 0 ? reportData.funnelData[idx - 1] : null;
-                        const retention = prevStage && prevStage.count > 0
-                            ? Math.round((stage.count / prevStage.count) * 100)
-                            : null;
-                        return (
-                            <React.Fragment key={stage.id}>
-                                {/* Drop-off indicator */}
-                                {retention !== null && (
-                                    <div className="flex items-center gap-2 py-1 pl-[120px]">
-                                        <div className="w-px h-2.5 bg-slate-700/80 ml-0.5" />
-                                        <span className={`text-[10px] font-medium tracking-wide ${
-                                            retention >= 70 ? 'text-emerald-400/80' :
-                                            retention >= 40 ? 'text-amber-400/80' : 'text-red-400/80'
-                                        }`}>
-                                            ▼ {retention}% avançaram
-                                        </span>
-                                    </div>
-                                )}
-                                {/* Stage row */}
-                                <div className="flex items-center gap-3 group py-0.5">
-                                    {/* Label */}
-                                    <div className="flex items-center gap-2 w-28 shrink-0">
-                                        <span className="w-2 h-2 rounded-full shrink-0 ring-2 ring-offset-1 ring-offset-[#0B1220]"
-                                            style={{ backgroundColor: stage.color, ringColor: `${stage.color}40` }} />
-                                        <p className="text-xs text-slate-400 truncate group-hover:text-slate-200 transition-colors duration-150"
-                                            title={stage.title}>
-                                            {stage.title}
-                                        </p>
-                                    </div>
-                                    {/* Bar track */}
-                                    <div className="flex-1 h-7 bg-slate-800/70 rounded-lg overflow-hidden">
-                                        <motion.div
-                                            initial={{ width: 0, opacity: 0 }}
-                                            animate={{ width: `${Math.max(percentage, stage.count > 0 ? 2 : 0)}%`, opacity: 1 }}
-                                            transition={{ duration: 0.75, delay: idx * 0.07, ease: [0.16, 1, 0.3, 1] }}
-                                            className="h-full rounded-lg relative overflow-hidden"
-                                            style={{
-                                                background: `linear-gradient(90deg, ${stage.color}DD 0%, ${stage.color}88 100%)`,
-                                                boxShadow: `0 0 18px ${stage.color}35`,
-                                            }}
-                                        >
-                                            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent" />
-                                            <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-black/10 to-transparent" />
-                                        </motion.div>
-                                    </div>
-                                    {/* Count badge */}
+                <AnimatePresence mode="wait">
+                {!selectedSellerId ? (
+                    /* ── STATE 1: Seller cards grid ─────────────────────────── */
+                    <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                        <div className="flex items-center justify-between mb-5">
+                            <div>
+                                <h3 className="font-semibold text-white">Funil de Conversão</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">Selecione um vendedor para ver o funil individual</p>
+                            </div>
+                            <span className="text-xs text-slate-500 tabular-nums">{sellerStats.length} vendedores</span>
+                        </div>
+
+                        {sellerStats.length === 0 ? (
+                            <div className="flex flex-col items-center py-12 text-slate-600">
+                                <Users className="w-8 h-8 mb-2" />
+                                <p className="text-sm text-slate-500">Nenhum vendedor com leads no período</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                                {sellerStats.map((stat, i) => (
                                     <motion.div
-                                        initial={{ opacity: 0, x: -6 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ duration: 0.4, delay: idx * 0.07 + 0.35 }}
-                                        className="w-12 shrink-0 flex justify-end"
+                                        key={stat.user.id}
+                                        initial={{ opacity: 0, y: 12 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.3, delay: i * 0.04 }}
+                                        onClick={() => setSelectedSellerId(stat.user.id)}
+                                        className="bg-[#060d18] border border-white/5 rounded-xl p-4 cursor-pointer hover:border-blue-500/30 hover:bg-blue-500/[0.03] transition-all duration-200 group"
+                                        style={{ boxShadow: 'none' }}
+                                        whileHover={{ boxShadow: '0 0 20px rgba(59,130,246,0.08)' }}
                                     >
-                                        <span className="text-sm font-bold tabular-nums" style={{ color: stage.color }}>
-                                            {stage.count}
-                                        </span>
+                                        {/* Avatar + name */}
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                                                style={{ background: getAvatarGradient(stat.user.name) }}>
+                                                {getInitials(stat.user.name)}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold text-white truncate leading-snug">{stat.user.name}</p>
+                                                <p className="text-[10px] text-slate-500">Vendedor</p>
+                                            </div>
+                                        </div>
+
+                                        {/* 3 metrics */}
+                                        <div className="grid grid-cols-3 gap-1 mb-3 text-center">
+                                            <div>
+                                                <p className="text-base font-bold text-white">{stat.activeLeads}</p>
+                                                <p className="text-[10px] text-slate-500 leading-tight">Ativos</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-emerald-400 truncate">{currencyFormatter.format(stat.totalValue).replace('R$\u00a0', 'R$')}</p>
+                                                <p className="text-[10px] text-slate-500 leading-tight">Valor</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-base font-bold text-blue-400">{stat.conversionRate}%</p>
+                                                <p className="text-[10px] text-slate-500 leading-tight">Conv.</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Stage distribution bar */}
+                                        {stat.stageDistribution.length > 0 && (
+                                            <div>
+                                                <div className="flex h-1 rounded-full overflow-hidden gap-px">
+                                                    {stat.stageDistribution.map(s => (
+                                                        <div key={s.id} className="rounded-full transition-all" style={{ width: `${s.pct}%`, backgroundColor: s.color }} title={`${s.title}: ${s.count}`} />
+                                                    ))}
+                                                    <div className="flex-1 bg-slate-800/60 rounded-full" />
+                                                </div>
+                                                <div className="flex gap-2 mt-1.5 flex-wrap">
+                                                    {stat.stageDistribution.slice(0, 2).map(s => (
+                                                        <span key={s.id} className="text-[10px] text-slate-600 flex items-center gap-1">
+                                                            <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: s.color }} />
+                                                            {s.title}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </motion.div>
-                                </div>
-                            </React.Fragment>
-                        );
-                    })}
-                </div>
+                                ))}
+                            </div>
+                        )}
+                    </motion.div>
+                ) : (
+                    /* ── STATE 2: Individual seller funnel ──────────────────── */
+                    <motion.div key="funnel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                        {(() => {
+                            const seller = users.find(u => u.id === selectedSellerId);
+                            const funnelData = selectedSellerFunnelData ?? [];
+                            const totalCount = funnelData.reduce((s, d) => s + d.count, 0);
+                            return (
+                                <>
+                                    {/* Header */}
+                                    <div className="flex items-center gap-3 mb-5">
+                                        <button
+                                            onClick={() => setSelectedSellerId(null)}
+                                            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
+                                        >
+                                            <ArrowLeft className="w-3.5 h-3.5" />
+                                            Todos os vendedores
+                                        </button>
+                                        <span className="text-slate-700">·</span>
+                                        {seller && (
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+                                                    style={{ background: getAvatarGradient(seller.name) }}>
+                                                    {getInitials(seller.name)}
+                                                </div>
+                                                <span className="text-sm font-semibold text-white">{seller.name}</span>
+                                            </div>
+                                        )}
+                                        <span className="ml-auto text-xs text-slate-500 tabular-nums">{totalCount} leads</span>
+                                    </div>
+
+                                    {/* Funnel bars */}
+                                    <div className="space-y-0.5">
+                                        {funnelData.map((stage, idx) => {
+                                            const maxCount = Math.max(...funnelData.map(s => s.count), 1);
+                                            const percentage = (stage.count / maxCount) * 100;
+                                            const prevStage = idx > 0 ? funnelData[idx - 1] : null;
+                                            const retention = prevStage && prevStage.count > 0
+                                                ? Math.round((stage.count / prevStage.count) * 100)
+                                                : null;
+                                            return (
+                                                <React.Fragment key={stage.id}>
+                                                    {retention !== null && (
+                                                        <div className="flex items-center gap-2 py-1 pl-[120px]">
+                                                            <div className="w-px h-2.5 bg-slate-700/80 ml-0.5" />
+                                                            <span className={`text-[10px] font-medium tracking-wide ${retention >= 70 ? 'text-emerald-400/80' : retention >= 40 ? 'text-amber-400/80' : 'text-red-400/80'}`}>
+                                                                ▼ {retention}% avançaram
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-center gap-3 group py-0.5">
+                                                        <div className="flex items-center gap-2 w-28 shrink-0">
+                                                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: stage.color }} />
+                                                            <p className="text-xs text-slate-400 truncate group-hover:text-slate-200 transition-colors duration-150" title={stage.title}>
+                                                                {stage.title}
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex-1 h-7 bg-slate-800/70 rounded-lg overflow-hidden">
+                                                            <motion.div
+                                                                initial={{ width: 0, opacity: 0 }}
+                                                                animate={{ width: `${Math.max(percentage, stage.count > 0 ? 2 : 0)}%`, opacity: 1 }}
+                                                                transition={{ duration: 0.75, delay: idx * 0.07, ease: [0.16, 1, 0.3, 1] }}
+                                                                className="h-full rounded-lg relative overflow-hidden"
+                                                                style={{ background: `linear-gradient(90deg, ${stage.color}DD 0%, ${stage.color}88 100%)`, boxShadow: `0 0 18px ${stage.color}35` }}
+                                                            >
+                                                                <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent" />
+                                                            </motion.div>
+                                                        </div>
+                                                        <motion.div
+                                                            initial={{ opacity: 0, x: -6 }}
+                                                            animate={{ opacity: 1, x: 0 }}
+                                                            transition={{ duration: 0.4, delay: idx * 0.07 + 0.35 }}
+                                                            className="w-12 shrink-0 flex justify-end"
+                                                        >
+                                                            <span className="text-sm font-bold tabular-nums" style={{ color: stage.color }}>{stage.count}</span>
+                                                        </motion.div>
+                                                    </div>
+                                                </React.Fragment>
+                                            );
+                                        })}
+                                    </div>
+                                </>
+                            );
+                        })()}
+                    </motion.div>
+                )}
+                </AnimatePresence>
             </FlatCard>
 
             <FlatCard className="overflow-hidden">
