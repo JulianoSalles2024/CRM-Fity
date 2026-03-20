@@ -115,3 +115,24 @@ select
   true
 from support_categories where name = 'Primeiros Passos'
 on conflict (slug) do nothing;
+
+-- ── DELETE policies (added after initial migration) ──────────────────
+-- Articles: admin only
+DROP POLICY IF EXISTS "admin_delete_article" ON support_articles;
+CREATE POLICY "admin_delete_article" ON support_articles
+  FOR DELETE USING (public.my_role() = 'admin');
+
+-- Tickets: admin can delete any in company; seller deletes own
+DROP POLICY IF EXISTS "admin_delete_ticket" ON support_tickets;
+CREATE POLICY "admin_delete_ticket" ON support_tickets
+  FOR DELETE USING (
+    company_id = public.my_company_id()
+    AND public.my_role() = 'admin'
+  );
+
+DROP POLICY IF EXISTS "seller_delete_own_ticket" ON support_tickets;
+CREATE POLICY "seller_delete_own_ticket" ON support_tickets
+  FOR DELETE USING (
+    company_id = public.my_company_id()
+    AND opened_by = auth.uid()
+  );
