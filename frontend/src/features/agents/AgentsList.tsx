@@ -55,7 +55,7 @@ export const AgentsList: React.FC<Props> = ({
         </div>
 
         {/* Status filter */}
-        <div className="flex items-center bg-[#0B1220] border border-white/10 rounded-lg p-0.5 gap-0.5">
+        <div className="flex items-center gap-1">
           {[
             { v: 'all', l: 'Todos' },
             { v: 'active', l: 'Ativos' },
@@ -64,8 +64,10 @@ export const AgentsList: React.FC<Props> = ({
             <button
               key={opt.v}
               onClick={() => setStatusFilter(opt.v as typeof statusFilter)}
-              className={`px-2.5 py-1 text-xs rounded-md transition-all ${
-                statusFilter === opt.v ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-all border ${
+                statusFilter === opt.v
+                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                  : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
               }`}
             >
               {opt.l}
