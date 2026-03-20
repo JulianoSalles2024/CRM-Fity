@@ -8,7 +8,7 @@ export function useTickets(isAdmin: boolean, userId: string | null) {
   const [openCount, setOpenCount] = useState(0);
 
   const fetchTickets = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) { setLoading(false); return; }
     setLoading(true);
 
     let query = supabase
@@ -42,7 +42,7 @@ export function useTickets(isAdmin: boolean, userId: string | null) {
   const updateTicketStatus = async (ticketId: string, status: TicketStatus) => {
     const { error } = await supabase
       .from('support_tickets')
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({ status })
       .eq('id', ticketId);
     if (!error) fetchTickets();
     return { error };

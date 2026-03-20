@@ -40,6 +40,7 @@ export function useTicketMessages(ticketId: string | null, isAdmin: boolean) {
   }, [ticketId, fetchMessages]);
 
   const sendMessage = async (content: string, isInternal = false) => {
+    if (!ticketId) return { error: new Error('No ticket selected') };
     const { error } = await supabase.from('support_messages').insert({
       ticket_id: ticketId,
       content,
