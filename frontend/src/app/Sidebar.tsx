@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Columns,
   Users,
+  Users2,
   User as UserIcon,
   ClipboardList,
   Calendar,
@@ -108,6 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { icon: Bot, label: 'Agentes' },
     { icon: MessageSquare, label: 'Chat' },
     { icon: Users, label: 'Grupos' },
+    { icon: Users2, label: 'Comunidade' },
     // { icon: ToyBrick, label: 'Integrações' }, // Removed: moved to Settings
   ].filter((item) => {
     if (!isChatEnabled && item.label === 'Chat') return false;

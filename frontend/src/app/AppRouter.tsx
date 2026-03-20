@@ -20,6 +20,7 @@ import PrintableLeadsReport from '@/src/features/reports/PrintableLeadsReport';
 import InboxView from '@/src/features/chat/InboxView';
 import { InboxPage } from '@/src/features/inbox/InboxPage';
 import { AgentsPage } from '@/src/features/agents/AgentsPage';
+import CommunityPage from '@/src/features/community/CommunityPage';
 
 interface AppRouterProps {
   activeView: string;
@@ -243,6 +244,8 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
       return <InboxPage />;
     case 'Agentes':
       return <AgentsPage />;
+    case 'Comunidade':
+      return <CommunityPage />;
     case 'Chat':
         return <ChatView
             conversations={conversations} messages={messages} leads={filteredLeads} currentUser={localUser}
