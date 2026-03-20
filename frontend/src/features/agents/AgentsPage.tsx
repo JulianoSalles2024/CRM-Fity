@@ -8,6 +8,7 @@ import { useAgentPlaybooks } from './hooks/useAgentPlaybooks';
 import { AgentsCommandCenter } from './AgentsCommandCenter';
 import { AgentsList } from './AgentsList';
 import { AgentWizard } from './AgentWizard';
+import { AgentDetail } from './AgentDetail';
 import type { AIAgent } from './hooks/useAgents';
 
 type Tab = 'comando' | 'agentes' | 'playbooks' | 'analytics';
@@ -40,6 +41,7 @@ export const AgentsPage: React.FC = () => {
     () => PATH_TAB[location.pathname] ?? 'agentes'
   );
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<AIAgent | null>(null);
 
   useEffect(() => {
     navigate(TAB_PATHS[activeTab], { replace: true });
@@ -112,7 +114,8 @@ export const AgentsPage: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-6">
         {activeTab === 'comando' && (
           <AgentsCommandCenter onSelectAgent={(id) => {
-            // Navigate to agent detail (future)
+            const found = agents.find(a => a.id === id);
+            if (found) setSelectedAgent(found);
           }} />
         )}
 
@@ -124,9 +127,7 @@ export const AgentsPage: React.FC = () => {
             onToggle={toggleActive}
             onArchive={archiveAgent}
             onEdit={handleEditAgent}
-            onSelectAgent={(agent) => {
-              // Future: open AgentDetail panel
-            }}
+            onSelectAgent={(agent) => setSelectedAgent(agent)}
           />
         )}
 
@@ -189,6 +190,11 @@ export const AgentsPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Agent Detail Drawer */}
+      {selectedAgent && (
+        <AgentDetail agent={selectedAgent} onClose={() => setSelectedAgent(null)} />
+      )}
 
       {/* Wizard */}
       {wizardOpen && (

@@ -91,6 +91,12 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({ conversation
               {status.label}
             </span>
           )}
+          {conversation.ai_agent_id != null && !isAiEscalated && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium border bg-purple-500/10 text-purple-400 border-purple-500/20">
+              <Bot className="w-2.5 h-2.5" />
+              Agente IA
+            </span>
+          )}
           <span className="text-[10px] text-slate-600">· WhatsApp</span>
         </div>
       </div>
