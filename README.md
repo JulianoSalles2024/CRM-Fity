@@ -68,7 +68,7 @@ O **NextSales** é uma plataforma comercial SaaS voltada para equipes de vendas 
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/JulianoSalles2024/CRM-Fity.git
+git clone https://github.com/JulianoSalles2024/CRM-Nextsales.git
 cd CRM-Fity
 
 # 2. Instale as dependências
