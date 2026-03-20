@@ -140,7 +140,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
 
     const trendData = useMemo(() => {
         const now = new Date();
-        const buckets: { label: string; startDate: Date; endDate: Date; revenue: number; newLeads: number; churn: number }[] = [];
+        const buckets: { label: string; startDate: Date; endDate: Date; revenue: number; newLeads: number; churn: number; pipelineValue: number }[] = [];
 
         if (chartViewMode === 'day') {
             const todayStart = new Date(now);
@@ -150,7 +150,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                 hourStart.setHours(i);
                 const hourEnd = new Date(hourStart);
                 hourEnd.setHours(i, 59, 59, 999);
-                buckets.push({ label: `${String(i).padStart(2, '0')}:00`, startDate: hourStart, endDate: hourEnd, revenue: 0, newLeads: 0, churn: 0 });
+                buckets.push({ label: `${String(i).padStart(2, '0')}:00`, startDate: hourStart, endDate: hourEnd, revenue: 0, newLeads: 0, churn: 0, pipelineValue: 0 });
             }
         } else if (chartViewMode === 'week') {
             for (let i = 6; i >= 0; i--) {
@@ -160,7 +160,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     label: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
                     startDate: new Date(new Date(date).setHours(0, 0, 0, 0)),
                     endDate: new Date(new Date(date).setHours(23, 59, 59, 999)),
-                    revenue: 0, newLeads: 0, churn: 0,
+                    revenue: 0, newLeads: 0, churn: 0, pipelineValue: 0,
                 });
             }
         } else {
@@ -173,7 +173,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                     label: `Semana ${4 - i}`,
                     startDate: new Date(new Date(weekStart).setHours(0, 0, 0, 0)),
                     endDate: new Date(new Date(weekEnd).setHours(23, 59, 59, 999)),
-                    revenue: 0, newLeads: 0, churn: 0,
+                    revenue: 0, newLeads: 0, churn: 0, pipelineValue: 0,
                 });
             }
         }
@@ -186,7 +186,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
             const churnDate = lead.status === 'ENCERRADO' && lead.lastActivityTimestamp ? new Date(lead.lastActivityTimestamp) : null;
 
             for (const bucket of buckets) {
-                if (creationDate && creationDate >= bucket.startDate && creationDate <= bucket.endDate) bucket.newLeads++;
+                if (creationDate && creationDate >= bucket.startDate && creationDate <= bucket.endDate) {
+                    bucket.newLeads++;
+                    bucket.pipelineValue += Number(lead.value || 0);
+                }
                 if (wonDate && wonDate >= bucket.startDate && wonDate <= bucket.endDate) bucket.revenue += Number(lead.value || 0);
                 if (churnDate && churnDate >= bucket.startDate && churnDate <= bucket.endDate) bucket.churn++;
             }
@@ -195,9 +198,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         return {
             labels: buckets.map(b => b.label),
             datasets: [
-                { label: 'Receita',      data: buckets.map(b => b.revenue),   color: '#22c55e' },
-                { label: 'Novos Leads',  data: buckets.map(b => b.newLeads),  color: '#3b82f6' },
-                { label: 'Churn',        data: buckets.map(b => b.churn),     color: '#ef4444' },
+                { label: 'Receita',      data: buckets.map(b => b.revenue),       color: '#22c55e' },
+                { label: 'Novos Leads',  data: buckets.map(b => b.newLeads),      color: '#3b82f6' },
+                { label: 'Churn',        data: buckets.map(b => b.churn),         color: '#ef4444' },
+                { label: 'Pipeline',     data: buckets.map(b => b.pipelineValue), color: '#eab308' },
             ],
         };
     }, [activeLeadPool, activeColumns, chartViewMode]);
@@ -213,7 +217,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         const cW = svgW - pad.left - pad.right;
         const cH = svgH - pad.top - pad.bottom;
 
-        const maxRev   = Math.max(...data.datasets[0].data, 1);
+        const maxRev   = Math.max(...data.datasets[0].data, ...data.datasets[3].data, 1);
         const maxCount = Math.max(...data.datasets[1].data, ...data.datasets[2].data, 5);
         const isEmpty  = data.datasets.every(ds => ds.data.every(v => v === 0));
 
@@ -225,6 +229,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
             revenue:  yRev(data.datasets[0].data[i]),
             newLeads: yCount(data.datasets[1].data[i]),
             churn:    yCount(data.datasets[2].data[i]),
+            pipeline: yRev(data.datasets[3].data[i]),
         }));
 
         const makePath = (ys: { x: number; y: number }[]) =>
@@ -237,9 +242,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                 return `${acc} C ${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${p2.x},${p2.y}`;
             }, '');
 
-        const revPath = makePath(pts.map(p => ({ x: p.x, y: p.revenue  })));
-        const nlPath  = makePath(pts.map(p => ({ x: p.x, y: p.newLeads })));
-        const chPath  = makePath(pts.map(p => ({ x: p.x, y: p.churn    })));
+        const revPath  = makePath(pts.map(p => ({ x: p.x, y: p.revenue  })));
+        const nlPath   = makePath(pts.map(p => ({ x: p.x, y: p.newLeads })));
+        const chPath   = makePath(pts.map(p => ({ x: p.x, y: p.churn    })));
+        const pipePath = makePath(pts.map(p => ({ x: p.x, y: p.pipeline })));
 
         const brlCompact = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 });
         const brlFull    = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
@@ -247,9 +253,10 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         const totals = data.datasets.map(ds => ds.data.reduce((a, b) => a + b, 0));
 
         const SERIES = [
-            { key: 'revenue',  color: '#22c55e', label: 'Receita',     gradId: 'td-rev', value: (i: number) => brlFull.format(data.datasets[0].data[i]) },
-            { key: 'newLeads', color: '#3b82f6', label: 'Novos Leads', gradId: 'td-nl',  value: (i: number) => String(data.datasets[1].data[i]) },
-            { key: 'churn',    color: '#f43f5e', label: 'Churn',       gradId: 'td-ch',  value: (i: number) => String(data.datasets[2].data[i]) },
+            { key: 'revenue',  color: '#22c55e', label: 'Receita',     gradId: 'td-rev',  value: (i: number) => brlFull.format(data.datasets[0].data[i]) },
+            { key: 'newLeads', color: '#3b82f6', label: 'Novos Leads', gradId: 'td-nl',   value: (i: number) => String(data.datasets[1].data[i]) },
+            { key: 'churn',    color: '#f43f5e', label: 'Churn',       gradId: 'td-ch',   value: (i: number) => String(data.datasets[2].data[i]) },
+            { key: 'pipeline', color: '#eab308', label: 'Pipeline',    gradId: 'td-pipe', value: (i: number) => brlFull.format(data.datasets[3].data[i]) },
         ] as const;
 
         const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
@@ -277,7 +284,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                             <div className="flex flex-col leading-none gap-0.5">
                                 <span className="text-[10px] text-slate-500 uppercase tracking-widest">{s.label}</span>
                                 <span className="text-xs font-bold text-slate-200 tabular-nums">
-                                    {s.key === 'revenue' ? brlCompact.format(totals[i]) : totals[i]}
+                                    {(s.key === 'revenue' || s.key === 'pipeline') ? brlCompact.format(totals[i]) : totals[i]}
                                 </span>
                             </div>
                         </div>
@@ -309,6 +316,11 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                                 <stop offset="0%"   stopColor="#f43f5e" stopOpacity={0.18} />
                                 <stop offset="70%"  stopColor="#f43f5e" stopOpacity={0.03} />
                                 <stop offset="100%" stopColor="#f43f5e" stopOpacity={0} />
+                            </linearGradient>
+                            <linearGradient id="td-pipe" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%"   stopColor="#eab308" stopOpacity={0.22} />
+                                <stop offset="70%"  stopColor="#eab308" stopOpacity={0.04} />
+                                <stop offset="100%" stopColor="#eab308" stopOpacity={0} />
                             </linearGradient>
                             <linearGradient id="td-hline" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="0%"   stopColor="white" stopOpacity={0} />
@@ -361,14 +373,16 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                                     ))}
 
                                     {/* Area fills */}
-                                    <path d={`${revPath} L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-rev)" />
-                                    <path d={`${nlPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-nl)" />
-                                    <path d={`${chPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-ch)" />
+                                    <path d={`${revPath}  L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-rev)" />
+                                    <path d={`${nlPath}   L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-nl)" />
+                                    <path d={`${chPath}   L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-ch)" />
+                                    <path d={`${pipePath} L ${pts[pts.length-1].x},${cH} L ${pts[0].x},${cH} Z`} fill="url(#td-pipe)" />
 
                                     {/* Spline lines */}
-                                    <path d={revPath} fill="none" stroke="#22c55e" strokeWidth="2"   strokeLinecap="round" />
-                                    <path d={nlPath}  fill="none" stroke="#3b82f6" strokeWidth="2"   strokeLinecap="round" />
-                                    <path d={chPath}  fill="none" stroke="#f43f5e" strokeWidth="1.5" strokeLinecap="round" />
+                                    <path d={revPath}  fill="none" stroke="#22c55e" strokeWidth="2"   strokeLinecap="round" />
+                                    <path d={nlPath}   fill="none" stroke="#3b82f6" strokeWidth="2"   strokeLinecap="round" />
+                                    <path d={chPath}   fill="none" stroke="#f43f5e" strokeWidth="1.5" strokeLinecap="round" />
+                                    <path d={pipePath} fill="none" stroke="#eab308" strokeWidth="2"   strokeLinecap="round" strokeDasharray="6 3" />
                                 </motion.g>
                             </AnimatePresence>
 
@@ -390,6 +404,7 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
                                             { y: pts[hoveredIndex].revenue,  color: '#22c55e' },
                                             { y: pts[hoveredIndex].newLeads, color: '#3b82f6' },
                                             { y: pts[hoveredIndex].churn,    color: '#f43f5e' },
+                                            { y: pts[hoveredIndex].pipeline, color: '#eab308' },
                                         ] as const).map(({ y, color }) => (
                                             <g key={color}>
                                                 <circle cx={pts[hoveredIndex].x} cy={y} r="10" fill={color} fillOpacity={0.1} />
