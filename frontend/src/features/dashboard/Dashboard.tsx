@@ -495,12 +495,16 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
             <FlatCard className="p-5 flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-white">Tendência do Negócio</h2>
-                    <div className="flex items-center gap-1 p-1 bg-slate-800 border border-slate-700 rounded-lg">
+                    <div className="flex items-center gap-1">
                         {(['day', 'week', 'month'] as const).map(view => (
                             <button
                                 key={view}
                                 onClick={() => setChartViewMode(view)}
-                                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors duration-200 ${chartViewMode === view ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-700/50 hover:text-white'}`}
+                                className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-all border ${
+                                    chartViewMode === view
+                                        ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                        : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                                }`}
                             >
                                 {view === 'day' ? 'Dia' : view === 'week' ? 'Semana' : 'Mês'}
                             </button>
