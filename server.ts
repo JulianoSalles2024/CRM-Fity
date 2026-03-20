@@ -7,8 +7,7 @@ import testConnectionHandler from "./api/ai/test-connection";
 import generateHandler from "./api/ai/generate";
 import generatePlaybookHandler from "./api/ai/generate-playbook";
 import migrateHandler from "./api/install/migrate";
-import analyzeOpportunitiesHandler from "./api/opportunities/analyze";
-import listOpportunitiesHandler from "./api/opportunities/list";
+import opportunitiesHandler from "./api/opportunities/[action]";
 import channelsHandler from "./api/channels/[action]";
 import apiKeysHandler from "./api/api-keys/index";
 
@@ -29,8 +28,7 @@ app.all("/api/ai/test-connection", (req, res) => testConnectionHandler(req, res)
 app.all("/api/ai/generate", (req, res) => generateHandler(req, res));
 app.post("/api/ai/generate-playbook", (req, res) => generatePlaybookHandler(req as any, res as any));
 app.all("/api/install/migrate", (req, res) => migrateHandler(req as any, res as any));
-app.post("/api/opportunities/analyze", (req, res) => analyzeOpportunitiesHandler(req as any, res as any));
-app.get("/api/opportunities/list", (req, res) => listOpportunitiesHandler(req as any, res as any));
+app.all("/api/opportunities/:action", (req, res) => opportunitiesHandler(req as any, res as any));
 
 app.get("/api/health", (req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
 
