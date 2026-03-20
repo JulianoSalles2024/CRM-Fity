@@ -197,8 +197,7 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, users = [], onNavig
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div>
-                    <h1 className="text-4xl font-bold text-white tracking-tight">Follow Up</h1>
-                    <p className="text-slate-400 mt-1 text-lg">Sua mesa de trabalho.</p>
+                    <p className="text-slate-400 text-lg">Sua mesa de trabalho.</p>
                     {isAdmin && (
                         <div className="flex items-center gap-3 mt-3">
                             <button
