@@ -369,11 +369,11 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                         <select
                             value={selectedBoardId}
                             onChange={e => setSelectedBoardId(e.target.value)}
-                            className="bg-transparent text-sm text-slate-200 focus:outline-none cursor-pointer"
+                            className="bg-slate-800 text-sm text-slate-200 focus:outline-none cursor-pointer"
                         >
-                            <option value="all">Geral (todos os pipelines)</option>
+                            <option value="all" className="bg-slate-800 text-slate-200">Geral (todos os pipelines)</option>
                             {boards.map(b => (
-                                <option key={b.id} value={b.id}>{b.name}</option>
+                                <option key={b.id} value={b.id} className="bg-slate-800 text-slate-200">{b.name}</option>
                             ))}
                         </select>
                     </div>
