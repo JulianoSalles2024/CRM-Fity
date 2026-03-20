@@ -90,24 +90,37 @@ export const AgentsPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 px-6 py-2 border-b border-white/5 bg-[#0B1220]/60 flex-shrink-0">
-        {TABS.map(tab => {
-          const Icon = tab.icon;
+      <div className="flex items-center px-6 py-2 border-b border-white/5 bg-[#0B1220]/60 flex-shrink-0">
+        {(() => {
+          const activeIdx = TABS.findIndex(t => t.id === activeTab);
+          const W = 156;
           return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-all ${
-                activeTab === tab.id
-                  ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                  : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {tab.label}
-            </button>
+            <div className="relative flex items-center gap-0 bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
+              <div
+                className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out"
+                style={{ width: W, left: `calc(${activeIdx} * ${W}px + 4px)` }}
+              />
+              {TABS.map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    style={{ width: W }}
+                    className={`relative z-10 flex items-center justify-center gap-1.5 py-1.5 text-sm rounded-lg transition-colors duration-200 ${
+                      activeTab === tab.id
+                        ? 'text-blue-400'
+                        : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
           );
-        })}
+        })()}
       </div>
 
       {/* Content */}
