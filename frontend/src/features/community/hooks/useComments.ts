@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import type { CommunityComment } from '../community.types';
 
-export function useComments(postId: string | null) {
+export function useComments(postId: string | null, userId?: string | null) {
   const [comments, setComments] = useState<CommunityComment[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -53,6 +53,7 @@ export function useComments(postId: string | null) {
       post_id: postId,
       content,
       parent_id: parentId,
+      ...(userId ? { author_id: userId } : {}),
     });
     if (!error) fetchComments();
     return { error };

@@ -19,7 +19,7 @@ interface PostDetailProps {
 const PostDetail: React.FC<PostDetailProps> = ({
   post, authorName, authorPoints = 0, currentUserId, onBack, onPostVote,
 }) => {
-  const { comments, addComment, markAsSolution } = useComments(post.id);
+  const { comments, addComment, markAsSolution } = useComments(post.id, currentUserId);
   const { toggleVote } = useVotes(currentUserId);
 
   const handleCommentVote = async (commentId: string, voted: boolean) => {
