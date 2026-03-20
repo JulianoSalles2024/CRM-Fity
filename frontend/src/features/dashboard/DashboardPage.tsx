@@ -85,11 +85,11 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
               <select
                 value={selectedBoardId}
                 onChange={e => setSelectedBoardId(e.target.value)}
-                className="bg-transparent text-sm text-slate-200 focus:outline-none cursor-pointer"
+                className="bg-slate-900 text-sm text-slate-200 focus:outline-none cursor-pointer"
               >
-                <option value="all">Geral (todos os pipelines)</option>
+                <option value="all" className="bg-slate-900 text-slate-200">Geral (todos os pipelines)</option>
                 {props.boards.map(b => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
+                  <option key={b.id} value={b.id} className="bg-slate-900 text-slate-200">{b.name}</option>
                 ))}
               </select>
             </div>
@@ -98,10 +98,10 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
               <select
                 value={selectedPeriod}
                 onChange={e => setSelectedPeriod(e.target.value)}
-                className="bg-transparent text-sm text-slate-200 focus:outline-none cursor-pointer"
+                className="bg-slate-900 text-sm text-slate-200 focus:outline-none cursor-pointer"
               >
                 {PERIOD_OPTIONS.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
+                  <option key={opt} value={opt} className="bg-slate-900 text-slate-200">{opt}</option>
                 ))}
               </select>
             </div>
