@@ -25,7 +25,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack }) => (
       )}
       <h1 className="text-xl font-bold text-white mb-4">{article.title}</h1>
       <div className="prose prose-invert prose-sm max-w-none text-slate-300">
-        <ReactMarkdown>{article.content}</ReactMarkdown>
+        <ReactMarkdown>{article.content.replace(/\\n/g, '\n')}</ReactMarkdown>
       </div>
     </div>
   </div>
