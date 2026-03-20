@@ -269,70 +269,69 @@ const ScoreTab: React.FC<ScoreTabProps> = ({ sellers, onSelectSeller, companyId 
 
     return (
         <div className="space-y-6">
-            {/* ── CONTEXT BAR ─────────────────────────────────────────────── */}
-            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 space-y-4">
-                <div className="flex flex-col lg:flex-row gap-6">
-                    {/* Period */}
-                    <div className="flex flex-col gap-2 flex-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Período</label>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                            {([
-                                { v: 'mes_atual',      l: 'Mês atual'     },
-                                { v: 'mes_especifico', l: 'Mês'           },
-                                { v: 'trimestre',      l: 'Trimestre'     },
-                                { v: 'ano',            l: 'Ano'           },
-                                { v: 'custom',         l: 'Personalizado' },
-                            ] as { v: ScorePeriod; l: string }[]).map(({ v, l }) => (
-                                <button key={v} onClick={() => setPeriod(v)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${period === v ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}>
-                                    {l}
-                                </button>
-                            ))}
-                        </div>
-                        {period === 'mes_especifico' && (
-                            <div className="flex items-center gap-2 mt-1">
-                                <select value={selMonth} onChange={e => setSelMonth(Number(e.target.value))}
-                                    className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                                    {['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((m, i) => (
-                                        <option key={i} value={i + 1}>{m}</option>
-                                    ))}
-                                </select>
-                                <input type="number" value={selYear} onChange={e => setSelYear(Number(e.target.value))}
-                                    min={2020} max={2099}
-                                    className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-20" />
-                            </div>
-                        )}
-                        {period === 'custom' && (
-                            <div className="flex items-center gap-2 mt-1">
-                                <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
-                                    className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500" />
-                                <span className="text-slate-500 text-xs">até</span>
-                                <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
-                                    className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500" />
-                            </div>
-                        )}
-                    </div>
+            {/* ── PERIOD TAB BAR ──────────────────────────────────────────── */}
+            <div className="flex items-center gap-1 border-b border-white/5 bg-[#0B1220]/60 -mx-6 px-6 pb-0">
+                {([
+                    { v: 'mes_atual',      l: 'Mês atual'     },
+                    { v: 'mes_especifico', l: 'Mês'           },
+                    { v: 'trimestre',      l: 'Trimestre'     },
+                    { v: 'ano',            l: 'Ano'           },
+                    { v: 'custom',         l: 'Personalizado' },
+                ] as { v: ScorePeriod; l: string }[]).map(({ v, l }) => (
+                    <button key={v} onClick={() => setPeriod(v)}
+                        className={`px-4 py-2 text-sm rounded-t-lg transition-all border-b-2 -mb-px ${
+                            period === v
+                                ? 'text-blue-400 border-blue-500 bg-blue-500/5'
+                                : 'text-slate-500 border-transparent hover:text-slate-300 hover:bg-white/5'
+                        }`}>
+                        {l}
+                    </button>
+                ))}
+            </div>
 
-                    {/* Ranking type */}
-                    <div className="flex flex-col gap-2 flex-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tipo de Ranking</label>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                            {([
-                                { v: 'faturamento',  l: 'Faturamento'  },
-                                { v: 'crescimento',  l: 'Crescimento'  },
-                                { v: 'meta',         l: 'Meta %'       },
-                                { v: 'ticket_medio', l: 'Ticket Médio' },
-                                { v: 'num_vendas',   l: 'Nº Vendas'    },
-                                { v: 'consistencia', l: 'Consistência' },
-                            ] as { v: RankingType; l: string }[]).map(({ v, l }) => (
-                                <button key={v} onClick={() => setRankingType(v)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${rankingType === v ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>
-                                    {l}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+            {/* Date pickers inline */}
+            {period === 'mes_especifico' && (
+                <div className="flex items-center gap-2">
+                    <select value={selMonth} onChange={e => setSelMonth(Number(e.target.value))}
+                        className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                        {['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((m, i) => (
+                            <option key={i} value={i + 1}>{m}</option>
+                        ))}
+                    </select>
+                    <input type="number" value={selYear} onChange={e => setSelYear(Number(e.target.value))}
+                        min={2020} max={2099}
+                        className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 w-20" />
                 </div>
+            )}
+            {period === 'custom' && (
+                <div className="flex items-center gap-2">
+                    <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
+                        className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500" />
+                    <span className="text-slate-500 text-xs">até</span>
+                    <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
+                        className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500" />
+                </div>
+            )}
+
+            {/* Ranking type */}
+            <div className="flex items-center gap-1 border-b border-white/5 bg-[#0B1220]/60 -mx-6 px-6 pb-0">
+                {([
+                    { v: 'faturamento',  l: 'Faturamento'  },
+                    { v: 'crescimento',  l: 'Crescimento'  },
+                    { v: 'meta',         l: 'Meta %'       },
+                    { v: 'ticket_medio', l: 'Ticket Médio' },
+                    { v: 'num_vendas',   l: 'Nº Vendas'    },
+                    { v: 'consistencia', l: 'Consistência' },
+                ] as { v: RankingType; l: string }[]).map(({ v, l }) => (
+                    <button key={v} onClick={() => setRankingType(v)}
+                        className={`px-4 py-2 text-sm rounded-t-lg transition-all border-b-2 -mb-px ${
+                            rankingType === v
+                                ? 'text-blue-400 border-blue-500 bg-blue-500/5'
+                                : 'text-slate-500 border-transparent hover:text-slate-300 hover:bg-white/5'
+                        }`}>
+                        {l}
+                    </button>
+                ))}
             </div>
 
             {loading ? (
