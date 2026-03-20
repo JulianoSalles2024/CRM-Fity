@@ -48,5 +48,17 @@ export function useTickets(isAdmin: boolean, userId: string | null) {
     return { error };
   };
 
-  return { tickets, loading, openCount, createTicket, updateTicketStatus, refetch: fetchTickets };
+  const deleteTicket = async (ticketId: string) => {
+    const { error } = await supabase.from('support_tickets').delete().eq('id', ticketId);
+    if (!error) fetchTickets();
+    return { error };
+  };
+
+  const bulkDeleteTickets = async (ids: string[]) => {
+    const { error } = await supabase.from('support_tickets').delete().in('id', ids);
+    if (!error) fetchTickets();
+    return { error };
+  };
+
+  return { tickets, loading, openCount, createTicket, updateTicketStatus, deleteTicket, bulkDeleteTickets, refetch: fetchTickets };
 }

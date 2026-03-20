@@ -24,7 +24,7 @@ const SupportPage: React.FC = () => {
 
   // SupportPage owns these hooks — passes categories down to avoid duplicate fetches
   const { categories } = useArticles();
-  const { tickets, loading: ticketsLoading, createTicket, updateTicketStatus } = useTickets(isAdmin, userId);
+  const { tickets, loading: ticketsLoading, createTicket, updateTicketStatus, deleteTicket, bulkDeleteTickets } = useTickets(isAdmin, userId);
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
     { key: 'help', label: 'Central de Ajuda', icon: BookOpen },
@@ -87,7 +87,7 @@ const SupportPage: React.FC = () => {
       </div>
 
       {/* Content */}
-      {activeTab === 'help' && <HelpCenter categories={categories} />}
+      {activeTab === 'help' && <HelpCenter categories={categories} isAdmin={isAdmin} />}
 
       {activeTab === 'tickets' && (
         selectedTicket ? (
@@ -101,7 +101,12 @@ const SupportPage: React.FC = () => {
         ) : ticketsLoading ? (
           <div className="text-slate-500 text-sm">Carregando chamados...</div>
         ) : (
-          <TicketList tickets={tickets} onSelect={setSelectedTicket} />
+          <TicketList
+              tickets={tickets}
+              onSelect={setSelectedTicket}
+              onDelete={async (id) => { await deleteTicket(id); }}
+              onBulkDelete={async (ids) => { await bulkDeleteTickets(ids); }}
+            />
         )
       )}
 

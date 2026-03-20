@@ -36,5 +36,17 @@ export function useArticles(searchQuery = '') {
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
   useEffect(() => { fetchArticles(); }, [fetchArticles]);
 
-  return { articles, categories, loading, refetch: fetchArticles };
+  const deleteArticle = async (articleId: string) => {
+    const { error } = await supabase.from('support_articles').delete().eq('id', articleId);
+    if (!error) fetchArticles();
+    return { error };
+  };
+
+  const bulkDeleteArticles = async (ids: string[]) => {
+    const { error } = await supabase.from('support_articles').delete().in('id', ids);
+    if (!error) fetchArticles();
+    return { error };
+  };
+
+  return { articles, categories, loading, refetch: fetchArticles, deleteArticle, bulkDeleteArticles };
 }
