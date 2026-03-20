@@ -87,12 +87,13 @@ export const AgentDetail: React.FC<AgentDetailProps> = ({ agent, onClose }) => {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+        className="fixed inset-x-0 bottom-0 z-[150] bg-black/40 backdrop-blur-sm"
+        style={{ top: '80px' }}
         onClick={onClose}
       />
 
       {/* Drawer */}
-      <div className="fixed right-0 top-0 bottom-0 z-50 w-[420px] flex flex-col bg-[#0B1220] border-l border-white/8 shadow-2xl animate-slide-in-right overflow-hidden">
+      <div className="fixed right-0 bottom-0 z-[151] w-[420px] flex flex-col bg-[#0B1220] border-l border-white/8 shadow-2xl animate-slide-in-right overflow-hidden" style={{ top: '80px' }}>
 
         {/* Top accent */}
         <div className="h-0.5 w-full flex-shrink-0" style={{ background: agent.avatar_color }} />
