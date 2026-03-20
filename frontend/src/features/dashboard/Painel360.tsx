@@ -284,7 +284,7 @@ const ScoreTab: React.FC<ScoreTabProps> = ({ sellers, onSelectSeller, companyId 
                                 { v: 'custom',         l: 'Personalizado' },
                             ] as { v: ScorePeriod; l: string }[]).map(({ v, l }) => (
                                 <button key={v} onClick={() => setPeriod(v)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${period === v ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${period === v ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}>
                                     {l}
                                 </button>
                             ))}
