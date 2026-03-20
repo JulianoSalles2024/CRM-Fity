@@ -1,5 +1,5 @@
-import React from 'react';
-import { Bot, FileText } from 'lucide-react';
+import React, { useState } from 'react';
+import { Bot, FileText, ImageOff, MicOff } from 'lucide-react';
 import type { OmniMessage } from './hooks/useMessages';
 
 function formatTime(dateStr: string): string {
@@ -10,8 +10,17 @@ interface MessageBubbleProps {
   message: OmniMessage;
 }
 
+const LABEL: Record<string, string> = {
+  image: 'Imagem',
+  audio: 'Áudio',
+  video: 'Vídeo',
+  document: 'Documento',
+};
+
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const { sender_type, content, sent_at, content_type, media_url } = message;
+  const [imgError, setImgError] = useState(false);
+  const [audioError, setAudioError] = useState(false);
 
   // System event — centered
   if (sender_type === 'system') {
@@ -28,26 +37,48 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
 
   const renderContent = () => {
     // Image
-    if (content_type === 'image' && media_url) {
+    if (content_type === 'image') {
+      if (media_url && !imgError) {
+        return (
+          <div className="flex flex-col gap-1.5">
+            <img
+              src={media_url}
+              alt="Imagem"
+              className="rounded-xl max-w-[260px] max-h-[320px] object-cover cursor-pointer"
+              onClick={() => window.open(media_url, '_blank')}
+              onError={() => setImgError(true)}
+            />
+            {content && <span className="text-sm leading-relaxed">{content}</span>}
+          </div>
+        );
+      }
       return (
-        <div className="flex flex-col gap-1.5">
-          <img
-            src={media_url}
-            alt="Imagem"
-            className="rounded-xl max-w-[260px] max-h-[320px] object-cover cursor-pointer"
-            onClick={() => window.open(media_url, '_blank')}
-          />
-          {content && <span className="text-sm leading-relaxed">{content}</span>}
-        </div>
+        <span className="flex items-center gap-1.5 text-xs italic text-slate-400">
+          <ImageOff className="w-3.5 h-3.5" /> Imagem não disponível
+        </span>
       );
     }
 
     // Audio
-    if (content_type === 'audio' && media_url) {
+    if (content_type === 'audio') {
+      if (media_url && !audioError) {
+        return (
+          <div className="flex flex-col gap-1.5 max-w-[260px]">
+            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+            <audio controls src={media_url} className="w-full h-10" onError={() => setAudioError(true)} />
+            {content && (
+              <p className="text-xs text-slate-300 italic leading-relaxed">
+                🎤 {content}
+              </p>
+            )}
+          </div>
+        );
+      }
       return (
-        <div className="flex flex-col gap-1.5 max-w-[260px]">
-          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-          <audio controls src={media_url} className="w-full h-10" />
+        <div className="flex flex-col gap-1">
+          <span className="flex items-center gap-1.5 text-xs italic text-slate-400">
+            <MicOff className="w-3.5 h-3.5" /> Áudio não disponível
+          </span>
           {content && (
             <p className="text-xs text-slate-300 italic leading-relaxed">
               🎤 {content}
@@ -65,7 +96,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
       );
     }
 
-    // Document / fallback with URL
+    // Document
     if (content_type === 'document' && media_url) {
       return (
         <a
@@ -80,20 +111,21 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
       );
     }
 
-    // Text / unknown / media without URL (fallback placeholder)
-    if (content_type === 'text' || content_type === 'unknown' || !media_url) {
+    // Text / unknown / media types without URL
+    if (content_type === 'text' || content_type === 'unknown') {
       return <span>{content ?? ''}</span>;
     }
 
-    // Remaining content types without URL
-    return (
-      <span className="italic text-slate-300 text-xs">
-        [{content_type === 'image' ? 'Imagem' :
-          content_type === 'audio' ? 'Áudio' :
-          content_type === 'video' ? 'Vídeo' :
-          content_type === 'document' ? 'Documento' : content_type}]
-      </span>
-    );
+    // Other media types without a valid URL
+    if (!media_url) {
+      return (
+        <span className="italic text-slate-400 text-xs">
+          [{LABEL[content_type] ?? content_type}]
+        </span>
+      );
+    }
+
+    return <span>{content ?? ''}</span>;
   };
 
   return (
