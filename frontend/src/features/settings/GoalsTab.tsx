@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Target, Plus, Loader2, TrendingUp, Users, Receipt, BarChart2, UserMinus, X, Zap, Pencil, Trash2 } from 'lucide-react';
 import FlatCard from '@/components/ui/FlatCard';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -119,6 +119,49 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, canManage, isActivating, onAc
         )}
     </div>
 );
+
+// ── Sliding-pill tab bar ──────────────────────────────────────────────────────
+const GoalsSlidingTabs: React.FC<{
+    scopeTab: 'global' | 'seller';
+    setScopeTab: (v: 'global' | 'seller') => void;
+}> = ({ scopeTab, setScopeTab }) => {
+    const tabs = [
+        { v: 'global' as const, l: 'Globais'      },
+        { v: 'seller' as const, l: 'Por Vendedor' },
+    ];
+    const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    const [pill, setPill] = useState({ left: 0, width: 0 });
+
+    const measure = () => {
+        const idx = tabs.findIndex(t => t.v === scopeTab);
+        const el = btnRefs.current[idx];
+        if (el) setPill({ left: el.offsetLeft, width: el.offsetWidth });
+    };
+
+    useEffect(() => { measure(); }, [scopeTab]);
+    useEffect(() => { measure(); }, []);
+
+    return (
+        <div className="relative flex items-center bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
+            <div
+                className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out pointer-events-none"
+                style={{ left: pill.left, width: pill.width }}
+            />
+            {tabs.map(({ v, l }, i) => (
+                <button
+                    key={v}
+                    ref={el => { btnRefs.current[i] = el; }}
+                    onClick={() => setScopeTab(v)}
+                    className={`relative z-10 flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-lg transition-colors duration-200 whitespace-nowrap ${
+                        scopeTab === v ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                >
+                    {l}
+                </button>
+            ))}
+        </div>
+    );
+};
 
 const GoalsTab: React.FC = () => {
     const { companyId, currentPermissions } = useAuth();
@@ -257,21 +300,7 @@ const GoalsTab: React.FC = () => {
             </div>
 
             {/* Scope Sub-tabs */}
-            <div className="flex gap-1">
-                {(['global', 'seller'] as const).map(tab => (
-                    <button
-                        key={tab}
-                        onClick={() => setScopeTab(tab)}
-                        className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-all border ${
-                            scopeTab === tab
-                                ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
-                        }`}
-                    >
-                        {tab === 'global' ? 'Globais' : 'Por Vendedor'}
-                    </button>
-                ))}
-            </div>
+            <GoalsSlidingTabs scopeTab={scopeTab} setScopeTab={setScopeTab} />
 
             {/* Content */}
             {scopeTab === 'seller' && (
