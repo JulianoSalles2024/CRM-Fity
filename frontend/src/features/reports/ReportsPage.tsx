@@ -44,7 +44,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
 
     // Derive columns and leads for the selected pipeline
     const activeColumns = useMemo(() => {
-        if (selectedBoardId === 'all') return columns;
+        if (selectedBoardId === 'all') return boards.flatMap(b => b.columns);
         const board = boards.find(b => b.id === selectedBoardId);
         return board ? board.columns : columns;
     }, [selectedBoardId, boards, columns]);
