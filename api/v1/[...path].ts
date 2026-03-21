@@ -179,11 +179,6 @@ async function handleLeadStage(req: any, res: any, ctx: any, id: string) {
 async function handleDeliver(req: any, res: any) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido.' });
 
-  // Secret opcional — só valida se SUPABASE_WEBHOOK_SECRET estiver definido E não vazio
-  const secret = (process.env.SUPABASE_WEBHOOK_SECRET ?? '').trim();
-  if (secret && req.headers['x-webhook-secret'] !== secret) {
-    return res.status(401).json({ error: 'Não autorizado.' });
-  }
 
   const { type, record, old_record } = req.body ?? {};
   if (!record?.company_id) return res.status(400).json({ error: 'Payload inválido.' });
