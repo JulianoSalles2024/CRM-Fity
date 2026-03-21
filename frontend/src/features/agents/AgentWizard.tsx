@@ -77,7 +77,7 @@ const defaultForm = (): FormData => ({
   work_hours_end: '18:00',
   timezone: 'America/Sao_Paulo',
   playbook_id: null,
-  opening_script: null,
+  opening_script: getDefaultPrompt('sdr', { tone: 'consultivo', client_type: 'medium' }),
   is_active: false,
   escalate_rules: {
     max_followups: 5,
