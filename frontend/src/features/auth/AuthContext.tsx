@@ -65,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .select('role, is_active, company_id')
       .eq('id', user.id)
       .single()
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (error) {
           console.error('[AuthContext] profile query error:', error.message, '| code:', error.code);
           // Keep safe default — do NOT silently show wrong role
@@ -85,6 +85,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setBlockedError('Usuário bloqueado. Contate o administrador.');
           supabase.auth.signOut();
           return;
+        }
+
+        // Check invite expiration for users who registered via invite link
+        const inviteToken = user.user_metadata?.invite_token as string | undefined;
+        if (inviteToken) {
+          const { data: invite } = await supabase
+            .from('invites')
+            .select('expires_at')
+            .eq('token', inviteToken)
+            .maybeSingle();
+
+          if (invite?.expires_at && new Date(invite.expires_at) < new Date()) {
+            setBlockedError('Acesso expirado. Contate o administrador.');
+            supabase.auth.signOut();
+            return;
+          }
         }
 
         const role = (data.role as AppRole) ?? 'user';
