@@ -75,19 +75,32 @@ async function handleLeads(req: any, res: any, ctx: any) {
     const { name, email, phone, company_name, value, board_id, column_id, owner_id } = req.body ?? {};
     if (!name?.trim()) throw new AppError(400, 'O campo name é obrigatório.');
 
+    // Resolve owner_id: usa o do body ou cai para o admin da empresa
+    let resolvedOwner = owner_id ?? null;
+    if (!resolvedOwner) {
+      const { data: admin } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('company_id', ctx.companyId)
+        .eq('role', 'admin')
+        .limit(1)
+        .single();
+      resolvedOwner = admin?.id ?? ctx.userId;
+    }
+
     const { data, error } = await supabaseAdmin
       .from('leads')
       .insert({
-        company_id: ctx.companyId,
-        name: name.trim(),
+        company_id:   ctx.companyId,
+        name:         name.trim(),
         email:        email        ?? null,
         phone:        phone        ?? null,
         company_name: company_name ?? null,
         value:        value        ?? null,
         board_id:     board_id     ?? null,
         column_id:    column_id    ?? null,
-        owner_id:     owner_id     ?? null,
-        status: 'NOVO',
+        owner_id:     resolvedOwner,
+        status:       'NOVO',
       })
       .select()
       .single();
