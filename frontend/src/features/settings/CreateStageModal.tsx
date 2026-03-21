@@ -132,7 +132,7 @@ const CreateStageModal: React.FC<CreateStageModalProps> = ({ onClose, onSubmit, 
                         <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-300 border border-white/10 rounded-lg hover:bg-white/5 transition-colors">
                             Cancelar
                         </button>
-                        <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                        <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 rounded-lg transition-all duration-200">
                             {isEditMode ? 'Salvar Alterações' : 'Criar Estágio'}
                         </button>
                     </div>

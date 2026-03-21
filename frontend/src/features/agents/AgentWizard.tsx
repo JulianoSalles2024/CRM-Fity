@@ -636,7 +636,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                 disabled={!canNext()}
                 className={`flex items-center gap-1.5 px-5 py-2 text-sm font-medium rounded-lg transition-colors ${
                   canNext()
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    ? 'bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 text-white'
                     : 'bg-slate-800 text-slate-600 cursor-not-allowed'
                 }`}
               >

@@ -726,7 +726,7 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
                         >
                             <div className="flex items-center justify-between">
                                 <h3 className="text-lg font-bold text-white">Normativas Bancárias</h3>
-                                <button className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all">
+                                <button className="bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all duration-200">
                                     <Plus className="w-4 h-4" /> Cadastrar Banco
                                 </button>
                             </div>

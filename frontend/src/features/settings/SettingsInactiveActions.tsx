@@ -395,9 +395,9 @@ export const SettingsInactiveActions: React.FC = () => {
               <button
                 onClick={handleSaveAutoClose}
                 disabled={isSavingSettings || !hoursDraft || parseInt(hoursDraft, 10) < 1}
-                className="ml-auto px-4 py-1.5 bg-blue-600 hover:bg-blue-700
+                className="ml-auto px-4 py-1.5 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5
                   disabled:opacity-40 disabled:cursor-not-allowed
-                  text-white text-sm font-medium rounded-lg transition-colors"
+                  text-white text-sm font-medium rounded-lg transition-all duration-200"
               >
                 Salvar
               </button>

@@ -92,7 +92,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ gruposContent }) => {
         {activeTab === 'feed' && (
           <button
             onClick={() => setShowNewPost(true)}
-            className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-all"
+            className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 text-white text-sm rounded-lg transition-all duration-200"
           >
             <Plus className="w-4 h-4" />
             Novo Post
