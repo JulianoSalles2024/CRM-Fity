@@ -116,7 +116,7 @@ async function handleLeads(req: any, res: any, ctx: any) {
       .single();
 
     if (error) throw new AppError(400, error.message);
-    deliverWebhooks(ctx.companyId, 'lead.created', data);
+    await deliverWebhooks(ctx.companyId, 'lead.created', data);
     return res.status(201).json({ data });
   }
 
@@ -146,7 +146,7 @@ async function handleLeadById(req: any, res: any, ctx: any, id: string) {
         updated_at: new Date().toISOString() })
       .eq('id', id).select().single();
     if (error) throw new AppError(500, 'Erro ao atualizar lead.');
-    deliverWebhooks(ctx.companyId, 'lead.updated', data);
+    await deliverWebhooks(ctx.companyId, 'lead.updated', data);
     return res.status(200).json({ data });
   }
 
@@ -181,7 +181,7 @@ async function handleLeadStage(req: any, res: any, ctx: any, id: string) {
     .eq('id', id).select().single();
   if (error) throw new AppError(500, 'Erro ao mover lead.');
 
-  deliverWebhooks(ctx.companyId, 'lead.stage_changed', { ...data, stage });
+  await deliverWebhooks(ctx.companyId, 'lead.stage_changed', { ...data, stage });
   return res.status(200).json({ data, stage });
 }
 
