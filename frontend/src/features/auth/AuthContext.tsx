@@ -87,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
-        // Check invite expiration for users who registered via invite link
+        // Verifica expiração do convite para usuários que se cadastraram via link de convite
         const inviteToken = user.user_metadata?.invite_token as string | undefined;
         if (inviteToken) {
           const { data: invite } = await supabase
