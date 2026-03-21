@@ -28,6 +28,7 @@
 - [API — Endpoints e segurança](#api--endpoints-e-segurança)
 - [Roles e permissões](#roles-e-permissões)
 - [Segurança — Fase 6 Hardening](#segurança--fase-6-hardening)
+- [Design System & UI](#design-system--ui)
 - [Deploy](#deploy)
 
 ---
@@ -51,6 +52,7 @@ O **NextSales** é uma plataforma comercial SaaS voltada para equipes de vendas 
 - 🔮 **Oportunidades Inteligentes** — scoring determinístico com bandas hot/warm/cold/risk/upsell
 - 👥 **Multiusuário RBAC** — admin, vendedor, com permissões distintas e RLS no banco
 - 🔐 **Segurança** — CSP, rate limiting, INSTALL_SECRET, ESM-safe, zero API keys no browser
+- 🎨 **UI/UX premium** — Sliding pill navigation, página de login "Data Convergence" com SVG animado, design system consistente
 
 ---
 
@@ -188,7 +190,7 @@ CRM-Fity/
 │   │   │   │       └── useAiEscalationCount.ts  # Badge Sidebar — count escalações
 │   │   │   ├── ai/               # Copiloto Zenius — chat, prompts, histórico
 │   │   │   ├── ai-credentials/   # Gestão de provedores de IA
-│   │   │   ├── auth/             # AuthContext, AuthGate, Login, Register
+│   │   │   ├── auth/             # AuthContext, AuthGate, SignIn (Data Convergence), Register
 │   │   │   ├── dashboard/        # KPIs, Painel 360, SellerDetail360
 │   │   │   ├── install/          # Install Wizard — páginas e serviço
 │   │   │   ├── leads/            # Kanban, LeadList, modais de lead
@@ -201,6 +203,10 @@ CRM-Fity/
 │   │   │   ├── supabase.ts       # Client Supabase (anon key, browser-safe)
 │   │   │   ├── permissions.ts    # RBAC — AppRole e Permissions
 │   │   │   └── uiStyles.ts       # Design system — classes Tailwind reutilizáveis
+│   │   ├── design-system/
+│   │   │   └── styles/
+│   │   │       ├── variables.css # Tokens CSS: --color-bg-page, --color-primary, --radius-* ...
+│   │   │       └── globals.css   # Utilitários globais e scrollbar
 │   │   └── hooks/                # Hooks globais de dados (Supabase)
 │
 ├── api/                          # Serverless Functions (Vercel) / Express local
@@ -518,6 +524,53 @@ Headers adicionais: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, 
 ### Zero API keys no browser
 
 Nenhum SDK de IA é instanciado no browser. O `AIService` delega toda geração para `/api/ai/generate`. A chave de API nunca trafega do servidor para o cliente.
+
+---
+
+## Design System & UI
+
+### Tokens de cor (`variables.css`)
+
+Todos os componentes usam **exclusivamente** CSS custom properties — nenhuma cor estática hardcodada.
+
+| Token | Valor | Uso |
+|---|---|---|
+| `--color-bg-page` | `slate.950` | Fundo da página |
+| `--color-bg-surface` | `slate.900` | Cards, modais |
+| `--color-bg-input` | `slate.950` | Inputs e selects |
+| `--color-border` | `slate.700` | Bordas padrão |
+| `--color-divider` | `slate.800` | Separadores |
+| `--color-text-primary` | `slate.100` | Texto principal |
+| `--color-text-secondary` | `slate.400` | Texto secundário |
+| `--color-text-muted` | `slate.500` | Texto atenuado |
+| `--color-primary` | `blue.600` | Cor de destaque da marca |
+| `--color-primary-hover` | `blue.500` | Hover de elementos primários |
+| `--color-primary-text` | `blue.400` | Links e textos de destaque |
+| `--radius-sm/md/lg/xl` | `0.375–1rem` | Escala de border-radius |
+
+### Página de Login — "Data Convergence" (`SignIn.tsx`)
+
+Página de login com design futurista inspirado em plataformas de IA (LangSmith, Vercel).
+
+**Layout:** split 55/45 — painel de branding à esquerda + card de formulário à direita.
+
+**Efeito SVG animado:**
+- 9 curvas Bézier partem da borda esquerda em diferentes alturas
+- Todas convergem para o ponto `(660, 450)` com partículas brancas viajando via `animateMotion`
+- Uma linha-tronco sai do ponto de convergência e termina apontando para o card de login
+- Nó pulsante no ponto de convergência + nós scatter ambientes
+- Card deslocado para a esquerda (`translateX(-10rem)`) criando a sensação de imersão
+
+**Fontes:** Syne (display, 600/700/800) + DM Sans (body). Adicionar ao `index.html`:
+```html
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet"/>
+```
+
+### Sliding Pill Navigation
+
+Padrão de abas com indicador deslizante aplicado em toda a plataforma. Usa `useRef` para medir `offsetLeft/offsetWidth` real de cada botão e deslizar a pill com `transition-all duration-300`.
+
+Aplicado em: `Dashboard`, `GlobalSales360`, `LeadListHeader`, `AgentsPage`, `TeamSettings`, `GoalsTab`.
 
 ---
 
