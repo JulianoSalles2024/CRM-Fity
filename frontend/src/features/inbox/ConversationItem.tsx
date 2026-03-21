@@ -11,6 +11,15 @@ function formatTime(dateStr: string | null): string {
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 }
 
+const AGENT_TYPE_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  hunter:     { label: 'Hunter',     color: 'text-orange-400',  bg: 'bg-orange-500/10',  border: 'border-orange-500/20' },
+  sdr:        { label: 'SDR',        color: 'text-blue-400',    bg: 'bg-blue-500/10',    border: 'border-blue-500/20' },
+  closer:     { label: 'Closer',     color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+  followup:   { label: 'Follow-up',  color: 'text-violet-400',  bg: 'bg-violet-500/10',  border: 'border-violet-500/20' },
+  curator:    { label: 'Curator',    color: 'text-cyan-400',    bg: 'bg-cyan-500/10',    border: 'border-cyan-500/20' },
+  supervisor: { label: 'Supervisor', color: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/20' },
+};
+
 const STATUS_CONFIG = {
   waiting:     { label: 'Em espera',      dot: 'bg-yellow-400', pill: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
   in_progress: { label: 'Em atendimento', dot: 'bg-blue-400',   pill: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
@@ -91,12 +100,16 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({ conversation
               {status.label}
             </span>
           )}
-          {conversation.ai_agent_id != null && !isAiEscalated && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium border bg-purple-500/10 text-purple-400 border-purple-500/20">
-              <Bot className="w-2.5 h-2.5" />
-              Agente IA
-            </span>
-          )}
+          {conversation.ai_agent_id != null && !isAiEscalated && (() => {
+            const ft  = conversation.ai_agents?.function_type;
+            const cfg = ft ? AGENT_TYPE_CONFIG[ft] : null;
+            return (
+              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium border ${cfg ? `${cfg.bg} ${cfg.color} ${cfg.border}` : 'bg-purple-500/10 text-purple-400 border-purple-500/20'}`}>
+                <Bot className="w-2.5 h-2.5" />
+                {cfg?.label ?? 'Agente IA'}
+              </span>
+            );
+          })()}
           <span className="text-[10px] text-slate-600">· WhatsApp</span>
         </div>
       </div>

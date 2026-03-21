@@ -14,6 +14,7 @@ export interface OmniConversation {
   status: ConversationStatus;
   assignee_id: string | null;
   ai_agent_id: string | null;
+  ai_agents?: { name: string; function_type: string; avatar_color: string | null } | null;
   last_message_at: string | null;
   last_message_preview: string | null;
   unread_count: number;
@@ -32,7 +33,7 @@ export function useConversations(statusFilter: ConversationStatus | null = null,
 
     let query = supabase
       .from('conversations')
-      .select('*')
+      .select('*, ai_agents!ai_agent_id(name, function_type, avatar_color)')
       .eq('company_id', companyId)
       .order('last_message_at', { ascending: false, nullsFirst: false });
 
