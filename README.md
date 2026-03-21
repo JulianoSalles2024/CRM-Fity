@@ -426,11 +426,13 @@ O NextSales usa o n8n como motor de automação. Os workflows são conectados vi
 
 | Workflow | Trigger | Função |
 |---|---|---|
-| **WF-01** — Recepção WhatsApp | Webhook Evolution API | Recebe mensagens, cria/resolve conversa, roteia para IA ou humano |
+| **WF-01** — Recepção WhatsApp | Webhook Evolution API | Recebe mensagens, cria/resolve conversa, roteia para IA ou humano, salva mídia (imagem/áudio em base64) |
+| **WF-02** — Envio WhatsApp Outbound | Webhook interno | Recebe requisição do CRM, chama Evolution API `sendText`, registra mensagem e atualiza preview da conversa |
+| **WF-03** — Follow-up por Inatividade | Cron `*/1 * * * *` | Busca conversas paradas via RPC `get_pending_followups`, gera mensagem personalizada via IA, envia WhatsApp e avança o step da sequência |
 | **WF-04** — Auto-close | Cron (configurável) | Encerra conversas inativas após período definido pela empresa |
 | **WF-05** — Agente de Pipeline | Chamado pelo WF-01 | IA copiloto para conversas sem agente comercial |
 | **WF-06** — Agent Router | Cron `*/5 * * * *` | Roteia leads da fila para cada agente ativo (respeita horário de trabalho) |
-| **WF-07** — Agent Executor | Webhook | Motor da IA: recebe lead → constrói prompt → OpenAI → envia WhatsApp → atualiza memória |
+| **WF-07** — Agent Executor | Webhook | Motor da IA: recebe lead → constrói prompt → OpenAI → envia WhatsApp → atualiza memória → envia trace para LangSmith |
 | **WF-08** — Agent Follow-up | Cron `0 * * * *` | Processa `next_action_at` vencidos e dispara WF-07 com `content_type=followup` |
 
 ### Fluxo WF-07 (Agent Executor)
@@ -469,9 +471,31 @@ action === "escalate" → escalar_para_humano → notifica vendedor
 
 ---
 
-## Copiloto IA (Zenius)
+## Copilotos de IA
 
-O **Zenius** é o assistente de IA integrado ao CRM para uso interativo do vendedor/admin. Toda geração passa pelo servidor — **nenhuma API key trafega para o browser**.
+O NextSales possui dois assistentes de IA integrados, ativados pelo botão **🤖** no canto superior direito. Toda geração passa pelo servidor — **nenhuma API key trafega para o browser**.
+
+### Zenius Pilot (admin)
+
+Assistente estratégico para administradores com acesso a ferramentas avançadas:
+
+- Análise de pipeline e geração de insights de desempenho
+- Criação de scripts de abordagem e email profissional
+- Sugestão de próxima ação por lead (urgência + razão)
+- Geração de estágios de Kanban e estrutura de board
+- Resumo diário de prioridades
+
+### SDR Vendas (vendedor)
+
+Assistente exclusivo para vendedores, focado em execução comercial e leads:
+
+- Sugestão de abordagem personalizada por lead
+- Contorno de objeções com argumentos contextualizados
+- Geração de mensagens de follow-up
+- Consulta rápida ao histórico da conversa e próximas tarefas
+- Quick replies e templates prontos para WhatsApp
+
+> O assistente exibido muda automaticamente conforme o role do usuário — vendedores veem o **SDR Vendas**, admins veem o **Zenius Pilot**.
 
 ### Arquitetura segura
 
