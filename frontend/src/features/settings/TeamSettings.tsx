@@ -560,7 +560,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                             {member.isActive ? (
                                                 <button
                                                     onClick={() => setBlockTarget(member)}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/10 hover:border-red-500/50 transition-all"
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-400 border border-amber-500/30 rounded-lg hover:bg-amber-500/10 hover:border-amber-500/50 transition-all"
                                                     title="Bloquear acesso"
                                                 >
                                                     <Ban className="w-3.5 h-3.5" />
