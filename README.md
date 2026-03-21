@@ -105,39 +105,69 @@ O NextSales possui um assistente de instalação guiado que configura toda a inf
 
 ### Como acessar
 
-Após fazer fork e deploy na Vercel, acesse:
+Após clonar o repositório e rodar `npm run dev`, acesse o wizard em:
 
 ```
-https://seu-dominio.vercel.app/install
+http://localhost:3002/install/fork
 ```
 
-### Fluxo de instalação (4 etapas)
+Em produção (após deploy na Vercel), substitua pela URL do seu domínio:
 
 ```
-/install/start     → Dados do administrador (nome, e-mail, senha)
-/install/vercel    → Token da Vercel (para configurar env vars e redeploy)
-/install/supabase  → URL, Service Role Key, Anon Key e PAT do Supabase
-/install/run       → Execução automática com feedback em tempo real
+https://seu-dominio.vercel.app/install/fork
+```
+
+### Fluxo de instalação (5 etapas)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  http://localhost:3002/install/fork                                  │
+│  → Fork do repositório no GitHub + deploy na Vercel                 │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  http://localhost:3002/install/start                                 │
+│  → Dados do administrador (nome, e-mail, senha)                      │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  /install/vercel                                                     │
+│  → Token da Vercel (para configurar env vars e redeploy)             │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  /install/supabase                                                   │
+│  → URL, Service Role Key, Anon Key e PAT do Supabase                 │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  /install/run                                                        │
+│  → Execução automática com feedback em tempo real                    │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ### O que o wizard faz automaticamente
 
 | Etapa | Ação |
 |---|---|
-| 1 | Detecta o projeto na Vercel via token |
-| 2 | Cria as variáveis de ambiente no Vercel |
-| 3 | Executa as migrations no Supabase via Management API |
-| 4 | Cria o usuário administrador no Supabase Auth |
-| 5 | Cria o perfil do admin com `role = 'admin'` |
-| 6 | Dispara redeploy automático na Vercel com as novas env vars |
+| 1 | Guia o fork do repositório e deploy inicial na Vercel |
+| 2 | Detecta o projeto na Vercel via token |
+| 3 | Cria as variáveis de ambiente no Vercel |
+| 4 | Executa as migrations no Supabase via Management API |
+| 5 | Cria o usuário administrador no Supabase Auth |
+| 6 | Cria o perfil do admin com `role = 'admin'` |
+| 7 | Dispara redeploy automático na Vercel com as novas env vars |
 
 ### Pré-requisitos para o wizard
 
-1. Fazer **fork** do repositório no GitHub
-2. Fazer **deploy** na Vercel conectando o fork
-3. Ter em mãos:
+1. Ter em mãos:
+   - Conta no [GitHub](https://github.com)
    - Token da Vercel ([vercel.com/account/tokens](https://vercel.com/account/tokens))
-   - URL, Service Role Key, Anon Key e PAT do Supabase
+   - URL, Service Role Key, Anon Key e PAT do Supabase ([app.supabase.com](https://app.supabase.com))
 
 ---
 
