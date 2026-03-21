@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../_lib/supabase.js';
 import { requireAnyAuth } from '../_lib/apiKeyAuth.js';
 import { AppError, apiError } from '../_lib/errors.js';
+import { deliverWebhooks } from '../_lib/deliverWebhooks.js';
 
 export default async function handler(req: any, res: any) {
   try {
@@ -71,6 +72,10 @@ export default async function handler(req: any, res: any) {
         .single();
 
       if (error) throw new AppError(500, 'Erro ao criar lead.');
+
+      // Dispara webhooks de saída (fire-and-forget)
+      deliverWebhooks(ctx.companyId, 'lead.created', data);
+
       return res.status(201).json({ data });
     }
 

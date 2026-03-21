@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../../../_lib/supabase.js';
 import { requireAnyAuth } from '../../../_lib/apiKeyAuth.js';
 import { AppError, apiError } from '../../../_lib/errors.js';
+import { deliverWebhooks } from '../../../_lib/deliverWebhooks.js';
 
 // PATCH /api/v1/leads/:id/stage
 // Body: { column_id: string }
@@ -50,6 +51,13 @@ export default async function handler(req: any, res: any) {
       .single();
 
     if (error) throw new AppError(500, 'Erro ao mover lead.');
+
+    // Dispara webhooks de saída (fire-and-forget)
+    deliverWebhooks(ctx.companyId, 'lead.stage_changed', {
+      ...data,
+      stage: { id: stage.id, name: stage.name },
+    });
+
     return res.status(200).json({ data, stage: { id: stage.id, name: stage.name } });
   } catch (err) {
     return apiError(res, err);
