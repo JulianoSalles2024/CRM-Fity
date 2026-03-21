@@ -21,16 +21,6 @@ export default async function handler(req: any, res: any) {
       return await handleDeliver(req, res);
     }
 
-    // Debug temporário — remove após confirmar webhooks
-    if (resource === 'debug-webhooks') {
-      const ctx = await requireAnyAuth(req);
-      const { data, error } = await supabaseAdmin
-        .from('outgoing_webhooks')
-        .select('*')
-        .eq('company_id', ctx.companyId);
-      return res.status(200).json({ company_id: ctx.companyId, webhooks: data, error: error?.message });
-    }
-
     if (resource !== 'leads') {
       return res.status(404).json({ error: 'Recurso não encontrado.' });
     }
@@ -115,7 +105,7 @@ async function handleLeads(req: any, res: any, ctx: any) {
       .select()
       .single();
 
-    if (error) throw new AppError(400, error.message);
+    if (error) throw new AppError(500, 'Erro ao criar lead.');
     await deliverWebhooks(ctx.companyId, 'lead.created', data);
     return res.status(201).json({ data });
   }
