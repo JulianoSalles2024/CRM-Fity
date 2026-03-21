@@ -78,7 +78,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
           <button
             onClick={handleReply}
             disabled={!replyText.trim()}
-            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 transition-all"
+            className="px-3 py-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 text-white rounded-lg disabled:opacity-50 transition-all duration-200"
           >
             <Send className="w-3.5 h-3.5" />
           </button>
@@ -139,7 +139,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({
         <button
           onClick={handleSubmit}
           disabled={!newComment.trim()}
-          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 transition-all"
+          className="px-3 py-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 text-white rounded-lg disabled:opacity-50 transition-all duration-200"
         >
           <Send className="w-4 h-4" />
         </button>

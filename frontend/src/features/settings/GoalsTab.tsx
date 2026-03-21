@@ -291,7 +291,7 @@ const GoalsTab: React.FC = () => {
                 {canManage && (
                     <button
                         onClick={openModal}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                        className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm"
                     >
                         <Plus className="w-4 h-4" />
                         Nova Meta
@@ -327,7 +327,7 @@ const GoalsTab: React.FC = () => {
             {canManage && (
              <button
             onClick={openModal}
-            className="mt-6 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+            className="mt-6 flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm"
          >
             <Plus className="w-4 h-4" />
             Nova Meta
@@ -379,7 +379,7 @@ const GoalsTab: React.FC = () => {
                         {canManage && (
                             <button
                                 onClick={openModal}
-                                className="mt-6 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                                className="mt-6 flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm"
                             >
                                 <Plus className="w-4 h-4" />
                                 Nova Meta
@@ -654,7 +654,7 @@ const GoalsTab: React.FC = () => {
                                     <button
                                         onClick={handleSubmit}
                                         disabled={isSaving}
-                                        className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 text-white transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
                                     >
                                         {isSaving
                                             ? <><Loader2 className="w-4 h-4 animate-spin" /> {isEditMode ? 'Atualizando...' : 'Salvando...'}</>

@@ -113,7 +113,7 @@ const NewPostModal: React.FC<NewPostModalProps> = ({ categories, onSubmit, onClo
             <button
               type="submit"
               disabled={loading || !title.trim() || !content.trim()}
-              className="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-all disabled:opacity-50"
+              className="flex-1 py-2 rounded-lg bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 text-white text-sm font-medium transition-all duration-200 disabled:opacity-50"
             >
               {loading ? 'Publicando...' : 'Publicar'}
             </button>

@@ -203,7 +203,7 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, users = [], onNavig
                             <button
                                 onClick={handleAnalyzeNow}
                                 disabled={isAnalyzing}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold transition-all"
+                                className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold transition-all duration-200"
                             >
                                 {isAnalyzing
                                     ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
