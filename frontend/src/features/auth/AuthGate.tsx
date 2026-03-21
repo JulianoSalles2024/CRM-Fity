@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from './AuthContext';
 import { supabaseUrl } from '@/src/lib/supabase';
-import AuthPage from './AuthPage';
+import { SignIn } from './SignIn';
 import DevSupabaseSwitcher from './DevSupabaseSwitcher';
 
 const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -73,7 +73,7 @@ const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
     return (
       <div className={rootCls}>
-        <AuthPage
+        <SignIn
           onLogin={login}
           onRegister={register}
           onSignInWithGoogle={signInWithGoogle}
