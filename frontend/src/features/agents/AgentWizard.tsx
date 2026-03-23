@@ -26,7 +26,6 @@ const TONE_OPTIONS: { value: AgentTone; label: string; desc: string }[] = [
   { value: 'agressivo',   label: 'Agressivo',    desc: 'Orientado a resultado, urgência alta' },
 ];
 
-const CHANNEL_OPTIONS = ['whatsapp', 'email', 'sms', 'instagram', 'linkedin'];
 const GOAL_METRICS: { value: string; label: string }[] = [
   { value: 'leads', label: 'Leads prospectados' },
   { value: 'meetings', label: 'Reuniões agendadas' },
@@ -216,10 +215,12 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
               {FUNCTION_OPTIONS.map(fn => {
                 const Icon = fn.icon;
                 const active = form.function_type === fn.value;
+                const disabled = ['hunter', 'followup', 'curator', 'supervisor'].includes(fn.value);
                 return (
                   <button
                     key={fn.value}
                     onClick={() => {
+                      if (disabled) return;
                       update({
                         function_type: fn.value,
                         opening_script: getDefaultPrompt(fn.value, {
@@ -230,9 +231,11 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                       });
                     }}
                     className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all ${
-                      active
-                        ? 'border-blue-500/40 bg-blue-500/5'
-                        : 'border-white/5 bg-[#0F172A] hover:border-white/15'
+                      disabled
+                        ? 'border-white/5 bg-[#0F172A] opacity-35 cursor-not-allowed'
+                        : active
+                          ? 'border-blue-500/40 bg-blue-500/5'
+                          : 'border-white/5 bg-[#0F172A] hover:border-white/15'
                     }`}
                   >
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -243,7 +246,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                       <p className={`text-sm font-semibold ${active ? 'text-white' : 'text-slate-300'}`}>{fn.label}</p>
                       <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{fn.desc}</p>
                     </div>
-                    {active && (
+                    {active && !disabled && (
                       <Check className="w-4 h-4 text-blue-400 ml-auto flex-shrink-0 mt-0.5" />
                     )}
                   </button>
@@ -333,32 +336,6 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
           {/* Step 2: Canais */}
           {step === 2 && (
             <div className="space-y-5">
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-2">Canais de comunicação *</label>
-                <div className="flex flex-wrap gap-2">
-                  {CHANNEL_OPTIONS.map(ch => {
-                    const active = form.channels.includes(ch);
-                    return (
-                      <button
-                        key={ch}
-                        onClick={() => update({
-                          channels: active
-                            ? form.channels.filter(c => c !== ch)
-                            : [...form.channels, ch],
-                        })}
-                        className={`px-3 py-1.5 rounded-lg text-sm border transition-all capitalize ${
-                          active
-                            ? 'border-blue-500/40 bg-blue-500/10 text-blue-300'
-                            : 'border-white/10 text-slate-500 hover:border-white/15 hover:text-white'
-                        }`}
-                      >
-                        {ch}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-400 mb-1.5">Início do expediente</label>
