@@ -179,16 +179,18 @@ const Dashboard: React.FC<DashboardProps> = ({ leads, columns, activities, tasks
         }
 
         const wonColumnIds = activeColumns.filter(c => c.type === 'won').map(c => c.id);
+        const lostColumnIds = activeColumns.filter(c => c.type === 'lost').map(c => c.id);
 
         activeLeadPool.forEach(lead => {
             const creationDate = lead.createdAt ? new Date(lead.createdAt) : null;
             const wonDate = lead.lastActivityTimestamp && wonColumnIds.includes(lead.columnId) ? new Date(lead.lastActivityTimestamp) : null;
             const churnDate = lead.status === 'ENCERRADO' && lead.lastActivityTimestamp ? new Date(lead.lastActivityTimestamp) : null;
+            const isActive = !wonColumnIds.includes(lead.columnId) && !lostColumnIds.includes(lead.columnId);
 
             for (const bucket of buckets) {
                 if (creationDate && creationDate >= bucket.startDate && creationDate <= bucket.endDate) {
                     bucket.newLeads++;
-                    bucket.pipelineValue += Number(lead.value || 0);
+                    if (isActive) bucket.pipelineValue += Number(lead.value || 0);
                 }
                 if (wonDate && wonDate >= bucket.startDate && wonDate <= bucket.endDate) bucket.revenue += Number(lead.value || 0);
                 if (churnDate && churnDate >= bucket.startDate && churnDate <= bucket.endDate) bucket.churn++;

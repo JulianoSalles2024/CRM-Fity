@@ -48,6 +48,7 @@ const STEPS = [
   { label: 'Canais', desc: 'Onde vai atuar' },
   { label: 'Meta', desc: 'Objetivo mensal' },
   { label: 'Regras', desc: 'Escalação e limites' },
+  { label: 'Comportamento', desc: 'Tom, emojis e restrições' },
   { label: 'Prompt', desc: 'Instruções do agente' },
 ];
 
@@ -58,6 +59,11 @@ type FormData = Omit<AgentInsert, 'escalate_rules'> & {
     keywords: string[];
     escalate_on_high_interest: boolean;
   };
+  response_delay_seconds: 0 | 5 | 10 | 30 | 60;
+  split_responses: boolean;
+  use_emojis: boolean;
+  sign_messages: boolean;
+  restrict_topics: boolean;
 };
 
 const defaultForm = (): FormData => ({
@@ -78,6 +84,11 @@ const defaultForm = (): FormData => ({
   playbook_id: null,
   opening_script: getDefaultPrompt('sdr', { tone: 'consultivo', client_type: 'medium' }),
   is_active: false,
+  response_delay_seconds: 0,
+  split_responses: false,
+  use_emojis: true,
+  sign_messages: false,
+  restrict_topics: false,
   escalate_rules: {
     max_followups: 5,
     min_ticket_to_escalate: null,
@@ -115,6 +126,11 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
       playbook_id:      editingAgent.playbook_id,
       opening_script:   editingAgent.opening_script,
       is_active:        editingAgent.is_active,
+      response_delay_seconds: (editingAgent.response_delay_seconds ?? 0) as 0 | 5 | 10 | 30 | 60,
+      split_responses:  editingAgent.split_responses ?? false,
+      use_emojis:       editingAgent.use_emojis ?? true,
+      sign_messages:    editingAgent.sign_messages ?? false,
+      restrict_topics:  editingAgent.restrict_topics ?? false,
       escalate_rules:   editingAgent.escalate_rules as FormData['escalate_rules'],
     };
   };
@@ -534,8 +550,85 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
             </div>
           )}
 
-          {/* Step 5: Prompt */}
+          {/* Step 5: Comportamento */}
           {step === 5 && (
+            <div className="space-y-4">
+              <p className="text-xs text-slate-500">
+                Controle o comportamento e tom do agente nas respostas geradas.
+              </p>
+
+              {/* Tempo de resposta */}
+              <div className="p-3 rounded-xl border border-white/5 bg-[#0F172A]">
+                <label className="block text-sm font-medium text-white mb-1">Tempo de resposta</label>
+                <p className="text-xs text-slate-500 mb-2.5">Aguardar antes de enviar — simula digitação humana</p>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {([
+                    { value: 0,  label: 'Imediato' },
+                    { value: 5,  label: '5s' },
+                    { value: 10, label: '10s' },
+                    { value: 30, label: '30s' },
+                    { value: 60, label: '1min' },
+                  ] as { value: 0 | 5 | 10 | 30 | 60; label: string }[]).map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => update({ response_delay_seconds: opt.value })}
+                      className={`py-2 rounded-lg text-xs font-medium transition-all ${
+                        form.response_delay_seconds === opt.value
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Toggle helper */}
+              {([
+                {
+                  key: 'split_responses' as const,
+                  label: 'Dividir resposta em balões',
+                  desc: 'Quebra textos longos em mensagens menores enviadas sequencialmente',
+                },
+                {
+                  key: 'use_emojis' as const,
+                  label: 'Usar emojis nas respostas',
+                  desc: 'Permite que o agente use emojis de forma moderada',
+                },
+                {
+                  key: 'sign_messages' as const,
+                  label: `Assinar nome do agente`,
+                  desc: `Adiciona "- ${form.name || 'Agente'}" ao final de cada mensagem`,
+                },
+                {
+                  key: 'restrict_topics' as const,
+                  label: 'Restringir temas permitidos',
+                  desc: 'Guardrail estrito: recusa assuntos fora do escopo comercial',
+                },
+              ] as { key: 'split_responses' | 'use_emojis' | 'sign_messages' | 'restrict_topics'; label: string; desc: string }[]).map(item => (
+                <label key={item.key} className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-white/5 bg-[#0F172A] hover:border-white/10 transition-colors">
+                  <div
+                    className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${
+                      form[item.key] ? 'bg-blue-600' : 'bg-slate-700'
+                    }`}
+                    onClick={() => update({ [item.key]: !form[item.key] } as Partial<FormData>)}
+                  >
+                    <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                      form[item.key] ? 'translate-x-5' : 'translate-x-0.5'
+                    }`} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-white">{item.label}</p>
+                    <p className="text-xs text-slate-500">{item.desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
+
+          {/* Step 6: Prompt */}
+          {step === 6 && (
             <div className="space-y-4">
               <div className="flex items-start justify-between">
                 <div>

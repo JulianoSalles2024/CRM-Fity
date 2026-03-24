@@ -281,10 +281,13 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
     // Invite Modal State
     const [inviteRole, setInviteRole] = useState<UserRole>('Vendedor');
     const [inviteExpiration, setInviteExpiration] = useState<'7 days' | '30 days' | 'never'>('7 days');
+    const [inviteEmail, setInviteEmail] = useState('');
+    const [emailSentSuccess, setEmailSentSuccess] = useState(false);
 
     const handleGenerateInvite = async () => {
         setIsGenerating(true);
         setGenerateError(null);
+        setEmailSentSuccess(false);
         try {
             const token = crypto.randomUUID();
             let expiresAt: string | null = null;
@@ -296,7 +299,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
             const roleValue = inviteRole === 'Admin' ? 'admin' : 'seller';
             const { data: { user } } = await supabase.auth.getUser();
             const { data: profile } = await supabase
-                .from('profiles').select('company_id').eq('id', user!.id).single();
+                .from('profiles').select('company_id, name').eq('id', user!.id).single();
             const companyId = profile?.company_id ?? null;
             const { data, error } = await supabase
                 .from('invites')
@@ -312,6 +315,23 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                 createdAt: new Date().toISOString(),
             };
             setInviteLinks(prev => [newInvite, ...prev]);
+
+            // Se email preenchido, envia via Edge Function
+            if (inviteEmail.trim()) {
+                const inviteLink = `${window.location.origin}/invite/${token}`;
+                const { error: fnError } = await supabase.functions.invoke('send-invite', {
+                    body: {
+                        email: inviteEmail.trim(),
+                        invite_link: inviteLink,
+                        invited_by_name: profile?.name ?? currentUser.name ?? 'Admin',
+                        role: roleValue,
+                        expires_at: expiresAt,
+                    },
+                });
+                if (fnError) throw new Error('Convite gerado, mas falha ao enviar email: ' + fnError.message);
+                setEmailSentSuccess(true);
+                setInviteEmail('');
+            }
         } catch (err: any) {
             setGenerateError(err.message ?? 'Erro ao gerar convite.');
         } finally {
@@ -1029,6 +1049,24 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                         </div>
                                     </div>
 
+                                    <div className="px-6 pb-2">
+                                        <label className="block text-sm font-medium text-slate-300 mb-2">
+                                            Enviar por email <span className="text-slate-500 font-normal">(opcional)</span>
+                                        </label>
+                                        <input
+                                            type="email"
+                                            value={inviteEmail}
+                                            onChange={e => { setInviteEmail(e.target.value); setEmailSentSuccess(false); }}
+                                            placeholder="email@exemplo.com"
+                                            className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all"
+                                        />
+                                        {emailSentSuccess && (
+                                            <p className="mt-1.5 text-xs text-green-400 flex items-center gap-1">
+                                                <Check className="w-3 h-3" /> Email enviado com sucesso!
+                                            </p>
+                                        )}
+                                    </div>
+
                                     <div className="p-6 border-t border-slate-800 flex justify-between items-center bg-slate-900/50">
                                         <button
                                             onClick={() => setInviteModalOpen(false)}
@@ -1044,7 +1082,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                                 className="bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all duration-200"
                                             >
                                                 {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
-                                                {isGenerating ? 'Gerando...' : 'Gerar Link'}
+                                                {isGenerating ? 'Gerando...' : inviteEmail.trim() ? 'Gerar e Enviar' : 'Gerar Link'}
                                             </button>
                                         </div>
                                     </div>

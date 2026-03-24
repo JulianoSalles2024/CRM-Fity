@@ -33,6 +33,11 @@ export interface AIAgent {
     keywords: string[];
     escalate_on_high_interest: boolean;
   };
+  response_delay_seconds: 0 | 5 | 10 | 30 | 60;
+  split_responses: boolean;
+  use_emojis: boolean;
+  sign_messages: boolean;
+  restrict_topics: boolean;
   is_active: boolean;
   is_archived: boolean;
   created_at: string;

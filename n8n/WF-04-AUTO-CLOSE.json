@@ -16,7 +16,10 @@
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -48,7 +51,10 @@
       "name": "HTTP - RPC get_expired_conversations",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
@@ -59,7 +65,10 @@
       "name": "Code - Unpack Items",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {
@@ -88,7 +97,10 @@
       "name": "IF - Has Expired?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {},
@@ -96,7 +108,10 @@
       "name": "No Operation",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [1120, 460]
+      "position": [
+        1120,
+        460
+      ]
     },
     {
       "parameters": {
@@ -132,7 +147,10 @@
       "name": "HTTP - Resolve Conversation",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1120, 300]
+      "position": [
+        1120,
+        300
+      ]
     },
     {
       "parameters": {
@@ -168,7 +186,10 @@
       "name": "HTTP - Insert System Message",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1340, 300]
+      "position": [
+        1340,
+        300
+      ]
     },
     {
       "parameters": {
@@ -197,7 +218,10 @@
       "name": "IF - Has Lead?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1560, 300]
+      "position": [
+        1560,
+        300
+      ]
     },
     {
       "parameters": {
@@ -233,7 +257,10 @@
       "name": "HTTP - Mark Lead Lost",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1780, 200]
+      "position": [
+        1780,
+        200
+      ]
     },
     {
       "parameters": {},
@@ -241,7 +268,262 @@
       "name": "No Operation (no lead)",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [1780, 420]
+      "position": [
+        1780,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/rpc/get_exhausted_followup_conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={}",
+        "options": {}
+      },
+      "id": "wf04-node-11-rpc2",
+      "name": "HTTP - RPC get_exhausted_followup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ── Unpack RPC result ────────────────────────────────────────────────────\n// n8n HTTP Request v4.2 auto-splits JSON array responses into individual\n// items BEFORE this node runs, so $input.all() usually has one item per row.\n// We still handle the legacy case where the full array arrives as one item.\n\nconst allItems = $input.all();\n\n// No items at all (empty response)\nif (!allItems || allItems.length === 0) {\n  return [{ json: { skip: true } }];\n}\n\nconst first = allItems[0].json;\n\n// Case A: v4.2 auto-split — each item IS already a row object\nif (first && first.conversation_id) {\n  return allItems.map(function(item) {\n    return { json: Object.assign({}, item.json, { skip: false }) };\n  });\n}\n\n// Case B: full array arrived as a single item (older n8n / raw response)\nif (Array.isArray(first) && first.length > 0) {\n  return first.map(function(row) {\n    return { json: Object.assign({}, row, { skip: false }) };\n  });\n}\n\n// Case C: empty array or unrecognised shape → skip\nreturn [{ json: { skip: true } }];"
+      },
+      "id": "wf04-node-12-unpack2",
+      "name": "Code - Unpack Exhausted",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond-exhausted-01",
+              "leftValue": "={{ $json.conversation_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "wf04-node-13-if2",
+      "name": "IF - Has Exhausted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        900,
+        640
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "wf04-node-14-noop3",
+      "name": "No Operation (exhausted skip)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/conversations?id=eq.{{ $json.conversation_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"resolved\"\n}",
+        "options": {}
+      },
+      "id": "wf04-node-15-resolve2",
+      "name": "HTTP - Resolve Conversation (Exhausted)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"company_id\":      \"{{ $(\"Code - Unpack Exhausted\").item.json.company_id }}\",\n  \"conversation_id\": \"{{ $(\"Code - Unpack Exhausted\").item.json.conversation_id }}\",\n  \"direction\":       null,\n  \"sender_type\":     \"system\",\n  \"content\":         \"Conversa encerrada automaticamente após o último passo de follow-up sem resposta.\",\n  \"content_type\":    \"text\",\n  \"status\":          null\n}",
+        "options": {}
+      },
+      "id": "wf04-node-16-msg2",
+      "name": "HTTP - Insert System Message (Exhausted)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1340,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond-lead-02",
+              "leftValue": "={{ $(\"Code - Unpack Exhausted\").item.json.lead_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "wf04-node-17-if-lead2",
+      "name": "IF - Has Lead? (Exhausted)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://fhkhamwrfwtacwydukvb.supabase.co/rest/v1/leads?id=eq.{{ $(\"Code - Unpack Exhausted\").item.json.lead_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoa2hhbXdyZnd0YWN3eWR1a3ZiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTMyNjcxMywiZXhwIjoyMDgwOTAyNzEzfQ.slNbow0lzBpryTaPPNNPDOV5x_uBqRHQZR38RRk92sY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\":  \"PERDIDO\",\n  \"lost_at\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {}
+      },
+      "id": "wf04-node-18-lost2",
+      "name": "HTTP - Mark Lead Lost (Exhausted)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1780,
+        540
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "wf04-node-19-noop4",
+      "name": "No Operation (exhausted no lead)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1780,
+        760
+      ]
     }
   ],
   "connections": {
@@ -250,6 +532,11 @@
         [
           {
             "node": "HTTP - RPC get_expired_conversations",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP - RPC get_exhausted_followup",
             "type": "main",
             "index": 0
           }
@@ -335,6 +622,86 @@
           }
         ]
       ]
+    },
+    "HTTP - RPC get_exhausted_followup": {
+      "main": [
+        [
+          {
+            "node": "Code - Unpack Exhausted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Unpack Exhausted": {
+      "main": [
+        [
+          {
+            "node": "IF - Has Exhausted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Has Exhausted?": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Resolve Conversation (Exhausted)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation (exhausted skip)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Resolve Conversation (Exhausted)": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Insert System Message (Exhausted)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Insert System Message (Exhausted)": {
+      "main": [
+        [
+          {
+            "node": "IF - Has Lead? (Exhausted)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Has Lead? (Exhausted)": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Mark Lead Lost (Exhausted)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation (exhausted no lead)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "pinData": {},
@@ -344,6 +711,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2026-03-14T00:00:00.000Z",
-  "versionId": "wf04-v1"
+  "updatedAt": "2026-03-24T00:00:00.000Z",
+  "versionId": "wf04-v2"
 }

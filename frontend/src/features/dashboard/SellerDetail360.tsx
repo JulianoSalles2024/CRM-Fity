@@ -275,6 +275,7 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
 
     const fetchData = useCallback(async () => {
         if (!supabase) { setLoading(false); return; }
+        if (!companyId) { setLoading(false); return; }
 
         // Custom period: wait until both dates are filled
         if (period === 'custom' && (!customStart || !customEnd)) {
@@ -290,6 +291,13 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
         const { start: prevStart, end: prevEnd } = period === 'custom'
             ? { start: new Date(customStart + 'T00:00:00').toISOString(), end: new Date(customEnd + 'T23:59:59.999').toISOString() }
             : getPrevDateRange(period as Exclude<Period, 'custom'>);
+
+        // won_at is timestamptz — bare date strings are cast to midnight UTC, which breaks
+        // comparisons for users in UTC- timezones. Convert to full ISO timestamps in local time.
+        const wonAtStart = period === 'custom' ? start : new Date(start + 'T00:00:00').toISOString();
+        const wonAtEnd   = period === 'custom' ? end   : new Date(end   + 'T23:59:59.999').toISOString();
+        const prevWonAtStart = period === 'custom' ? prevStart : new Date(prevStart + 'T00:00:00').toISOString();
+        const prevWonAtEnd   = period === 'custom' ? prevEnd   : new Date(prevEnd   + 'T23:59:59.999').toISOString();
 
         const today = toLocalDateStr(new Date());
 
@@ -337,8 +345,8 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
                 .eq('status', 'GANHO')
                 .eq('is_archived', false)
                 .is('deleted_at', null)
-                .gte('won_at', start)
-                .lte('won_at', end),
+                .gte('won_at', wonAtStart)
+                .lte('won_at', wonAtEnd),
 
             // ── Individual: leads GANHO do vendedor — período anterior ─────
             supabase
@@ -349,8 +357,8 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
                 .eq('status', 'GANHO')
                 .eq('is_archived', false)
                 .is('deleted_at', null)
-                .gte('won_at', prevStart)
-                .lte('won_at', prevEnd),
+                .gte('won_at', prevWonAtStart)
+                .lte('won_at', prevWonAtEnd),
 
             // ── Time: todos leads GANHO da empresa — período atual ────────
             supabase
@@ -360,8 +368,8 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
                 .eq('status', 'GANHO')
                 .eq('is_archived', false)
                 .is('deleted_at', null)
-                .gte('won_at', start)
-                .lte('won_at', end),
+                .gte('won_at', wonAtStart)
+                .lte('won_at', wonAtEnd),
 
             // ── Time: todos leads GANHO da empresa — período anterior ──────
             supabase
@@ -371,8 +379,8 @@ const SellerDetail360: React.FC<SellerDetail360Props> = ({ seller, onBack }) => 
                 .eq('status', 'GANHO')
                 .eq('is_archived', false)
                 .is('deleted_at', null)
-                .gte('won_at', prevStart)
-                .lte('won_at', prevEnd),
+                .gte('won_at', prevWonAtStart)
+                .lte('won_at', prevWonAtEnd),
 
             // ── Meta global (user_id IS NULL) — query direta ──────────────
             supabase

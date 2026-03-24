@@ -116,17 +116,37 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
           signUpError.message.toLowerCase().includes('rate limit') ||
           signUpError.status === 429;
 
-        setState({
-          status: 'error',
-          invite,
-          message: is429
-            ? 'Too many signup attempts. Please wait a few minutes.'
-            : signUpError.message || 'Erro ao criar conta.',
-        });
-        return;
+        const isEmailTaken =
+          signUpError.message.toLowerCase().includes('already registered') ||
+          signUpError.message.toLowerCase().includes('already been registered') ||
+          signUpError.message.toLowerCase().includes('email já');
+
+        if (isEmailTaken) {
+          // Email já existe — tentar logar com as credenciais fornecidas
+          const { data: retrySignIn, error: retryError } = await supabase.auth.signInWithPassword({ email, password });
+          if (retrySignIn?.user) {
+            userId = retrySignIn.user.id;
+          } else {
+            setState({
+              status: 'error',
+              invite,
+              message: 'Este email já tem uma conta. Verifique sua senha e tente novamente.',
+            });
+            return;
+          }
+        } else {
+          setState({
+            status: 'error',
+            invite,
+            message: is429
+              ? 'Too many signup attempts. Please wait a few minutes.'
+              : signUpError.message || 'Erro ao criar conta.',
+          });
+          return;
+        }
       }
 
-      userId = signUpData?.user?.id ?? null;
+      userId = userId ?? signUpData?.user?.id ?? null;
     } else {
       setState({
         status: 'error',

@@ -1,5 +1,18 @@
 import { supabaseAdmin } from './supabase.js';
 
+// Busca o ID da última conversa resolvida vinculada ao lead
+async function getLastResolvedConversationId(leadId: string): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from('conversations')
+    .select('id')
+    .eq('lead_id', leadId)
+    .eq('status', 'resolved')
+    .order('last_message_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
 export async function deliverWebhooks(
   companyId: string,
   event: string,
@@ -36,11 +49,20 @@ export async function deliverWebhooks(
 
     if (!targets.length) return;
 
+    // Para eventos de lead, busca o conversation_id da última conversa resolvida
+    let conversationId: string | null = null;
+    const leadId = typeof payload.id === 'string' ? payload.id : null;
+    if (event.startsWith('lead.') && leadId) {
+      conversationId = await getLastResolvedConversationId(leadId);
+      console.log(`[deliverWebhooks] lead=${leadId} conversation_id=${conversationId ?? 'none'}`);
+    }
+
     const body = JSON.stringify({
       event,
-      company_id: companyId,
-      timestamp:  new Date().toISOString(),
-      data:       payload,
+      company_id:      companyId,
+      timestamp:       new Date().toISOString(),
+      conversation_id: conversationId,
+      data:            payload,
     });
 
     await Promise.allSettled(

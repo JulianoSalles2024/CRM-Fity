@@ -176,11 +176,12 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
             const creationDate = lead.createdAt ? new Date(lead.createdAt) : null;
             const wonDate = (lead.lastActivityTimestamp && wonColumnIds.includes(lead.columnId)) ? new Date(lead.lastActivityTimestamp) : null;
             const churnDate = (lead.lastActivityTimestamp && lostColumnIds.includes(lead.columnId)) ? new Date(lead.lastActivityTimestamp) : null;
-    
+            const isActive = !wonColumnIds.includes(lead.columnId) && !lostColumnIds.includes(lead.columnId);
+
             for (const bucket of buckets) {
                 if (creationDate && creationDate >= bucket.startDate && creationDate <= bucket.endDate) {
                     bucket.newLeads++;
-                    bucket.pipelineValue += lead.value;
+                    if (isActive) bucket.pipelineValue += lead.value;
                 }
                 if (wonDate && wonDate >= bucket.startDate && wonDate <= bucket.endDate) {
                     bucket.revenue += lead.value;
