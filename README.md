@@ -385,6 +385,17 @@ O módulo de Agentes Comerciais transforma o NextSales em uma força de vendas d
 | `curator` | Qualificação e nutrição de leads |
 | `supervisor` | Supervisão e escalação da equipe |
 
+### Onboarding de vendedor
+
+1. Painel → **Configurações → Equipe** → Convidar usuário (role: Seller)
+2. O vendedor recebe e-mail de convite personalizado → cria senha → acessa a plataforma
+3. Painel → **Configurações → Conexões** → Nova conexão WhatsApp → escaneia QR Code
+4. Painel → **Agentes** → Novo Agente → wizard 6 passos (tipo, identidade, canais, meta, regras, prompt)
+
+**Personalização do e-mail de convite:**
+Acesse Supabase Dashboard → Authentication → Email Templates → **Invite User** para customizar o HTML.
+A variável `{{ .ConfirmationURL }}` é obrigatória e contém o link único gerado pelo Supabase.
+
 ### Escalação Inteligente
 
 Quando o agente detecta um gatilho (interesse alto, pedido de humano, ticket alto), ele chama `escalar_para_humano` e muda o status da conversa para `in_progress`. O vendedor recebe:
@@ -462,12 +473,26 @@ action === "escalate" → escalar_para_humano → notifica vendedor
 | Credencial Evolution API | URL + API Key da instância |
 | Credencial OpenAI | API Key (usada pelo WF-05 e WF-07) |
 
+### Fluxo de avanço automático de estágio (WF-07)
+
+A cada execução, o WF-07 analisa o histórico da conversa e decide se o lead deve avançar no pipeline:
+
+1. **Gatilho por palavra-chave** — se o estágio tem `auto_triggers` configurados, o match é imediato
+2. **Análise por IA** — OpenAI avalia o histórico com critério rigoroso: só avança com confirmação de budget, pedido de proposta, agendamento ou intenção explícita
+
+**Regras de proteção:**
+- Estágios com `can_auto_advance = false` (Fechado, Perdido) nunca são destino de avanço automático
+- "Fechado" e "Perdido" são exclusivos do vendedor — a IA só avança até Negociação
+- Mensagens genéricas, respostas curtas e confirmações de dados pessoais não justificam avanço
+
 ### Gotchas críticos para os workflows
 
 - `first().json` retorna objeto direto — `decision.action`, **nunca** `decision[0].action`
-- `jsonBody` dinâmico **sempre** começa com `=`
-- `channel_connections.external_id` = `instance_name` da Evolution API
+- `jsonBody` dinâmico **sempre** começa com `=` — sem prefixo, expressões `={{ }}` não são avaliadas
+- WF-06 e WF-08 devem passar o payload diretamente (`$json`), sem `JSON.stringify` — double-serialization quebra o body no WF-07
+- `channel_connections.external_id` = `instance_name` da Evolution API — manter sincronizado ou WF-07 retorna 404 silencioso
 - `continueOnFail: true` em nós que podem receber UUID vazio
+- Conversas com `ai_agent_id` preenchido nunca são fechadas pelo auto-close (WF-04)
 
 ---
 
