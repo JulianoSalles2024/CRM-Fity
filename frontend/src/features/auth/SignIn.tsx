@@ -8,6 +8,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Loader2, Cpu, Phone, Sparkles, GitBranch } from 'lucide-react';
+import { useTypewriter } from './useTypewriter';
+import { ConsentBanner } from './ConsentBanner';
+
+const ROTATING_WORDS = ['pensa', 'vende', 'escala'];
 
 interface SignInProps {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -57,7 +61,12 @@ const INTEGRATIONS = [
 
 /* ── Input / button classes mirroring AuthPage ── */
 const inputCls =
-  'w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200';
+  'w-full rounded-xl px-4 py-3 text-sm text-white appearance-none ' +
+  'bg-slate-900/60 ' +
+  'border border-white/10 ' +
+  'placeholder-slate-500 ' +
+  'focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 ' +
+  'transition-all duration-200';
 
 const primaryBtnCls =
   'w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200';
@@ -80,6 +89,7 @@ export const SignIn: React.FC<SignInProps> = ({
   const [internalError, setInternalError] = useState<string | null>(null);
   const [infoMessage, setInfoMessage]     = useState<string | null>(null);
   const [mounted, setMounted]     = useState(false);
+  const { displayText, isIdle }   = useTypewriter({ words: ROTATING_WORDS });
 
   useEffect(() => { const t = setTimeout(() => setMounted(true), 80); return () => clearTimeout(t); }, []);
   useEffect(() => { setInternalError(error); }, [error]);
@@ -121,6 +131,18 @@ export const SignIn: React.FC<SignInProps> = ({
         @keyframes ns-in { from { opacity:0; } to { opacity:1; } }
         .ns-aup { animation: ns-up 0.65s cubic-bezier(0.16,1,0.3,1) both; }
         .ns-ain { animation: ns-in 0.55s ease both; }
+        @keyframes ns-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .ns-cursor { display:inline-block; animation: ns-blink 0.85s step-end infinite; }
+        .ns-cursor-active { display:inline-block; opacity: 1; }
+        /* Override browser autofill — keeps the glassmorphism intact */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+          -webkit-box-shadow: 0 0 0 40px rgba(255,255,255,0.05) inset !important;
+          -webkit-text-fill-color: #fff !important;
+          caret-color: #fff;
+          transition: background-color 9999s ease;
+        }
       `}</style>
 
       {/* ══ BACKGROUND SVG — Data Convergence ══ */}
@@ -258,7 +280,14 @@ export const SignIn: React.FC<SignInProps> = ({
           <h1 className="ns-display text-white"
             style={{ fontSize: 'clamp(2.6rem, 4.4vw, 5rem)', fontWeight: 400, lineHeight: 1.08, letterSpacing: '-0.01em', marginBottom: '1.25rem' }}>
             O CRM que{' '}
-            <em className="text-blue-400 not-italic" style={{ fontStyle: 'italic', color: '#93c5fd' }}>pensa</em>
+            <em className="not-italic" style={{ fontStyle: 'italic', color: '#93c5fd' }}>
+              {displayText}
+              <span
+                className={isIdle ? 'ns-cursor' : 'ns-cursor-active'}
+                style={{ marginLeft: '1px', fontStyle: 'normal' }}
+                aria-hidden="true"
+              >|</span>
+            </em>
             <br/>com você.
           </h1>
           <p className="text-slate-400" style={{ fontSize: '1.05rem', lineHeight: 1.72, fontWeight: 300, maxWidth: 450 }}>
@@ -418,10 +447,12 @@ export const SignIn: React.FC<SignInProps> = ({
           </div>
 
           <p className="mt-6 text-center text-xs text-slate-600">
-            &copy; {new Date().getFullYear()} CRM. Todos os direitos reservados.
+            &copy; 2026 NextSales. Todos os direitos reservados.
           </p>
         </div>
       </div>
+
+      <ConsentBanner />
     </div>
   );
 };
