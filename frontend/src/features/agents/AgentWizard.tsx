@@ -3,6 +3,7 @@ import {
   X, ChevronRight, ChevronLeft, Check,
   Target, MessageSquare, DollarSign, RefreshCw,
   Database, Eye, Bot, Zap, FileText, RotateCcw,
+  User, Shield,
 } from 'lucide-react';
 import type { AgentFunctionType, AgentTone, AgentInsert, AIAgent } from './hooks/useAgents';
 import { getDefaultPrompt } from './agentPrompts';
@@ -43,13 +44,13 @@ const CLIENT_TYPES: { value: 'low' | 'medium' | 'high'; label: string; desc: str
 ];
 
 const STEPS = [
-  { label: 'Tipo', desc: 'Função do agente' },
-  { label: 'Identidade', desc: 'Nome e personalidade' },
-  { label: 'Canais', desc: 'Onde vai atuar' },
-  { label: 'Meta', desc: 'Objetivo mensal' },
-  { label: 'Regras', desc: 'Escalação e limites' },
-  { label: 'Comportamento', desc: 'Tom, emojis e restrições' },
-  { label: 'Prompt', desc: 'Instruções do agente' },
+  { label: 'Tipo',          desc: 'Função do agente',        icon: Bot },
+  { label: 'Identidade',    desc: 'Nome e personalidade',    icon: User },
+  { label: 'Canais',        desc: 'Onde vai atuar',          icon: Zap },
+  { label: 'Meta',          desc: 'Objetivo mensal',         icon: Target },
+  { label: 'Regras',        desc: 'Escalação e limites',     icon: Shield },
+  { label: 'Comportamento', desc: 'Tom, emojis e restrições',icon: MessageSquare },
+  { label: 'Prompt',        desc: 'Instruções do agente',    icon: FileText },
 ];
 
 type FormData = Omit<AgentInsert, 'escalate_rules'> & {
@@ -182,7 +183,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-2xl bg-[#0B1220] border border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-3xl bg-[#0B1220] border border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
           <div className="flex items-center gap-3">
@@ -200,26 +201,34 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
         </div>
 
         {/* Step indicators */}
-        <div className="flex items-center px-6 py-3 gap-0 border-b border-white/5">
-          {STEPS.map((s, i) => (
-            <React.Fragment key={s.label}>
-              <div className="flex items-center gap-1.5" onClick={() => i < step && setStep(i)}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                  i < step ? 'bg-blue-600 text-white cursor-pointer'
-                  : i === step ? 'bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/40'
-                  : 'bg-slate-800 text-slate-600'
-                }`}>
-                  {i < step ? <Check className="w-3 h-3" /> : i + 1}
-                </div>
-                <span className={`text-xs hidden sm:inline ${i === step ? 'text-white' : i < step ? 'text-slate-400' : 'text-slate-600'}`}>
-                  {s.label}
-                </span>
-              </div>
-              {i < STEPS.length - 1 && (
-                <div className={`flex-1 h-px mx-2 ${i < step ? 'bg-blue-600/40' : 'bg-slate-800'}`} />
-              )}
-            </React.Fragment>
-          ))}
+        <div className="flex items-center gap-1 px-4 py-2.5 border-b border-white/5 overflow-x-auto scrollbar-none">
+          {STEPS.map((s, i) => {
+            const Icon = s.icon;
+            const isActive = i === step;
+            const isDone = i < step;
+            const isClickable = isEditing || isDone;
+            return (
+              <button
+                key={s.label}
+                onClick={() => isClickable && setStep(i)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                  isActive
+                    ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
+                    : isDone
+                    ? 'text-slate-300 hover:bg-slate-800/60 cursor-pointer'
+                    : isEditing
+                    ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/40 cursor-pointer'
+                    : 'text-slate-600 cursor-default'
+                }`}
+              >
+                {isDone && !isActive
+                  ? <Check className="w-3 h-3 text-blue-400" />
+                  : <Icon className="w-3 h-3" />
+                }
+                {s.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Body */}

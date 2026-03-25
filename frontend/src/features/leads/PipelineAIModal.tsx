@@ -298,7 +298,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-[#0B1220] border border-slate-800 rounded-2xl shadow-xl w-full max-w-xl flex flex-col max-h-[90vh]"
+        className="bg-[#0B1220] border border-slate-800 rounded-2xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]"
       >
         {/* Header */}
         <div className="p-6 border-b border-white/10 flex items-center justify-between">
@@ -334,17 +334,15 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
         ) : (
           <>
             {/* Tabs */}
-            <div className="flex border-b border-white/5 px-6 pt-4 gap-1 overflow-x-auto">
+            <div className="flex items-center gap-1 px-4 py-2.5 border-b border-white/5 overflow-x-auto scrollbar-none">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-px whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                     activeTab === tab.id
-                      ? tab.id === 'cadencia'
-                        ? 'text-blue-400 border-blue-500 bg-blue-500/5'
-                        : 'text-blue-400 border-blue-500 bg-blue-500/5'
-                      : 'text-slate-500 border-transparent hover:text-slate-300'
+                      ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
+                      : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/40'
                   }`}
                 >
                   {tab.icon}

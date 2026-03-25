@@ -92,6 +92,21 @@ export function useSupervisorInsights() {
     setInsights(prev => prev.map(i => i.id === id ? { ...i, is_read: true, is_applied: true } : i));
   }, []);
 
+  const deleteInsight = useCallback(async (id: string) => {
+    await supabase.from('supervisor_insights').delete().eq('id', id);
+    setInsights(prev => prev.filter(i => i.id !== id));
+  }, []);
+
+  const deleteAllRead = useCallback(async () => {
+    if (!companyId) return;
+    await supabase
+      .from('supervisor_insights')
+      .delete()
+      .eq('company_id', companyId)
+      .eq('is_read', true);
+    setInsights(prev => prev.filter(i => !i.is_read));
+  }, [companyId]);
+
   // Realtime: atualiza automaticamente quando WF-09 insere novos insights
   useEffect(() => {
     if (!companyId) return;
@@ -117,5 +132,5 @@ export function useSupervisorInsights() {
 
   const unreadCount = insights.filter(i => !i.is_read).length;
 
-  return { insights, loading, unreadCount, fetchError, markRead, markApplied, refetch: fetch };
+  return { insights, loading, unreadCount, fetchError, markRead, markApplied, deleteInsight, deleteAllRead, refetch: fetch };
 }

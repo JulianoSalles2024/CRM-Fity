@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Brain, Lightbulb, CheckCheck, Sparkles, RefreshCw, Bot, User } from 'lucide-react';
+import { Brain, Lightbulb, CheckCheck, Sparkles, RefreshCw, Bot, User, X, Trash2 } from 'lucide-react';
 import { useSupervisorInsights, type SupervisorInsight } from './hooks/useSupervisorInsights';
 
 const TYPE_LABELS: Record<SupervisorInsight['type'], string> = {
@@ -57,9 +57,10 @@ interface InsightCardProps {
   insight: SupervisorInsight;
   onMarkRead: (id: string) => void;
   onMarkApplied: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
-const InsightCard: React.FC<InsightCardProps> = ({ insight, onMarkRead, onMarkApplied }) => {
+const InsightCard: React.FC<InsightCardProps> = ({ insight, onMarkRead, onMarkApplied, onDelete }) => {
   const cfg = SEVERITY_CONFIG[insight.severity];
   const isAgent   = !!insight.agent_id;
   const isSeller  = !!insight.profile_id;
@@ -111,9 +112,17 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, onMarkRead, onMarkAp
             </span>
           )}
         </div>
-        <span className="text-[10px] text-slate-600 whitespace-nowrap flex-shrink-0">
-          {timeAgo(insight.created_at)}
-        </span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="text-[10px] text-slate-600 whitespace-nowrap">
+            {timeAgo(insight.created_at)}
+          </span>
+          <button
+            onClick={() => onDelete(insight.id)}
+            className="p-0.5 rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
       </div>
 
       {/* Content */}
@@ -159,7 +168,7 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, onMarkRead, onMarkAp
 };
 
 export const SupervisorIntelligence: React.FC = () => {
-  const { insights, loading, fetchError, markRead, markApplied, refetch } = useSupervisorInsights();
+  const { insights, loading, fetchError, markRead, markApplied, deleteInsight, deleteAllRead, refetch } = useSupervisorInsights();
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
 
@@ -216,12 +225,23 @@ export const SupervisorIntelligence: React.FC = () => {
             Análise automática gerada diariamente sobre agentes e vendedores
           </p>
         </div>
-        <button
-          onClick={refetch}
-          className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {insights.some(i => i.is_read) && (
+            <button
+              onClick={deleteAllRead}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-400 hover:bg-red-500/10 border border-red-500/20 transition-all"
+            >
+              <Trash2 className="w-3 h-3" />
+              Limpar lidas
+            </button>
+          )}
+          <button
+            onClick={refetch}
+            className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Filtros — linha 1: fonte */}
@@ -300,6 +320,7 @@ export const SupervisorIntelligence: React.FC = () => {
                 insight={insight}
                 onMarkRead={markRead}
                 onMarkApplied={markApplied}
+                onDelete={deleteInsight}
               />
             ))}
           </div>
