@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   X, ChevronRight, ChevronLeft, Check,
   Target, MessageSquare, DollarSign, RefreshCw,
@@ -233,6 +234,14 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
+          <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
+          >
 
           {/* Step 0: Tipo */}
           {step === 0 && (
@@ -690,6 +699,9 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
               </div>
             </div>
           )}
+
+          </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Footer */}
