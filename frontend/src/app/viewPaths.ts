@@ -19,6 +19,7 @@ export const VIEW_PATHS: Record<string, string> = {
     'Perfil': '/perfil',
     'Dashboard': '/dashboard',
     'Agentes': '/agentes',
+    'Portfólio': '/portfolio',
     'Suporte': '/suporte',
     'Comunidade': '/comunidade',
 };

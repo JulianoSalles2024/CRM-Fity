@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  Zap, LayoutGrid, TrendingUp, BookOpen, Bot, Users,
+  Zap, LayoutGrid, TrendingUp, Bot, Users,
 } from 'lucide-react';
 import { useAgents } from './hooks/useAgents';
-import { useAgentPlaybooks } from './hooks/useAgentPlaybooks';
 import { AgentsCommandCenter } from './AgentsCommandCenter';
 import { AgentsList } from './AgentsList';
 import { AgentWizard } from './AgentWizard';
@@ -13,26 +12,23 @@ import { AgentAnalytics } from './AgentAnalytics';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import type { AIAgent } from './hooks/useAgents';
 
-type Tab = 'comando' | 'agentes' | 'playbooks' | 'analytics';
+type Tab = 'comando' | 'agentes' | 'analytics';
 
 const TAB_PATHS: Record<Tab, string> = {
   comando:   '/agentes/central-de-comando',
   agentes:   '/agentes/meus-agentes',
-  playbooks: '/agentes/portfolio',
   analytics: '/agentes/analytics',
 };
 
 const PATH_TAB: Record<string, Tab> = {
   '/agentes/central-de-comando': 'comando',
   '/agentes/meus-agentes':       'agentes',
-  '/agentes/portfolio':          'playbooks',
   '/agentes/analytics':          'analytics',
 };
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'comando',   label: 'Central de Comando', icon: Zap },
   { id: 'agentes',   label: 'Meus Agentes',        icon: Bot },
-  { id: 'playbooks', label: 'Portfólio',            icon: BookOpen },
   { id: 'analytics', label: 'Analytics',            icon: TrendingUp },
 ];
 
@@ -104,7 +100,6 @@ export const AgentsPage: React.FC = () => {
   const [editingAgent, setEditingAgent] = useState<AIAgent | null>(null);
 
   const { agents, loading, createAgent, updateAgent, toggleActive, archiveAgent } = useAgents();
-  const { playbooks, loading: pbLoading } = useAgentPlaybooks();
 
   const handleSaveAgent = async (data: Parameters<typeof createAgent>[0]) => {
     if (editingAgent) {
@@ -173,57 +168,6 @@ export const AgentsPage: React.FC = () => {
             onEdit={handleEditAgent}
             onSelectAgent={(agent) => setSelectedAgent(agent)}
           />
-        )}
-
-        {activeTab === 'playbooks' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-white">Portfólio de Playbooks</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Scripts, objeções e frameworks de qualificação</p>
-              </div>
-            </div>
-
-            {pbLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="bg-[#0B1220] border border-white/5 rounded-xl h-28 animate-pulse" />
-                ))}
-              </div>
-            ) : playbooks.length === 0 ? (
-              <div className="flex flex-col items-center py-16 text-slate-600">
-                <BookOpen className="w-10 h-10 mb-3" />
-                <p className="text-sm text-slate-500">Nenhum playbook criado</p>
-                <p className="text-xs text-slate-600 mt-1">Os playbooks são criados via Configurações → Playbooks</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {playbooks.map(pb => (
-                  <div key={pb.id} className="bg-[#0B1220] border border-white/5 rounded-xl p-4 hover:border-white/10 transition-colors">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="text-sm font-semibold text-white">{pb.name}</p>
-                        <p className="text-xs text-slate-500 mt-0.5 capitalize">
-                          {pb.function_type ?? 'genérico'} · {pb.qualification_framework.toUpperCase()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      <span className="text-[10px] bg-slate-800/60 text-slate-400 px-2 py-0.5 rounded">
-                        {pb.opening_scripts.length} scripts
-                      </span>
-                      <span className="text-[10px] bg-slate-800/60 text-slate-400 px-2 py-0.5 rounded">
-                        {Object.keys(pb.objection_map).length} objeções
-                      </span>
-                      <span className="text-[10px] bg-slate-800/60 text-slate-400 px-2 py-0.5 rounded">
-                        {pb.qualification_questions.length} perguntas
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         )}
 
         {activeTab === 'analytics' && (

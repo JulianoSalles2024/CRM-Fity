@@ -20,6 +20,7 @@ import {
   ScanLine,
   Bot,
   LifeBuoy,
+  Package,
 } from 'lucide-react';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { useAiEscalationCount } from '@/src/features/inbox/hooks/useAiEscalationCount';
@@ -120,6 +121,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { icon: BarChart, label: 'Relatórios' },
     { icon: InboxIcon, label: 'Omnichannel' },
     { icon: Bot, label: 'Agentes' },
+    { icon: Package, label: 'Portfólio' },
     { icon: MessageSquare, label: 'Chat' },
     // { icon: ToyBrick, label: 'Integrações' }, // Removed: moved to Settings
   ].filter((item) => {
@@ -130,6 +132,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (currentUserRole === 'admin' && item.label === 'Pipeline') return false;
     if (currentUserRole === 'admin' && item.label === 'Playbooks') return false;
     if (currentUserRole !== 'admin' && item.label === 'Agentes') return false;
+    if (currentUserRole !== 'admin' && item.label === 'Portfólio') return false;
     if (currentUserRole === 'admin' && item.label === 'Tarefas') return false;
     return true;
   });

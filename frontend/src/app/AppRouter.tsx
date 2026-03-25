@@ -20,6 +20,7 @@ import PrintableLeadsReport from '@/src/features/reports/PrintableLeadsReport';
 import InboxView from '@/src/features/chat/InboxView';
 import { InboxPage } from '@/src/features/inbox/InboxPage';
 import { AgentsPage } from '@/src/features/agents/AgentsPage';
+import { PortfolioPage } from '@/src/features/portfolio/PortfolioPage';
 import SupportPage from '@/src/features/support/SupportPage';
 import CommunityPage from '@/src/features/community/CommunityPage';
 
@@ -245,6 +246,8 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
       return <InboxPage />;
     case 'Agentes':
       return <AgentsPage />;
+    case 'Portfólio':
+      return <PortfolioPage />;
     case 'Suporte':
       return <SupportPage />;
     case 'Comunidade': {
