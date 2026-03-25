@@ -130,7 +130,15 @@ export const ConversationPanel: React.FC<ConversationPanelProps> = ({ conversati
         p_reason:          `Encerrado manualmente por ${userName}`,
         p_outcome:         'neutral',
       });
-      if (!error) onStatusChange(conversation.id, newStatus);
+      if (!error) {
+        onStatusChange(conversation.id, newStatus);
+        // Dispara WF-10 para gerar resumo IA e enviar ao vendedor via WhatsApp
+        fetch('https://n8n.julianosalles.com.br/webhook/conv-summary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversation_id: conversation.id, company_id: companyId }),
+        }).catch(() => {}); // fire-and-forget
+      }
       setIsUpdating(false);
       return;
     }

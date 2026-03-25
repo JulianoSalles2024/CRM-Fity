@@ -14,6 +14,18 @@ export const InboxPage: React.FC = () => {
 
   const { conversations, loading, removeConversation } = useConversations(statusFilter, search);
 
+  // Auto-seleciona conversa criada via "Iniciar Conversa" no Lead Detail
+  React.useEffect(() => {
+    if (loading) return;
+    const pendingId = sessionStorage.getItem('pending_inbox_conversation');
+    if (!pendingId) return;
+    const conv = conversations.find(c => c.id === pendingId);
+    if (conv) {
+      sessionStorage.removeItem('pending_inbox_conversation');
+      setActiveConversation(conv);
+    }
+  }, [conversations, loading]);
+
   const handleSelectConversation = useCallback((conv: OmniConversation) => {
     setActiveConversation(conv);
     // Zera badge de não lidas ao abrir a conversa (fire-and-forget)

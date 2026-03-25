@@ -51,6 +51,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
+  // Save consent to DB after login (requires user_id)
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const raw = localStorage.getItem('ns_consent_v1');
+      if (!raw) return;
+      const consent = JSON.parse(raw) as { accepted_at?: string; policy_version?: string; user_agent?: string; synced?: boolean };
+      if (consent.synced) return;
+      supabase
+        .from('consent_logs')
+        .insert({
+          user_id: user.id,
+          policy_version: consent.policy_version ?? 'v1.0',
+          accepted_at: consent.accepted_at,
+          user_agent: consent.user_agent,
+        })
+        .then(({ error }) => {
+          if (error) {
+            console.error('[AuthContext] consent save failed:', error);
+          } else {
+            // Mark as synced so it doesn't insert again on next login
+            localStorage.setItem('ns_consent_v1', JSON.stringify({ ...consent, synced: true }));
+          }
+        });
+    } catch { /* ignore */ }
+  }, [user]);
+
   // Fetch role + is_active from profiles whenever user changes
   useEffect(() => {
     setIsRoleReady(false);

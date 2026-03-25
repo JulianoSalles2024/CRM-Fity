@@ -270,6 +270,11 @@ export default function RootLayout() {
                         onApplyPlaybook={ctx.handleApplyPlaybook}
                         allTags={ctx.tags}
                         onUpdateLead={(updated: any) => ctx.updateLead(updated.id, updated)}
+                        onNavigateToConversation={(conversationId: string) => {
+                            sessionStorage.setItem('pending_inbox_conversation', conversationId);
+                            ctx.setSelectedLead(null);
+                            ctx.setActiveView('Omnichannel');
+                        }}
                     />
                 )}
             </AnimatePresence>

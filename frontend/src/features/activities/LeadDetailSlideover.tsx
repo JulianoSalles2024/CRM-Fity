@@ -29,6 +29,7 @@ import {
 import { useConversationSummaries } from './hooks/useConversationSummaries';
 import type { Lead, Tag, Activity, EmailDraft, Id, CreateEmailDraftData, Tone, Playbook, Task, PlaybookHistoryEntry, Board } from '@/types';
 import { VercelAvatar } from '@/src/shared/components/VercelAvatar';
+import { StartConversationModal } from '@/src/features/leads/StartConversationModal';
 
 interface LeadDetailSlideoverProps {
   lead: Lead;
@@ -53,6 +54,7 @@ interface LeadDetailSlideoverProps {
   onApplyPlaybook: (playbookId: Id) => void;
   allTags: Tag[];
   onUpdateLead: (lead: Lead) => void;
+  onNavigateToConversation?: (conversationId: string) => void;
 }
 
 const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
@@ -78,8 +80,10 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
     onApplyPlaybook,
     allTags,
     onUpdateLead,
+    onNavigateToConversation,
 }) => {
   const [activeTab, setActiveTab] = useState('Resumo');
+  const [showStartConversation, setShowStartConversation] = useState(false);
   const tabs = ['Resumo', 'Playbook', 'Produtos', 'IA Insights'];
   const { summaries, loading: summariesLoading } = useConversationSummaries(lead.id as string);
   const [resumoSubTab, setResumoSubTab] = useState<'resumos' | 'historico'>('resumos');
@@ -149,6 +153,19 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
   const isInactiveLead = statusBadge.label !== 'ATIVO';
 
   return (
+    <>
+    <AnimatePresence>
+      {showStartConversation && (
+        <StartConversationModal
+          lead={lead}
+          onClose={() => setShowStartConversation(false)}
+          onSuccess={(conversationId) => {
+            setShowStartConversation(false);
+            onNavigateToConversation?.(conversationId);
+          }}
+        />
+      )}
+    </AnimatePresence>
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
@@ -169,6 +186,12 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
               <span className={`text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 ${statusBadge.cls}`}>
                 <Check className="w-3 h-3" /> {statusBadge.label}
               </span>
+              <button
+                onClick={() => setShowStartConversation(true)}
+                className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-bold px-3 py-1.5 rounded-lg border border-emerald-500/20 flex items-center gap-2 transition-colors"
+              >
+                <MessageSquare className="w-3.5 h-3.5" /> Omnichannel
+              </button>
               <button
                 onClick={onEdit}
                 className="bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-xs font-bold px-3 py-1.5 rounded-lg border border-sky-500/20 flex items-center gap-2 transition-colors"
@@ -571,6 +594,7 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
         </div>
       </motion.div>
     </div>
+    </>
   );
 };
 
