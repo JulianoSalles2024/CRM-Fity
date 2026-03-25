@@ -115,8 +115,8 @@ export const SignIn: React.FC<SignInProps> = ({
       style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
-        .ns-display { font-family: 'Bricolage Grotesque', sans-serif; font-variation-settings: 'wdth' 100; }
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+        .ns-display { font-family: 'Instrument Serif', Georgia, serif; }
         @keyframes ns-up { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
         @keyframes ns-in { from { opacity:0; } to { opacity:1; } }
         .ns-aup { animation: ns-up 0.65s cubic-bezier(0.16,1,0.3,1) both; }
@@ -238,13 +238,13 @@ export const SignIn: React.FC<SignInProps> = ({
         style={{ width: '55%', padding: '0 clamp(3rem, 6vw, 7rem)' }}
       >
         {/* Logo */}
-        <div className="ns-display ns-aup flex items-center gap-3" style={{ marginBottom: '3.5rem', animationDelay: '0.1s' }}>
+        <div className="ns-aup flex items-center gap-3" style={{ marginBottom: '3.5rem', animationDelay: '0.1s' }}>
           <div className="flex items-center justify-center rounded-xl bg-blue-600 shadow-lg"
             style={{ width: 42, height: 42, boxShadow: '0 0 22px rgba(37,99,235,0.45)' }}>
             <Cpu size={21} color="#fff" strokeWidth={1.8}/>
           </div>
           <div>
-            <div className="ns-display text-white font-bold" style={{ fontSize: '1.05rem', letterSpacing: '-0.01em' }}>
+            <div className="text-white font-semibold" style={{ fontSize: '1.05rem', letterSpacing: '-0.01em' }}>
               NextSales
             </div>
             <div className="text-slate-500 uppercase" style={{ fontSize: '0.68rem', letterSpacing: '0.13em' }}>
@@ -256,9 +256,9 @@ export const SignIn: React.FC<SignInProps> = ({
         {/* Headline */}
         <div className="ns-aup" style={{ animationDelay: '0.2s' }}>
           <h1 className="ns-display text-white"
-            style={{ fontSize: 'clamp(2.4rem, 4vw, 4.5rem)', fontWeight: 700, lineHeight: 1.06, letterSpacing: '-0.025em', marginBottom: '1.25rem', fontVariationSettings: "'wdth' 100" }}>
+            style={{ fontSize: 'clamp(2.6rem, 4.4vw, 5rem)', fontWeight: 400, lineHeight: 1.08, letterSpacing: '-0.01em', marginBottom: '1.25rem' }}>
             O CRM que{' '}
-            <span className="text-blue-400">pensa</span>
+            <em className="text-blue-400 not-italic" style={{ fontStyle: 'italic', color: '#93c5fd' }}>pensa</em>
             <br/>com você.
           </h1>
           <p className="text-slate-400" style={{ fontSize: '1.05rem', lineHeight: 1.72, fontWeight: 300, maxWidth: 450 }}>
