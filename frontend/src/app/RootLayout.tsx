@@ -36,6 +36,7 @@ export default function RootLayout() {
     const navigate = useNavigate();
 
     const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const bannerKey = user?.id ? `banner_wa_dismissed_${user.id}` : null;
     const [bannerDismissed, setBannerDismissed] = useState<boolean>(() =>
         bannerKey ? localStorage.getItem(bannerKey) === '1' : false
@@ -187,6 +188,8 @@ export default function RootLayout() {
                 isCollapsed={ctx.isSidebarCollapsed}
                 onToggle={() => ctx.setSidebarCollapsed((p: boolean) => !p)}
                 isChatEnabled={ctx.isChatEnabled}
+                isMobileOpen={isMobileMenuOpen}
+                onMobileClose={() => setIsMobileMenuOpen(false)}
             />
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Header
@@ -198,6 +201,7 @@ export default function RootLayout() {
                     onOpenSdrBot={ctx.handleOpenSdrBot}
                     activeView={ctx.activeView}
                     onNavigate={ctx.setActiveView}
+                    onMobileMenuToggle={() => setIsMobileMenuOpen((p) => !p)}
                 />
 
                 {/* Banner WhatsApp — aparece para quem ainda não conectou */}
@@ -218,13 +222,13 @@ export default function RootLayout() {
                             </p>
                             <button
                                 onClick={() => setWhatsappModalOpen(true)}
-                                className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 px-3 py-1 border border-emerald-500/30 rounded-lg transition-colors whitespace-nowrap"
+                                className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 px-3 py-2 min-h-[44px] border border-emerald-500/30 rounded-lg transition-colors whitespace-nowrap"
                             >
                                 Conectar agora
                             </button>
                             <button
                                 onClick={dismissBanner}
-                                className="text-emerald-700 hover:text-emerald-500 transition-colors"
+                                className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-emerald-700 hover:text-emerald-500 transition-colors"
                             >
                                 <X className="w-4 h-4" />
                             </button>
@@ -232,7 +236,7 @@ export default function RootLayout() {
                     )}
                 </AnimatePresence>
 
-                <main className="flex-1 overflow-auto p-6 bg-transparent">
+                <main className="flex-1 overflow-auto p-3 sm:p-6 bg-transparent">
                     <AppRouter {...routerProps} />
                 </main>
                 <footer className="text-center text-xs text-slate-500 py-2">

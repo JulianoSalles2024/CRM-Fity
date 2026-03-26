@@ -8,6 +8,7 @@ import {
     DragEndEvent,
     DragStartEvent,
     PointerSensor,
+    TouchSensor,
     useSensor,
     useSensors,
     closestCenter,
@@ -90,11 +91,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     }, [leads, searchQuery]);
     const activeBoard = boards.find(b => b.id === activeBoardId) || boards[0];
 
-    const sensors = useSensors(useSensor(PointerSensor, {
-        activationConstraint: {
-            distance: 10, // 10px threshold to start dragging
-        },
-    }));
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: { distance: 10 },
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: { delay: 250, tolerance: 5 },
+        }),
+    );
 
     function handleDragStart(event: DragStartEvent) {
         const lead = leads.find(l => l.id === event.active.id);

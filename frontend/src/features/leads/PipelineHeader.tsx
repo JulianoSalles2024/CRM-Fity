@@ -46,7 +46,7 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
 
     return (
         <div className="flex-shrink-0 flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 flex-wrap">
                 <div className="relative">
                     <button 
                         onClick={() => setBoardMenuOpen(!isBoardMenuOpen)}
@@ -163,14 +163,14 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
                     </button>
                 </div>
 
-                <div className="relative ml-2">
+                <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <input
                         type="text"
                         placeholder="Buscar lead..."
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
-                        className="w-48 bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-all"
+                        className="w-full sm:w-48 bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-all"
                     />
                 </div>
             </div>

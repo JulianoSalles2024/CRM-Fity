@@ -174,15 +174,15 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
         className="bg-slate-900 border border-slate-800 w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="p-8 pb-4">
-          <div className="flex items-start justify-between mb-2">
+        <div className="p-4 pb-3 md:p-8 md:pb-4">
+          <div className="flex items-start justify-between gap-2 mb-2">
             <div>
               <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                 {lead.name}
               </h2>
               <p className="text-sky-400 text-xl font-bold mt-1">{currencyFormatter.format(lead.value)}</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
               <span className={`text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 ${statusBadge.cls}`}>
                 <Check className="w-3 h-3" /> {statusBadge.label}
               </span>
@@ -218,7 +218,7 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
           </div>
 
           {/* Pipeline Progress */}
-          <div className="mt-8 flex items-center gap-4 flex-wrap">
+          <div className="mt-4 md:mt-8 flex items-center gap-3 flex-wrap">
             {pipelineStages.map((stage, i) => {
               const isActive = i === activeStageIdx;
               const isPast   = i < activeStageIdx;
@@ -241,9 +241,9 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
           </div>
         </div>
 
-        <div className="flex-1 flex overflow-hidden border-t border-slate-800/50">
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden border-t border-slate-800/50">
           {/* Sidebar */}
-          <div className="w-72 border-r border-slate-800/50 p-8 space-y-8 overflow-y-auto custom-scrollbar bg-slate-950/30">
+          <div className="w-full md:w-72 border-b md:border-b-0 md:border-r border-slate-800/50 p-4 md:p-8 space-y-6 md:space-y-8 overflow-y-auto custom-scrollbar bg-slate-950/30">
             <section>
               <h3 className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-4 flex items-center gap-2">
                 <User className="w-3 h-3" /> CONTATO PRINCIPAL
@@ -340,7 +340,7 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
 
           {/* Main Content */}
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex border-b border-slate-800/50 px-8 bg-slate-950/30">
+            <div className="flex border-b border-slate-800/50 px-4 md:px-8 bg-slate-950/30">
               {tabs.map(tab => (
                 <button
                   key={tab}
@@ -355,7 +355,7 @@ const LeadDetailSlideover: React.FC<LeadDetailSlideoverProps> = ({
               ))}
             </div>
 
-            <div className="flex-1 p-8 overflow-y-auto custom-scrollbar">
+            <div className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar">
               {activeTab === 'Resumo' && (
                 <div className="space-y-5">
                   {/* Sub-tabs */}
