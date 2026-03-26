@@ -260,7 +260,7 @@ async function handleRegister(req: any, res: any) {
     }
 
     const name = displayName?.trim() || `WhatsApp (${instanceName})`;
-    const { data, error } = await supabaseAdmin
+    const { data: upserted, error: upsertError } = await supabaseAdmin
       .from('channel_connections')
       .upsert({
         company_id:  companyId,
@@ -276,8 +276,23 @@ async function handleRegister(req: any, res: any) {
       .select()
       .single();
 
-    if (error) throw new AppError(500, 'Erro ao registrar conexão no banco.');
-    return res.status(201).json({ connection: data });
+    if (upsertError) throw new AppError(500, 'Erro ao registrar conexão no banco.');
+
+    // BUG 1 SAFETY-NET: The upsert onConflict path may not update owner_id if the
+    // existing row was owned by a different user (e.g. admin who tested the instance).
+    // Force-correct it here so the Seller tag always reflects the real owner.
+    if (upserted.owner_id !== userId) {
+      console.warn(`[register] owner_id mismatch — found=${upserted.owner_id} expected=${userId}. Forcing correction.`);
+      await supabaseAdmin
+        .from('channel_connections')
+        .update({ owner_id: userId, updated_at: new Date().toISOString() })
+        .eq('id', upserted.id)
+        .eq('company_id', companyId);
+      upserted.owner_id = userId;
+    }
+
+    console.log(`[register] OK — connectionId=${upserted.id} owner_id=${upserted.owner_id}`);
+    return res.status(201).json({ connection: upserted });
   } catch (err) { return apiError(res, err); }
 }
 
@@ -444,14 +459,22 @@ async function handleDisconnect(req: any, res: any) {
       } catch { /* ignore — Evolution may have already cleaned it up */ }
     }
 
-    // Step 4: Remove from DB by exact id — atomic, no ambiguity.
-    const { error } = await supabaseAdmin
+    // Step 4: Remove from DB.
+    // Always delete conversations first (messages cascade automatically).
+    // This avoids FK RESTRICT violation from conversations → channel_connections.
+    await supabaseAdmin
+      .from('conversations')
+      .delete()
+      .eq('company_id', companyId)
+      .eq('channel_connection_id', conn.id);
+
+    const { error: deleteError } = await supabaseAdmin
       .from('channel_connections')
       .delete()
       .eq('company_id', companyId)
       .eq('id', conn.id);
 
-    if (error) throw new AppError(500, 'Erro ao remover conexão do banco.');
+    if (deleteError) throw new AppError(500, 'Erro ao remover conexão do banco.');
 
     return res.status(200).json({ ok: true });
   } catch (err) { return apiError(res, err); }
