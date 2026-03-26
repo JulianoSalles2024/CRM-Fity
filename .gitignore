@@ -17,6 +17,11 @@ credentials/
 .env
 .env.*
 
+# n8n temp/working files (may contain API keys)
+n8n/_*.json
+n8n/wf07_payload.json
+n8n/wf07_v19_*.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
