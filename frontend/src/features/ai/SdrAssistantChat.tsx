@@ -1,7 +1,7 @@
 import { safeError } from '@/src/utils/logger';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { X, Send, Bot, User, Loader2, Plus, Trash2, MessageSquare } from 'lucide-react';
+import { X, Send, Bot, User, Loader2, Plus, Trash2, MessageSquare, History } from 'lucide-react';
 import { createAIService } from '@/src/services/ai';
 import { useAIState } from '@/src/features/ai/hooks/useAIState';
 import { useAIProviders } from '@/src/features/ai-credentials/useAIProviders';
@@ -79,6 +79,7 @@ const SdrAssistantChat: React.FC<SdrAssistantChatProps> = ({ onClose, leads, tas
     const [titleInput, setTitleInput] = useState('');
     const [hoveredConvId, setHoveredConvId] = useState<string | null>(null);
     const [showBlockedUI, setShowBlockedUI] = useState(isBlocked);
+    const [showSidebar, setShowSidebar] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const titleInputRef = useRef<HTMLInputElement>(null);
@@ -289,12 +290,13 @@ ${unassignedLeads.length > 0 ? `\nLEADS SEM RESPONSÁVEL:\n${JSON.stringify(unas
         : 'Olá! Sou o Zenius, seu assistente estratégico. Como posso ajudar?';
 
     return (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center backdrop-blur-sm sm:p-4" onClick={onClose}>
             <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="bg-slate-900 w-full max-w-2xl rounded-2xl border border-slate-700/60 shadow-2xl shadow-black/40 overflow-hidden flex flex-col h-[600px] max-h-[90vh]"
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 40 }}
+                transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+                className="bg-slate-900 w-full max-w-2xl rounded-t-2xl sm:rounded-2xl border-t border-x sm:border border-slate-700/60 shadow-2xl shadow-black/40 overflow-hidden flex flex-col h-[92dvh] sm:h-[600px] sm:max-h-[90vh]"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
@@ -312,7 +314,14 @@ ${unassignedLeads.length > 0 ? `\nLEADS SEM RESPONSÁVEL:\n${JSON.stringify(unas
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={() => setShowSidebar(s => !s)}
+                            className="sm:hidden p-2 rounded-full text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+                            title="Histórico"
+                        >
+                            <History className="w-5 h-5" />
+                        </button>
                         <button
                             onClick={handleNewConversation}
                             className="p-2 rounded-full text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
@@ -326,9 +335,23 @@ ${unassignedLeads.length > 0 ? `\nLEADS SEM RESPONSÁVEL:\n${JSON.stringify(unas
                     </div>
                 </div>
 
-                <div className="flex flex-1 overflow-hidden">
+                <div className="flex flex-1 overflow-hidden relative">
+                    {/* Backdrop mobile para fechar sidebar */}
+                    {showSidebar && (
+                        <div
+                            className="absolute inset-0 z-10 bg-black/40 sm:hidden"
+                            onClick={() => setShowSidebar(false)}
+                        />
+                    )}
+
                     {/* Sidebar de conversas */}
-                    <div className="w-44 border-r border-slate-800/50 bg-slate-950/30 flex flex-col overflow-hidden flex-shrink-0">
+                    <div className={`
+                        absolute sm:relative z-20 inset-y-0 left-0
+                        w-64 sm:w-44
+                        transition-transform duration-300 ease-in-out
+                        ${showSidebar ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'}
+                        border-r border-slate-800/50 bg-slate-950/95 sm:bg-slate-950/30 flex flex-col overflow-hidden flex-shrink-0
+                    `}>
                         <div className="flex-1 overflow-y-auto py-2">
                             {loading ? (
                                 <div className="flex items-center justify-center h-16">
@@ -374,10 +397,10 @@ ${unassignedLeads.length > 0 ? `\nLEADS SEM RESPONSÁVEL:\n${JSON.stringify(unas
                                                     {conv.title}
                                                 </span>
                                             )}
-                                            {hoveredConvId === conv.id && editingTitleId !== conv.id && (
+                                            {editingTitleId !== conv.id && (
                                                 <button
                                                     onClick={e => handleDeleteConversation(e, conv.id)}
-                                                    className="text-slate-500 hover:text-red-400 transition-colors flex-shrink-0"
+                                                    className="text-slate-600 hover:text-red-400 active:text-red-400 transition-colors flex-shrink-0 p-0.5"
                                                 >
                                                     <Trash2 className="w-3 h-3" />
                                                 </button>
@@ -462,7 +485,7 @@ ${unassignedLeads.length > 0 ? `\nLEADS SEM RESPONSÁVEL:\n${JSON.stringify(unas
                             )}
 
                             {/* Input */}
-                            <div className="p-4 bg-slate-900/40 border-t border-slate-800/50">
+                            <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-slate-900/40 border-t border-slate-800/50">
                                 <form onSubmit={handleSend} className="flex gap-2">
                                     <input
                                         type="text"
