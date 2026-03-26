@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { safeLog } from '@/src/utils/logger';
 import { getLeadComputedStatus } from '@/src/lib/leadStatus';
+import { supabase } from '@/src/lib/supabase';
 
 // Auth
 import { useAuth } from '@/src/features/auth/AuthContext';
@@ -435,6 +436,7 @@ export function useAppState() {
             await updateLead(leadId, updates);
             if (isWon) {
                 notifyLeadWon(localUser.name, leadToMove.name, leadToMove.value ?? 0).catch(() => {});
+                closeLeadConversationAndNotify(leadId).catch(() => {});
             }
         } catch (err) {
             safeError('Failed to move lead:', err);
@@ -461,6 +463,36 @@ export function useAppState() {
         }
     };
 
+    // Fecha a conversa ativa do lead (se existir) e dispara WF-10 para resumo IA.
+    // Chamado sempre que um lead é marcado como encerrado/perdido/ganho pelo pipeline.
+    // Fire-and-forget: não bloqueia o fluxo principal se falhar.
+    const closeLeadConversationAndNotify = useCallback(async (leadId: Id) => {
+        if (!companyId) return;
+        const { data: convRows } = await supabase
+            .from('conversations')
+            .select('id')
+            .eq('lead_id', leadId)
+            .eq('company_id', companyId)
+            .neq('status', 'resolved')
+            .order('updated_at', { ascending: false })
+            .limit(1);
+        const conv = convRows?.[0];
+        if (!conv) return;
+        const { error } = await supabase.rpc('close_conversation', {
+            p_conversation_id: conv.id,
+            p_company_id:      companyId,
+            p_reason:          'Conversa encerrada junto com o lead',
+            p_outcome:         'neutral',
+        });
+        if (!error) {
+            fetch('https://n8n.julianosalles.com.br/webhook/conv-summary', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ conversation_id: conv.id, company_id: companyId }),
+            }).catch(() => {});
+        }
+    }, [companyId]);
+
     const handleProcessLostLead = async (reason: string, reactivationDate: string | null) => {
         if (!lostLeadInfo) return;
         const { lead, columnId } = lostLeadInfo;
@@ -478,6 +510,7 @@ export function useAppState() {
             await updateLead(lead.id, updates);
             createActivityLog(lead.id, 'status_change', `Lead movido para "${columns.find(c => c.id === columnId)?.title}" (Motivo: ${reason}).`);
             notifyLeadLost(localUser.name, lead.name, lead.value ?? 0).catch(() => {});
+            closeLeadConversationAndNotify(lead.id).catch(() => {});
         } catch (err) {
             safeError('Failed to process lost lead:', err);
             showNotification('Erro ao processar lead perdido.', 'error');
