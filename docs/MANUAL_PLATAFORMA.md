@@ -23,8 +23,9 @@
 16. [Grupos](#16-grupos)
 17. [Comunidade](#17-comunidade)
 18. [Suporte](#18-suporte)
-19. [Fluxo Completo: do Lead ao Fechamento](#19-fluxo-completo-do-lead-ao-fechamento)
-20. [Glossário](#20-glossário)
+19. [Plano & Assinatura](#19-plano--assinatura)
+20. [Fluxo Completo: do Lead ao Fechamento](#20-fluxo-completo-do-lead-ao-fechamento)
+21. [Glossário](#21-glossário)
 
 ---
 
@@ -1050,5 +1051,43 @@ Admin vê todos os chamados. Seller vê apenas os próprios.
 
 ---
 
-*Documento gerado em 22/03/2026 — CRM-Fity v1.0*
-*Para atualizar este manual, edite o arquivo `docs/MANUAL_PLATAFORMA.md`*
+---
+
+## 19. Plano & Assinatura
+
+Acessível pelo menu lateral **Plano** (visível apenas para Admin).
+
+### Estados do plano
+
+| Estado | O que aparece |
+|---|---|
+| **Plano Thrill (Trial)** | Badge azul com dias restantes no topo da sidebar e na página |
+| **Trial — últimos 3 dias** | Aviso vermelho de urgência na página de planos |
+| **Trial expirado** | Badge vermelho + tela de bloqueio (`UpgradePage`) |
+| **Plano ativo** | Badge verde com nome do plano |
+
+### Planos disponíveis
+
+| Plano | Preço | Destaques |
+|---|---|---|
+| **Starter** | R$ 297/mês | 1 pipeline, 500 leads, 1 usuário, Agente IA básico |
+| **Growth** | R$ 697/mês | 3 pipelines, 2.000 leads, 5 usuários, follow-up automático |
+| **Scale** | R$ 1.497/mês | Tudo ilimitado, suporte prioritário, onboarding dedicado |
+
+### Como fazer upgrade
+
+1. Acesse **Configurações → Plano** no menu lateral
+2. Escolha o plano desejado
+3. Clique em **Assinar [Plano]** — abrirá o WhatsApp com nossa equipe
+4. Nossa equipe enviará o link de pagamento (PIX, Boleto ou Cartão)
+
+### TrialBanner
+
+Enquanto estiver no trial, um banner aparece no topo da tela com:
+- Quantos dias restam do Thrill
+- Botão "Fazer upgrade" que leva direto à página de planos
+- Pode ser fechado (dismiss) se faltar mais de 3 dias
+
+---
+
+## 20. Fluxo Completo: do Lead ao Fechamento

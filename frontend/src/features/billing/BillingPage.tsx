@@ -1,84 +1,40 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Zap, Rocket, Crown, ArrowRight, Sparkles, Clock, Shield, CheckCircle2, AlertCircle } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import {
+  Check, Zap, Rocket, Crown, CreditCard, Clock,
+  Shield, CheckCircle2, AlertCircle,
+} from 'lucide-react';
 import { useBilling } from '@/src/contexts/BillingContext';
+import CheckoutModal, { type CheckoutPlan, type BillingInterval } from './CheckoutModal';
 
 // ─── Planos ───────────────────────────────────────────────────────────────────
 
-const PLANS = [
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 297,
-    icon: Zap,
-    gradient: 'from-blue-600 to-cyan-500',
-    glow: 'shadow-blue-500/20',
-    border: 'border-blue-500/25',
-    ring: 'ring-blue-500/30',
-    color: 'blue',
-    badge: null,
-    features: [
-      '1 pipeline de vendas',
-      '500 leads ativos',
-      'Agente IA básico (SDR)',
-      '1 usuário',
-      'WhatsApp integrado',
-      'Relatórios essenciais',
-    ],
-  },
-  {
-    id: 'growth',
-    name: 'Growth',
-    price: 697,
-    icon: Rocket,
-    gradient: 'from-violet-600 to-purple-500',
-    glow: 'shadow-violet-500/25',
-    border: 'border-violet-500/35',
-    ring: 'ring-violet-500/40',
-    color: 'violet',
-    badge: 'Mais popular',
-    popular: true,
-    features: [
-      '3 pipelines de vendas',
-      '2.000 leads ativos',
-      'Agente IA avançado',
-      '5 usuários',
-      'WhatsApp + automações',
-      'Relatórios completos',
-      'Follow-up automático',
-    ],
-  },
-  {
-    id: 'scale',
-    name: 'Scale',
-    price: 1497,
-    icon: Crown,
-    gradient: 'from-amber-500 to-orange-500',
-    glow: 'shadow-amber-500/20',
-    border: 'border-amber-500/25',
-    ring: 'ring-amber-500/30',
-    color: 'amber',
-    badge: null,
-    features: [
-      'Pipelines ilimitados',
-      'Leads ilimitados',
-      'Agente IA premium (full)',
-      'Usuários ilimitados',
-      'Tudo do Growth +',
-      'Suporte prioritário',
-      'Onboarding dedicado',
-      'API de integração',
-    ],
-  },
-] as const;
+const PLANS: CheckoutPlan[] = [
+  { id: 'starter', name: 'Starter', price: 297,  gradient: 'from-sky-500 to-blue-500' },
+  { id: 'growth',  name: 'Growth',  price: 697,  gradient: 'from-sky-500 to-blue-500' },
+  { id: 'scale',   name: 'Scale',   price: 1497, gradient: 'from-sky-500 to-blue-500' },
+];
 
-const WA_LINK = 'https://wa.me/5551985488078';
+const PLAN_FEATURES: Record<string, string[]> = {
+  starter: ['1 pipeline de vendas', '500 leads ativos', 'Agente IA básico (SDR)', '1 usuário', 'WhatsApp integrado', 'Relatórios essenciais'],
+  growth:  ['3 pipelines de vendas', '2.000 leads ativos', 'Agente IA avançado', '5 usuários', 'WhatsApp + automações', 'Relatórios completos', 'Follow-up automático'],
+  scale:   ['Pipelines ilimitados', 'Leads ilimitados', 'Agente IA premium (full)', 'Usuários ilimitados', 'Tudo do Growth +', 'Suporte prioritário', 'Onboarding dedicado', 'API de integração'],
+};
 
-// ─── Status badge do plano atual ─────────────────────────────────────────────
+const PLAN_ICONS: Record<string, React.FC<{ className?: string }>> = {
+  starter: Zap,
+  growth:  Rocket,
+  scale:   Crown,
+};
+
+const PLAN_POPULAR: Record<string, boolean> = {
+  growth: true,
+};
+
+// ─── Status badge ─────────────────────────────────────────────────────────────
 
 function CurrentPlanBadge() {
   const { billing, daysRemaining, isTrial, isActive, isTrialExpired } = useBilling();
-
   if (!billing) return null;
 
   if (isTrialExpired) return (
@@ -89,7 +45,7 @@ function CurrentPlanBadge() {
   );
 
   if (isTrial) return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium">
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-300 text-xs font-medium">
       <Clock className="w-3.5 h-3.5" />
       Plano Thrill (Trial) · {daysRemaining} dias restantes
     </div>
@@ -107,53 +63,43 @@ function CurrentPlanBadge() {
 
 // ─── Card de plano ────────────────────────────────────────────────────────────
 
-function PlanCard({ plan, index }: { plan: typeof PLANS[number]; index: number }) {
-  const [hovered, setHovered] = useState(false);
-  const Icon = plan.icon;
-
-  const colorMap: Record<string, string> = {
-    blue: 'text-blue-400', violet: 'text-violet-400', amber: 'text-amber-400',
-  };
+function PlanCard({
+  plan, index, interval, onCheckout,
+}: {
+  plan: CheckoutPlan;
+  index: number;
+  interval: BillingInterval;
+  onCheckout: (plan: CheckoutPlan) => void;
+}) {
+  const Icon     = PLAN_ICONS[plan.id];
+  const popular  = PLAN_POPULAR[plan.id] ?? false;
+  const features = PLAN_FEATURES[plan.id] ?? [];
+  const price    = interval === 'yearly' ? Math.round(plan.price * 12 * 0.9) : plan.price;
+  const perLabel = interval === 'yearly' ? '/ano' : '/mês';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 32 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      className="relative flex flex-col"
-    >
-      {plan.badge && (
+    <div className="relative flex flex-col">
+      {/* Badge popular */}
+      {popular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-          <div className={`bg-gradient-to-r ${plan.gradient} text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg`}>
-            ✦ {plan.badge}
+          <div className="bg-sky-500/15 border border-sky-500/40 text-sky-300 text-[10px] font-bold px-3 py-1 rounded-full">
+            ✦ Mais popular
           </div>
         </div>
       )}
 
-      <motion.div
-        animate={{ y: hovered ? -3 : 0 }}
-        transition={{ duration: 0.2 }}
-        className={`relative flex flex-col flex-1 rounded-2xl border p-5 overflow-hidden backdrop-blur-xl bg-white/[0.02]
-          ${plan.border}
-          ${plan.popular ? `ring-1 ${plan.ring} shadow-xl ${plan.glow}` : 'shadow-md'}
-          ${hovered ? `shadow-2xl ${plan.glow}` : ''}
-          transition-shadow duration-300`}
+      <div
+        className={[
+          'relative flex flex-col flex-1 rounded-xl border p-5 bg-[#0B1220] transition-colors duration-150',
+          popular
+            ? 'border-sky-500/25 ring-1 ring-sky-500/10'
+            : 'border-white/5 hover:border-white/10',
+        ].join(' ')}
       >
-        <AnimatePresence>
-          {hovered && (
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className={`absolute inset-0 bg-gradient-to-br ${plan.gradient} opacity-[0.035] pointer-events-none`}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Header */}
+        {/* Ícone + nome */}
         <div className="mb-4">
-          <div className={`inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br ${plan.gradient} mb-3 shadow-md`}>
-            <Icon className="w-4 h-4 text-white" />
+          <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#0B1220] border border-white/10 mb-3">
+            <Icon className="w-4 h-4 text-sky-400" />
           </div>
           <h3 className="text-base font-bold text-white">{plan.name}</h3>
         </div>
@@ -162,40 +108,36 @@ function PlanCard({ plan, index }: { plan: typeof PLANS[number]; index: number }
         <div className="mb-5">
           <div className="flex items-end gap-1">
             <span className="text-xs text-slate-400 mb-1">R$</span>
-            <span className="text-3xl font-black text-white leading-none">{plan.price.toLocaleString('pt-BR')}</span>
-            <span className="text-xs text-slate-400 mb-1">/mês</span>
+            <span className="text-3xl font-black text-white leading-none">
+              {price.toLocaleString('pt-BR')}
+            </span>
+            <span className="text-xs text-slate-400 mb-1">{perLabel}</span>
           </div>
+          {interval === 'yearly' && (
+            <p className="text-[10px] text-emerald-400 mt-0.5">10% off no anual</p>
+          )}
         </div>
 
         {/* Features */}
         <ul className="space-y-2 flex-1 mb-5">
-          {plan.features.map((feat, i) => (
-            <motion.li
-              key={feat}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 + i * 0.03 + 0.25 }}
-              className="flex items-center gap-2"
-            >
-              <Check className={`w-3.5 h-3.5 shrink-0 ${colorMap[plan.color]}`} strokeWidth={3} />
+          {features.map((feat) => (
+            <li key={feat} className="flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 shrink-0 text-sky-400" strokeWidth={3} />
               <span className="text-xs text-slate-300">{feat}</span>
-            </motion.li>
+            </li>
           ))}
         </ul>
 
         {/* CTA */}
-        <a
-          href={`${WA_LINK}?text=${encodeURIComponent(`Olá! Quero assinar o plano ${plan.name} do NextSales (R$${plan.price}/mês).`)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`group flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl font-semibold text-sm transition-all duration-200
-            bg-gradient-to-r ${plan.gradient} text-white shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]`}
+        <button
+          onClick={() => onCheckout(plan)}
+          className="group flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl font-semibold text-sm transition-all
+            border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50"
         >
           Assinar {plan.name}
-          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-        </a>
-      </motion.div>
-    </motion.div>
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -203,21 +145,18 @@ function PlanCard({ plan, index }: { plan: typeof PLANS[number]; index: number }
 
 export default function BillingPage() {
   const { isTrial, isTrialExpired, daysRemaining } = useBilling();
+  const [interval, setInterval]         = useState<BillingInterval>('monthly');
+  const [checkoutPlan, setCheckoutPlan] = useState<CheckoutPlan | null>(null);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-6">
 
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
-      >
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <div className="p-1.5 rounded-lg bg-violet-500/10 border border-violet-500/20">
-              <Sparkles className="w-4 h-4 text-violet-400" />
+            <div className="p-1.5 rounded-lg bg-[#0B1220] border border-white/10">
+              <CreditCard className="w-4 h-4 text-sky-400" />
             </div>
             <h1 className="text-xl font-bold text-white">Plano & Assinatura</h1>
           </div>
@@ -226,34 +165,22 @@ export default function BillingPage() {
           </p>
         </div>
         <CurrentPlanBadge />
-      </motion.div>
+      </div>
 
-      {/* Aviso de urgência */}
-      <AnimatePresence>
-        {isTrial && !isTrialExpired && daysRemaining <= 3 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="flex items-center gap-3 p-4 rounded-xl border border-red-500/20 bg-red-500/8"
-          >
-            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-            <p className="text-sm text-red-300">
-              <span className="font-semibold">Atenção:</span> seu trial expira em {daysRemaining} {daysRemaining === 1 ? 'dia' : 'dias'}.
-              Escolha um plano abaixo para não perder o acesso.
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Aviso urgência */}
+      {isTrial && !isTrialExpired && daysRemaining <= 3 && (
+        <div className="flex items-center gap-3 p-4 rounded-xl border border-red-500/20 bg-red-500/10">
+          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+          <p className="text-sm text-red-300">
+            <span className="font-semibold">Atenção:</span> seu trial expira em {daysRemaining}{' '}
+            {daysRemaining === 1 ? 'dia' : 'dias'}. Escolha um plano abaixo para não perder o acesso.
+          </p>
+        </div>
+      )}
 
       {/* O que está incluído no trial */}
       {isTrial && !isTrialExpired && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="p-4 rounded-xl border border-white/6 bg-white/[0.02]"
-        >
+        <div className="p-4 rounded-xl border border-white/5 bg-[#0B1220]">
           <div className="flex items-center gap-2 mb-3">
             <Shield className="w-4 h-4 text-slate-400" />
             <span className="text-sm font-semibold text-white">Seu plano Thrill inclui</span>
@@ -266,42 +193,61 @@ export default function BillingPage() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       )}
 
-      {/* Cards de planos */}
-      <div>
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.15 }}
-          className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-4"
-        >
+      {/* Label + toggle mensal/anual */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
           Escolha seu plano
-        </motion.p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          {PLANS.map((plan, i) => <PlanCard key={plan.id} plan={plan} index={i} />)}
+        </p>
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-[#0B1220] border border-white/5">
+          {(['monthly', 'yearly'] as BillingInterval[]).map((iv) => (
+            <button
+              key={iv}
+              onClick={() => setInterval(iv)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                interval === iv
+                  ? 'bg-sky-500/10 border border-sky-500/20 text-sky-300'
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              {iv === 'monthly' ? 'Mensal' : 'Anual (−10%)'}
+            </button>
+          ))}
         </div>
       </div>
 
+      {/* Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-3">
+        {PLANS.map((plan, i) => (
+          <PlanCard
+            key={plan.id}
+            plan={plan}
+            index={i}
+            interval={interval}
+            onCheckout={setCheckoutPlan}
+          />
+        ))}
+      </div>
+
       {/* Footer */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="text-center pb-4"
-      >
-        <p className="text-xs text-slate-500">
-          Dúvidas sobre qual plano escolher?{' '}
-          <a href={WA_LINK} target="_blank" rel="noopener noreferrer"
-            className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors">
-            Fale com a gente pelo WhatsApp
-          </a>
-        </p>
-        <p className="text-[10px] text-slate-600 mt-1">
+      <div className="text-center pb-4">
+        <p className="text-[10px] text-slate-600">
           Sem taxas escondidas · Cancele quando quiser · Suporte em português
         </p>
-      </motion.div>
+      </div>
+
+      {/* Modal de checkout */}
+      <AnimatePresence>
+        {checkoutPlan && (
+          <CheckoutModal
+            plan={checkoutPlan}
+            interval={interval}
+            onClose={() => setCheckoutPlan(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

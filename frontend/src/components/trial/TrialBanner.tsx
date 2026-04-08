@@ -39,13 +39,13 @@ export default function TrialBanner({ onUpgrade }: Props) {
               ? 'bg-red-500/8 border-red-500/20'
               : isWarning
               ? 'bg-orange-500/8 border-orange-500/20'
-              : 'bg-blue-500/8 border-blue-500/20'
+              : 'bg-sky-500/8 border-sky-500/20'
             }`}
         >
           {/* Glow linha esquerda */}
           <div
             className={`absolute left-0 top-0 bottom-0 w-0.5
-              ${isUrgent ? 'bg-red-500' : isWarning ? 'bg-orange-500' : 'bg-blue-500'}`}
+              ${isUrgent ? 'bg-red-500' : isWarning ? 'bg-orange-500' : 'bg-sky-500'}`}
           />
 
           {/* Ícone */}
@@ -55,18 +55,18 @@ export default function TrialBanner({ onUpgrade }: Props) {
                 ? 'bg-red-500/15'
                 : isWarning
                 ? 'bg-orange-500/15'
-                : 'bg-blue-500/15'
+                : 'bg-sky-500/15'
               }`}
           >
             {isUrgent
               ? <Clock className="w-3.5 h-3.5 text-red-400 animate-pulse" />
-              : <Zap  className={`w-3.5 h-3.5 ${isWarning ? 'text-orange-400' : 'text-blue-400'}`} />
+              : <Zap  className={`w-3.5 h-3.5 ${isWarning ? 'text-orange-400' : 'text-sky-400'}`} />
             }
           </div>
 
           {/* Texto */}
           <p className={`text-xs flex-1 font-medium
-            ${isUrgent ? 'text-red-300' : isWarning ? 'text-orange-300' : 'text-blue-300'}`}>
+            ${isUrgent ? 'text-red-300' : isWarning ? 'text-orange-300' : 'text-sky-300'}`}>
             {label}.{' '}
             <span className="opacity-70 font-normal">
               Faça upgrade e continue usando o NextSales sem interrupção.
@@ -81,7 +81,7 @@ export default function TrialBanner({ onUpgrade }: Props) {
                 ? 'text-red-300 border-red-500/40 hover:bg-red-500/10 hover:text-red-200'
                 : isWarning
                 ? 'text-orange-300 border-orange-500/40 hover:bg-orange-500/10 hover:text-orange-200'
-                : 'text-blue-300 border-blue-500/40 hover:bg-blue-500/10 hover:text-blue-200'
+                : 'text-sky-400 border-sky-500/30 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50'
               }`}
           >
             Fazer upgrade →
