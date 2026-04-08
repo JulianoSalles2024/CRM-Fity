@@ -290,8 +290,8 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                     {label}
                     <span className={isActive ? 'opacity-100' : 'opacity-50 group-hover:opacity-100 transition-opacity'}>
                         {isActive 
-                            ? (isAscending ? <ChevronUp className="w-4 h-4 text-blue-400" /> : <ChevronDown className="w-4 h-4 text-blue-400" />)
-                            : <ChevronsUpDown className="w-4 h-4 text-blue-400" />
+                            ? (isAscending ? <ChevronUp className="w-4 h-4 text-sky-400" /> : <ChevronDown className="w-4 h-4 text-sky-400" />)
+                            : <ChevronsUpDown className="w-4 h-4 text-sky-400" />
                         }
                     </span>
                 </button>
@@ -321,8 +321,8 @@ const LeadListView: React.FC<LeadListViewProps> = ({
 
                 {/* ── Action bar — visível quando há seleção ────────── */}
                 {selectedIds.size > 0 && (
-                    <div className="px-4 py-2.5 bg-blue-600/10 border-b border-blue-500/20 flex items-center gap-4 flex-shrink-0">
-                        <span className="text-sm text-blue-300 font-medium">
+                    <div className="px-4 py-2.5 bg-blue-600/10 border-b border-sky-500/20 flex items-center gap-4 flex-shrink-0">
+                        <span className="text-sm text-sky-300 font-medium">
                             {selectedIds.size} contato{selectedIds.size !== 1 ? 's' : ''} selecionado{selectedIds.size !== 1 ? 's' : ''}
                         </span>
                         <button
@@ -487,7 +487,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white/5 rounded-lg p-0.5 w-fit">
                                                 <button
                                                     onClick={e => { e.stopPropagation(); onEditLead(lead); }}
-                                                    className="p-1.5 rounded-md text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
+                                                    className="p-1.5 rounded-md text-slate-500 hover:text-sky-400 hover:bg-sky-500/5 transition-colors"
                                                     title="Editar"
                                                 >
                                                     <Pencil className="w-3.5 h-3.5" />
@@ -527,7 +527,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({
                                     disabled={page === currentPage}
                                     className={`w-7 h-7 rounded-md text-xs font-medium transition-colors ${
                                         page === currentPage
-                                            ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 cursor-default'
+                                            ? 'bg-blue-600/20 text-sky-400 border border-sky-500/30 cursor-default'
                                             : 'text-slate-500 hover:text-white hover:bg-white/8'
                                     }`}
                                 >

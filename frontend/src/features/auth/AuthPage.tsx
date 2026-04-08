@@ -92,10 +92,10 @@ const AuthPage: React.FC<AuthPageProps> = ({
   };
 
   const inputClass =
-    'w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200';
+    'w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200';
 
   const primaryBtnClass =
-    'w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200';
+    'w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all';
 
   if (mode === 'forgotPassword') {
     return (
@@ -130,7 +130,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
           <button
             type="button"
             onClick={() => handleModeChange('login')}
-            className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+            className="text-sky-400 hover:text-sky-300 font-medium transition-colors"
           >
             Voltar para o login
           </button>
@@ -156,7 +156,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
         </div>
       )}
       {infoMessage && mode === 'login' && (
-        <div className="mb-4 rounded-xl bg-blue-500/10 border border-blue-500/20 px-4 py-3 text-sm text-blue-400">
+        <div className="mb-4 rounded-xl bg-sky-500/5 border border-sky-500/20 px-4 py-3 text-sm text-sky-400">
           {infoMessage}
         </div>
       )}
@@ -205,7 +205,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
               <button
                 type="button"
                 onClick={() => handleModeChange('forgotPassword')}
-                className="text-xs text-slate-400 hover:text-blue-400 transition-colors"
+                className="text-xs text-slate-400 hover:text-sky-400 transition-colors"
               >
                 Esqueci minha senha
               </button>
@@ -238,7 +238,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
             <button
               type="button"
               onClick={() => handleModeChange('register')}
-              className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+              className="text-sky-400 hover:text-sky-300 font-medium transition-colors"
             >
               Criar conta
             </button>
@@ -249,7 +249,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
             <button
               type="button"
               onClick={() => handleModeChange('login')}
-              className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+              className="text-sky-400 hover:text-sky-300 font-medium transition-colors"
             >
               Entrar
             </button>
@@ -265,7 +265,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
 const PageWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="min-h-screen w-full flex items-center justify-center px-4 py-12">
     <div className="w-full max-w-md">
-      <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl shadow-2xl shadow-black/40 border border-white/10 px-8 py-10 transition-all duration-200 hover:-translate-y-1 hover:bg-slate-900/55 hover:border-blue-500/30 hover:shadow-blue-500/10 hover:ring-1 hover:ring-blue-500/20">
+      <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl shadow-2xl shadow-black/40 border border-white/10 px-8 py-10 transition-all duration-200 hover:-translate-y-1 hover:bg-slate-900/55 hover:border-sky-500/30 hover:shadow-blue-500/10 hover:ring-1 hover:ring-blue-500/20">
         {children}
       </div>
       <p className="mt-6 text-center text-xs text-slate-600">

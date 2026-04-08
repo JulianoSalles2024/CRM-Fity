@@ -14,7 +14,7 @@ export const InboxSearch: React.FC<InboxSearchProps> = ({ value, onChange }) => 
       placeholder="Buscar por nome ou telefone..."
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full bg-slate-800/60 border border-slate-700/50 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      className="w-full bg-slate-800/60 border border-slate-700/50 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
     />
   </div>
 );

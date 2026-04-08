@@ -53,8 +53,8 @@ const TYPE_META: Record<OfferType, {
     label: 'Próprio',
     borderClass: 'border-l-blue-500',
     accentColor: '#3b82f6',
-    textClass: 'text-blue-400',
-    bgClass: 'bg-blue-500/10',
+    textClass: 'text-sky-400',
+    bgClass: 'bg-sky-500/5',
     icon: Package,
   },
   affiliate: {

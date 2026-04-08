@@ -54,14 +54,14 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
                     <div className="flex justify-between items-center">
                         <div>
                             <div className="flex items-center gap-1 mb-2">
-                                <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+                                <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-sky-500/5 border-sky-500/30 text-sky-400 shadow-sm shadow-sky-900/20 cursor-default">
                                     <FileText className="w-4 h-4 flex-shrink-0" />
                                     <span>Playbooks</span>
                                 </button>
                             </div>
                             <p className="text-sm text-slate-400">Crie e gerencie sequências de tarefas automatizadas para seus leads.</p>
                         </div>
-                        <button onClick={() => handleOpenModal()} className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
+                        <button onClick={() => handleOpenModal()} className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                             <PlusCircle className="w-4 h-4" />
                             <span>Novo Playbook</span>
                         </button>
@@ -106,7 +106,7 @@ const PlaybookSettings: React.FC<PlaybookSettingsProps> = ({ initialPlaybooks, p
                                                 <ul className="mt-4 space-y-2">
                                                     {playbook.steps.map((step, index) => (
                                                         <li key={index} className="flex items-center gap-3 text-sm">
-                                                            <span className="font-bold text-blue-400 w-10">D+{step.day}</span>
+                                                            <span className="font-bold text-sky-400 w-10">D+{step.day}</span>
                                                             <span className="font-semibold text-slate-300 w-20">{step.type}</span>
                                                             <span className="text-slate-400 flex-1">{step.instructions}</span>
                                                         </li>

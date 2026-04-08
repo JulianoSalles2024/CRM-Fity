@@ -451,7 +451,7 @@ const CreateEditPlaybookModal: React.FC<CreateEditPlaybookModalProps> = ({
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 rounded-lg transition-all duration-200"
+                                        className="px-4 py-2 text-sm font-semibold text-white border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all rounded-xl transition-all duration-200"
                                     >
                                         {isEditMode ? 'Salvar Alterações' : 'Criar Playbook'}
                                     </button>

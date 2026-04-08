@@ -49,7 +49,7 @@ const SupportPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-sky-500/5 border-sky-500/30 text-sky-400 shadow-sm shadow-sky-900/20 cursor-default">
             <LifeBuoy className="w-4 h-4" />
             <span>Suporte</span>
           </button>
@@ -57,7 +57,7 @@ const SupportPage: React.FC = () => {
         {activeTab === 'tickets' && !selectedTicket && (
           <button
             onClick={() => setShowNewTicket(true)}
-            className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-all"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 text-sm font-semibold transition-all"
           >
             <Plus className="w-4 h-4" />
             Novo Chamado
@@ -68,7 +68,7 @@ const SupportPage: React.FC = () => {
       {/* Sliding pill tabs */}
       <div className="relative bg-slate-900/60 border border-blue-500/10 rounded-xl p-1 flex w-fit">
         <div
-          className="absolute top-1 bottom-1 bg-blue-500/10 border border-blue-500/20 rounded-lg transition-all duration-300 pointer-events-none"
+          className="absolute top-1 bottom-1 bg-sky-500/5 border border-sky-500/20 rounded-lg transition-all duration-300 pointer-events-none"
           style={{ left: pillStyle.left, width: pillStyle.width }}
         />
         {tabs.map((tab, idx) => (
@@ -77,7 +77,7 @@ const SupportPage: React.FC = () => {
             ref={el => { tabRefs.current[idx] = el; }}
             onClick={() => { setActiveTab(tab.key); setSelectedTicket(null); }}
             className={`relative z-10 flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === tab.key ? 'text-blue-400' : 'text-slate-500 hover:text-white'
+              activeTab === tab.key ? 'text-sky-400' : 'text-slate-500 hover:text-white'
             }`}
           >
             <tab.icon className="w-4 h-4" />

@@ -218,7 +218,7 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
   // ── Render ───────────────────────────────────────────────
 
   const inputClass =
-    'w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all';
+    'w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-blue-500/40 transition-all';
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-[#0f1c3a] to-slate-950 px-4">
@@ -249,8 +249,8 @@ const InvitePage: React.FC<{ token: string }> = ({ token: pathToken }) => {
         {(state.status === 'form' || state.status === 'submitting' || state.status === 'error') && (
           <>
             <div className="mb-8">
-              <div className="w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/20 flex items-center justify-center mx-auto mb-5">
-                <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <div className="w-12 h-12 rounded-xl bg-blue-600/20 border border-sky-500/20 flex items-center justify-center mx-auto mb-5">
+                <svg className="w-6 h-6 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                 </svg>
               </div>

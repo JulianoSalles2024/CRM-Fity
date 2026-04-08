@@ -415,7 +415,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-1 mb-2">
-                        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+                        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-sky-500/5 border-sky-500/30 text-sky-400 shadow-sm shadow-sky-900/20 cursor-default">
                             <Target className="w-4 h-4 flex-shrink-0" />
                             <span>Relatórios</span>
                         </button>
@@ -490,7 +490,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ duration: 0.3, delay: i * 0.04 }}
                                         onClick={() => setSelectedSellerId(stat.user.id)}
-                                        className="bg-[#060d18] border border-white/5 rounded-xl p-4 cursor-pointer hover:border-blue-500/30 hover:bg-blue-500/[0.03] transition-all duration-200 group"
+                                        className="bg-[#060d18] border border-white/5 rounded-xl p-4 cursor-pointer hover:border-sky-500/30 hover:bg-blue-500/[0.03] transition-all duration-200 group"
                                         style={{ boxShadow: 'none' }}
                                         whileHover={{ boxShadow: '0 0 20px rgba(59,130,246,0.08)' }}
                                     >
@@ -517,7 +517,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ leads, columns, tasks, activi
                                                 <p className="text-[10px] text-slate-500 leading-tight">Valor</p>
                                             </div>
                                             <div>
-                                                <p className="text-base font-bold text-blue-400">{stat.conversionRate}%</p>
+                                                <p className="text-base font-bold text-sky-400">{stat.conversionRate}%</p>
                                                 <p className="text-[10px] text-slate-500 leading-tight">Conv.</p>
                                             </div>
                                         </div>

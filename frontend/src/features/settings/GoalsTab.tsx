@@ -59,7 +59,7 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, canManage, isActivating, onAc
                 <div className="flex items-center gap-2">
                     <span className="text-white font-semibold">{goal.name}</span>
                     {sellerName && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/5 text-sky-400 border border-sky-500/20">
                             👤 {sellerName}
                         </span>
                     )}
@@ -144,7 +144,7 @@ const GoalsSlidingTabs: React.FC<{
     return (
         <div className="relative flex items-center bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
             <div
-                className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out pointer-events-none"
+                className="absolute top-1 bottom-1 rounded-lg bg-sky-500/5 border border-sky-500/20 transition-all duration-300 ease-in-out pointer-events-none"
                 style={{ left: pill.left, width: pill.width }}
             />
             {tabs.map(({ v, l }, i) => (
@@ -153,7 +153,7 @@ const GoalsSlidingTabs: React.FC<{
                     ref={el => { btnRefs.current[i] = el; }}
                     onClick={() => setScopeTab(v)}
                     className={`relative z-10 flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-lg transition-colors duration-200 whitespace-nowrap ${
-                        scopeTab === v ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+                        scopeTab === v ? 'text-sky-400' : 'text-slate-500 hover:text-slate-300'
                     }`}
                 >
                     {l}
@@ -271,7 +271,7 @@ const GoalsTab: React.FC = () => {
                         exit={{ opacity: 0, y: -12 }}
                         className={`fixed bottom-5 right-5 z-[100] px-5 py-3 rounded-xl text-sm font-medium shadow-lg border ${
                             toast.type === 'success'
-                                ? 'bg-blue-950 border-blue-700 text-blue-300'
+                                ? 'bg-blue-950 border-blue-700 text-sky-300'
                                 : 'bg-red-950 border-red-700 text-red-300'
                         }`}
                     >
@@ -291,7 +291,7 @@ const GoalsTab: React.FC = () => {
                 {canManage && (
                     <button
                         onClick={openModal}
-                        className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm"
+                        className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl font-semibold transition-all duration-200 text-sm"
                     >
                         <Plus className="w-4 h-4" />
                         Nova Meta
@@ -327,7 +327,7 @@ const GoalsTab: React.FC = () => {
             {canManage && (
              <button
             onClick={openModal}
-            className="mt-6 flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm"
+            className="mt-6 flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl font-semibold transition-all duration-200 text-sm"
          >
             <Plus className="w-4 h-4" />
             Nova Meta
@@ -379,7 +379,7 @@ const GoalsTab: React.FC = () => {
                         {canManage && (
                             <button
                                 onClick={openModal}
-                                className="mt-6 flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm"
+                                className="mt-6 flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl font-semibold transition-all duration-200 text-sm"
                             >
                                 <Plus className="w-4 h-4" />
                                 Nova Meta
@@ -471,7 +471,7 @@ const GoalsTab: React.FC = () => {
                             {/* Header */}
                             <div className="p-6 border-b border-white/10 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400">
+                                    <div className="p-2.5 rounded-xl bg-sky-500/5 text-sky-400">
                                         <Target className="w-5 h-5" />
                                     </div>
                                     <div>
@@ -654,7 +654,7 @@ const GoalsTab: React.FC = () => {
                                     <button
                                         onClick={handleSubmit}
                                         disabled={isSaving}
-                                        className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 text-white transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all flex items-center justify-center gap-2"
                                     >
                                         {isSaving
                                             ? <><Loader2 className="w-4 h-4 animate-spin" /> {isEditMode ? 'Atualizando...' : 'Salvando...'}</>

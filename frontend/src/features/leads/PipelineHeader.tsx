@@ -117,7 +117,7 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
                                                 onCreateBoardClick();
                                                 setBoardMenuOpen(false);
                                             }}
-                                            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-blue-400 hover:bg-slate-800 hover:text-blue-300 transition-colors text-sm font-medium"
+                                            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sky-400 hover:bg-slate-800 hover:text-sky-300 transition-colors text-sm font-medium"
                                         >
                                             <Plus className="w-4 h-4" />
                                             Criar novo board
@@ -179,7 +179,7 @@ const PipelineHeader: React.FC<PipelineHeaderProps> = ({
                 <div className="relative">
                     <button
                         onClick={() => setCustomizeOpen(prev => !prev)}
-                        className="flex items-center gap-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded-md transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 text-sm font-semibold transition-all"
                     >
                         <SlidersHorizontal className="w-4 h-4" />
                         <span>Personalizar Cards</span>

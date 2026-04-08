@@ -281,7 +281,7 @@ const ScoreTab: React.FC<ScoreTabProps> = ({ sellers, onSelectSeller, companyId 
                     <button key={v} onClick={() => setPeriod(v)}
                         className={`px-4 py-2 text-sm rounded-t-lg transition-all border-b-2 -mb-px ${
                             period === v
-                                ? 'text-blue-400 border-blue-500 bg-blue-500/5'
+                                ? 'text-sky-400 border-blue-500 bg-blue-500/5'
                                 : 'text-slate-500 border-transparent hover:text-slate-300 hover:bg-white/5'
                         }`}>
                         {l}
@@ -326,7 +326,7 @@ const ScoreTab: React.FC<ScoreTabProps> = ({ sellers, onSelectSeller, companyId 
                     <button key={v} onClick={() => setRankingType(v)}
                         className={`px-4 py-2 text-sm rounded-t-lg transition-all border-b-2 -mb-px ${
                             rankingType === v
-                                ? 'text-blue-400 border-blue-500 bg-blue-500/5'
+                                ? 'text-sky-400 border-blue-500 bg-blue-500/5'
                                 : 'text-slate-500 border-transparent hover:text-slate-300 hover:bg-white/5'
                         }`}>
                         {l}
@@ -352,7 +352,7 @@ const ScoreTab: React.FC<ScoreTabProps> = ({ sellers, onSelectSeller, companyId 
                 <>
                     {/* ── HERO (Campeão do Período) ────────────────────────── */}
                     {champion && (
-                        <div className="relative bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-blue-500/20 rounded-2xl p-6 overflow-hidden">
+                        <div className="relative bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-sky-500/20 rounded-2xl p-6 overflow-hidden">
                             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-blue-600/5 pointer-events-none" />
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative">
                                 <div className="flex items-center gap-4">
@@ -437,7 +437,7 @@ const ScoreTab: React.FC<ScoreTabProps> = ({ sellers, onSelectSeller, companyId 
                                 <button
                                     key={seller.id}
                                     onClick={() => { const u = sellers.find(s => s.id === seller.id); if (u) onSelectSeller(u); }}
-                                    className="w-full p-4 bg-slate-900/50 border border-slate-800 hover:border-blue-500/30 hover:bg-slate-900 rounded-xl transition-all group text-left space-y-3"
+                                    className="w-full p-4 bg-slate-900/50 border border-slate-800 hover:border-sky-500/30 hover:bg-slate-900 rounded-xl transition-all group text-left space-y-3"
                                 >
                                     <div className="flex items-center gap-3">
                                         {/* Position */}
@@ -456,7 +456,7 @@ const ScoreTab: React.FC<ScoreTabProps> = ({ sellers, onSelectSeller, companyId 
                                         {/* Name + badges */}
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors truncate">
+                                                <p className="text-sm font-bold text-white group-hover:text-sky-400 transition-colors truncate">
                                                     {seller.name}
                                                 </p>
                                                 {seller.bateuMeta && (
@@ -465,7 +465,7 @@ const ScoreTab: React.FC<ScoreTabProps> = ({ sellers, onSelectSeller, companyId 
                                                     </span>
                                                 )}
                                                 {seller.maiorCrescimento && (
-                                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 whitespace-nowrap">
+                                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-500/5 border border-sky-500/20 text-sky-400 whitespace-nowrap">
                                                         ↑ Maior crescimento
                                                     </span>
                                                 )}
@@ -494,7 +494,7 @@ const ScoreTab: React.FC<ScoreTabProps> = ({ sellers, onSelectSeller, companyId 
                                                 <p className="text-[10px] text-slate-500">Meta</p>
                                                 <p className={`text-xs font-bold ${
                                                     seller.metaPct >= 100 ? 'text-emerald-400' :
-                                                    seller.metaPct >= 70  ? 'text-blue-400' : 'text-slate-400'
+                                                    seller.metaPct >= 70  ? 'text-sky-400' : 'text-slate-400'
                                                 }`}>
                                                     {seller.metaPct.toFixed(0)}%
                                                 </p>
@@ -597,7 +597,7 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
             <div className="flex items-center justify-between">
                 <div>
                     <div className="flex items-center gap-1 mb-2">
-                        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+                        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-sky-500/5 border-sky-500/30 text-sky-400 shadow-sm shadow-sky-900/20 cursor-default">
                             <User className="w-4 h-4 flex-shrink-0" />
                             <span>Painel 360</span>
                         </button>
@@ -616,7 +616,7 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
                         onClick={() => setActiveTab(tab)}
                         className={`px-6 py-3 text-sm font-medium transition-all relative ${
                             activeTab === tab
-                                ? 'text-blue-400'
+                                ? 'text-sky-400'
                                 : 'text-slate-500 hover:text-slate-300'
                         }`}
                     >
@@ -668,12 +668,12 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
                                         <button
                                             key={seller.id}
                                             onClick={() => handleSelectSeller(seller)}
-                                            className="flex items-center justify-between p-4 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-blue-500/50 hover:bg-slate-900 transition-all group text-left"
+                                            className="flex items-center justify-between p-4 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-sky-500/50 hover:bg-slate-900 transition-all group text-left"
                                         >
                                             <div className="flex items-center gap-3">
                                                 <VercelAvatar name={seller.name} src={seller.avatarUrl} size={40} />
                                                 <div>
-                                                    <h4 className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
+                                                    <h4 className="text-sm font-bold text-white group-hover:text-sky-400 transition-colors">
                                                         {seller.name}
                                                     </h4>
                                                     <div className="flex items-center gap-2 mt-1">
@@ -685,10 +685,10 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[10px] text-slate-600 group-hover:text-blue-400 transition-colors font-medium">
+                                                <span className="text-[10px] text-slate-600 group-hover:text-sky-400 transition-colors font-medium">
                                                     Ver 360
                                                 </span>
-                                                <ArrowRight className="w-4 h-4 text-slate-700 group-hover:text-blue-400 transition-all" />
+                                                <ArrowRight className="w-4 h-4 text-slate-700 group-hover:text-sky-400 transition-all" />
                                             </div>
                                         </button>
                                     ))}
@@ -726,7 +726,7 @@ const Painel360: React.FC<Painel360Props> = ({ users, onSelectSeller }) => {
                         >
                             <div className="flex items-center justify-between">
                                 <h3 className="text-lg font-bold text-white">Normativas Bancárias</h3>
-                                <button className="bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all duration-200">
+                                <button className="border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all duration-200">
                                     <Plus className="w-4 h-4" /> Cadastrar Banco
                                 </button>
                             </div>

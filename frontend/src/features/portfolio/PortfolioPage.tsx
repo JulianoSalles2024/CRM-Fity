@@ -19,7 +19,7 @@ const FilterSelect: React.FC<{
     <select
       value={value}
       onChange={e => onChange(e.target.value)}
-      className="appearance-none bg-slate-900/60 border border-white/10 rounded-lg pl-3 pr-7 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/50 hover:border-white/20 transition-colors cursor-pointer"
+      className="appearance-none bg-slate-900/60 border border-white/10 rounded-lg pl-3 pr-7 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-sky-500/50 hover:border-white/20 transition-colors cursor-pointer"
     >
       {options.map(o => (
         <option key={o.value} value={o.value}>{o.label}</option>
@@ -85,7 +85,7 @@ export const PortfolioPage: React.FC = () => {
       <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#0B1220]/80 backdrop-blur-sm flex-shrink-0">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-sky-500/5 border-sky-500/30 text-sky-400 shadow-sm shadow-sky-900/20 cursor-default">
               <Package className="w-4 h-4 flex-shrink-0" />
               <span>Portfólio de Produtos</span>
             </button>
@@ -116,7 +116,7 @@ export const PortfolioPage: React.FC = () => {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar produto..."
-            className="w-full bg-slate-900/60 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 hover:border-white/20 transition-colors"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50 hover:border-white/20 transition-colors"
           />
         </div>
 
@@ -167,7 +167,7 @@ export const PortfolioPage: React.FC = () => {
             <p className="text-sm text-slate-500">Nenhum produto encontrado para este filtro</p>
             <button
               onClick={() => { setSearch(''); setTypeFilter('all'); setStatusFilter('all'); }}
-              className="mt-3 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              className="mt-3 text-xs text-sky-400 hover:text-sky-300 transition-colors"
             >
               Limpar filtros
             </button>

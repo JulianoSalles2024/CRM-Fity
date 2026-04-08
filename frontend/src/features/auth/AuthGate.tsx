@@ -19,8 +19,8 @@ const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return (
       <div className={`flex items-center justify-center h-screen px-4 ${rootCls}`}>
         <div className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-8 text-center">
-          <div className="w-14 h-14 rounded-full bg-blue-600/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-5">
-            <svg className="w-7 h-7 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <div className="w-14 h-14 rounded-full bg-blue-600/10 border border-sky-500/20 flex items-center justify-center mx-auto mb-5">
+            <svg className="w-7 h-7 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-6.837m5.386.154c-.49-.49-.987-.995-1.489-1.489" />
             </svg>
           </div>

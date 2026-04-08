@@ -4,7 +4,7 @@ import type { SupportTicket, TicketStatus, TicketPriority } from './support.type
 
 const statusColors: Record<TicketStatus, string> = {
   open: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
-  in_progress: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+  in_progress: 'text-sky-400 bg-blue-400/10 border-blue-400/20',
   resolved: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
   reopened: 'text-orange-400 bg-orange-400/10 border-orange-400/20',
 };
@@ -12,7 +12,7 @@ const statusLabels: Record<TicketStatus, string> = {
   open: 'Aberto', in_progress: 'Em Atendimento', resolved: 'Resolvido', reopened: 'Reaberto',
 };
 const priorityColors: Record<TicketPriority, string> = {
-  low: 'text-slate-400', medium: 'text-blue-400', high: 'text-orange-400', urgent: 'text-red-400',
+  low: 'text-slate-400', medium: 'text-sky-400', high: 'text-orange-400', urgent: 'text-red-400',
 };
 const priorityLabels: Record<TicketPriority, string> = {
   low: 'Baixa', medium: 'Média', high: 'Alta', urgent: 'Urgente',
@@ -98,7 +98,7 @@ const TicketList: React.FC<TicketListProps> = ({ tickets, onSelect, onDelete, on
         <div
           key={ticket.id}
           className={`flex items-center gap-3 px-4 py-3.5 bg-[#0B1220] border rounded-xl transition-all group ${
-            selected.has(ticket.id) ? 'border-blue-500/40 bg-blue-950/10' : 'border-slate-800 hover:border-blue-500/30 hover:bg-blue-950/10'
+            selected.has(ticket.id) ? 'border-blue-500/40 bg-blue-950/10' : 'border-slate-800 hover:border-sky-500/30 hover:bg-blue-950/10'
           }`}
         >
           <input
@@ -128,7 +128,7 @@ const TicketList: React.FC<TicketListProps> = ({ tickets, onSelect, onDelete, on
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${statusColors[ticket.status]}`}>
                 {statusLabels[ticket.status]}
               </span>
-              <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-blue-400" />
+              <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-sky-400" />
             </div>
           </button>
 

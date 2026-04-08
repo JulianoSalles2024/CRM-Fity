@@ -22,10 +22,10 @@ interface PostCardProps {
 const PostCard: React.FC<PostCardProps> = ({ post, authorName, authorPoints = 0, onClick }) => (
   <button
     onClick={onClick}
-    className="w-full flex items-start gap-4 px-5 py-4 bg-[#0B1220] border border-slate-800 rounded-xl text-left hover:border-blue-500/30 hover:bg-blue-950/10 transition-all group"
+    className="w-full flex items-start gap-4 px-5 py-4 bg-[#0B1220] border border-slate-800 rounded-xl text-left hover:border-sky-500/30 hover:bg-blue-950/10 transition-all group"
   >
     <div className="flex flex-col items-center gap-1 flex-shrink-0 pt-0.5">
-      <ThumbsUp className={`w-4 h-4 ${post.user_voted ? 'text-blue-400' : 'text-slate-600'}`} />
+      <ThumbsUp className={`w-4 h-4 ${post.user_voted ? 'text-sky-400' : 'text-slate-600'}`} />
       <span className="text-xs font-semibold text-slate-400">{post.upvotes}</span>
     </div>
 
@@ -33,13 +33,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, authorName, authorPoints = 0,
       <div className="flex items-center gap-2 mb-1">
         {post.is_pinned && <Pin className="w-3 h-3 text-amber-400 flex-shrink-0" />}
         {post.is_solved && <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />}
-        <h3 className="text-sm font-semibold text-white group-hover:text-blue-300 truncate transition-colors">
+        <h3 className="text-sm font-semibold text-white group-hover:text-sky-300 truncate transition-colors">
           {post.title}
         </h3>
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
         {post.category && (
-          <span className="text-blue-400/70">{post.category.name}</span>
+          <span className="text-sky-400/70">{post.category.name}</span>
         )}
         <span>{authorName}</span>
         <ReputationBadge points={authorPoints} size="xs" />

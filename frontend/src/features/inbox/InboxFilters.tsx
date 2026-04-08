@@ -26,7 +26,7 @@ export const InboxFilters: React.FC<InboxFiltersProps> = ({ active, onChange }) 
         onClick={() => onChange(f.value)}
         className={`flex-1 px-1.5 py-1 rounded-lg text-[11px] font-medium transition-all duration-200 border whitespace-nowrap ${
           active === f.value
-            ? 'bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20'
+            ? 'bg-sky-500/5 border-sky-500/30 text-sky-400 shadow-sm shadow-sky-900/20'
             : 'border-transparent text-slate-500 hover:text-white hover:bg-white/5'
         }`}
       >

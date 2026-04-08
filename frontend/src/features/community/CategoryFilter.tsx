@@ -13,7 +13,7 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({ categories, selected, o
       onClick={() => onSelect(null)}
       className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
         selected === null
-          ? 'bg-blue-950/40 border-blue-500/30 text-blue-400'
+          ? 'bg-sky-500/5 border-sky-500/30 text-sky-400'
           : 'border-slate-700 text-slate-500 hover:text-white hover:bg-white/5'
       }`}
     >
@@ -25,7 +25,7 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({ categories, selected, o
         onClick={() => onSelect(cat.id)}
         className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
           selected === cat.id
-            ? 'bg-blue-950/40 border-blue-500/30 text-blue-400'
+            ? 'bg-sky-500/5 border-sky-500/30 text-sky-400'
             : 'border-slate-700 text-slate-500 hover:text-white hover:bg-white/5'
         }`}
       >

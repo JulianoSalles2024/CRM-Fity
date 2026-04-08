@@ -17,8 +17,8 @@ function timeAgo(dateStr: string): string {
 function NotificationIcon({ type }: { type: NotificationEventType }) {
   if (type === 'lead_created') {
     return (
-      <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center flex-shrink-0">
-        <UserPlus className="w-4 h-4 text-blue-400" />
+      <div className="w-8 h-8 rounded-full bg-sky-500/5 flex items-center justify-center flex-shrink-0">
+        <UserPlus className="w-4 h-4 text-sky-400" />
       </div>
     );
   }
@@ -90,7 +90,7 @@ export const NotificationsDropdown: React.FC<Props> = ({
                 className={`flex items-start gap-3 px-4 py-3 border-b border-slate-800/60 cursor-pointer transition-colors group ${
                   n.is_read
                     ? 'hover:bg-slate-800/30'
-                    : 'bg-blue-500/5 hover:bg-blue-500/10'
+                    : 'bg-blue-500/5 hover:bg-sky-500/5'
                 }`}
               >
                 <NotificationIcon type={n.type} />

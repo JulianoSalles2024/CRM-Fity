@@ -19,7 +19,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack }) => (
     </button>
     <div className="bg-[#0B1220] border border-slate-800 rounded-2xl p-6">
       {article.category && (
-        <span className="text-xs text-blue-400 font-medium uppercase tracking-wide mb-2 block">
+        <span className="text-xs text-sky-400 font-medium uppercase tracking-wide mb-2 block">
           {article.category.name}
         </span>
       )}

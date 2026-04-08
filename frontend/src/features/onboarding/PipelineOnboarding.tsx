@@ -58,7 +58,7 @@ const MiniKanban: React.FC = () => {
                 key={name}
                 animate={floatingCard === name ? { opacity: 0.3, scale: 0.95 } : { opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3 }}
-                className="bg-[#0F172A] border border-white/8 rounded-lg p-2"
+                className="bg-[#0F172A] border border-slate-700/50 rounded-lg p-2"
               >
                 <div className="w-4 h-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 mb-1.5 flex items-center justify-center">
                   <span className="text-[7px] font-bold text-white">{name[0]}</span>
@@ -94,7 +94,7 @@ const MiniKanban: React.FC = () => {
             className="absolute top-[52px] left-[30%] bg-[#1e293b] border border-blue-500/40 rounded-lg p-2 shadow-lg shadow-blue-500/20 z-10 pointer-events-none"
           >
             <div className="text-[9px] text-white font-semibold">{floatingCard}</div>
-            <div className="text-[8px] text-blue-400 mt-0.5">movendo →</div>
+            <div className="text-[8px] text-sky-400 mt-0.5">movendo →</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -145,7 +145,7 @@ const Step: React.FC<StepProps> = ({ number, label, sublabel, icon: Icon, active
     </div>
 
     {active && (
-      <div className="shrink-0 flex items-center gap-1 text-blue-400">
+      <div className="shrink-0 flex items-center gap-1 text-sky-400">
         <span className="text-xs font-medium">Agora</span>
         <Zap className="w-3 h-3" />
       </div>
@@ -185,10 +185,10 @@ const PipelineOnboarding: React.FC<PipelineOnboardingProps> = ({ onCreatePipelin
               initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-500/5 border border-sky-500/20 mb-6"
             >
               <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-              <span className="text-xs font-semibold text-blue-400 tracking-wide uppercase">Passo 1 de 3</span>
+              <span className="text-xs font-semibold text-sky-400 tracking-wide uppercase">Passo 1 de 3</span>
             </motion.div>
 
             {/* Headline */}
@@ -257,16 +257,11 @@ const PipelineOnboarding: React.FC<PipelineOnboardingProps> = ({ onCreatePipelin
                 onClick={onCreatePipeline}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="group relative inline-flex items-center gap-3 px-7 py-4 rounded-2xl text-base font-bold text-white overflow-hidden shadow-xl shadow-blue-600/20 transition-all"
-                style={{
-                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%)',
-                }}
+                className="group inline-flex items-center gap-3 px-7 py-3.5 rounded-xl text-sm font-semibold text-sky-400 border border-sky-500/30 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all"
               >
-                {/* Shine */}
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/8 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                <Sparkles className="w-5 h-5" />
+                <Sparkles className="w-4 h-4" />
                 Criar minha pipeline agora
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
               </motion.button>
               <p className="text-xs text-slate-600 mt-3">
                 Leva menos de 1 minuto · Templates prontos disponíveis
@@ -282,10 +277,10 @@ const PipelineOnboarding: React.FC<PipelineOnboardingProps> = ({ onCreatePipelin
             className="hidden lg:flex flex-col gap-5"
           >
             {/* Preview card */}
-            <div className="bg-[#0B1220] border border-white/6 rounded-2xl p-5 shadow-2xl">
+            <div className="bg-[#0B1220] border border-slate-700/50 rounded-2xl p-5 shadow-2xl">
               <div className="flex items-center gap-2 mb-4">
-                <div className="p-1.5 rounded-lg bg-blue-500/10">
-                  <Kanban className="w-4 h-4 text-blue-400" />
+                <div className="p-1.5 rounded-lg bg-sky-500/5">
+                  <Kanban className="w-4 h-4 text-sky-400" />
                 </div>
                 <span className="text-sm font-semibold text-white">Pipeline de Vendas</span>
                 <span className="ml-auto text-xs text-slate-500">3 leads ativos</span>
@@ -294,9 +289,9 @@ const PipelineOnboarding: React.FC<PipelineOnboardingProps> = ({ onCreatePipelin
             </div>
 
             {/* Stat chips */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-4">
               {[
-                { icon: Target, value: '3×', label: 'mais conversões', color: 'text-blue-400', bg: 'bg-blue-500/10' },
+                { icon: Target, value: '3×', label: 'mais conversões', color: 'text-sky-400', bg: 'bg-sky-500/5' },
                 { icon: TrendingUp, value: '47%', label: 'mais receita', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
                 { icon: Star, value: '#1', label: 'ferramenta de times', color: 'text-amber-400', bg: 'bg-amber-500/10' },
               ].map(({ icon: Icon, value, label, color, bg }, i) => (
@@ -305,13 +300,13 @@ const PipelineOnboarding: React.FC<PipelineOnboardingProps> = ({ onCreatePipelin
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 + i * 0.08, duration: 0.4 }}
-                  className="bg-[#0B1220] border border-white/6 rounded-xl p-3 text-center"
+                  className="bg-[#0B1220] border border-slate-700/50 rounded-xl p-4 text-center"
                 >
-                  <div className={`inline-flex p-1.5 rounded-lg ${bg} mb-2`}>
-                    <Icon className={`w-3.5 h-3.5 ${color}`} />
+                  <div className={`inline-flex p-2 rounded-lg ${bg} mb-2.5`}>
+                    <Icon className={`w-4 h-4 ${color}`} />
                   </div>
-                  <div className={`text-lg font-extrabold ${color}`}>{value}</div>
-                  <div className="text-[10px] text-slate-500 leading-tight">{label}</div>
+                  <div className={`text-xl font-extrabold ${color}`}>{value}</div>
+                  <div className="text-[11px] text-slate-500 leading-tight mt-0.5">{label}</div>
                 </motion.div>
               ))}
             </div>
@@ -321,7 +316,7 @@ const PipelineOnboarding: React.FC<PipelineOnboardingProps> = ({ onCreatePipelin
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7, duration: 0.6 }}
-              className="bg-[#0B1220] border border-white/6 rounded-xl p-4"
+              className="bg-[#0B1220] border border-slate-700/50 rounded-xl p-4"
             >
               <div className="flex gap-0.5 mb-2">
                 {[1,2,3,4,5].map(s => (

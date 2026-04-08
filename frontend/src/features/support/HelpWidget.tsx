@@ -39,9 +39,9 @@ const HelpWidgetPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           <div className="flex flex-col gap-3">
             <button
               onClick={() => setView('help')}
-              className="flex items-center gap-3 p-4 bg-slate-900/60 border border-slate-800 rounded-xl hover:border-blue-500/30 transition-all text-left"
+              className="flex items-center gap-3 p-4 bg-slate-900/60 border border-slate-800 rounded-xl hover:border-sky-500/30 transition-all text-left"
             >
-              <BookOpen className="w-5 h-5 text-blue-400" />
+              <BookOpen className="w-5 h-5 text-sky-400" />
               <div>
                 <div className="text-white text-sm font-medium">Central de Ajuda</div>
                 <div className="text-slate-500 text-xs">Artigos e tutoriais</div>
@@ -49,7 +49,7 @@ const HelpWidgetPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             </button>
             <button
               onClick={() => setShowNewTicket(true)}
-              className="flex items-center gap-3 p-4 bg-slate-900/60 border border-slate-800 rounded-xl hover:border-blue-500/30 transition-all text-left"
+              className="flex items-center gap-3 p-4 bg-slate-900/60 border border-slate-800 rounded-xl hover:border-sky-500/30 transition-all text-left"
             >
               <Ticket className="w-5 h-5 text-emerald-400" />
               <div>
@@ -83,7 +83,7 @@ const HelpWidget: React.FC = () => {
     <>
       <button
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-6 right-6 z-[100] w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg shadow-blue-900/40 flex items-center justify-center transition-all hover:scale-105"
+        className="fixed bottom-6 right-6 z-[100] w-12 h-12 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 rounded-full flex items-center justify-center transition-all hover:scale-105"
         title="Ajuda"
       >
         {open ? <X className="w-5 h-5" /> : <HelpCircle className="w-5 h-5" />}

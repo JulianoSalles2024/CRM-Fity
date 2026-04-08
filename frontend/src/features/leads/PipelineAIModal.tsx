@@ -73,7 +73,7 @@ const TEMPLATES: TemplateOption[] = [
 // ── Estilos compartilhados ────────────────────────────────────────────────────
 
 const inputCls =
-  'w-full bg-[#0B1220] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all';
+  'w-full bg-[#0B1220] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-sky-500 outline-none transition-all';
 
 // ── Componente Toggle ─────────────────────────────────────────────────────────
 
@@ -303,8 +303,8 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
         {/* Header */}
         <div className="p-6 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-              <Bot className="w-5 h-5 text-blue-400" />
+            <div className="w-9 h-9 rounded-xl bg-sky-500/5 border border-sky-500/20 flex items-center justify-center">
+              <Bot className="w-5 h-5 text-sky-400" />
             </div>
             <div>
               <h3 className="text-base font-semibold text-white">Agente de IA</h3>
@@ -341,7 +341,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                     activeTab === tab.id
-                      ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
+                      ? 'bg-sky-500/5 text-sky-400 border border-sky-500/20'
                       : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/40'
                   }`}
                 >
@@ -368,8 +368,8 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                 <div className="space-y-4">
                   <div className="bg-[#0F172A] border border-white/5 rounded-xl p-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                        <Zap className="w-4 h-4 text-blue-400" />
+                      <div className="w-8 h-8 rounded-lg bg-sky-500/5 flex items-center justify-center shrink-0 mt-0.5">
+                        <Zap className="w-4 h-4 text-sky-400" />
                       </div>
                       <div>
                         <p className="text-sm font-medium text-white mb-1">Comportamento padrão</p>
@@ -389,7 +389,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                       'Registrar informações coletadas no CRM',
                     ].map((item) => (
                       <div key={item} className="flex items-center gap-2.5">
-                        <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
+                        <div className="w-4 h-4 rounded-full bg-sky-500/10 flex items-center justify-center shrink-0">
                           <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                         </div>
                         <span className="text-xs text-slate-300">{item}</span>
@@ -403,7 +403,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
               {activeTab === 'templates' && (
                 <div className="space-y-3">
                   <p className="text-xs text-slate-500">
-                    Selecione uma metodologia. O prompt será pré-preenchido automaticamente e pode ser editado na aba <span className="text-blue-400">Avançado</span>.
+                    Selecione uma metodologia. O prompt será pré-preenchido automaticamente e pode ser editado na aba <span className="text-sky-400">Avançado</span>.
                   </p>
                   <div className="grid grid-cols-1 gap-2">
                     {TEMPLATES.map((t) => {
@@ -414,17 +414,17 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                           onClick={() => handleSelectTemplate(t)}
                           className={`w-full text-left flex items-center justify-between gap-3 px-4 py-3 rounded-xl border transition-all ${
                             isSelected
-                              ? 'bg-blue-500/10 border-blue-500/40 text-white'
+                              ? 'bg-sky-500/5 border-blue-500/40 text-white'
                               : 'bg-[#0F172A] border-white/5 text-slate-300 hover:border-white/10 hover:bg-white/5'
                           }`}
                         >
                           <div>
-                            <p className={`text-sm font-semibold ${isSelected ? 'text-blue-300' : ''}`}>
+                            <p className={`text-sm font-semibold ${isSelected ? 'text-sky-300' : ''}`}>
                               {t.label}
                             </p>
                             <p className="text-xs text-slate-500 mt-0.5">{t.description}</p>
                           </div>
-                          {isSelected && <CheckCircle className="w-4 h-4 text-blue-400 shrink-0" />}
+                          {isSelected && <CheckCircle className="w-4 h-4 text-sky-400 shrink-0" />}
                         </button>
                       );
                     })}
@@ -471,7 +471,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                               </div>
                               <div className="flex items-center gap-2">
                                 {hasPrompt && (
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/5 text-sky-400 border border-sky-500/20">
                                     Configurado
                                   </span>
                                 )}
@@ -507,7 +507,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
               {/* ── Cadência ────────────────────────────────────────── */}
               {activeTab === 'cadencia' && (
                 <div className="space-y-3">
-                  <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3">
+                  <div className="bg-blue-500/5 border border-sky-500/20 rounded-xl p-3">
                     <p className="text-xs text-slate-300 leading-relaxed">
                       Configure gatilhos para que a IA mova leads automaticamente ao detectar palavras-chave na conversa WhatsApp.
                       Defina também qual playbook é ativado ao entrar em cada estágio.
@@ -552,7 +552,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                               </div>
                               <div className="flex items-center gap-2">
                                 {badgeCount > 0 && (
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/5 text-sky-400 border border-sky-500/20">
                                     {badgeCount} {badgeCount === 1 ? 'regra' : 'regras'}
                                   </span>
                                 )}
@@ -569,7 +569,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                                 {/* Playbook automático */}
                                 <div>
                                   <div className="flex items-center gap-2 mb-2">
-                                    <BookOpenCheck className="w-3.5 h-3.5 text-blue-400" />
+                                    <BookOpenCheck className="w-3.5 h-3.5 text-sky-400" />
                                     <label className="text-xs font-medium text-slate-300">
                                       Playbook ao entrar neste estágio
                                     </label>
@@ -594,7 +594,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                                 {/* Gatilhos de avanço */}
                                 <div>
                                   <div className="flex items-center gap-2 mb-2">
-                                    <GitMerge className="w-3.5 h-3.5 text-blue-400" />
+                                    <GitMerge className="w-3.5 h-3.5 text-sky-400" />
                                     <label className="text-xs font-medium text-slate-300">
                                       Gatilhos para avançar ao próximo estágio
                                     </label>
@@ -606,7 +606,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                                       {stage.auto_triggers.map((kw) => (
                                         <span
                                           key={kw}
-                                          className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300"
+                                          className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/5 border border-sky-500/20 text-xs text-sky-300"
                                         >
                                           {kw}
                                           <button
@@ -643,7 +643,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                                       <button
                                         type="button"
                                         onClick={() => handleAddTrigger(stage.id)}
-                                        className="px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 rounded-lg text-blue-300 transition-colors"
+                                        className="px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-sky-500/30 rounded-lg text-sky-300 transition-colors"
                                       >
                                         <Plus className="w-4 h-4" />
                                       </button>
@@ -673,7 +673,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                                       disabled={isLastStage}
                                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-colors text-left ${
                                         !stage.requires_approval && !isLastStage
-                                          ? 'border-blue-500/40 bg-blue-500/10'
+                                          ? 'border-blue-500/40 bg-sky-500/5'
                                           : 'border-white/5 bg-transparent opacity-50'
                                       } ${isLastStage ? 'cursor-not-allowed' : 'hover:border-white/10'}`}
                                     >
@@ -733,7 +733,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                     <div className="bg-[#0F172A] border border-white/5 rounded-xl p-4 text-center">
                       <p className="text-xs text-slate-500">
                         Nenhum playbook cadastrado ainda.{' '}
-                        <span className="text-blue-400">Crie playbooks em Configurações → Playbooks</span>{' '}
+                        <span className="text-sky-400">Crie playbooks em Configurações → Playbooks</span>{' '}
                         para associá-los aos estágios.
                       </p>
                     </div>
@@ -746,8 +746,8 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                 <div className="space-y-4">
                   <div className="bg-[#0F172A] border border-white/5 rounded-xl p-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                        <BookOpen className="w-4 h-4 text-blue-400" />
+                      <div className="w-8 h-8 rounded-lg bg-sky-500/5 flex items-center justify-center shrink-0 mt-0.5">
+                        <BookOpen className="w-4 h-4 text-sky-400" />
                       </div>
                       <div>
                         <p className="text-sm font-medium text-white mb-1">Base de conhecimento (RAG)</p>
@@ -767,7 +767,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
                       'Políticas de preço e condições comerciais',
                     ].map((item) => (
                       <div key={item} className="flex items-center gap-2.5">
-                        <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
+                        <div className="w-4 h-4 rounded-full bg-sky-500/10 flex items-center justify-center shrink-0">
                           <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                         </div>
                         <span className="text-xs text-slate-300">{item}</span>
@@ -833,7 +833,7 @@ const PipelineAIModal: React.FC<PipelineAIModalProps> = ({
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 disabled:opacity-50 rounded-lg transition-all duration-200"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all rounded-xl transition-all duration-200"
               >
                 {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Salvar

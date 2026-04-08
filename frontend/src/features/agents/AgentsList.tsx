@@ -50,7 +50,7 @@ export const AgentsList: React.FC<Props> = ({
             placeholder="Buscar agente..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full bg-[#0B1220] border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+            className="w-full bg-[#0B1220] border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500/50"
           />
         </div>
 
@@ -66,7 +66,7 @@ export const AgentsList: React.FC<Props> = ({
               onClick={() => setStatusFilter(opt.v as typeof statusFilter)}
               className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-all border ${
                 statusFilter === opt.v
-                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                  ? 'bg-sky-500/5 text-sky-400 border-sky-500/20'
                   : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'
               }`}
             >
@@ -78,7 +78,7 @@ export const AgentsList: React.FC<Props> = ({
         {/* Create button */}
         <button
           onClick={onCreateAgent}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 text-white text-xs font-medium rounded-lg transition-all duration-200 ml-auto"
+          className="flex items-center gap-2 px-4 py-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all text-sm font-semibold rounded-xl transition-all duration-200 ml-auto"
         >
           <Plus className="w-3.5 h-3.5" />
           Novo Agente
@@ -93,7 +93,7 @@ export const AgentsList: React.FC<Props> = ({
             onClick={() => setFnFilter(f.value)}
             className={`px-3 py-1 text-xs rounded-full border transition-all ${
               fnFilter === f.value
-                ? 'border-blue-500/50 bg-blue-500/10 text-blue-400'
+                ? 'border-sky-500/50 bg-sky-500/5 text-sky-400'
                 : 'border-white/10 text-slate-500 hover:text-white hover:border-white/15'
             }`}
           >
@@ -118,7 +118,7 @@ export const AgentsList: React.FC<Props> = ({
           {agents.length === 0 && (
             <button
               onClick={onCreateAgent}
-              className="mt-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 text-white text-sm rounded-lg transition-all duration-200"
+              className="mt-4 flex items-center gap-2 px-4 py-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all text-sm font-semibold rounded-xl transition-all duration-200"
             >
               <Plus className="w-4 h-4" /> Criar primeiro agente
             </button>

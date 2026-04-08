@@ -294,7 +294,7 @@ const GroupsView: React.FC<GroupsViewProps> = ({ group, groups, leads, analysis,
                     <KpiCard icon={UserCheck} title="Fechado"        value={`${groupMetrics.onboardingRate.toFixed(0)}%`} colorClass="text-green-400" />
                     <KpiCard icon={UserX}     title="Churn"          value={`${groupMetrics.churnRate.toFixed(1)}%`}      colorClass="text-red-400" />
                     {group.memberGoal ? (
-                        <KpiCard icon={Goal} title="Meta" value={`${groupMetrics.currentMembers} / ${group.memberGoal}`} colorClass="text-blue-400" />
+                        <KpiCard icon={Goal} title="Meta" value={`${groupMetrics.currentMembers} / ${group.memberGoal}`} colorClass="text-sky-400" />
                     ) : (
                         <GlassSection className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center bg-slate-700/50">

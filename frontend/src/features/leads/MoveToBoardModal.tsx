@@ -96,13 +96,13 @@ const MoveToBoardModal: React.FC<MoveToBoardModalProps> = ({
                 disabled={isMoving}
                 className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-[#0F172A] border border-white/5 rounded-xl hover:bg-white/[0.04] hover:border-white/12 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span className="text-sm font-medium text-white group-hover:text-blue-300 transition-colors">
+                <span className="text-sm font-medium text-white group-hover:text-sky-300 transition-colors">
                   {board.name}
                 </span>
                 {isMoving ? (
                   <Loader2 className="w-4 h-4 text-slate-500 animate-spin" />
                 ) : (
-                  <ArrowRightCircle className="w-4 h-4 text-slate-600 group-hover:text-blue-400 transition-colors" />
+                  <ArrowRightCircle className="w-4 h-4 text-slate-600 group-hover:text-sky-400 transition-colors" />
                 )}
               </button>
             ))

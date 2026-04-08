@@ -138,7 +138,7 @@ const ExportImportModal: React.FC<ExportImportModalProps> = ({ boards, onClose, 
                                             type="text"
                                             value={exportName}
                                             onChange={(e) => setExportName(e.target.value)}
-                                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-sky-500 outline-none transition-all"
                                         />
                                     </div>
 
@@ -153,7 +153,7 @@ const ExportImportModal: React.FC<ExportImportModalProps> = ({ boards, onClose, 
                                                             type="checkbox"
                                                             checked={selectedBoardIds.includes(board.id)}
                                                             onChange={() => handleToggleBoard(board.id)}
-                                                            className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
+                                                            className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-blue-500 focus:ring-sky-500 focus:ring-offset-slate-900"
                                                         />
                                                         <span className="text-sm text-slate-300">{board.name}</span>
                                                     </div>
@@ -169,7 +169,7 @@ const ExportImportModal: React.FC<ExportImportModalProps> = ({ boards, onClose, 
                                     <div className="flex gap-3">
                                         <button 
                                             onClick={handleDownload}
-                                            className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 text-white px-4 py-2.5 rounded-lg font-semibold transition-all duration-200"
+                                            className="flex-1 flex items-center justify-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
                                         >
                                             <Download className="w-4 h-4" />
                                             Baixar arquivo
@@ -216,7 +216,7 @@ const ExportImportModal: React.FC<ExportImportModalProps> = ({ boards, onClose, 
                                                 onChange={(e) => setImportJson(e.target.value)}
                                                 placeholder="Cole o conteúdo do arquivo JSON aqui..."
                                                 rows={6}
-                                                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white font-mono text-xs focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
+                                                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white font-mono text-xs focus:ring-2 focus:ring-sky-500 outline-none transition-all resize-none"
                                             />
                                         </div>
                                     </div>
@@ -224,7 +224,7 @@ const ExportImportModal: React.FC<ExportImportModalProps> = ({ boards, onClose, 
                                     <button 
                                         onClick={handleImport}
                                         disabled={!importJson || isInstalling}
-                                        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-semibold transition-all duration-200"
+                                        className="w-full flex items-center justify-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200"
                                     >
                                         {isInstalling ? (
                                             <>

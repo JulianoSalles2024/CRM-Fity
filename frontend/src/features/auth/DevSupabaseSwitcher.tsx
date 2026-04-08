@@ -58,7 +58,7 @@ export default function DevSupabaseSwitcher() {
           {/* Current status */}
           <div className="text-slate-500 break-all leading-relaxed">
             <span className="text-slate-400">URL:</span>{' '}
-            <span className="text-blue-400">{displayUrl}</span>
+            <span className="text-sky-400">{displayUrl}</span>
           </div>
 
           <div className="border-t border-slate-800" />
@@ -94,14 +94,14 @@ export default function DevSupabaseSwitcher() {
                 placeholder="https://xxx.supabase.co"
                 value={url}
                 onChange={e => setUrl(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
               <input
                 type="text"
                 placeholder="anon key (eyJ...)"
                 value={anonKey}
                 onChange={e => setAnonKey(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
               <button
                 onClick={applyManual}

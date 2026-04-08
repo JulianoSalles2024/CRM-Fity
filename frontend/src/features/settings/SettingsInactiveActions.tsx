@@ -253,7 +253,7 @@ export const SettingsInactiveActions: React.FC = () => {
           <button
             onClick={addRule}
             disabled={isSaving}
-            className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-4 h-4" />
             Nova Regra
@@ -395,9 +395,7 @@ export const SettingsInactiveActions: React.FC = () => {
               <button
                 onClick={handleSaveAutoClose}
                 disabled={isSavingSettings || !hoursDraft || parseInt(hoursDraft, 10) < 1}
-                className="ml-auto px-4 py-1.5 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5
-                  disabled:opacity-40 disabled:cursor-not-allowed
-                  text-white text-sm font-medium rounded-lg transition-all duration-200"
+                className="ml-auto px-4 py-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all text-sm font-semibold rounded-xl transition-all duration-200"
               >
                 Salvar
               </button>

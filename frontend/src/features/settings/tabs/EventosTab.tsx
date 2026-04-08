@@ -15,7 +15,7 @@ import { Copy } from 'lucide-react';
 
 const STATUS_MAP: Record<WebhookEvent['status'], { label: string; cls: string; icon: React.ElementType }> = {
   processed: { label: 'Processado', cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25', icon: CheckCircle2 },
-  received:  { label: 'Recebido',   cls: 'text-blue-400 bg-blue-500/10 border-blue-500/25',         icon: ArrowDownLeft },
+  received:  { label: 'Recebido',   cls: 'text-sky-400 bg-sky-500/5 border-blue-500/25',         icon: ArrowDownLeft },
   failed:    { label: 'Falhou',     cls: 'text-red-400 bg-red-500/10 border-red-500/25',             icon: XCircle },
   duplicate: { label: 'Duplicado',  cls: 'text-slate-400 bg-slate-500/10 border-slate-500/25',       icon: Copy },
 };
@@ -177,7 +177,7 @@ const EventosTab: React.FC<EventosTabProps> = ({ showNotification }) => {
       <div className="grid grid-cols-4 gap-2">
         {[
           { label: 'Processados', count: counts.processed, cls: 'text-emerald-400' },
-          { label: 'Recebidos',   count: counts.received,  cls: 'text-blue-400' },
+          { label: 'Recebidos',   count: counts.received,  cls: 'text-sky-400' },
           { label: 'Falhos',      count: counts.failed,    cls: 'text-red-400' },
           { label: 'Duplicados',  count: counts.duplicate, cls: 'text-slate-400' },
         ].map(({ label, count, cls }) => (
@@ -195,7 +195,7 @@ const EventosTab: React.FC<EventosTabProps> = ({ showNotification }) => {
       >
         {/* animated pill */}
         <span
-          className="absolute top-1 bottom-1 bg-blue-500/10 border border-blue-500/20 rounded-lg transition-all duration-300 pointer-events-none"
+          className="absolute top-1 bottom-1 bg-sky-500/5 border border-sky-500/20 rounded-lg transition-all duration-300 pointer-events-none"
           style={{ left: pillStyle.left, width: pillStyle.width }}
         />
         {STATUS_FILTERS.map(({ value, label }, i) => (
@@ -205,7 +205,7 @@ const EventosTab: React.FC<EventosTabProps> = ({ showNotification }) => {
             onClick={() => setFilter(value)}
             className={`relative px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 ${
               filter === value
-                ? 'text-blue-400'
+                ? 'text-sky-400'
                 : 'text-slate-500 hover:text-white'
             }`}
           >

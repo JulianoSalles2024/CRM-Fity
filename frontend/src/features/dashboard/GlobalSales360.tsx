@@ -403,13 +403,13 @@ const GlobalSales360: React.FC = () => {
                 {/* Identity + period filter */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center text-blue-400">
+                        <div className="w-14 h-14 rounded-full bg-sky-500/5 border-2 border-sky-500/30 flex items-center justify-center text-sky-400">
                             <Globe className="w-7 h-7" />
                         </div>
                         <div>
                             <h2 className="text-2xl font-bold text-white">Vendas Globais</h2>
                             <p className="text-sm text-slate-500 mt-0.5">Consolidado da empresa</p>
-                            <span className="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-wider">
+                            <span className="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded bg-sky-500/5 border border-sky-500/20 text-sky-400 text-[10px] font-bold uppercase tracking-wider">
                                 <Building2 className="w-3 h-3" /> Empresa
                             </span>
                         </div>
@@ -421,7 +421,7 @@ const GlobalSales360: React.FC = () => {
                             <div className="relative flex items-center gap-0 bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
                                 {/* sliding pill */}
                                 <div
-                                    className="absolute top-1 bottom-1 w-[88px] rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out"
+                                    className="absolute top-1 bottom-1 w-[88px] rounded-lg bg-sky-500/5 border border-sky-500/20 transition-all duration-300 ease-in-out"
                                     style={{
                                         left: `calc(${(['hoje','semana','mes','ano','custom'] as Period[]).indexOf(period)} * 88px + 4px)`,
                                     }}
@@ -431,7 +431,7 @@ const GlobalSales360: React.FC = () => {
                                         key={p}
                                         onClick={() => setPeriod(p)}
                                         className={`relative z-10 w-[88px] py-1.5 text-sm rounded-lg transition-colors duration-200 text-center ${
-                                            period === p ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+                                            period === p ? 'text-sky-400' : 'text-slate-500 hover:text-slate-300'
                                         }`}
                                     >
                                         {periodLabels[p]}
@@ -507,7 +507,7 @@ const GlobalSales360: React.FC = () => {
                     </div>
                     <div className="space-y-0.5">
                         <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Total Vendas</p>
-                        <p className="text-lg font-bold text-blue-400">{kpis.totalVendas}</p>
+                        <p className="text-lg font-bold text-sky-400">{kpis.totalVendas}</p>
                     </div>
                     <div className="space-y-0.5">
                         <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Crescimento</p>
@@ -518,7 +518,7 @@ const GlobalSales360: React.FC = () => {
                     {period === 'mes' && (
                         <div className="space-y-0.5">
                             <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Meta/dia</p>
-                            <p className="text-lg font-bold text-blue-400">{fmt.format(kpis.metaDiaria)}</p>
+                            <p className="text-lg font-bold text-sky-400">{fmt.format(kpis.metaDiaria)}</p>
                         </div>
                     )}
                 </div>
@@ -536,8 +536,8 @@ const GlobalSales360: React.FC = () => {
                     {/* Faturamento Total */}
                     <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-5 space-y-3">
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                                <DollarSign className="w-4 h-4 text-blue-400" />
+                            <div className="w-8 h-8 rounded-lg bg-sky-500/5 border border-sky-500/20 flex items-center justify-center">
+                                <DollarSign className="w-4 h-4 text-sky-400" />
                             </div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Faturamento Total</p>
                         </div>

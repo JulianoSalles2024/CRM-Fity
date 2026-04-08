@@ -214,17 +214,17 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
             onClick={() => update({ offer_type: opt.value })}
             className={`w-full flex items-start gap-4 p-4 rounded-xl border transition-all duration-150 text-left ${
               active
-                ? 'border-blue-500/40 bg-blue-500/10'
+                ? 'border-blue-500/40 bg-sky-500/5'
                 : 'border-white/5 bg-slate-900/40 hover:border-white/10 hover:bg-slate-900/70'
             }`}
           >
             <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-              active ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-slate-500'
+              active ? 'bg-sky-500/10 text-sky-400' : 'bg-slate-800 text-slate-500'
             }`}>
               <Icon className="w-4 h-4" />
             </div>
             <div>
-              <p className={`text-sm font-semibold ${active ? 'text-blue-300' : 'text-white'}`}>{opt.title}</p>
+              <p className={`text-sm font-semibold ${active ? 'text-sky-300' : 'text-white'}`}>{opt.title}</p>
               <p className="text-xs text-slate-500 mt-0.5">{opt.desc}</p>
             </div>
             {active && (
@@ -250,7 +250,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
           value={form.name}
           onChange={e => update({ name: e.target.value })}
           placeholder="Ex: NextSales CRM Growth"
-          className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+          className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20"
         />
       </div>
 
@@ -262,7 +262,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
           onChange={e => update({ description: e.target.value })}
           placeholder="O que torna este produto relevante para o lead..."
           rows={2}
-          className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 resize-none"
+          className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20 resize-none"
         />
       </div>
 
@@ -272,7 +272,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
         <select
           value={form.category}
           onChange={e => update({ category: e.target.value as OfferCategory })}
-          className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+          className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20"
         >
           {CATEGORY_OPTIONS.map(o => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -289,7 +289,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
               key={o.value}
               className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                 form.journey_type === o.value
-                  ? 'border-blue-500/30 bg-blue-500/5'
+                  ? 'border-sky-500/30 bg-blue-500/5'
                   : 'border-white/5 hover:border-white/10'
               }`}
             >
@@ -324,13 +324,13 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
               value={form.price}
               onChange={e => update({ price: e.target.value === '' ? '' : Number(e.target.value) })}
               placeholder="0,00"
-              className="w-full bg-slate-900/60 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+              className="w-full bg-slate-900/60 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20"
             />
           </div>
           <select
             value={form.price_recurrence}
             onChange={e => update({ price_recurrence: e.target.value as PriceRecurrence })}
-            className="bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 w-28"
+            className="bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500/50 w-28"
           >
             {RECURRENCE_OPTIONS.map(o => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -350,7 +350,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
           value={form.checkout_url}
           onChange={e => update({ checkout_url: e.target.value })}
           placeholder="https://..."
-          className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+          className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20"
         />
       </div>
 
@@ -361,7 +361,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
           onChange={e => update({ selling_arguments: e.target.value })}
           placeholder="Benefícios e diferenciais que o agente deve usar nas abordagens..."
           rows={3}
-          className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 resize-none"
+          className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20 resize-none"
         />
       </div>
 
@@ -377,7 +377,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
               };
               update({ objections: [...form.objections, newObj] });
             }}
-            className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+            className="flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300 transition-colors"
           >
             <Plus className="w-3 h-3" />
             Adicionar objeção
@@ -457,7 +457,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
           value={form.affiliate_link}
           onChange={e => update({ affiliate_link: e.target.value })}
           placeholder="https://hotmart.com/produto/...?ref=..."
-          className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+          className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20"
         />
       </div>
 
@@ -471,7 +471,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
             value={form.commission_pct}
             onChange={e => update({ commission_pct: e.target.value === '' ? '' : Number(e.target.value) })}
             placeholder="Ex: 40"
-            className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50"
           />
         </div>
         <div>
@@ -481,7 +481,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
             min="1"
             value={form.cookie_days}
             onChange={e => update({ cookie_days: e.target.value === '' ? '' : Number(e.target.value) })}
-            className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50"
           />
         </div>
       </div>
@@ -524,7 +524,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
             value={form.partner_name}
             onChange={e => update({ partner_name: e.target.value })}
             placeholder="Ex: TechCorp Solutions"
-            className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50"
           />
         </div>
         <div>
@@ -534,7 +534,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
             value={form.partner_contact}
             onChange={e => update({ partner_contact: e.target.value })}
             placeholder="contato@empresa.com"
-            className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50"
           />
         </div>
       </div>
@@ -549,7 +549,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
             value={form.commission_pct}
             onChange={e => update({ commission_pct: e.target.value === '' ? '' : Number(e.target.value) })}
             placeholder="Ex: 25"
-            className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50"
           />
         </div>
         <div>
@@ -559,7 +559,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
             min="1"
             value={form.partner_sla_hours}
             onChange={e => update({ partner_sla_hours: e.target.value === '' ? '' : Number(e.target.value) })}
-            className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500/50"
           />
         </div>
       </div>
@@ -598,7 +598,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
                 key={agent.id}
                 className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                   checked
-                    ? 'border-blue-500/30 bg-blue-500/5'
+                    ? 'border-sky-500/30 bg-blue-500/5'
                     : 'border-white/5 hover:border-white/10'
                 }`}
               >
@@ -633,7 +633,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
               key={p.value}
               className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                 form.priority === p.value
-                  ? 'border-blue-500/30 bg-blue-500/5'
+                  ? 'border-sky-500/30 bg-blue-500/5'
                   : 'border-white/5 hover:border-white/10'
               }`}
             >
@@ -677,8 +677,8 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
-              <Package className="w-4 h-4 text-blue-400" />
+            <div className="w-8 h-8 bg-sky-500/5 rounded-lg flex items-center justify-center">
+              <Package className="w-4 h-4 text-sky-400" />
             </div>
             <div>
               <h2 className="text-sm font-semibold text-white">Adicionar Produto</h2>
@@ -705,7 +705,7 @@ export const OfferWizard: React.FC<Props> = ({ onClose, onSave }) => {
                   i < step
                     ? 'bg-blue-600 text-white cursor-pointer'
                     : i === step
-                    ? 'bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/40'
+                    ? 'bg-sky-500/10 text-sky-400 ring-1 ring-blue-500/40'
                     : 'bg-slate-800 text-slate-600'
                 }`}>
                   {i < step ? <Check className="w-3 h-3" /> : i + 1}

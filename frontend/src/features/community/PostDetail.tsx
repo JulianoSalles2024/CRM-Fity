@@ -45,7 +45,7 @@ const PostDetail: React.FC<PostDetailProps> = ({
           <div className="flex flex-col items-center gap-1 flex-shrink-0 pt-1">
             <button
               onClick={() => onPostVote(post.id, post.user_voted ?? false)}
-              className={`transition-colors ${post.user_voted ? 'text-blue-400' : 'text-slate-600 hover:text-slate-400'}`}
+              className={`transition-colors ${post.user_voted ? 'text-sky-400' : 'text-slate-600 hover:text-slate-400'}`}
             >
               <ThumbsUp className="w-5 h-5" />
             </button>
@@ -55,7 +55,7 @@ const PostDetail: React.FC<PostDetailProps> = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               {post.category && (
-                <span className="text-xs text-blue-400 font-medium">{post.category.name}</span>
+                <span className="text-xs text-sky-400 font-medium">{post.category.name}</span>
               )}
               {post.is_solved && (
                 <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">

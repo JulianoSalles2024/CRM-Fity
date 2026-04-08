@@ -37,7 +37,7 @@ const RecentActivities: React.FC<RecentActivitiesProps> = ({ activities, leads, 
     const getActivityIcon = (type: Activity['type']) => {
         switch (type) {
             case 'note': return <MessageSquare className="w-4 h-4 text-purple-400" />;
-            case 'email_sent': return <Mail className="w-4 h-4 text-blue-400" />;
+            case 'email_sent': return <Mail className="w-4 h-4 text-sky-400" />;
             case 'status_change': return <ArrowRight className="w-4 h-4 text-emerald-400" />;
             default: return <ActivityIcon className="w-4 h-4 text-slate-400" />;
         }
@@ -68,7 +68,7 @@ const RecentActivities: React.FC<RecentActivitiesProps> = ({ activities, leads, 
                                          activity.type === 'status_change' ? 'atualizou status de' : 'interagiu com'}
                                     </span>
                                     {' '}
-                                    <button onClick={() => {}} className="font-medium text-blue-400 hover:underline truncate align-bottom">
+                                    <button onClick={() => {}} className="font-medium text-sky-400 hover:underline truncate align-bottom">
                                         {getLeadName(activity.leadId)}
                                     </button>
                                 </p>
@@ -88,7 +88,7 @@ const RecentActivities: React.FC<RecentActivitiesProps> = ({ activities, leads, 
                 </div>
             )}
             <div className="mt-4 pt-4 border-t border-slate-800">
-                <button onClick={() => onNavigate('Tarefas')} className="w-full py-2 text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors text-center border border-slate-800 rounded-lg hover:bg-slate-800">
+                <button onClick={() => onNavigate('Tarefas')} className="w-full py-2 text-sm text-sky-400 hover:text-sky-300 font-medium transition-colors text-center border border-slate-800 rounded-lg hover:bg-slate-800">
                     Ver todas as atividades
                 </button>
             </div>

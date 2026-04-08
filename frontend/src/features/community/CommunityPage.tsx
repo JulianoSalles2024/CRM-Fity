@@ -68,7 +68,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ gruposContent }) => {
             onClick={() => setActiveTab('feed')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
               activeTab === 'feed'
-                ? 'bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default'
+                ? 'bg-sky-500/5 border-sky-500/30 text-sky-400 shadow-sm shadow-sky-900/20 cursor-default'
                 : 'border-transparent text-slate-500 hover:text-white hover:bg-white/5'
             }`}
           >
@@ -80,7 +80,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ gruposContent }) => {
               onClick={() => setActiveTab('grupos')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
                 activeTab === 'grupos'
-                  ? 'bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default'
+                  ? 'bg-sky-500/5 border-sky-500/30 text-sky-400 shadow-sm shadow-sky-900/20 cursor-default'
                   : 'border-transparent text-slate-500 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -92,7 +92,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ gruposContent }) => {
         {activeTab === 'feed' && (
           <button
             onClick={() => setShowNewPost(true)}
-            className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 text-white text-sm rounded-lg transition-all duration-200"
+            className="flex items-center gap-2 px-4 py-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all text-sm font-semibold rounded-xl transition-all duration-200"
           >
             <Plus className="w-4 h-4" />
             Novo Post
@@ -120,7 +120,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ gruposContent }) => {
           <div className="flex flex-wrap items-center gap-4">
             <div className="relative bg-slate-900/60 border border-blue-500/10 rounded-xl p-1 flex">
               <div
-                className="absolute top-1 bottom-1 bg-blue-500/10 border border-blue-500/20 rounded-lg transition-all duration-300 pointer-events-none"
+                className="absolute top-1 bottom-1 bg-sky-500/5 border border-sky-500/20 rounded-lg transition-all duration-300 pointer-events-none"
                 style={{ left: pillStyle.left, width: pillStyle.width }}
               />
               {sortTabs.map((tab, idx) => (
@@ -129,7 +129,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ gruposContent }) => {
                   ref={el => { tabRefs.current[idx] = el; }}
                   onClick={() => setSortMode(tab.key)}
                   className={`relative z-10 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                    sortMode === tab.key ? 'text-blue-400' : 'text-slate-500 hover:text-white'
+                    sortMode === tab.key ? 'text-sky-400' : 'text-slate-500 hover:text-white'
                   }`}
                 >
                   <tab.icon className="w-3.5 h-3.5" />

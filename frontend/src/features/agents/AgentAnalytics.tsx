@@ -64,12 +64,12 @@ interface SummaryCardProps {
 }
 
 const SummaryCard: React.FC<SummaryCardProps> = ({
-  label, value, sub, icon: Icon, accent = 'text-blue-400',
+  label, value, sub, icon: Icon, accent = 'text-sky-400',
 }) => (
   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-5 flex flex-col gap-3">
     <div className="flex items-center justify-between">
       <span className="text-xs text-slate-500 font-medium uppercase tracking-wide">{label}</span>
-      <div className={`p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 ${accent}`}>
+      <div className={`p-2 rounded-lg bg-sky-500/5 border border-sky-500/20 ${accent}`}>
         <Icon className="w-4 h-4" />
       </div>
     </div>
@@ -95,7 +95,7 @@ const FunnelStep: React.FC<FunnelStepProps> = ({ label, count, rate, isLast }) =
       <p className="text-lg font-bold text-white">{count.toLocaleString('pt-BR')}</p>
       <p className="text-xs text-slate-500 mt-0.5">{label}</p>
       {rate && (
-        <span className="inline-block mt-1.5 text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full">
+        <span className="inline-block mt-1.5 text-[10px] bg-sky-500/5 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-full">
           {rate} taxa
         </span>
       )}
@@ -132,7 +132,7 @@ export const AgentAnalytics: React.FC<AgentAnalyticsProps> = ({ companyId }) => 
               onClick={() => setPeriod(p.id)}
               className={`px-3 py-1.5 text-xs rounded-lg transition-colors duration-200 ${
                 period === p.id
-                  ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
+                  ? 'bg-sky-500/5 border border-sky-500/20 text-sky-400'
                   : 'text-slate-500 hover:text-slate-300'
               }`}
             >
@@ -173,7 +173,7 @@ export const AgentAnalytics: React.FC<AgentAnalyticsProps> = ({ companyId }) => 
               value={`${(summary?.avg_conversion ?? 0).toFixed(1)}%`}
               sub="média por agente"
               icon={TrendingUp}
-              accent="text-blue-400"
+              accent="text-sky-400"
             />
           </>
         )}
@@ -323,7 +323,7 @@ export const AgentAnalytics: React.FC<AgentAnalyticsProps> = ({ companyId }) => 
                           target="_blank"
                           rel="noopener noreferrer"
                           title="Abrir no LangSmith"
-                          className="flex items-center justify-center w-7 h-7 rounded-lg text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
+                          className="flex items-center justify-center w-7 h-7 rounded-lg text-slate-600 hover:text-sky-400 hover:bg-sky-500/5 transition-colors"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>

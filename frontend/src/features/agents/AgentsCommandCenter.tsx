@@ -90,7 +90,7 @@ export const AgentsCommandCenter: React.FC<Props> = ({ onSelectAgent }) => {
       <div className="flex items-center gap-3">
         <div className="relative flex items-center bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
           <div
-            className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out pointer-events-none"
+            className="absolute top-1 bottom-1 rounded-lg bg-sky-500/5 border border-sky-500/20 transition-all duration-300 ease-in-out pointer-events-none"
             style={{ left: pill.left, width: pill.width }}
           />
           {COMMAND_TABS.map((tab, i) => {
@@ -101,7 +101,7 @@ export const AgentsCommandCenter: React.FC<Props> = ({ onSelectAgent }) => {
                 ref={el => { tabRefs.current[i] = el; }}
                 onClick={() => setCommandTab(tab.id)}
                 className={`relative z-10 flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-lg transition-colors duration-200 whitespace-nowrap ${
-                  commandTab === tab.id ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+                  commandTab === tab.id ? 'text-sky-400' : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5 flex-shrink-0" />
@@ -133,7 +133,7 @@ export const AgentsCommandCenter: React.FC<Props> = ({ onSelectAgent }) => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-base font-semibold text-white flex items-center gap-2">
-            <Zap className="w-4 h-4 text-blue-400" />
+            <Zap className="w-4 h-4 text-sky-400" />
             Central de Comando
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">Visão em tempo real do Exército Comercial</p>
@@ -171,7 +171,7 @@ export const AgentsCommandCenter: React.FC<Props> = ({ onSelectAgent }) => {
         {/* Ranking header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-blue-400" />
+            <TrendingUp className="w-4 h-4 text-sky-400" />
             <span className="text-sm font-semibold text-white">Ranking de Agentes</span>
           </div>
           <div className="flex items-center bg-[#0F172A] rounded-lg p-0.5 gap-0.5">

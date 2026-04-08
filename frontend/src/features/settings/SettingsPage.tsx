@@ -43,7 +43,7 @@ const StageItem: React.FC<{ column: ColumnData; index: number; onEdit?: (column:
     const typeStyles: Record<ColumnData['type'], string> = {
         open: 'bg-slate-700 text-slate-300',
         qualification: 'bg-purple-900/50 text-purple-400',
-        'follow-up': 'bg-blue-900/50 text-blue-400',
+        'follow-up': 'bg-blue-900/50 text-sky-400',
         scheduling: 'bg-teal-900/50 text-teal-400',
         won: 'bg-green-900/50 text-green-400',
         lost: 'bg-red-900/50 text-red-400',
@@ -128,7 +128,7 @@ const BoardsSettings: React.FC<BoardsSettingsProps> = ({ boards, activeBoardId, 
                         <h2 className="text-lg font-semibold text-white">Seus Pipelines (Boards)</h2>
                         <p className="text-sm text-slate-400 mt-1">Gerencie seus diferentes fluxos de trabalho.</p>
                     </div>
-                    <button onClick={onCreateBoard} className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
+                    <button onClick={onCreateBoard} className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                         <PlusCircle className="w-4 h-4" /><span>Novo Pipeline</span>
                     </button>
                 </div>
@@ -146,7 +146,7 @@ const BoardsSettings: React.FC<BoardsSettingsProps> = ({ boards, activeBoardId, 
                                 {board.id !== activeBoardId && (
                                     <button
                                         onClick={() => onSelectBoard(board.id)}
-                                        className="text-xs font-semibold text-blue-400 hover:text-blue-300 px-3 py-1.5 rounded-md hover:bg-blue-500/10 transition-colors"
+                                        className="text-xs font-semibold text-sky-400 hover:text-sky-300 px-3 py-1.5 rounded-md hover:bg-sky-500/5 transition-colors"
                                     >
                                         Ativar
                                     </button>
@@ -266,7 +266,7 @@ const PipelineSettings: React.FC<PipelineSettingsProps> = ({ columns: initialCol
                         <h2 className="text-lg font-semibold text-white">Estágios do Pipeline</h2>
                         <p className="text-sm text-slate-400 mt-1">Configure os estágios do seu funil de vendas. Arraste para reordenar.</p>
                     </div>
-                    <button onClick={() => { setEditingStage(null); setCreateStageModalOpen(true); }} className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
+                    <button onClick={() => { setEditingStage(null); setCreateStageModalOpen(true); }} className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                         <PlusCircle className="w-4 h-4" /><span>Novo Estágio</span>
                     </button>
                 </div>
@@ -316,8 +316,8 @@ const BoardsAISettings: React.FC<{ boards: Board[] }> = ({ boards }) => {
         <>
             <FlatCard className="p-6 space-y-5">
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                        <Bot className="w-5 h-5 text-blue-400" />
+                    <div className="p-2.5 rounded-xl bg-sky-500/5 border border-sky-500/20">
+                        <Bot className="w-5 h-5 text-sky-400" />
                     </div>
                     <div>
                         <h2 className="text-lg font-bold text-white">Agente de IA por Pipeline</h2>
@@ -337,7 +337,7 @@ const BoardsAISettings: React.FC<{ boards: Board[] }> = ({ boards }) => {
                             </div>
                             <button
                                 onClick={() => setSelectedBoard(board)}
-                                className="flex items-center gap-1.5 text-xs font-semibold text-blue-400 hover:text-blue-300 px-3 py-1.5 rounded-lg hover:bg-blue-500/10 transition-colors whitespace-nowrap"
+                                className="flex items-center gap-1.5 text-xs font-semibold text-sky-400 hover:text-sky-300 px-3 py-1.5 rounded-lg hover:bg-sky-500/5 transition-colors whitespace-nowrap"
                             >
                                 <Bot className="w-3.5 h-3.5" />
                                 Configurar
@@ -462,7 +462,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         <div className="flex flex-col gap-1">
             <div>
                 <div className="flex items-center gap-1 mb-2">
-                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-sky-500/5 border-sky-500/30 text-sky-400 shadow-sm shadow-sky-900/20 cursor-default">
                         <Settings className="w-4 h-4 flex-shrink-0" />
                         <span>Configurações</span>
                     </button>
@@ -477,7 +477,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         <button
                             key={tab.name}
                             onClick={() => setActiveTab(tab.name)}
-                            className={`whitespace-nowrap flex items-center gap-2 px-6 py-3 text-sm font-medium transition-all relative ${activeTab === tab.name ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`whitespace-nowrap flex items-center gap-2 px-6 py-3 text-sm font-medium transition-all relative ${activeTab === tab.name ? 'text-sky-400' : 'text-slate-500 hover:text-slate-300'}`}
                         >
                             <tab.icon className="w-4 h-4" />
                             {tab.name}

@@ -302,7 +302,7 @@ ${unassignedLeads.length > 0 ? `\nLEADS SEM RESPONSÁVEL:\n${JSON.stringify(unas
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-slate-800/60 bg-slate-900/60 backdrop-blur-md flex-shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-sky-500 flex items-center justify-center shadow-lg shadow-blue-900/20 animate-pulse">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-sky-500 flex items-center justify-center shadow-lg shadow-sky-900/20 animate-pulse">
                             <Bot className="w-6 h-6 text-white" />
                         </div>
                         <div>
@@ -370,7 +370,7 @@ ${unassignedLeads.length > 0 ? `\nLEADS SEM RESPONSÁVEL:\n${JSON.stringify(unas
                                             onMouseLeave={() => setHoveredConvId(null)}
                                             className={`flex items-center gap-1.5 px-3 py-2 cursor-pointer transition-all border-l-2 ${
                                                 activeId === conv.id
-                                                    ? 'border-blue-500 bg-blue-500/10 text-white'
+                                                    ? 'border-blue-500 bg-sky-500/5 text-white'
                                                     : 'border-transparent text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                                             }`}
                                         >
@@ -420,7 +420,7 @@ ${unassignedLeads.length > 0 ? `\nLEADS SEM RESPONSÁVEL:\n${JSON.stringify(unas
                                 <p className="text-sm text-slate-400 mb-6">O administrador ainda não habilitou o SDR de vendas para sua equipe.</p>
                                 <button
                                     onClick={() => setShowBlockedUI(false)}
-                                    className="w-full bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+                                    className="w-full border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
                                 >
                                     Entendi
                                 </button>
@@ -434,7 +434,7 @@ ${unassignedLeads.length > 0 ? `\nLEADS SEM RESPONSÁVEL:\n${JSON.stringify(unas
                                     <div className="flex justify-start">
                                         <div className="flex items-start gap-2 max-w-[80%]">
                                             <div className="w-8 h-8 rounded-full bg-blue-900/30 border border-blue-700/50 flex items-center justify-center flex-shrink-0 mt-1">
-                                                <Bot className="w-4 h-4 text-blue-400" />
+                                                <Bot className="w-4 h-4 text-sky-400" />
                                             </div>
                                             <div className="p-3 rounded-2xl rounded-tl-none text-sm leading-relaxed bg-slate-900 border border-slate-800 text-slate-200">
                                                 {initialMessage}
@@ -446,7 +446,7 @@ ${unassignedLeads.length > 0 ? `\nLEADS SEM RESPONSÁVEL:\n${JSON.stringify(unas
                                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                         <div className={`flex items-start gap-2 max-w-[80%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${msg.role === 'user' ? 'bg-slate-700' : 'bg-blue-900/30 border border-blue-700/50'}`}>
-                                                {msg.role === 'user' ? <User className="w-4 h-4 text-slate-300" /> : <Bot className="w-4 h-4 text-blue-400" />}
+                                                {msg.role === 'user' ? <User className="w-4 h-4 text-slate-300" /> : <Bot className="w-4 h-4 text-sky-400" />}
                                             </div>
                                             <div className={`p-3 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-blue-600/20 border border-blue-500/25 text-white rounded-tr-none' : 'bg-slate-900/80 border border-slate-800/80 text-slate-200 rounded-tl-none'}`}>
                                                 {msg.text}
@@ -458,10 +458,10 @@ ${unassignedLeads.length > 0 ? `\nLEADS SEM RESPONSÁVEL:\n${JSON.stringify(unas
                                     <div className="flex justify-start">
                                         <div className="flex items-center gap-2">
                                             <div className="w-8 h-8 rounded-full bg-blue-900/30 border border-blue-700/50 flex items-center justify-center flex-shrink-0">
-                                                <Bot className="w-4 h-4 text-blue-400" />
+                                                <Bot className="w-4 h-4 text-sky-400" />
                                             </div>
                                             <div className="p-3 bg-slate-900 border border-slate-800 rounded-2xl rounded-tl-none">
-                                                <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+                                                <Loader2 className="w-4 h-4 text-sky-400 animate-spin" />
                                             </div>
                                         </div>
                                     </div>
@@ -476,7 +476,7 @@ ${unassignedLeads.length > 0 ? `\nLEADS SEM RESPONSÁVEL:\n${JSON.stringify(unas
                                         <button
                                             key={qr.label}
                                             onClick={() => handleQuickReply(qr.message)}
-                                            className="text-xs px-3 py-1.5 rounded-full border border-blue-700/50 bg-blue-950/40 text-blue-300 hover:bg-blue-900/50 hover:border-blue-500 transition-all duration-200"
+                                            className="text-xs px-3 py-1.5 rounded-full border border-blue-700/50 bg-blue-950/40 text-sky-300 hover:bg-blue-900/50 hover:border-blue-500 transition-all duration-200"
                                         >
                                             {qr.label}
                                         </button>
@@ -492,13 +492,13 @@ ${unassignedLeads.length > 0 ? `\nLEADS SEM RESPONSÁVEL:\n${JSON.stringify(unas
                                         value={input}
                                         onChange={e => setInput(e.target.value)}
                                         placeholder="Pergunte sobre seus leads ou tarefas..."
-                                        className="flex-1 bg-slate-900/50 border border-slate-700/60 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all"
+                                        className="flex-1 bg-slate-900/50 border border-slate-700/60 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-blue-500/40 transition-all"
                                         disabled={isLoading}
                                     />
                                     <button
                                         type="submit"
                                         disabled={!input.trim() || isLoading}
-                                        className="bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] text-white p-3 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-sky-500/20"
+                                        className="border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all p-3 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-sky-500/20"
                                     >
                                         <Send className="w-5 h-5" />
                                     </button>

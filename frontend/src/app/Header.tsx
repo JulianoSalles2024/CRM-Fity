@@ -61,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({
         {/* SDR Bot Button */}
         <button
           onClick={onOpenSdrBot}
-          className="p-2.5 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/20 hover:shadow-sky-500/30 hover:scale-105 transition-all duration-200 group"
+          className="p-2.5 rounded-full border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 hover:scale-105 transition-all duration-200 group"
           title="SDR Bot (IA)"
         >
           <Bot className="w-5 h-5 group-hover:rotate-12 transition-transform" />

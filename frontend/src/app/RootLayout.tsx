@@ -372,7 +372,9 @@ export default function RootLayout() {
                 )}
             </AnimatePresence>
 
-            <OnboardingModal onOpenCreateBoard={() => ctx.setCreateBoardModalOpen(true)} />
+            {(ctx.boards ?? []).length === 0 && (
+                <OnboardingModal onOpenCreateBoard={() => ctx.setCreateBoardModalOpen(true)} />
+            )}
 
             {/* Widget de Suporte — flutuante em toda a plataforma */}
             <HelpWidget />

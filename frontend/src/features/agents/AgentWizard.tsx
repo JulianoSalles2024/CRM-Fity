@@ -188,8 +188,8 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
-              <Bot className="w-4 h-4 text-blue-400" />
+            <div className="w-8 h-8 bg-sky-500/5 rounded-lg flex items-center justify-center">
+              <Bot className="w-4 h-4 text-sky-400" />
             </div>
             <div>
               <h2 className="text-sm font-semibold text-white">{isEditing ? 'Editar Agente' : 'Criar Agente'}</h2>
@@ -214,7 +214,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                 onClick={() => isClickable && setStep(i)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                   isActive
-                    ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
+                    ? 'bg-sky-500/5 text-sky-400 border border-sky-500/20'
                     : isDone
                     ? 'text-slate-300 hover:bg-slate-800/60 cursor-pointer'
                     : isEditing
@@ -223,7 +223,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                 }`}
               >
                 {isDone && !isActive
-                  ? <Check className="w-3 h-3 text-blue-400" />
+                  ? <Check className="w-3 h-3 text-sky-400" />
                   : <Icon className="w-3 h-3" />
                 }
                 {s.label}
@@ -281,7 +281,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                       <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{fn.desc}</p>
                     </div>
                     {active && !disabled && (
-                      <Check className="w-4 h-4 text-blue-400 ml-auto flex-shrink-0 mt-0.5" />
+                      <Check className="w-4 h-4 text-sky-400 ml-auto flex-shrink-0 mt-0.5" />
                     )}
                   </button>
                 );
@@ -299,7 +299,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                   placeholder={`Ex: ${selectedFn?.label ?? 'Agente'} Pro`}
                   value={form.name}
                   onChange={e => update({ name: e.target.value })}
-                  className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                  className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500/50"
                 />
               </div>
 
@@ -334,7 +334,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                         <span className="text-sm font-medium">{t.label}</span>
                         <span className="text-xs text-slate-500 ml-2">{t.desc}</span>
                       </div>
-                      {form.tone === t.value && <Check className="w-3.5 h-3.5 text-blue-400" />}
+                      {form.tone === t.value && <Check className="w-3.5 h-3.5 text-sky-400" />}
                     </button>
                   ))}
                 </div>
@@ -348,7 +348,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                     placeholder="Ex: SaaS, Imóveis..."
                     value={form.niche ?? ''}
                     onChange={e => update({ niche: e.target.value })}
-                    className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                    className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500/50"
                   />
                 </div>
                 <div>
@@ -356,7 +356,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                   <select
                     value={form.client_type}
                     onChange={e => update({ client_type: e.target.value as 'low' | 'medium' | 'high' })}
-                    className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                    className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500/50"
                   >
                     {CLIENT_TYPES.map(c => (
                       <option key={c.value} value={c.value}>{c.label}</option>
@@ -377,7 +377,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                     type="time"
                     value={form.work_hours_start}
                     onChange={e => update({ work_hours_start: e.target.value })}
-                    className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                    className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500/50"
                   />
                 </div>
                 <div>
@@ -386,7 +386,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                     type="time"
                     value={form.work_hours_end}
                     onChange={e => update({ work_hours_end: e.target.value })}
-                    className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                    className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500/50"
                   />
                 </div>
               </div>
@@ -396,7 +396,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                 <select
                   value={form.timezone}
                   onChange={e => update({ timezone: e.target.value })}
-                  className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                  className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500/50"
                 >
                   <option value="America/Sao_Paulo">America/Sao_Paulo (GMT-3)</option>
                   <option value="America/Manaus">America/Manaus (GMT-4)</option>
@@ -424,7 +424,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                       }`}
                     >
                       <span className="text-sm">{m.label}</span>
-                      {form.goal_metric === m.value && <Check className="w-3.5 h-3.5 text-blue-400" />}
+                      {form.goal_metric === m.value && <Check className="w-3.5 h-3.5 text-sky-400" />}
                     </button>
                   ))}
                 </div>
@@ -439,7 +439,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                   placeholder="Ex: 50"
                   value={form.monthly_goal ?? ''}
                   onChange={e => update({ monthly_goal: e.target.value ? Number(e.target.value) : null })}
-                  className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                  className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500/50"
                 />
               </div>
             </div>
@@ -457,7 +457,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                   min={1} max={20}
                   value={form.escalate_rules.max_followups}
                   onChange={e => updateEscalate({ max_followups: Number(e.target.value) })}
-                  className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                  className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500/50"
                 />
               </div>
 
@@ -473,7 +473,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                   onChange={e => updateEscalate({
                     min_ticket_to_escalate: e.target.value ? Number(e.target.value) : null,
                   })}
-                  className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                  className="w-full bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500/50"
                 />
               </div>
 
@@ -495,7 +495,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
                         setKeywordInput('');
                       }
                     }}
-                    className="flex-1 bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                    className="flex-1 bg-[#0F172A] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500/50"
                   />
                   <button
                     onClick={() => {
@@ -651,7 +651,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-blue-400" />
+                    <FileText className="w-4 h-4 text-sky-400" />
                     Prompt do Agente
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
@@ -688,7 +688,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
               </div>
 
               <div className="flex items-start gap-2 p-3 bg-blue-500/5 border border-blue-500/15 rounded-lg">
-                <Zap className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
+                <Zap className="w-3.5 h-3.5 text-sky-400 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-slate-400">
                   Variáveis substituídas pelo WF-07:{' '}
                   <span className="font-mono text-slate-500">{`{company_name}`}</span> ·{' '}
@@ -725,9 +725,9 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
               <button
                 onClick={() => canNext() && setStep(s => s + 1)}
                 disabled={!canNext()}
-                className={`flex items-center gap-1.5 px-5 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl transition-all duration-200 ${
                   canNext()
-                    ? 'bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 text-white'
+                    ? 'border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all'
                     : 'bg-slate-800 text-slate-600 cursor-not-allowed'
                 }`}
               >
@@ -737,7 +737,7 @@ export const AgentWizard: React.FC<Props> = ({ onClose, onSave, editingAgent }) 
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-1.5 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all text-sm font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? (
                   <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Salvando...</>

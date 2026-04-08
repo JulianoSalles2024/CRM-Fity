@@ -3,7 +3,7 @@ import { getReputationLevel } from './community.types';
 
 const colors = {
   Novato: 'text-slate-400 bg-slate-400/10 border-slate-400/20',
-  Contribuidor: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+  Contribuidor: 'text-sky-400 bg-blue-400/10 border-blue-400/20',
   Especialista: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
   Embaixador: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
 };

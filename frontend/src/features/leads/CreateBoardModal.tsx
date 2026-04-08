@@ -207,7 +207,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col"
+                className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col"
             >
                 {/* Header */}
                 <div className="p-6 border-b border-slate-800 flex items-center justify-between">
@@ -257,7 +257,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                                         onClick={() => setMethod('playbook')}
                                         className="p-6 rounded-xl bg-slate-800/50 border border-slate-700 hover:border-slate-600 hover:bg-slate-800 transition-all flex items-center gap-4 text-left"
                                     >
-                                        <div className="p-3 rounded-full bg-blue-500/10 text-blue-400">
+                                        <div className="p-3 rounded-full bg-sky-500/5 text-sky-400">
                                             <BookOpen className="w-6 h-6" />
                                         </div>
                                         <div>
@@ -316,7 +316,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                                     value={aiDescription}
                                     onChange={e => setAiDescription(e.target.value)}
                                     placeholder={'Exemplo: "Sou tatuador e quero organizar meus leads de orçamento."'}
-                                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm leading-relaxed"
+                                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none text-sm leading-relaxed"
                                 />
 
                                 <div className="flex justify-between items-center pt-2">
@@ -380,7 +380,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                                                     <template.icon className="w-6 h-6" />
                                                 </div>
                                             </div>
-                                            <h4 className="text-lg font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">{template.name}</h4>
+                                            <h4 className="text-lg font-semibold text-white mb-2 group-hover:text-sky-400 transition-colors">{template.name}</h4>
                                             <p className="text-slate-400 text-sm mb-4">{template.description}</p>
                                             <div className="flex flex-wrap gap-2">
                                                 {template.tags.map(tag => (
@@ -417,7 +417,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                                             onClick={() => handlePlaybookSelect(playbook)}
                                             className="p-6 rounded-xl bg-slate-800/50 border border-slate-700 hover:border-slate-600 hover:bg-slate-800 transition-all text-left flex items-start gap-4"
                                         >
-                                            <div className="p-3 rounded-lg bg-blue-900/30 text-blue-400">
+                                            <div className="p-3 rounded-lg bg-blue-900/30 text-sky-400">
                                                 <BookOpen className="w-6 h-6" />
                                             </div>
                                             <div>
@@ -467,7 +467,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                                                     {done
                                                         ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                                                         : active
-                                                        ? <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+                                                        ? <Loader2 className="w-4 h-4 text-sky-400 animate-spin" />
                                                         : <div className="w-4 h-4 rounded-full border border-slate-700" />
                                                     }
                                                 </div>
@@ -518,7 +518,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                                             value={boardName}
                                             onChange={(e) => setBoardName(e.target.value)}
                                             placeholder="Ex: Pipeline de Vendas, Onboarding, etc"
-                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
                                         />
                                     </div>
 
@@ -530,7 +530,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                                                 value={boardSlug}
                                                 onChange={(e) => setBoardSlug(e.target.value)}
                                                 placeholder="ex: vendas-b2b"
-                                                className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
                                             />
                                         </div>
                                         <p className="text-xs text-slate-500 mt-1">Dica: é mais fácil usar isso no n8n/Make do que um UUID.</p>
@@ -543,7 +543,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                                             value={boardDescription}
                                             onChange={(e) => setBoardDescription(e.target.value)}
                                             placeholder="Breve descrição do propósito deste board"
-                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
                                         />
                                     </div>
 
@@ -552,7 +552,7 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                                             <h4 className="text-sm font-medium text-slate-300">Etapas do Kanban</h4>
                                             <button 
                                                 onClick={() => setColumns([...columns, { id: `col-${Date.now()}`, title: 'Nova Etapa', color: '#64748b', type: 'open' }])}
-                                                className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                                                className="text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1"
                                             >
                                                 <Plus className="w-3 h-3" /> Adicionar etapa
                                             </button>
@@ -591,10 +591,10 @@ const CreateBoardModal: React.FC<CreateBoardModalProps> = ({ isOpen, onClose, on
                                     >
                                         Cancelar
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={handleCreate}
                                         disabled={!boardName}
-                                        className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="px-4 py-2 rounded-lg text-sm font-semibold text-sky-400 border border-sky-500/30 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
                                         Criar Board
                                     </button>

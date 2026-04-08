@@ -52,7 +52,7 @@ const SlidingPillTabs: React.FC<{
     return (
         <div className="relative flex items-center bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
             <div
-                className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out pointer-events-none"
+                className="absolute top-1 bottom-1 rounded-lg bg-sky-500/5 border border-sky-500/20 transition-all duration-300 ease-in-out pointer-events-none"
                 style={{ left: pill.left, width: pill.width }}
             />
             {tabs.map(({ v, l, badge }, i) => (
@@ -61,7 +61,7 @@ const SlidingPillTabs: React.FC<{
                     ref={el => { btnRefs.current[i] = el; }}
                     onClick={() => onChange(v)}
                     className={`relative z-10 flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-lg transition-colors duration-200 whitespace-nowrap ${
-                        active === v ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+                        active === v ? 'text-sky-400' : 'text-slate-500 hover:text-slate-300'
                     }`}
                 >
                     {l}
@@ -417,7 +417,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                         exit={{ opacity: 0, y: 12 }}
                         className={`fixed bottom-5 right-5 z-[100] px-5 py-3 rounded-xl text-sm font-medium shadow-lg border ${
                             toast.type === 'success'
-                                ? 'bg-blue-950 border-blue-700 text-blue-300'
+                                ? 'bg-blue-950 border-blue-700 text-sky-300'
                                 : 'bg-red-950 border-red-700 text-red-300'
                         }`}
                     >
@@ -439,7 +439,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                 {currentPermissions.canManageTeam && (
                     <button
                         onClick={() => setInviteModalOpen(true)}
-                        className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200"
+                        className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl font-semibold transition-all duration-200"
                     >
                         <UserPlus className="w-4 h-4" />
                         Convidar
@@ -499,7 +499,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                     <div className="flex items-center gap-2">
                                         <h3 className="font-semibold text-white">{member.name}</h3>
                                         {member.id === currentUser.id && (
-                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-blue-400 uppercase tracking-wider">
+                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-sky-400 uppercase tracking-wider">
                                                 Você
                                             </span>
                                         )}
@@ -570,7 +570,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                             {member.inviteId && (
                                                 <button
                                                     onClick={() => setExtendTarget(member)}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-500/10 hover:border-blue-500/50 transition-all"
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-sky-400 border border-sky-500/30 rounded-lg hover:bg-sky-500/5 hover:border-sky-500/50 transition-all"
                                                     title="Editar período de acesso"
                                                 >
                                                     <CalendarDays className="w-3.5 h-3.5" />
@@ -876,8 +876,8 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                             className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
                         >
                             <div className="p-6">
-                                <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-4">
-                                    <CalendarDays className="w-6 h-6 text-blue-400" />
+                                <div className="w-12 h-12 rounded-xl bg-sky-500/5 border border-sky-500/20 flex items-center justify-center mx-auto mb-4">
+                                    <CalendarDays className="w-6 h-6 text-sky-400" />
                                 </div>
                                 <h3 className="text-lg font-bold text-white text-center">Editar período de acesso</h3>
                                 <p className="text-sm text-slate-400 text-center mt-1 mb-1">
@@ -936,7 +936,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                         >
                             {/* Header */}
                             <div className="p-6 border-b border-slate-800 flex items-center gap-4">
-                                <div className="p-3 rounded-xl bg-blue-500/10 text-blue-500">
+                                <div className="p-3 rounded-xl bg-sky-500/5 text-blue-500">
                                     <UserPlus className="w-6 h-6" />
                                 </div>
                                 <div>
@@ -973,7 +973,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                                         <div key={link.id} className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 flex items-center justify-between group">
                                                             <div className="overflow-hidden">
                                                                 <div className="flex items-center gap-2 mb-1">
-                                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 uppercase">
+                                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-sky-500/10 text-sky-400 uppercase">
                                                                         {link.role}
                                                                     </span>
                                                                     <span className="text-xs text-slate-500">
@@ -1015,7 +1015,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <button
                                                         onClick={() => setInviteRole('Vendedor')}
-                                                        className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${inviteRole === 'Vendedor' ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'}`}
+                                                        className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${inviteRole === 'Vendedor' ? 'bg-sky-500/5 border-blue-500 text-sky-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'}`}
                                                     >
                                                         <BriefcaseIcon className="w-4 h-4" />
                                                         <span className="font-medium">Vendedor</span>
@@ -1023,7 +1023,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                                     </button>
                                                     <button
                                                         onClick={() => setInviteRole('Admin')}
-                                                        className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${inviteRole === 'Admin' ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'}`}
+                                                        className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${inviteRole === 'Admin' ? 'bg-sky-500/5 border-blue-500 text-sky-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'}`}
                                                     >
                                                         <Shield className="w-4 h-4" />
                                                         <span className="font-medium">Admin</span>
@@ -1058,7 +1058,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                             value={inviteEmail}
                                             onChange={e => { setInviteEmail(e.target.value); setEmailSentSuccess(false); }}
                                             placeholder="email@exemplo.com"
-                                            className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all"
+                                            className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-blue-500/40 transition-all"
                                         />
                                         {emailSentSuccess && (
                                             <p className="mt-1.5 text-xs text-green-400 flex items-center gap-1">
@@ -1079,7 +1079,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                             <button
                                                 onClick={handleGenerateInvite}
                                                 disabled={isGenerating}
-                                                className="bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all duration-200"
+                                                className="border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all duration-200"
                                             >
                                                 {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
                                                 {isGenerating ? 'Gerando...' : inviteEmail.trim() ? 'Gerar e Enviar' : 'Gerar Link'}
@@ -1108,7 +1108,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                                             {[
                                                                 { label: 'Total', value: total, color: 'text-slate-300' },
                                                                 { label: 'Ativos', value: ativos, color: 'text-emerald-400' },
-                                                                { label: 'Usados', value: usados, color: 'text-blue-400' },
+                                                                { label: 'Usados', value: usados, color: 'text-sky-400' },
                                                                 { label: 'Expirados', value: expirados, color: 'text-red-400' },
                                                             ].map(({ label, value, color }) => (
                                                                 <div key={label} className="bg-slate-800/50 border border-slate-700 rounded-xl p-3 text-center">
@@ -1129,7 +1129,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({ users, currentUser, onUpdat
                                                             const status = getInviteStatus(invite);
                                                             const statusConfig = {
                                                                 ativo:    { label: 'Ativo',    cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' },
-                                                                usado:    { label: 'Usado',    cls: 'bg-blue-500/15 text-blue-400 border-blue-500/20' },
+                                                                usado:    { label: 'Usado',    cls: 'bg-sky-500/5 text-sky-400 border-sky-500/20' },
                                                                 expirado: { label: 'Expirado', cls: 'bg-red-500/15 text-red-400 border-red-500/20' },
                                                             };
                                                             const sc = statusConfig[status];

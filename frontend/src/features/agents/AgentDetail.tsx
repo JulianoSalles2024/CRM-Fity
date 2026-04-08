@@ -13,7 +13,7 @@ const FUNCTION_META: Record<AgentFunctionType, {
   label: string; color: string; bg: string; icon: React.ElementType;
 }> = {
   hunter:     { label: 'Hunter',     color: 'text-orange-400',  bg: 'bg-orange-500/10',  icon: Target },
-  sdr:        { label: 'SDR',        color: 'text-blue-400',    bg: 'bg-blue-500/10',    icon: MessageSquare },
+  sdr:        { label: 'SDR',        color: 'text-sky-400',    bg: 'bg-sky-500/5',    icon: MessageSquare },
   closer:     { label: 'Closer',     color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: DollarSign },
   followup:   { label: 'Follow-up',  color: 'text-violet-400',  bg: 'bg-violet-500/10',  icon: RefreshCw },
   curator:    { label: 'Curator',    color: 'text-cyan-400',    bg: 'bg-cyan-500/10',    icon: Database },
@@ -22,7 +22,7 @@ const FUNCTION_META: Record<AgentFunctionType, {
 
 const INTEREST_CONFIG = {
   very_high: { label: 'Muito alto', color: 'text-emerald-400', dot: 'bg-emerald-400' },
-  high:      { label: 'Alto',       color: 'text-blue-400',    dot: 'bg-blue-400' },
+  high:      { label: 'Alto',       color: 'text-sky-400',    dot: 'bg-blue-400' },
   medium:    { label: 'Médio',      color: 'text-amber-400',   dot: 'bg-amber-400' },
   low:       { label: 'Baixo',      color: 'text-slate-400',   dot: 'bg-slate-500' },
 };
@@ -30,7 +30,7 @@ const INTEREST_CONFIG = {
 const OUTCOME_CONFIG: Record<string, { label: string; color: string }> = {
   escalated:         { label: 'Escalou',          color: 'text-amber-400' },
   followup_scheduled:{ label: 'Follow-up agend.', color: 'text-violet-400' },
-  message_sent:      { label: 'Msg enviada',       color: 'text-blue-400' },
+  message_sent:      { label: 'Msg enviada',       color: 'text-sky-400' },
   no_response:       { label: 'Sem resposta',      color: 'text-slate-500' },
   qualified:         { label: 'Qualificado',       color: 'text-emerald-400' },
   closed_won:        { label: 'Fechado',           color: 'text-emerald-400' },
@@ -96,7 +96,7 @@ function Paginator({ page, total, onPage }: { page: number; total: number; onPag
           onClick={() => onPage(p)}
           className={`w-6 h-6 rounded text-xs font-medium transition-colors ${
             p === page
-              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+              ? 'bg-sky-500/10 text-sky-400 border border-sky-500/30'
               : 'text-slate-500 hover:text-white hover:bg-white/5'
           }`}
         >
@@ -136,7 +136,7 @@ export const AgentDetail: React.FC<AgentDetailProps> = ({ agent, onClose }) => {
       />
 
       {/* Drawer */}
-      <div className="fixed right-0 bottom-0 z-[151] w-[420px] flex flex-col bg-[#0B1220] border-l border-blue-500/30 shadow-2xl shadow-blue-900/20 animate-slide-in-right overflow-hidden" style={{ top: '80px' }}>
+      <div className="fixed right-0 bottom-0 z-[151] w-[420px] flex flex-col bg-[#0B1220] border-l border-sky-500/30 shadow-2xl shadow-sky-900/20 animate-slide-in-right overflow-hidden" style={{ top: '80px' }}>
 
         {/* Top accent */}
         <div className="h-0.5 w-full flex-shrink-0" style={{ background: agent.avatar_color }} />
@@ -194,7 +194,7 @@ export const AgentDetail: React.FC<AgentDetailProps> = ({ agent, onClose }) => {
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Hoje</span>
           </div>
           <div className="grid grid-cols-4 gap-2">
-            <KpiCard label="Abordagens"  value={perf?.approaches  ?? 0} color="text-blue-400" />
+            <KpiCard label="Abordagens"  value={perf?.approaches  ?? 0} color="text-sky-400" />
             <KpiCard label="Respostas"   value={perf?.responses   ?? 0} color="text-violet-400" />
             <KpiCard label="Qualific."   value={perf?.qualified   ?? 0} color="text-cyan-400" />
             <KpiCard label="Escalações"  value={perf?.escalations ?? 0} color="text-amber-400" />

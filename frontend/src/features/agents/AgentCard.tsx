@@ -15,7 +15,7 @@ const FUNCTION_META: Record<AgentFunctionType, {
   desc: string;
 }> = {
   hunter:     { label: 'Hunter',     color: 'text-orange-400', bg: 'bg-orange-500/10', ring: 'ring-orange-500/30', icon: Target,       desc: 'Prospecção ativa' },
-  sdr:        { label: 'SDR',        color: 'text-blue-400',   bg: 'bg-blue-500/10',   ring: 'ring-blue-500/30',   icon: MessageSquare, desc: 'Qualificação' },
+  sdr:        { label: 'SDR',        color: 'text-sky-400',   bg: 'bg-sky-500/5',   ring: 'ring-blue-500/30',   icon: MessageSquare, desc: 'Qualificação' },
   closer:     { label: 'Closer',     color: 'text-emerald-400',bg: 'bg-emerald-500/10',ring: 'ring-emerald-500/30',icon: DollarSign,   desc: 'Fechamento' },
   followup:   { label: 'Follow-up',  color: 'text-violet-400', bg: 'bg-violet-500/10', ring: 'ring-violet-500/30', icon: RefreshCw,    desc: 'Retenção' },
   curator:    { label: 'Curator',    color: 'text-cyan-400',   bg: 'bg-cyan-500/10',   ring: 'ring-cyan-500/30',   icon: Database,     desc: 'Higienização' },

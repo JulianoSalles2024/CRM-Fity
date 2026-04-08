@@ -189,7 +189,7 @@ const Card: React.FC<CardProps> = ({ lead, columnType, displaySettings, users, t
                             <div className="pt-2 space-y-2">
                                 <div className="flex flex-wrap gap-2">
                                     {lead.activePlaybook && (
-                                        <div className="flex items-center gap-2 text-xs font-semibold text-blue-400 bg-blue-900/40 px-2 py-1 rounded-md">
+                                        <div className="flex items-center gap-2 text-xs font-semibold text-sky-400 bg-blue-900/40 px-2 py-1 rounded-md">
                                             <BookOpen className="w-3.5 h-3.5" />
                                             <span className="truncate max-w-[150px]">{lead.activePlaybook.playbookName}</span>
                                         </div>

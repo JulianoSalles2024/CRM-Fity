@@ -30,7 +30,7 @@ const formatTimestamp = (timestamp: string) => {
 };
 
 const statusConfig: Record<ChatConversationStatus, { label: string; icon: React.ElementType; color: string; bgColor: string; }> = {
-    open: { label: 'Em Aberto', icon: OpenIcon, color: 'text-blue-400', bgColor: 'bg-blue-900/50' },
+    open: { label: 'Em Aberto', icon: OpenIcon, color: 'text-sky-400', bgColor: 'bg-blue-900/50' },
     waiting: { label: 'Aguardando', icon: FileClock, color: 'text-yellow-400', bgColor: 'bg-yellow-900/50' },
     not_started: { label: 'Não Iniciada', icon: Inbox, color: 'text-zinc-400', bgColor: 'bg-zinc-700/50' },
     automation: { label: 'Automação', icon: Bot, color: 'text-purple-400', bgColor: 'bg-purple-900/50' },

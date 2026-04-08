@@ -59,7 +59,7 @@ const TabBar: React.FC<{ activeTab: Tab; onTabChange: (t: Tab) => void }> = ({
       <div className="relative flex items-center bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
         {/* sliding pill */}
         <div
-          className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out pointer-events-none"
+          className="absolute top-1 bottom-1 rounded-lg bg-sky-500/5 border border-sky-500/20 transition-all duration-300 ease-in-out pointer-events-none"
           style={{ left: pill.left, width: pill.width }}
         />
         {TABS.map((tab, i) => {
@@ -71,7 +71,7 @@ const TabBar: React.FC<{ activeTab: Tab; onTabChange: (t: Tab) => void }> = ({
               onClick={() => onTabChange(tab.id)}
               className={`relative z-10 flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-lg transition-colors duration-200 whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'text-blue-400'
+                  ? 'text-sky-400'
                   : 'text-slate-500 hover:text-slate-300'
               }`}
             >
@@ -121,7 +121,7 @@ export const AgentsPage: React.FC = () => {
       <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#0B1220]/80 backdrop-blur-sm flex-shrink-0">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-sky-500/5 border-sky-500/30 text-sky-400 shadow-sm shadow-sky-900/20 cursor-default">
               <Zap className="w-4 h-4 flex-shrink-0" />
               <span>Exército Comercial de IA</span>
             </button>

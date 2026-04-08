@@ -50,8 +50,8 @@ const BAND_CONFIG: Record<Band, {
   warm: {
     label:  'Warm',
     Icon:   Thermometer,
-    badge:  'bg-blue-500/15 text-blue-400 border border-blue-500/25',
-    iconBg: 'bg-blue-500/15',
+    badge:  'bg-sky-500/5 text-sky-400 border border-blue-500/25',
+    iconBg: 'bg-sky-500/5',
     dot:    'bg-blue-400',
     row:    'border-blue-500/10 hover:bg-blue-500/5',
   },
@@ -81,7 +81,7 @@ const BAND_ORDER: Record<Band, number> = {
 // ── Score color helpers ───────────────────────────────────────
 function convColor(v: number): string {
   if (v >= 80) return 'bg-emerald-500/15 text-emerald-300';
-  if (v >= 50) return 'bg-blue-500/15 text-blue-300';
+  if (v >= 50) return 'bg-sky-500/5 text-sky-300';
   return 'bg-slate-700/60 text-slate-400';
 }
 function upsellColor(v: number): string {
@@ -240,8 +240,8 @@ const PredictiveOpportunitiesModal: React.FC<PredictiveOpportunitiesModalProps> 
             <div className="p-6 border-b border-slate-800 flex-shrink-0">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500/10 rounded-lg">
-                    <Zap className="w-5 h-5 text-blue-400" />
+                  <div className="p-2 bg-sky-500/5 rounded-lg">
+                    <Zap className="w-5 h-5 text-sky-400" />
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-white">Oportunidades Inteligentes</h2>

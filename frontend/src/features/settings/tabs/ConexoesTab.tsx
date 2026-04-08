@@ -21,7 +21,7 @@ const CHANNEL_LABEL: Record<string, string> = {
 
 const CHANNEL_COLOR: Record<string, { text: string; bg: string; border: string; glow: string }> = {
   whatsapp:  { text: 'text-emerald-400', bg: 'bg-emerald-500/8',  border: 'border-emerald-500/20', glow: 'shadow-emerald-500/10' },
-  email:     { text: 'text-blue-400',    bg: 'bg-blue-500/8',     border: 'border-blue-500/20',    glow: 'shadow-blue-500/10'    },
+  email:     { text: 'text-sky-400',    bg: 'bg-blue-500/8',     border: 'border-sky-500/20',    glow: 'shadow-blue-500/10'    },
   instagram: { text: 'text-pink-400',    bg: 'bg-pink-500/8',     border: 'border-pink-500/20',    glow: 'shadow-pink-500/10'    },
   telegram:  { text: 'text-sky-400',     bg: 'bg-sky-500/8',      border: 'border-sky-500/20',     glow: 'shadow-sky-500/10'     },
   webchat:   { text: 'text-violet-400',  bg: 'bg-violet-500/8',   border: 'border-violet-500/20',  glow: 'shadow-violet-500/10'  },
@@ -125,7 +125,7 @@ const ConnCard: React.FC<ConnCardProps> = ({
               {CHANNEL_LABEL[conn.channel] ?? conn.channel}
             </span>
             {ownerRole === 'admin' && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-sky-500/5 text-sky-400 border border-sky-500/20">
                 Admin
               </span>
             )}
@@ -531,8 +531,8 @@ const ConexoesTab: React.FC<ConexoesTabProps> = ({ showNotification, onOpenConne
         <Shield className="w-3.5 h-3.5 text-blue-500/60 shrink-0 mt-0.5" />
         <p className="text-[11px] text-slate-600 leading-relaxed">
           <span className="text-blue-500/70 font-medium">Isolamento garantido:</span>{' '}
-          cada conexão está vinculada ao <code className="text-blue-400/60">company_id</code> via RLS.
-          API Keys ficam no campo <code className="text-blue-400/60">config</code>, nunca expostas ao cliente.
+          cada conexão está vinculada ao <code className="text-sky-400/60">company_id</code> via RLS.
+          API Keys ficam no campo <code className="text-sky-400/60">config</code>, nunca expostas ao cliente.
         </p>
       </div>
 

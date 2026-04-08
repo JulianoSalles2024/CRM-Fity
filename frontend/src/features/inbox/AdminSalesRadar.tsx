@@ -56,7 +56,7 @@ const AdminSalesRadar: React.FC<AdminSalesRadarProps> = ({
     return (
         <FlatCard className="overflow-hidden">
             <div className="flex items-center gap-2 p-5 border-b border-slate-800">
-                <Radar className="w-4 h-4 text-blue-400" />
+                <Radar className="w-4 h-4 text-sky-400" />
                 <h3 className="font-semibold text-white">Radar Comercial</h3>
                 <span className="text-xs text-slate-500 ml-1">{rows.length} vendedor{rows.length !== 1 ? 'es' : ''}</span>
             </div>
@@ -94,7 +94,7 @@ const AdminSalesRadar: React.FC<AdminSalesRadarProps> = ({
                                     </span>
                                 </td>
                                 <td className="px-5 py-3.5 text-center">
-                                    <span className={`text-sm font-semibold ${myHot > 0 ? 'text-blue-400' : 'text-slate-500'}`}>
+                                    <span className={`text-sm font-semibold ${myHot > 0 ? 'text-sky-400' : 'text-slate-500'}`}>
                                         {myHot}
                                     </span>
                                 </td>

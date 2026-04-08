@@ -97,7 +97,7 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
                     return (
                         <div className="relative flex items-center gap-0 bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
                             <div
-                                className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out"
+                                className="absolute top-1 bottom-1 rounded-lg bg-sky-500/5 border border-sky-500/20 transition-all duration-300 ease-in-out"
                                 style={{ width: W, left: `calc(${activeIdx} * ${W}px + 4px)` }}
                             />
                             {tabs.map(({ v, l }) => (
@@ -107,7 +107,7 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
                                     style={{ width: W }}
                                     className={`relative z-10 py-1.5 text-sm rounded-lg transition-colors duration-200 text-center ${
                                         statusFilter === v
-                                            ? 'text-blue-400'
+                                            ? 'text-sky-400'
                                             : 'text-slate-500 hover:text-slate-300'
                                     }`}
                                 >
@@ -137,7 +137,7 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
                      <div className="relative z-50" ref={createMenuRef}>
                         <button
                             onClick={() => setCreateMenuOpen(prev => !prev)}
-                            className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200"
+                            className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200"
                         >
                             <Plus className="w-4 h-4" />
                             <span>Criar</span>
@@ -171,7 +171,7 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
                     <div className="relative z-30">
                         <button
                             onClick={() => setCustomizeOpen(prev => !prev)}
-                            className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200"
+                            className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200"
                         >
                             <SlidersHorizontal className="w-4 h-4" />
                             <span>Personalizar Colunas</span>
@@ -188,7 +188,7 @@ const LeadListHeader: React.FC<LeadListHeaderProps> = ({
                     </div>
                     <button
                         onClick={onExportCSV}
-                        className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200"
+                        className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200"
                     >
                         <Download className="w-4 h-4" />
                         <span>Exportar CSV</span>

@@ -65,11 +65,11 @@ const inputCls =
   'bg-slate-900/60 ' +
   'border border-white/10 ' +
   'placeholder-slate-500 ' +
-  'focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 ' +
+  'focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-sky-500/20 ' +
   'transition-all duration-200';
 
 const primaryBtnCls =
-  'w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200';
+  'w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all';
 
 /* ══════════════════════════════════════════════════════════════════════════════
    COMPONENT
@@ -352,7 +352,7 @@ export const SignIn: React.FC<SignInProps> = ({
 
         {/* Testimonial */}
         <div className="ns-ain" style={{ animationDelay: '0.54s', marginTop: '2.75rem' }}>
-          <div className="border-l-2 border-blue-500/30 pl-4" style={{ maxWidth: 360 }}>
+          <div className="border-l-2 border-sky-500/30 pl-4" style={{ maxWidth: 360 }}>
             <p className="text-slate-400" style={{ fontSize: '0.875rem', lineHeight: 1.65, fontWeight: 300, marginBottom: '0.45rem' }}>
               "Aumentamos a conversão em{' '}
               <strong className="text-white font-semibold">3.4×</strong>{' '}
@@ -369,7 +369,7 @@ export const SignIn: React.FC<SignInProps> = ({
       <div className="relative z-10 flex items-start sm:items-center justify-center w-full sm:w-[45%] px-5 pb-10 sm:pb-0 sm:px-[clamp(2rem,4vw,5rem)]">
         <div className="w-full ns-card-shift" style={{ maxWidth: 448 }}>
           {/* Card — mesmo estilo do AuthPage */}
-          <div className="rounded-2xl border border-white/10 px-8 py-10 transition-all duration-200 hover:-translate-y-1 hover:border-blue-500/30 hover:ring-1 hover:ring-blue-500/20 ns-aup"
+          <div className="rounded-2xl border border-white/10 px-8 py-10 transition-all duration-200 hover:-translate-y-1 hover:border-sky-500/30 hover:ring-1 hover:ring-blue-500/20 ns-aup"
             style={{ animationDelay: '0.26s' }}>
 
             {/* Header — centralizado igual ao AuthPage */}
@@ -421,7 +421,7 @@ export const SignIn: React.FC<SignInProps> = ({
                     <label htmlFor="password" className="block text-sm font-medium text-slate-300">Senha</label>
                     {mode === 'login' && (
                       <button type="button" onClick={() => changeMode('forgot')}
-                        className="text-xs text-slate-400 hover:text-blue-400 transition-colors">
+                        className="text-xs text-slate-400 hover:text-sky-400 transition-colors">
                         Esqueci minha senha
                       </button>
                     )}
@@ -458,13 +458,13 @@ export const SignIn: React.FC<SignInProps> = ({
                 <>
                   Não tem conta?{' '}
                   <button type="button" onClick={() => changeMode('register')}
-                    className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                    className="text-sky-400 hover:text-sky-300 font-medium transition-colors">
                     Criar conta
                   </button>
                 </>
               ) : (
                 <button type="button" onClick={() => changeMode('login')}
-                  className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                  className="text-sky-400 hover:text-sky-300 font-medium transition-colors">
                   Voltar para o login
                 </button>
               )}

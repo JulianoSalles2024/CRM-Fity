@@ -10,7 +10,7 @@ interface NotificationProps {
 }
 
 const colors: Record<NotificationType, string> = {
-  success: 'bg-blue-950 border-blue-700 text-blue-300',
+  success: 'bg-blue-950 border-blue-700 text-sky-300',
   error:   'bg-red-950 border-red-700 text-red-300',
   warning: 'bg-amber-950 border-amber-700 text-amber-300',
   info:    'bg-slate-900 border-slate-700 text-slate-300',

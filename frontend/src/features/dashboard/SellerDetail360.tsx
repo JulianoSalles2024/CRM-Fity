@@ -593,7 +593,7 @@ sales.forEach(s => {
             <div className="relative flex items-center bg-slate-900/60 border border-blue-500/10 rounded-xl p-1 w-fit">
                 {/* sliding pill */}
                 <div
-                    className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out pointer-events-none"
+                    className="absolute top-1 bottom-1 rounded-lg bg-sky-500/5 border border-sky-500/20 transition-all duration-300 ease-in-out pointer-events-none"
                     style={{ left: tabPill.left, width: tabPill.width }}
                 />
                 {(['individual', 'team'] as const).map((tab, i) => (
@@ -603,7 +603,7 @@ sales.forEach(s => {
                         onClick={() => setActiveTab(tab)}
                         className={`relative z-10 px-4 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 whitespace-nowrap ${
                             activeTab === tab
-                                ? 'text-blue-400'
+                                ? 'text-sky-400'
                                 : 'text-slate-500 hover:text-slate-300'
                         }`}
                     >
@@ -620,14 +620,14 @@ sales.forEach(s => {
                         {seller.avatarUrl ? (
                             <img src={seller.avatarUrl} alt="" className="w-14 h-14 rounded-full border-2 border-slate-700 object-cover" />
                         ) : (
-                            <div className="w-14 h-14 rounded-full bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center text-blue-400 text-xl font-bold">
+                            <div className="w-14 h-14 rounded-full bg-sky-500/5 border-2 border-sky-500/30 flex items-center justify-center text-sky-400 text-xl font-bold">
                                 {seller.name.charAt(0).toUpperCase()}
                             </div>
                         )}
                         <div>
                             <h2 className="text-2xl font-bold text-white">{seller.name}</h2>
                             <p className="text-sm text-slate-500 mt-0.5">{seller.email}</p>
-                            <span className="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-wider">
+                            <span className="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded bg-sky-500/5 border border-sky-500/20 text-sky-400 text-[10px] font-bold uppercase tracking-wider">
                                 <Star className="w-3 h-3" /> Vendedor
                             </span>
                         </div>
@@ -638,7 +638,7 @@ sales.forEach(s => {
                         <div className="flex items-center gap-1">
                             <div className="relative flex items-center bg-slate-900/60 border border-blue-500/10 rounded-xl p-1">
                                 <div
-                                    className="absolute top-1 bottom-1 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all duration-300 ease-in-out pointer-events-none"
+                                    className="absolute top-1 bottom-1 rounded-lg bg-sky-500/5 border border-sky-500/20 transition-all duration-300 ease-in-out pointer-events-none"
                                     style={{ left: periodPill.left, width: periodPill.width }}
                                 />
                                 {PERIODS.map((p, i) => (
@@ -648,7 +648,7 @@ sales.forEach(s => {
                                         onClick={() => setPeriod(p)}
                                         className={`relative z-10 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 whitespace-nowrap ${
                                             period === p
-                                                ? 'text-blue-400'
+                                                ? 'text-sky-400'
                                                 : 'text-slate-500 hover:text-slate-300'
                                         }`}
                                     >
@@ -743,7 +743,7 @@ sales.forEach(s => {
                     {period === 'mes' && (
                         <div className="space-y-0.5">
                             <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Meta/dia</p>
-                            <p className="text-lg font-bold text-blue-400">{fmt.format(activeFinancialKpis.metaDiaria)}</p>
+                            <p className="text-lg font-bold text-sky-400">{fmt.format(activeFinancialKpis.metaDiaria)}</p>
                         </div>
                     )}
                     <div className="space-y-0.5">
@@ -751,7 +751,7 @@ sales.forEach(s => {
                         <div className="flex items-center gap-2">
                             <p className={`text-lg font-bold ${
                                 kpis.score >= 80 ? 'text-emerald-400' :
-                                kpis.score >= 60 ? 'text-blue-400' :
+                                kpis.score >= 60 ? 'text-sky-400' :
                                 kpis.score >= 40 ? 'text-amber-400' : 'text-red-400'
                             }`}>{kpis.score}</p>
                             <Zap className="w-3.5 h-3.5 text-amber-400" />
@@ -772,8 +772,8 @@ sales.forEach(s => {
                     {/* KPI 1 – Faturamento */}
                     <div className="bg-[rgba(10,16,28,0.72)] backdrop-blur-[14px] border border-white/5 rounded-xl p-5 space-y-3">
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                                <DollarSign className="w-4 h-4 text-blue-400" />
+                            <div className="w-8 h-8 rounded-lg bg-sky-500/5 border border-sky-500/20 flex items-center justify-center">
+                                <DollarSign className="w-4 h-4 text-sky-400" />
                             </div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Faturamento</p>
                         </div>

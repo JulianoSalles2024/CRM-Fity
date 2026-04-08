@@ -155,7 +155,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ leads, onReactivateLead, on
                                                 e.stopPropagation();
                                                 onReactivateLead(lead.id);
                                             }}
-                                            className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200"
+                                            className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200"
                                         >
                                             <RefreshCw className="w-4 h-4" />
                                             <span>Reativar</span>
@@ -240,7 +240,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ leads, onReactivateLead, on
                                     <div className="flex items-center gap-2 self-start sm:self-center">
                                         <button
                                             onClick={(e) => { e.stopPropagation(); }}
-                                            className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200"
+                                            className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200"
                                         >
                                             <Phone className="w-4 h-4" />
                                             <span>Follow-up</span>

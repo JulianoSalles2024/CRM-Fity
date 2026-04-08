@@ -50,7 +50,7 @@ interface InboxViewProps {
 const getContainerClass = (color: string) => {
     if (color.includes('red'))     return 'bg-red-500/5 border-red-500/20 shadow-[0_0_30px_rgba(239,68,68,0.06)] hover:border-red-500/40';
     if (color.includes('amber'))   return 'bg-amber-500/5 border-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.06)] hover:border-amber-500/40';
-    if (color.includes('blue'))    return 'bg-blue-500/5 border-blue-500/20 shadow-[0_0_30px_rgba(59,130,246,0.06)] hover:border-blue-500/40';
+    if (color.includes('blue'))    return 'bg-blue-500/5 border-sky-500/20 shadow-[0_0_30px_rgba(59,130,246,0.06)] hover:border-blue-500/40';
     if (color.includes('emerald')) return 'bg-emerald-500/5 border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.06)] hover:border-emerald-500/40';
     return 'bg-slate-900/50 border-slate-800 hover:border-slate-700';
 };
@@ -153,13 +153,13 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, users = [], onNavig
         ? [
             { label: 'ATRASADAS (EMPRESA)', value: overdueTasks.length, subtext: overdueTasks.length === 0 ? 'Nenhuma atrasada' : `${overdueTasks.length} tarefas`, color: overdueTasks.length > 0 ? 'text-red-400' : 'text-emerald-500', onClick: () => onNavigate('Tarefas') },
             { label: 'VENDEDORES COM ATRASO', value: sellersWithOverdue, subtext: sellersWithOverdue === 0 ? 'Equipe em dia' : `${sellersWithOverdue} vendedor${sellersWithOverdue > 1 ? 'es' : ''} com pendências`, color: sellersWithOverdue > 0 ? 'text-amber-400' : 'text-emerald-500', onClick: undefined },
-            { label: 'OPORTUNIDADES QUENTES', value: hotOpportunities, subtext: hotOpportunities === 0 ? 'Nenhuma no momento' : `${hotOpportunities} lead${hotOpportunities > 1 ? 's' : ''} priorizados`, color: hotOpportunities > 0 ? 'text-blue-400' : 'text-slate-500', onClick: () => setShowOpportunities(true) },
+            { label: 'OPORTUNIDADES QUENTES', value: hotOpportunities, subtext: hotOpportunities === 0 ? 'Nenhuma no momento' : `${hotOpportunities} lead${hotOpportunities > 1 ? 's' : ''} priorizados`, color: hotOpportunities > 0 ? 'text-sky-400' : 'text-slate-500', onClick: () => setShowOpportunities(true) },
             { label: 'LEADS EM RISCO', value: churnRiskLeads.length, subtext: churnRiskLeads.length === 0 ? 'Nenhum lead em risco' : `${churnRiskLeads.length} sem atividade recente`, color: churnRiskLeads.length > 0 ? 'text-amber-400' : 'text-slate-500', onClick: undefined },
         ]
         : [
             { label: 'ATRASADOS', value: overdueTasks.length, subtext: overdueTasks.length === 0 ? 'Tudo em dia' : `${overdueTasks.length} pendentes`, color: overdueTasks.length > 0 ? 'text-red-400' : 'text-emerald-500', onClick: () => onNavigate('Tarefas') },
             { label: 'HOJE', value: todayTasks.length, subtext: todayTasks.length === 0 ? 'Sem tarefas para hoje' : `${todayTasks.length} tarefas`, color: 'text-emerald-500', onClick: () => onNavigate('Tarefas') },
-            { label: 'OPORTUNIDADES QUENTES', value: hotOpportunities, subtext: hotOpportunities === 0 ? 'Nenhuma no momento' : `${hotOpportunities} lead${hotOpportunities > 1 ? 's' : ''} priorizados`, color: hotOpportunities > 0 ? 'text-blue-400' : 'text-slate-500', onClick: () => setShowOpportunities(true) },
+            { label: 'OPORTUNIDADES QUENTES', value: hotOpportunities, subtext: hotOpportunities === 0 ? 'Nenhuma no momento' : `${hotOpportunities} lead${hotOpportunities > 1 ? 's' : ''} priorizados`, color: hotOpportunities > 0 ? 'text-sky-400' : 'text-slate-500', onClick: () => setShowOpportunities(true) },
             { label: 'EM RISCO', value: churnRiskLeads.length, subtext: churnRiskLeads.length === 0 ? 'Nenhum lead em risco' : `${churnRiskLeads.length} leads sem atividade`, color: churnRiskLeads.length > 0 ? 'text-amber-400' : 'text-slate-500', onClick: undefined },
         ];
 
@@ -203,7 +203,7 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, users = [], onNavig
                             <button
                                 onClick={handleAnalyzeNow}
                                 disabled={isAnalyzing}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold transition-all duration-200"
+                                className="flex items-center gap-2 px-4 py-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all rounded-xl text-sm font-semibold transition-all duration-200"
                             >
                                 {isAnalyzing
                                     ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -262,9 +262,9 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, users = [], onNavig
                             </button>
                             <button
                                 onClick={() => setViewMode('focus')}
-                                className="flex items-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-400 text-white rounded-lg text-sm font-bold transition-all shadow-lg shadow-sky-500/20"
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 text-sm font-semibold transition-all"
                             >
-                                <Circle className="w-4 h-4 fill-white" />
+                                <Circle className="w-4 h-4" />
                                 Começar foco
                             </button>
                         </div>
@@ -359,7 +359,7 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, users = [], onNavig
                         >
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
-                                    <Zap className="w-5 h-5 text-blue-400" />
+                                    <Zap className="w-5 h-5 text-sky-400" />
                                     <h3 className="font-bold text-white">Oportunidades Inteligentes</h3>
                                 </div>
                                 <button
@@ -387,8 +387,8 @@ const InboxView: React.FC<InboxViewProps> = ({ tasks, leads, users = [], onNavig
                                     )}
                                     {bandCounts.warm > 0 && (
                                         <span className="flex items-center gap-1.5">
-                                            <Star className="w-4 h-4 text-blue-400" />
-                                            <span className="text-lg font-bold text-blue-400">{bandCounts.warm}</span>
+                                            <Star className="w-4 h-4 text-sky-400" />
+                                            <span className="text-lg font-bold text-sky-400">{bandCounts.warm}</span>
                                             <span className="text-xs text-slate-500">Warm</span>
                                         </span>
                                     )}

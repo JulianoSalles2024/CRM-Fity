@@ -27,7 +27,7 @@ const SEVERITY_CONFIG: Record<SupervisorInsight['severity'], {
   },
   info: {
     border: 'border-l-blue-500',
-    badge:  'bg-blue-500/15 text-blue-400 border border-blue-500/20',
+    badge:  'bg-sky-500/5 text-sky-400 border border-sky-500/20',
     dot:    'bg-blue-400',
     label:  'Info',
   },
@@ -150,7 +150,7 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, onMarkRead, onMarkAp
         {insight.recommendation && !insight.is_applied && (
           <button
             onClick={() => onMarkApplied(insight.id)}
-            className="text-[11px] text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 ml-auto"
+            className="text-[11px] text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-1 ml-auto"
           >
             <Sparkles className="w-3 h-3" />
             Aplicar recomendação
@@ -195,7 +195,7 @@ export const SupervisorIntelligence: React.FC = () => {
         <Brain className="w-8 h-8 text-red-400" />
         <p className="text-sm text-red-400">Erro ao carregar insights</p>
         <p className="text-xs text-slate-600 font-mono max-w-sm text-center break-all">{fetchError}</p>
-        <button onClick={refetch} className="mt-2 text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
+        <button onClick={refetch} className="mt-2 text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1">
           <RefreshCw className="w-3 h-3" /> Tentar novamente
         </button>
       </div>
@@ -258,7 +258,7 @@ export const SupervisorIntelligence: React.FC = () => {
               onClick={() => setSourceFilter(f.id)}
               className={`px-3 py-1 text-xs rounded-lg border transition-all flex items-center gap-1.5 ${
                 sourceFilter === f.id
-                  ? 'bg-blue-500/15 text-blue-400 border-blue-500/20'
+                  ? 'bg-sky-500/5 text-sky-400 border-sky-500/20'
                   : 'text-slate-500 border-white/5 hover:text-slate-300 hover:border-white/10'
               }`}
             >

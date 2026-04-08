@@ -38,7 +38,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
           <button
             onClick={() => onVote(comment.id, comment.user_voted ?? false)}
             className={`flex items-center gap-1 text-xs transition-colors ${
-              comment.user_voted ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
+              comment.user_voted ? 'text-sky-400' : 'text-slate-500 hover:text-slate-300'
             }`}
           >
             <ThumbsUp className="w-3.5 h-3.5" />
@@ -78,7 +78,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
           <button
             onClick={handleReply}
             disabled={!replyText.trim()}
-            className="px-3 py-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 text-white rounded-lg disabled:opacity-50 transition-all duration-200"
+            className="px-3 py-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all rounded-xl disabled:opacity-50 transition-all duration-200"
           >
             <Send className="w-3.5 h-3.5" />
           </button>
@@ -139,7 +139,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({
         <button
           onClick={handleSubmit}
           disabled={!newComment.trim()}
-          className="px-3 py-2 bg-gradient-to-r from-sky-500 to-blue-500 hover:shadow-[0_0_14px_rgba(29,161,242,0.4)] hover:-translate-y-0.5 text-white rounded-lg disabled:opacity-50 transition-all duration-200"
+          className="px-3 py-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all rounded-xl disabled:opacity-50 transition-all duration-200"
         >
           <Send className="w-4 h-4" />
         </button>

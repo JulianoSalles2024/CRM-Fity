@@ -18,7 +18,7 @@ const POLICY_VERSION  = 'v1.0';
 /* ─── Privacy Policy Text ───────────────────────────────────────────────── */
 
 const EMAIL = (
-  <a href="mailto:nextsalesia@gmail.com" className="text-blue-400 hover:text-blue-300 underline transition-colors">
+  <a href="mailto:nextsalesia@gmail.com" className="text-sky-400 hover:text-sky-300 underline transition-colors">
     nextsalesia@gmail.com
   </a>
 );
@@ -87,7 +87,7 @@ function PolicyModal({ onClose, onAccept }: { onClose: () => void; onAccept: () 
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-5 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-3">
-            <Shield size={18} className="text-blue-400" />
+            <Shield size={18} className="text-sky-400" />
             <span className="text-white font-semibold text-base">Política de Privacidade</span>
             <span className="text-xs text-slate-500 ml-1">{POLICY_VERSION}</span>
           </div>
@@ -182,7 +182,7 @@ export function ConsentBanner() {
         }}
       >
         <div className="max-w-screen-xl mx-auto px-6 py-3.5 flex items-center gap-4 flex-wrap">
-          <Shield size={16} className="text-blue-400 shrink-0" />
+          <Shield size={16} className="text-sky-400 shrink-0" />
           <p className="text-slate-400 text-sm flex-1 min-w-0">
             Usamos seus dados conforme nossa{' '}
             <strong className="text-slate-300 font-medium">Política de Privacidade</strong>.
@@ -191,7 +191,7 @@ export function ConsentBanner() {
           <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => setModalOpen(true)}
-              className="text-sm text-blue-400 hover:text-blue-300 transition-colors whitespace-nowrap"
+              className="text-sm text-sky-400 hover:text-sky-300 transition-colors whitespace-nowrap"
             >
               Ver política
             </button>

@@ -66,7 +66,7 @@ const DashboardPage: React.FC<DashboardPageProps> = (props) => {
                 onClick={() => setActiveTab(tab.key)}
                 className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border ${
                   isActive
-                    ? 'bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20'
+                    ? 'bg-sky-500/5 border-sky-500/30 text-sky-400 shadow-sm shadow-sky-900/20'
                     : 'border-transparent text-slate-500 hover:text-white hover:bg-white/5'
                 }`}
               >

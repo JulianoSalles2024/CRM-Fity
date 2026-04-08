@@ -29,7 +29,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, metrics, onSelect, onEdit,
     const cfg = statusConfig[group.status] ?? statusConfig['Arquivado'];
 
     return (
-        <FlatCard className="flex flex-col transition-all duration-200 ease-in-out hover:border-blue-500/50 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-900/20 p-0 overflow-hidden">
+        <FlatCard className="flex flex-col transition-all duration-200 ease-in-out hover:border-sky-500/50 hover:-translate-y-1 hover:shadow-xl hover:shadow-sky-900/20 p-0 overflow-hidden">
 
             {/* Accent bar */}
             <div className={`h-0.5 w-full ${cfg.bar} opacity-60`} />
@@ -113,13 +113,13 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, metrics, onSelect, onEdit,
                     <div className="mb-4">
                         <div className="flex justify-between items-center text-xs mb-1.5">
                             <span className="flex items-center gap-1 text-slate-400 font-medium">
-                                <Target className="w-3 h-3 text-blue-400" /> Meta
+                                <Target className="w-3 h-3 text-sky-400" /> Meta
                             </span>
                             <span className="text-slate-400 tabular-nums">{metrics.currentMembers} / {group.memberGoal}</span>
                         </div>
                         <div className="w-full bg-slate-800 rounded-full h-1.5">
                             <div
-                                className="bg-gradient-to-r from-sky-500 to-blue-500 h-1.5 rounded-full transition-all duration-500"
+                                className="border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all h-1.5 rounded-full transition-all duration-500"
                                 style={{ width: `${progress}%` }}
                             />
                         </div>
@@ -127,7 +127,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, metrics, onSelect, onEdit,
                 )}
                 <button
                     onClick={() => onSelect(group.id)}
-                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white font-semibold py-2 rounded-xl hover:shadow-[0_0_18px_rgba(29,161,242,0.35)] hover:-translate-y-0.5 transition-all duration-200 text-sm"
+                    className="w-full flex items-center justify-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all font-semibold py-2 rounded-xl hover:shadow-[0_0_18px_rgba(29,161,242,0.35)] hover:-translate-y-0.5 transition-all duration-200 text-sm"
                 >
                     Ver Membros
                     <ArrowRight className="w-4 h-4" />
@@ -183,14 +183,14 @@ const GroupsDashboard: React.FC<GroupsDashboardProps> = ({ groups, leads, onSele
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-1 mb-2">
-                        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+                        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-sky-500/5 border-sky-500/30 text-sky-400 shadow-sm shadow-sky-900/20 cursor-default">
                             <Users className="w-4 h-4 flex-shrink-0" />
                             <span>Grupos</span>
                         </button>
                     </div>
                     <p className="text-slate-400 text-sm">Visão geral da saúde e performance de suas comunidades</p>
                 </div>
-                <button onClick={onAddGroup} className="flex items-center justify-center md:justify-start gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
+                <button onClick={onAddGroup} className="flex items-center justify-center md:justify-start gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                     <PlusCircle className="w-4 h-4" />
                     <span>Novo Grupo</span>
                 </button>

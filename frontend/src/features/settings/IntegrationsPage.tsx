@@ -20,7 +20,7 @@ import WhatsAppConnectModal from '@/src/features/onboarding/WhatsAppConnectModal
 const CodeBlock: React.FC<{ code: string; language?: string; onCopy?: () => void }> = ({ code, language = 'bash', onCopy }) => (
     <div className="bg-zinc-900 border border-zinc-700 rounded-lg relative group my-4">
         <pre className="p-4 overflow-x-auto text-sm scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
-            <code className={`language-${language} text-blue-300`}>
+            <code className={`language-${language} text-sky-300`}>
                 {code.trim()}
             </code>
         </pre>
@@ -78,7 +78,7 @@ const SubTabs: React.FC<{ tabs: {name: string, icon?: React.ElementType}[], acti
     return (
         <div className="relative bg-slate-900/60 border border-blue-500/10 rounded-xl p-1 flex w-fit self-start">
             <div
-                className="absolute top-1 bottom-1 bg-blue-500/10 border border-blue-500/20 rounded-lg transition-all duration-300 pointer-events-none"
+                className="absolute top-1 bottom-1 bg-sky-500/5 border border-sky-500/20 rounded-lg transition-all duration-300 pointer-events-none"
                 style={{ left: pillStyle.left, width: pillStyle.width }}
             />
             {tabs.map((tab, idx) => (
@@ -86,7 +86,7 @@ const SubTabs: React.FC<{ tabs: {name: string, icon?: React.ElementType}[], acti
                     key={tab.name}
                     ref={el => { btnRefs.current[idx] = el; }}
                     onClick={() => onTabClick(tab.name)}
-                    className={`relative z-10 flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${activeTab === tab.name ? 'text-blue-400' : 'text-slate-500 hover:text-white'}`}
+                    className={`relative z-10 flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${activeTab === tab.name ? 'text-sky-400' : 'text-slate-500 hover:text-white'}`}
                 >
                     {tab.icon && <tab.icon className="w-4 h-4" />}
                     {tab.name}
@@ -218,7 +218,7 @@ const ApiKeysTab: React.FC<{ showNotification: (msg: string, type: 'success' | '
                 <button
                     onClick={() => setCreateModalOpen(true)}
                     disabled={creating}
-                    className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60"
+                    className="flex items-center gap-2 border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all px-4 py-2 rounded-xl text-sm font-semibold hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60"
                 >
                     <Plus className="w-4 h-4" /> Nova Chave
                 </button>
@@ -629,7 +629,7 @@ const ApiRestTab: React.FC<ApiRestTabProps> = ({ showNotification }) => {
     };
     
     const getMethodClass = (method: string) => ({
-        'GET': 'bg-blue-900/50 text-blue-400', 'POST': 'bg-blue-900/50 text-blue-400', 'PUT': 'bg-orange-900/50 text-orange-400', 
+        'GET': 'bg-blue-900/50 text-sky-400', 'POST': 'bg-blue-900/50 text-sky-400', 'PUT': 'bg-orange-900/50 text-orange-400', 
         'PATCH': 'bg-yellow-900/50 text-yellow-400', 'DELETE': 'bg-red-900/50 text-red-400'
     }[method] || 'bg-slate-700 text-slate-400');
 
@@ -683,9 +683,9 @@ const ApiRestTab: React.FC<ApiRestTabProps> = ({ showNotification }) => {
                     <Section icon={Gauge} title="Rate Limiting Headers">
                         <p className="text-slate-400 text-sm mb-4">Todas as respostas incluem headers informativos sobre o rate limiting:</p>
                         <div className="font-mono text-sm text-slate-300 space-y-2">
-                            <div className="flex justify-between items-center"><span className="text-blue-300">X-RateLimit-Limit</span><span className="text-slate-500">Limite total de requisições</span></div>
-                            <div className="flex justify-between items-center"><span className="text-blue-300">X-RateLimit-Remaining</span><span className="text-slate-500">Requisições restantes</span></div>
-                            <div className="flex justify-between items-center"><span className="text-blue-300">X-RateLimit-Reset</span><span className="text-slate-500">Timestamp do reset</span></div>
+                            <div className="flex justify-between items-center"><span className="text-sky-300">X-RateLimit-Limit</span><span className="text-slate-500">Limite total de requisições</span></div>
+                            <div className="flex justify-between items-center"><span className="text-sky-300">X-RateLimit-Remaining</span><span className="text-slate-500">Requisições restantes</span></div>
+                            <div className="flex justify-between items-center"><span className="text-sky-300">X-RateLimit-Reset</span><span className="text-slate-500">Timestamp do reset</span></div>
                         </div>
                     </Section>
                 </div>
@@ -745,15 +745,15 @@ const McpTab: React.FC = () => {
         <div className="space-y-8">
             {/* Header */}
             <div className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-blue-500/8 to-blue-500/5 border border-blue-500/15">
-                <div className="p-3 rounded-xl bg-blue-500/15 border border-blue-500/20">
-                    <Layers className="w-6 h-6 text-blue-400" />
+                <div className="p-3 rounded-xl bg-sky-500/5 border border-sky-500/20">
+                    <Layers className="w-6 h-6 text-sky-400" />
                 </div>
                 <div>
                     <h3 className="text-base font-bold text-white mb-1">Model Context Protocol (MCP)</h3>
                     <p className="text-sm text-slate-400 leading-relaxed max-w-2xl">
                         O MCP padroniza como agentes de IA interagem com o NextSales. Em vez de chamadas ad-hoc,
                         cada ferramenta é um contrato tipado â€” o agente sabe exatamente o que pode fazer, com quais
-                        parâmetros e quais garantias de isolamento por <code className="text-blue-400">company_id</code>.
+                        parâmetros e quais garantias de isolamento por <code className="text-sky-400">company_id</code>.
                     </p>
                 </div>
             </div>
@@ -793,7 +793,7 @@ const McpTab: React.FC = () => {
                     {tools.map(({ name, desc, ready }) => (
                         <div key={name} className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/40 border border-slate-800">
                             <div className={`w-2 h-2 rounded-full shrink-0 ${ready ? 'bg-emerald-400' : 'bg-slate-600'}`} />
-                            <code className="text-xs text-blue-400 font-mono w-48 shrink-0">{name}</code>
+                            <code className="text-xs text-sky-400 font-mono w-48 shrink-0">{name}</code>
                             <span className="text-xs text-slate-400 flex-1">{desc}</span>
                             <span className={`text-[10px] font-bold ${ready ? 'text-emerald-400' : 'text-slate-600'}`}>
                                 {ready ? 'pronto' : 'em breve'}
@@ -813,11 +813,11 @@ const McpTab: React.FC = () => {
                         {[
                             { label: 'Evolution API', color: 'text-emerald-400 bg-emerald-500/10' },
                             { label: 'â†’', color: 'text-slate-600' },
-                            { label: 'n8n WF-01', color: 'text-blue-400 bg-blue-500/10' },
+                            { label: 'n8n WF-01', color: 'text-sky-400 bg-sky-500/5' },
                             { label: 'â†’', color: 'text-slate-600' },
-                            { label: 'resolve_or_create_lead()', color: 'text-blue-400 bg-blue-500/10' },
+                            { label: 'resolve_or_create_lead()', color: 'text-sky-400 bg-sky-500/5' },
                             { label: 'â†’', color: 'text-slate-600' },
-                            { label: 'resolve_or_create_conversation()', color: 'text-blue-400 bg-blue-500/10' },
+                            { label: 'resolve_or_create_conversation()', color: 'text-sky-400 bg-sky-500/5' },
                             { label: 'â†’', color: 'text-slate-600' },
                             { label: 'WF-05 AI Agent', color: 'text-amber-400 bg-amber-500/10' },
                         ].map(({ label, color }, i) => (

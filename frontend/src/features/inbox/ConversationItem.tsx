@@ -13,7 +13,7 @@ function formatTime(dateStr: string | null): string {
 
 const AGENT_TYPE_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
   hunter:     { label: 'Hunter',     color: 'text-orange-400',  bg: 'bg-orange-500/10',  border: 'border-orange-500/20' },
-  sdr:        { label: 'SDR',        color: 'text-blue-400',    bg: 'bg-blue-500/10',    border: 'border-blue-500/20' },
+  sdr:        { label: 'SDR',        color: 'text-sky-400',    bg: 'bg-sky-500/5',    border: 'border-sky-500/20' },
   closer:     { label: 'Closer',     color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
   followup:   { label: 'Follow-up',  color: 'text-violet-400',  bg: 'bg-violet-500/10',  border: 'border-violet-500/20' },
   curator:    { label: 'Curator',    color: 'text-cyan-400',    bg: 'bg-cyan-500/10',    border: 'border-cyan-500/20' },
@@ -22,7 +22,7 @@ const AGENT_TYPE_CONFIG: Record<string, { label: string; color: string; bg: stri
 
 const STATUS_CONFIG = {
   waiting:     { label: 'Em espera',      dot: 'bg-yellow-400', pill: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
-  in_progress: { label: 'Em atendimento', dot: 'bg-blue-400',   pill: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+  in_progress: { label: 'Em atendimento', dot: 'bg-blue-400',   pill: 'bg-sky-500/5 text-sky-400 border-sky-500/20' },
   resolved:    { label: 'Encerrado',      dot: 'bg-emerald-400', pill: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
   blocked:     { label: 'Bloqueado',      dot: 'bg-red-400',    pill: 'bg-red-500/10 text-red-400 border-red-500/20' },
 };

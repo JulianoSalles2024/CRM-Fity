@@ -118,7 +118,7 @@ const HelpCenter: React.FC<HelpCenterProps> = ({ categories, isAdmin = false }) 
                   <div
                     key={article.id}
                     className={`flex items-center gap-2 px-4 py-3 bg-[#0B1220] border rounded-xl transition-all group ${
-                      selected.has(article.id) ? 'border-blue-500/40 bg-blue-950/10' : 'border-slate-800 hover:border-blue-500/30 hover:bg-blue-950/20'
+                      selected.has(article.id) ? 'border-blue-500/40 bg-blue-950/10' : 'border-slate-800 hover:border-sky-500/30 hover:bg-blue-950/20'
                     }`}
                   >
                     {isAdmin && (
@@ -135,7 +135,7 @@ const HelpCenter: React.FC<HelpCenterProps> = ({ categories, isAdmin = false }) 
                       className="flex items-center justify-between flex-1 text-left min-w-0"
                     >
                       <span className="text-sm text-slate-300 group-hover:text-white truncate">{article.title}</span>
-                      <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-blue-400 flex-shrink-0 ml-2" />
+                      <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-sky-400 flex-shrink-0 ml-2" />
                     </button>
 
                     {isAdmin && (

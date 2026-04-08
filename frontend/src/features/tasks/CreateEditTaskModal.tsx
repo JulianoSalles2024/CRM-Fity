@@ -144,7 +144,7 @@ const CreateEditTaskModal: React.FC<CreateEditTaskModalProps> = ({ task, leads, 
                  <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-slate-300 bg-slate-800 rounded-md hover:bg-slate-700 transition-colors">
                     Cancelar
                 </button>
-                <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 rounded-md hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
+                <button type="submit" className="px-4 py-2 text-sm font-semibold text-white border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all rounded-xl hover:shadow-[0_0_18px_rgba(29,161,242,0.45)] hover:-translate-y-0.5 transition-all duration-200">
                     {isEditMode ? 'Salvar' : 'Criar'}
                 </button>
             </div>

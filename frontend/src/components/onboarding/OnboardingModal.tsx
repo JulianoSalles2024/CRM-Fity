@@ -65,8 +65,8 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ onOpenCreateBoard }) 
                     >
                         {/* Header */}
                         <div className="p-8 pb-6 text-center">
-                            <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-5">
-                                <Rocket className="w-7 h-7 text-blue-400" />
+                            <div className="w-14 h-14 rounded-2xl bg-sky-500/5 border border-sky-500/20 flex items-center justify-center mx-auto mb-5">
+                                <Rocket className="w-7 h-7 text-sky-400" />
                             </div>
                             <h2 className="text-2xl font-bold text-white">Bem-vindo ao seu CRM</h2>
                             <p className="text-slate-400 mt-2 text-sm leading-relaxed">
@@ -79,7 +79,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ onOpenCreateBoard }) 
                             <div className="space-y-3">
                                 {steps.map((step, i) => (
                                     <div key={i} className="flex items-center gap-3 bg-slate-800/50 rounded-xl px-4 py-3 border border-slate-700/50">
-                                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-xs font-bold shrink-0">
+                                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-sky-500/5 border border-sky-500/30 text-sky-400 text-xs font-bold shrink-0">
                                             {i + 1}
                                         </div>
                                         <span className="text-sm text-slate-300">{step}</span>

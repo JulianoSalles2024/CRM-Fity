@@ -30,7 +30,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
     {/* Header */}
     <div className="px-4 py-4 border-b border-slate-800 flex items-center justify-between">
       <h2 className="text-base font-semibold text-white flex items-center gap-2">
-        <MessageCircle className="w-5 h-5 text-blue-400" />
+        <MessageCircle className="w-5 h-5 text-sky-400" />
         Conversas
       </h2>
       {conversations.length > 0 && (

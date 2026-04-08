@@ -198,7 +198,7 @@ export const ProfileView: React.FC = () => {
 
       {/* ── Tab header ─────────────────────────────────────── */}
       <div className="flex items-center gap-1">
-        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-blue-950/40 border-blue-500/30 text-blue-400 shadow-sm shadow-blue-900/20 cursor-default">
+        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-sky-500/5 border-sky-500/30 text-sky-400 shadow-sm shadow-sky-900/20 cursor-default">
           <User className="w-4 h-4 flex-shrink-0" />
           <span>Meu Perfil</span>
         </button>
@@ -265,7 +265,7 @@ export const ProfileView: React.FC = () => {
                 <button
                   onClick={handleSave}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg transition-all active:scale-[0.97] ${
-                    saved ? 'bg-emerald-500 shadow-emerald-500/20 text-white' : 'bg-sky-600 hover:bg-sky-500 shadow-sky-500/20 text-white'
+                    saved ? 'bg-emerald-500 shadow-emerald-500/20 text-white' : 'border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50'
                   }`}
                 >
                   {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
@@ -437,7 +437,7 @@ export const ProfileView: React.FC = () => {
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg transition-all active:scale-[0.97] ${
                   passwordSaved
                     ? 'bg-emerald-500 shadow-emerald-500/20 text-white'
-                    : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-blue-500/20'
+                    : 'border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50'
                 }`}
               >
                 {passwordSaved ? <Check className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}

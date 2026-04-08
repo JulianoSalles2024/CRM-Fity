@@ -32,7 +32,7 @@ const NewTicketModal: React.FC<NewTicketModalProps> = ({ categories, onSubmit, o
       <div className="bg-[#0B1220] border border-slate-800 rounded-2xl shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between p-5 border-b border-slate-800">
           <div className="flex items-center gap-2">
-            <Ticket className="w-5 h-5 text-blue-400" />
+            <Ticket className="w-5 h-5 text-sky-400" />
             <h2 className="text-white font-semibold">Abrir Chamado</h2>
           </div>
           <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
@@ -77,7 +77,7 @@ const NewTicketModal: React.FC<NewTicketModalProps> = ({ categories, onSubmit, o
                   onClick={() => setPriority(p)}
                   className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                     priority === p
-                      ? 'bg-blue-950/40 border-blue-500/30 text-blue-400'
+                      ? 'bg-sky-500/5 border-sky-500/30 text-sky-400'
                       : 'border-slate-700 text-slate-500 hover:text-white hover:bg-white/5'
                   }`}
                 >

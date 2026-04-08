@@ -68,7 +68,7 @@ function StepPaymentMethod({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r ${plan.gradient} text-white text-sm font-semibold mb-3`}>
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-500/15 border border-sky-500/40 text-sky-300 text-sm font-semibold mb-3">
           {plan.name}
         </div>
         <p className="text-3xl font-black text-white">
@@ -83,9 +83,9 @@ function StepPaymentMethod({
           <button
             key={id}
             onClick={() => onSelect(id)}
-            className="group w-full flex items-center gap-4 p-4 rounded-xl border border-white/8 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/15 transition-all"
+            className="group w-full flex items-center gap-4 p-4 rounded-xl border border-white/5 bg-[#0B1220] hover:border-white/10 transition-all"
           >
-            <div className="p-2 rounded-lg bg-white/5">
+            <div className="p-2 rounded-lg bg-[#0B1220] border border-white/5">
               <Icon className="w-4 h-4 text-slate-300" />
             </div>
             <div className="flex-1 text-left">
@@ -126,7 +126,7 @@ function StepCustomerData({
     onSubmit(form);
   };
 
-  const inputCls = 'w-full px-3 py-2.5 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-white/25 transition-colors';
+  const inputCls = 'w-full px-3 py-2.5 rounded-lg bg-[#0B1220] border border-white/5 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-sky-500/40 transition-colors';
   const labelCls = 'text-xs text-slate-400 font-medium mb-1 block';
 
   return (
@@ -156,12 +156,13 @@ function StepCustomerData({
 
       <div className="flex gap-3 pt-2">
         <button type="button" onClick={onBack}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 text-slate-400 text-sm hover:border-white/20 transition-colors">
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/5 text-slate-400 text-sm hover:border-white/10 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Voltar
         </button>
         <button type="submit" disabled={loading}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all
-            bg-gradient-to-r ${loading ? 'opacity-60 cursor-not-allowed' : 'hover:scale-[1.01]'} from-violet-600 to-blue-500 text-white`}>
+            border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50
+            disabled:opacity-50 disabled:cursor-not-allowed`}>
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Gerar cobrança <ArrowRight className="w-4 h-4" /></>}
         </button>
       </div>
@@ -210,7 +211,7 @@ function StepResult({
     return (
       <div className="space-y-5">
         <div className="text-center">
-          <QrCode className="w-8 h-8 text-violet-400 mx-auto mb-2" />
+          <QrCode className="w-8 h-8 text-sky-400 mx-auto mb-2" />
           <p className="font-semibold text-white">Escaneie o QR Code</p>
           <p className="text-xs text-slate-500 mt-0.5">O acesso é liberado automaticamente após o pagamento</p>
         </div>
@@ -229,11 +230,11 @@ function StepResult({
           <div className="space-y-2">
             <p className="text-xs text-slate-500">Ou use o Pix Copia e Cola:</p>
             <div className="flex gap-2">
-              <div className="flex-1 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/8 text-xs text-slate-400 font-mono truncate">
+              <div className="flex-1 px-3 py-2 rounded-lg bg-[#0B1220] border border-white/5 text-xs text-slate-400 font-mono truncate">
                 {result.pix_qr_code.slice(0, 40)}...
               </div>
               <button onClick={copyPix}
-                className="px-3 py-2 rounded-lg border border-white/10 text-slate-400 hover:text-white hover:border-white/20 transition-all">
+                className="px-3 py-2 rounded-lg border border-white/5 text-slate-400 hover:text-white hover:border-white/10 transition-all">
                 {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
               </button>
             </div>
@@ -364,10 +365,10 @@ export default function CheckoutModal({ plan, interval, onClose }: Props) {
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 16 }}
         transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full max-w-md bg-[#0a1628] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+        className="relative w-full max-w-md bg-[#0B1220] border border-white/5 rounded-xl shadow-2xl overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
           <div>
             <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
               Assinar plano
