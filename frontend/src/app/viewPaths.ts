@@ -22,6 +22,7 @@ export const VIEW_PATHS: Record<string, string> = {
     'Portfólio': '/portfolio',
     'Suporte': '/suporte',
     'Comunidade': '/comunidade',
+    'Plano': '/plano',
 };
 
 export const PATH_VIEWS: Record<string, string> = Object.fromEntries(

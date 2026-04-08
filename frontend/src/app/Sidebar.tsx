@@ -21,6 +21,7 @@ import {
   Bot,
   LifeBuoy,
   Package,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import { useAiEscalationCount } from '@/src/features/inbox/hooks/useAiEscalationCount';
@@ -64,14 +65,14 @@ const NavItem: React.FC<{
     title={isCollapsed ? item.label : undefined}
     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group border ${
       isActive
-        ? 'bg-blue-950/30 border-blue-900/50 text-blue-400 shadow-sm shadow-blue-900/20'
+        ? 'bg-sky-500/5 border-sky-500/30 text-sky-400 shadow-sm shadow-sky-900/20'
         : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-900'
     } ${isCollapsed ? 'justify-center' : ''}`}
   >
     <div className="relative flex-shrink-0">
       <item.icon
         className={`w-5 h-5 transition-colors ${
-          isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'
+          isActive ? 'text-sky-400' : 'text-slate-500 group-hover:text-slate-300'
         }`}
       />
       {badge != null && badge > 0 && isCollapsed && (
@@ -112,8 +113,12 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     { icon: LifeBuoy, label: 'Suporte' },
     { icon: Users2, label: 'Comunidade' },
+    { icon: CreditCard, label: 'Plano' },
     { icon: Settings, label: 'Configurações' },
-  ];
+  ].filter(item => {
+    if (item.label === 'Plano' && currentUserRole !== 'admin') return false;
+    return true;
+  });
 
   const mainNavItems = [
     { icon: LayoutDashboard, label: 'Dashboard' },
@@ -160,7 +165,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         {!isCollapsedMode && (
           <>
             <span className="text-lg font-bold text-white whitespace-nowrap tracking-tight">
-              <span className="text-blue-400">Next</span>Sales
+              <span className="text-sky-400">Next</span>Sales
             </span>
             <button
               onClick={onToggleFn}

@@ -208,7 +208,7 @@ export default function RootLayout() {
                 />
 
                 {/* Banner Trial Thrill — aparece durante o período de teste */}
-                <TrialBanner onUpgrade={() => { /* TrialGuard bloqueia se expirado */ }} />
+                <TrialBanner onUpgrade={() => ctx.setActiveView('Plano')} />
 
                 {/* Banner WhatsApp — aparece para quem ainda não conectou */}
                 <AnimatePresence>

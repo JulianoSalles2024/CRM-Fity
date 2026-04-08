@@ -23,6 +23,7 @@ import { AgentsPage } from '@/src/features/agents/AgentsPage';
 import { PortfolioPage } from '@/src/features/portfolio/PortfolioPage';
 import SupportPage from '@/src/features/support/SupportPage';
 import CommunityPage from '@/src/features/community/CommunityPage';
+import BillingPage from '@/src/features/billing/BillingPage';
 
 interface AppRouterProps {
   activeView: string;
@@ -382,6 +383,12 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
             return null;
         }
         return <Painel360 users={users} />;
+    case 'Plano':
+        if (currentUserRole !== 'admin') {
+            setActiveView('Dashboard');
+            return null;
+        }
+        return <BillingPage />;
     default:
         return <div>View not found</div>;
   }
