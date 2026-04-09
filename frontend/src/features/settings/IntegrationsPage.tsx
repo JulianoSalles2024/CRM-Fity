@@ -911,7 +911,6 @@ const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ showNotification })
                             showNotification('WhatsApp conectado com sucesso!', 'success');
                         }}
                     />
-                    {/* onGoToAgents não disponível aqui — usuário navega manualmente */}
                 )}
             </AnimatePresence>
         </div>
