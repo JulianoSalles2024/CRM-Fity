@@ -222,8 +222,10 @@ export default function BillingPage() {
               </p>
             </div>
             <div>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Próxima renovação</p>
-              <p className="text-sm font-semibold text-emerald-400">
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">
+                {billing.cancel_at_period_end ? 'Acesso até' : 'Próxima renovação'}
+              </p>
+              <p className={`text-sm font-semibold ${billing.cancel_at_period_end ? 'text-amber-400' : 'text-emerald-400'}`}>
                 {new Date(billing.current_period_end).toLocaleDateString('pt-BR', {
                   day: '2-digit', month: 'long', year: 'numeric',
                 })}
