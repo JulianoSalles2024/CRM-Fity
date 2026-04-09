@@ -280,26 +280,105 @@ function StepResult({
 
 // ─── Modal principal ──────────────────────────────────────────────────────────
 
-type Step = 'method' | 'data' | 'result';
+type Step = 'method' | 'data' | 'card' | 'result';
+
+interface CardData {
+  holderName: string; number: string; expiryMonth: string; expiryYear: string; ccv: string;
+}
+
+function formatCardNumber(v: string) {
+  return v.replace(/\D/g, '').replace(/(\d{4})(?=\d)/g, '$1 ').slice(0, 19);
+}
+
+function StepCardData({ onSubmit, onBack, loading }: {
+  onSubmit: (data: CardData) => void;
+  onBack:   () => void;
+  loading:  boolean;
+}) {
+  const [form, setForm] = useState<CardData>({ holderName: '', number: '', expiryMonth: '', expiryYear: '', ccv: '' });
+  const set = (k: keyof CardData) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }));
+
+  const inputCls = 'w-full px-3 py-2.5 rounded-lg bg-[#0B1220] border border-white/5 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-sky-500/40 transition-colors';
+  const labelCls = 'text-xs text-slate-400 font-medium mb-1 block';
+
+  return (
+    <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-4">
+      <div>
+        <label className={labelCls}>Nome no cartão</label>
+        <input required className={inputCls} placeholder="JOÃO DA SILVA" value={form.holderName}
+          onChange={set('holderName')} />
+      </div>
+      <div>
+        <label className={labelCls}>Número do cartão</label>
+        <input required className={inputCls} placeholder="0000 0000 0000 0000" value={form.number}
+          onChange={e => setForm(f => ({ ...f, number: formatCardNumber(e.target.value) }))} maxLength={19} />
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <div>
+          <label className={labelCls}>Mês</label>
+          <input required className={inputCls} placeholder="12" maxLength={2} value={form.expiryMonth}
+            onChange={e => setForm(f => ({ ...f, expiryMonth: e.target.value.replace(/\D/g, '').slice(0, 2) }))} />
+        </div>
+        <div>
+          <label className={labelCls}>Ano</label>
+          <input required className={inputCls} placeholder="2030" maxLength={4} value={form.expiryYear}
+            onChange={e => setForm(f => ({ ...f, expiryYear: e.target.value.replace(/\D/g, '').slice(0, 4) }))} />
+        </div>
+        <div>
+          <label className={labelCls}>CVV</label>
+          <input required className={inputCls} placeholder="123" maxLength={4} value={form.ccv}
+            onChange={e => setForm(f => ({ ...f, ccv: e.target.value.replace(/\D/g, '').slice(0, 4) }))} />
+        </div>
+      </div>
+      <div className="flex gap-3 pt-2">
+        <button type="button" onClick={onBack}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/5 text-slate-400 text-sm hover:border-white/10 transition-colors">
+          <ArrowLeft className="w-4 h-4" /> Voltar
+        </button>
+        <button type="submit" disabled={loading}
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm border border-sky-500/30 text-sky-400 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Pagar agora <ArrowRight className="w-4 h-4" /></>}
+        </button>
+      </div>
+    </form>
+  );
+}
 
 export default function CheckoutModal({ plan, interval, onClose }: Props) {
   const { companyId } = useAuth() as any;
   const { refetch }   = useBilling();
 
-  const [step,        setStep]        = useState<Step>('method');
-  const [paymentType, setPaymentType] = useState<PaymentType>('pix');
-  const [loading,     setLoading]     = useState(false);
-  const [error,       setError]       = useState<string | null>(null);
-  const [result,      setResult]      = useState<CheckoutResult | null>(null);
+  const [step,         setStep]         = useState<Step>('method');
+  const [paymentType,  setPaymentType]  = useState<PaymentType>('pix');
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState<string | null>(null);
+  const [result,       setResult]       = useState<CheckoutResult | null>(null);
+  const [customerData, setCustomerData] = useState<{ name: string; email: string; cpfCnpj: string; phone: string } | null>(null);
 
   const handleMethod = (type: PaymentType) => {
     setPaymentType(type);
     setStep('data');
   };
 
-  const handleCustomerData = async (customerData: {
-    name: string; email: string; cpfCnpj: string; phone: string;
-  }) => {
+  const handleCustomerData = (data: { name: string; email: string; cpfCnpj: string; phone: string }) => {
+    setCustomerData(data);
+    if (paymentType === 'credit_card') {
+      setStep('card');
+    } else {
+      submitCheckout(data, null);
+    }
+  };
+
+  const handleCardData = (card: CardData) => {
+    if (!customerData) return;
+    submitCheckout(customerData, card);
+  };
+
+  const submitCheckout = async (
+    custData: { name: string; email: string; cpfCnpj: string; phone: string },
+    card: CardData | null,
+  ) => {
     setLoading(true);
     setError(null);
 
@@ -308,36 +387,48 @@ export default function CheckoutModal({ plan, interval, onClose }: Props) {
       if (!session) throw new Error('Sessão expirada');
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+      const body: Record<string, unknown> = {
+        company_id:       companyId,
+        plan_slug:        plan.id,
+        billing_interval: interval,
+        payment_type:     paymentType,
+        customer_data: {
+          name:    custData.name,
+          email:   custData.email,
+          cpfCnpj: onlyDigits(custData.cpfCnpj),
+          phone:   onlyDigits(custData.phone),
+        },
+      };
+
+      if (card) {
+        body.credit_card = {
+          holderName:  card.holderName,
+          number:      onlyDigits(card.number),
+          expiryMonth: card.expiryMonth,
+          expiryYear:  card.expiryYear,
+          ccv:         card.ccv,
+        };
+        body.credit_card_holder = {
+          name:       custData.name,
+          email:      custData.email,
+          cpfCnpj:    onlyDigits(custData.cpfCnpj),
+          phone:      onlyDigits(custData.phone),
+          postalCode: '',
+        };
+      }
+
       const res = await fetch(`${supabaseUrl}/functions/v1/billing-checkout`, {
         method:  'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          company_id:       companyId,
-          plan_slug:        plan.id,
-          billing_interval: interval,
-          payment_type:     paymentType,
-          customer_data: {
-            name:      customerData.name,
-            email:     customerData.email,
-            cpfCnpj:   onlyDigits(customerData.cpfCnpj),
-            phone:     onlyDigits(customerData.phone),
-          },
-        }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body:    JSON.stringify(body),
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error ?? 'Erro ao processar pagamento');
 
       setResult(data);
       setStep('result');
-
-      if (data.confirmed) {
-        setTimeout(() => refetch(), 1000);
-      }
+      if (data.confirmed) setTimeout(() => refetch(), 1000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
@@ -348,7 +439,8 @@ export default function CheckoutModal({ plan, interval, onClose }: Props) {
   const stepTitles: Record<Step, string> = {
     method: 'Escolha o pagamento',
     data:   'Seus dados',
-    result: paymentType === 'pix' ? 'PIX gerado' : paymentType === 'boleto' ? 'Boleto gerado' : 'Pagamento processado',
+    card:   'Dados do cartão',
+    result: paymentType === 'pix' ? 'PIX gerado' : paymentType === 'boleto' ? 'Boleto gerado' : 'Pagamento confirmado!',
   };
 
   return (
@@ -411,6 +503,9 @@ export default function CheckoutModal({ plan, interval, onClose }: Props) {
               )}
               {step === 'data' && (
                 <StepCustomerData onSubmit={handleCustomerData} onBack={() => setStep('method')} loading={loading} />
+              )}
+              {step === 'card' && (
+                <StepCardData onSubmit={handleCardData} onBack={() => setStep('data')} loading={loading} />
               )}
               {step === 'result' && result && (
                 <StepResult result={result} paymentType={paymentType} onClose={onClose} />
