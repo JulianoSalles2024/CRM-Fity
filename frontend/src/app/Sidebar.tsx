@@ -147,7 +147,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (!isChatEnabled && item.label === 'Chat') return false;
     if (!currentPermissions.canViewDashboard && item.label === 'Dashboard') return false;
     if (!currentPermissions.canViewReports && item.label === 'Relatórios') return false;
-    if (!hasFeature('has_reports_advanced') && item.label === 'Relatórios') return false;
+    if (!hasFeature('has_reports_advanced') && currentUserRole !== 'admin' && item.label === 'Relatórios') return false;
     if (currentUserRole !== 'admin' && item.label === 'Painel 360') return false;
     if (currentUserRole === 'admin' && item.label === 'Pipeline') return false;
     if (currentUserRole === 'admin' && item.label === 'Playbooks') return false;
