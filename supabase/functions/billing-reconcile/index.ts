@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
   try {
     const { data: toRenew } = await db
       .from('subscriptions')
-      .select('id, company_id, gateway_customer_id, billing_interval, payment_type, plan_slug')
+      .select('id, company_id, gateway_customer_id, billing_interval, payment_type, plan_slug, credit_card_token')
       .eq('status', 'active')
       .eq('cancel_at_period_end', false)
       .lt('current_period_end', now.toISOString())
@@ -83,14 +83,22 @@ Deno.serve(async (req: Request) => {
         const dueDate    = addDays(now, 3)
         const dueDateStr = formatDate(dueDate)
 
-        const asaasPayment = await asaasFetch('POST', '/payments', {
+        // Cartão com token: cobrança automática sem ação do cliente
+        const paymentBody: Record<string, unknown> = {
           customer:          sub.gateway_customer_id,
           billingType:       toBillingType(sub.payment_type ?? 'pix'),
           value:             amountCents / 100,
           dueDate:           dueDateStr,
           description:       `Renovação ${sub.plan_slug} - ${sub.billing_interval === 'yearly' ? 'Anual' : 'Mensal'} (NextSales)`,
           externalReference: sub.company_id,
-        })
+        }
+
+        if (sub.payment_type === 'credit_card' && sub.credit_card_token) {
+          paymentBody.creditCardToken = sub.credit_card_token
+          console.log(`[billing-reconcile] Cobrança automática no cartão para company ${sub.company_id}`)
+        }
+
+        const asaasPayment = await asaasFetch('POST', '/payments', paymentBody)
 
         if (asaasPayment.id) {
           await db.from('invoices').insert({

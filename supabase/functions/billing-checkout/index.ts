@@ -166,6 +166,17 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Erro ao gerar cobrança no gateway' }, 502)
   }
 
+  // ── Salvar token do cartão para renovação automática ─────
+  if (payment_type === 'credit_card' && asaasPayment.creditCard?.creditCardToken) {
+    await db.from('subscriptions').update({
+      credit_card_token:       asaasPayment.creditCard.creditCardToken,
+      credit_card_holder_name: asaasPayment.creditCard.creditCardHolderName ?? null,
+      credit_card_last_four:   asaasPayment.creditCard.creditCardNumber?.slice(-4) ?? null,
+      credit_card_brand:       asaasPayment.creditCard.creditCardBrand ?? null,
+    }).eq('company_id', company_id)
+    console.log('[billing-checkout] Token de cartão salvo para company:', company_id)
+  }
+
   // ── Buscar QR Code PIX ────────────────────────────────────
   let pixPayload: string | null = null
   let pixImage: string | null   = null
