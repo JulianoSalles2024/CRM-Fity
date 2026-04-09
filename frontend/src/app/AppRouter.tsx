@@ -285,8 +285,6 @@ export const AppRouter: React.FC<AppRouterProps> = (props) => {
       />;
       return <CommunityPage gruposContent={gruposNode} />;
     }
-    case 'Grupos':
-      return null;
     case 'Chat':
         return <ChatView
             conversations={conversations} messages={messages} leads={filteredLeads} currentUser={localUser}
