@@ -7,14 +7,7 @@ import {
 import { useBilling } from '@/src/contexts/BillingContext';
 import CheckoutModal, { type CheckoutPlan, type BillingInterval } from './CheckoutModal';
 import CancelSubscriptionModal from './CancelSubscriptionModal';
-
-// ─── Planos ───────────────────────────────────────────────────────────────────
-
-const PLANS: CheckoutPlan[] = [
-  { id: 'starter', name: 'Starter', price: 297,  gradient: 'from-sky-500 to-blue-500' },
-  { id: 'growth',  name: 'Growth',  price: 697,  gradient: 'from-sky-500 to-blue-500' },
-  { id: 'scale',   name: 'Scale',   price: 1497, gradient: 'from-sky-500 to-blue-500' },
-];
+import { usePlanConfigs } from '@/src/hooks/usePlanConfigs';
 
 const PLAN_FEATURES: Record<string, string[]> = {
   starter: ['1 pipeline de vendas', '500 leads ativos', 'Agente IA básico (SDR)', '1 usuário', 'WhatsApp integrado', 'Relatórios essenciais'],
@@ -151,9 +144,18 @@ function PlanCard({
 
 export default function BillingPage() {
   const { billing, isTrial, isTrialExpired, isActive, daysRemaining } = useBilling();
+  const { plans: dbPlans } = usePlanConfigs();
   const [interval, setInterval]           = useState<BillingInterval>('monthly');
   const [checkoutPlan, setCheckoutPlan]   = useState<CheckoutPlan | null>(null);
   const [showCancel, setShowCancel]       = useState(false);
+
+  // Monta lista de planos com preços vindos do banco
+  const PLANS: CheckoutPlan[] = dbPlans.map(p => ({
+    id:       p.slug,
+    name:     p.display_name,
+    price:    p.price_monthly_cents / 100,
+    gradient: 'from-sky-500 to-blue-500',
+  }));
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">

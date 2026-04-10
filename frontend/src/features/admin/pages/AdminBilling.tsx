@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CreditCard, TrendingUp, AlertCircle, RefreshCw, Clock } from 'lucide-react'
 import { supabase } from '@/src/lib/supabase'
+import { usePlanConfigs } from '@/src/hooks/usePlanConfigs'
 
 function fmt(cents: number) {
   return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -40,6 +41,7 @@ export default function AdminBilling() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState<string | null>(null)
+  const { plans: planConfigs }    = usePlanConfigs()
 
   async function load() {
     setLoading(true)
@@ -71,11 +73,11 @@ export default function AdminBilling() {
 
   useEffect(() => { load() }, [])
 
-  // MRR simplificado a partir de companies ativas
-  const PLAN_PRICES: Record<string, number> = { starter: 29700, growth: 69700, scale: 149700 }
+  // MRR simplificado — lê preços do plan_configs (dinâmico)
+  const planPriceMap = Object.fromEntries(planConfigs.map(p => [p.slug, p.price_monthly_cents]))
   const mrr = companies
     .filter(c => c.plan_status === 'active')
-    .reduce((sum, c) => sum + (PLAN_PRICES[c.plan_slug] ?? 0), 0)
+    .reduce((sum, c) => sum + (planPriceMap[c.plan_slug] ?? 0), 0)
 
   // Renovações nos próximos 30 dias
   const upcoming = companies.filter(c => {

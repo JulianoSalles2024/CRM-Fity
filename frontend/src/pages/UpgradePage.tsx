@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Zap, Rocket, Crown, ArrowRight, Sparkles, Shield, Users, BarChart3 } from 'lucide-react';
+import { usePlanConfigs } from '@/src/hooks/usePlanConfigs';
 
 // ─── Planos ───────────────────────────────────────────────────────────────────
 
@@ -110,7 +111,7 @@ function AnimatedCheck({ color }: { color: string }) {
 
 // ─── Card de Plano ────────────────────────────────────────────────────────────
 
-function PlanCard({ plan, index }: { plan: typeof PLANS[number]; index: number }) {
+function PlanCard({ plan, index, priceOverride }: { plan: typeof PLANS[number]; index: number; priceOverride?: number }) {
   const [hovered, setHovered] = useState(false);
   const Icon = plan.icon;
 
@@ -177,7 +178,7 @@ function PlanCard({ plan, index }: { plan: typeof PLANS[number]; index: number }
               animate={{ opacity: 1, scale: 1 }}
               className="text-4xl font-black text-white leading-none tracking-tight"
             >
-              {plan.price.toLocaleString('pt-BR')}
+              {(priceOverride ?? plan.price).toLocaleString('pt-BR')}
             </motion.span>
             <span className="text-sm text-slate-400 mb-1">/{plan.period}</span>
           </div>
@@ -201,7 +202,7 @@ function PlanCard({ plan, index }: { plan: typeof PLANS[number]; index: number }
 
         {/* CTA */}
         <a
-          href={`${WA_LINK}?text=${encodeURIComponent(`Olá! Quero assinar o plano ${plan.name} do NextSales (R$${plan.price}/mês).`)}`}
+          href={`${WA_LINK}?text=${encodeURIComponent(`Olá! Quero assinar o plano ${plan.name} do NextSales (R$${priceOverride ?? plan.price}/mês).`)}`}
           target="_blank"
           rel="noopener noreferrer"
           className={`group relative flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200
@@ -220,6 +221,8 @@ function PlanCard({ plan, index }: { plan: typeof PLANS[number]; index: number }
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function UpgradePage() {
+  const { monthlyPrice } = usePlanConfigs();
+
   return (
     <div className="min-h-screen bg-[#050c18] flex flex-col items-center px-4 py-12 relative overflow-hidden">
 
@@ -287,7 +290,7 @@ export default function UpgradePage() {
         {/* Planos */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
           {PLANS.map((plan, i) => (
-            <PlanCard key={plan.id} plan={plan} index={i} />
+            <PlanCard key={plan.id} plan={plan} index={i} priceOverride={monthlyPrice(plan.id) || undefined} />
           ))}
         </div>
 
