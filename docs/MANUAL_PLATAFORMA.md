@@ -9,7 +9,7 @@
 2. [Perfis de Acesso](#2-perfis-de-acesso)
 3. [Pipeline e Kanban](#3-pipeline-e-kanban)
 4. [Leads](#4-leads)
-5. [Inbox Omnichannel](#5-inbox-omnichannel)
+5. [Chat (Inbox)](#5-chat-inbox)
 6. [Agentes de IA](#6-agentes-de-ia)
 7. [Automações n8n — O que cada Workflow faz](#7-automações-n8n--o-que-cada-workflow-faz)
 8. [Cadência Inteligente por Estágio](#8-cadência-inteligente-por-estágio)
@@ -177,7 +177,7 @@ Menu lateral → **Leads** → aba "Recuperação". Mostra leads inativos com op
 
 ---
 
-## 5. Inbox Omnichannel
+## 5. Chat (Inbox)
 
 ### O que é
 Central de atendimento de conversas recebidas pelo WhatsApp (e outros canais). Cada mensagem recebida cria ou reabre uma **conversa** vinculada a um lead.
@@ -401,8 +401,6 @@ Próxima mensagem do lead → Closer responde automaticamente
 |-----|-----------|
 | Central de Comando | Monitoramento em tempo real dos agentes ativos |
 | Meus Agentes | Lista todos os agentes, ativa/desativa/arquiva |
-| Portfólio | Playbooks disponíveis por agente |
-| Analytics | Performance: abordagens, respostas, qualificados, escaladas |
 
 ---
 
@@ -1056,7 +1054,7 @@ Admin vê todos os chamados. Seller vê apenas os próprios.
 
 ## 19. Plano & Assinatura
 
-Acessível pelo menu lateral **Plano** (visível apenas para Admin).
+Acessível pelo menu lateral **Planos** (visível apenas para Admin).
 
 ### Estados do plano
 
@@ -1069,15 +1067,17 @@ Acessível pelo menu lateral **Plano** (visível apenas para Admin).
 
 ### Planos disponíveis
 
-| Plano | Preço | Destaques |
-|---|---|---|
-| **Starter** | R$ 297/mês | 1 pipeline, 500 leads, 1 usuário, Agente IA básico |
-| **Growth** | R$ 697/mês | 3 pipelines, 2.000 leads, 5 usuários, follow-up automático |
-| **Scale** | R$ 1.497/mês | Tudo ilimitado, suporte prioritário, onboarding dedicado |
+| Plano | Destaques |
+|---|---|
+| **Starter** | 1 pipeline, 500 leads, 2 vendedores, 1 admin, Agente SDR |
+| **Growth** | 3 pipelines, 2.000 leads, 10 vendedores, 3 admins, todos os agentes |
+| **Scale** | Tudo ilimitado, suporte prioritário, onboarding dedicado |
+
+> Os preços são configurados pelo administrador no back-office (`/admin/planos`) e refletem em tempo real na plataforma.
 
 ### Como fazer upgrade
 
-1. Acesse **Configurações → Plano** no menu lateral
+1. Acesse **Planos** no menu lateral
 2. Escolha o plano desejado
 3. Clique em **Assinar [Plano]** — abrirá o WhatsApp com nossa equipe
 4. Nossa equipe enviará o link de pagamento (PIX, Boleto ou Cartão)
@@ -1099,7 +1099,8 @@ Cada plano contratado define o que a empresa pode usar dentro do CRM. Os limites
 |---------|-------|---------|--------|-------|
 | Pipelines | 1 | 1 | 3 | ∞ |
 | Leads ativos | 50 | 500 | 2.000 | ∞ |
-| Usuários/convites | 1 | 2 | 5 | ∞ |
+| Vendedores | 1 | 2 | 10 | ∞ |
+| Admins | 1 | 1 | 3 | ∞ |
 | Agentes IA | 1 | 1 | 2 | ∞ |
 | Instâncias WhatsApp | 1 | 1 | 2 | ∞ |
 | Playbooks | 1 | 2 | 5 | ∞ |
@@ -1112,7 +1113,7 @@ Cada plano contratado define o que a empresa pode usar dentro do CRM. Os limites
 | Suporte prioritário | ❌ | ❌ | ❌ | ✅ |
 | SLA garantido | ❌ | ❌ | ❌ | ✅ |
 
-> Os limites são configurados pelo administrador da plataforma no back-office (`/admin/planos`). Consulte o documento técnico completo em `docs/PLANOS-E-LIMITES.md`.
+> Todos os limites e preços são configurados no back-office (`/admin/planos`) e refletem imediatamente — sem redeploy. Consulte `docs/PLANOS-E-LIMITES.md` para detalhes técnicos.
 
 ---
 

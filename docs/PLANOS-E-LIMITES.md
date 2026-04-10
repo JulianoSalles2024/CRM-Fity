@@ -12,12 +12,14 @@ O sistema de planos controla **o que cada empresa pode fazer dentro do CRM** com
 
 ## Planos Disponíveis
 
-| Slug | Nome | Preço Mensal | Preço Anual |
-|------|------|-------------|------------|
-| `trial` | Thrill (Trial) | Grátis | — |
-| `starter` | Starter | R$ 297/mês | R$ 2.673/ano |
-| `growth` | Growth | R$ 697/mês | R$ 6.273/ano |
-| `scale` | Scale | R$ 1.497/mês | R$ 13.473/ano |
+| Slug | Nome | Preço |
+|------|------|-------|
+| `trial` | Thrill (Trial) | Grátis |
+| `starter` | Starter | configurável no back-office |
+| `growth` | Growth | configurável no back-office |
+| `scale` | Scale | configurável no back-office |
+
+> Preços armazenados em centavos (`price_monthly_cents`, `price_yearly_cents`). Exibidos via hook `usePlanConfigs` — sem hardcode. Alterar no back-office reflete imediatamente.
 
 ---
 
@@ -29,7 +31,8 @@ O sistema de planos controla **o que cada empresa pode fazer dentro do CRM** com
 |---------|-------|---------|--------|-------|
 | Pipelines | 1 | 1 | 3 | ∞ |
 | Leads ativos | 50 | 500 | 2.000 | ∞ |
-| Usuários | 1 | 2 | 5 | ∞ |
+| Vendedores | 1 | 2 | 10 | ∞ |
+| Admins | 1 | 1 | 3 | ∞ |
 | Agentes IA | 1 | 1 | 2 | ∞ |
 | Instâncias WhatsApp | 1 | 1 | 2 | ∞ |
 | Playbooks | 1 | 2 | 5 | ∞ |
@@ -69,7 +72,8 @@ O sistema de planos controla **o que cada empresa pode fazer dentro do CRM** com
 |-------------|---------------|---------|
 | Botão "Conectar WhatsApp" | `has_whatsapp` + `max_whatsapp_instances` | `ConexoesTab.tsx` |
 | Botão "Criar novo board" | `max_pipelines` | `PipelineHeader.tsx` |
-| Botão "Convidar" membro | `max_users` | `TeamSettings.tsx` |
+| Botão "Convidar" vendedor | `max_sellers` | `TeamSettings.tsx` |
+| Botão "Convidar" admin | `max_admins` | `TeamSettings.tsx` |
 | Botão "Criar agente" | `max_agents` | `AgentsPage.tsx` |
 | Cards de tipo (Closer/Follow-up) no wizard | `allowed_agents` | `AgentWizard.tsx` |
 | Botão "Novo Playbook" | `max_playbooks` | `PlaybookSettings.tsx` |
@@ -106,6 +110,8 @@ max_agents              INTEGER
 max_whatsapp_instances  INTEGER
 max_playbooks           INTEGER
 max_custom_fields       INTEGER
+max_sellers             INTEGER  -- NULL = ilimitado (migration 124)
+max_admins              INTEGER  -- NULL = ilimitado (migration 124)
 has_whatsapp            BOOLEAN
 has_ai_sdr              BOOLEAN
 has_ai_closer           BOOLEAN
@@ -186,15 +192,16 @@ if (blocked) { alert(reason); return; }
 7. Definir ordem de exibição
 8. Clicar em **Salvar alterações** (aparece só quando há mudança)
 
-**Efeito imediato:** O CRM chama `get_my_plan_limits()` a cada login/reload. Não há cache — mudanças no banco valem na próxima requisição.
+**Efeito imediato:** O CRM rebusca `get_my_plan_limits()` no mount e ao retornar o foco da aba (`window focus`). Preços são lidos via `usePlanConfigs` direto do banco. Mudanças no back-office refletem sem redeploy.
 
 ---
 
 ## Migration aplicada
 
-**Arquivo:** `supabase/migrations/123_plan_configs.sql`
-**Aplicada em:** 2026-04-09
-**Método:** Supabase Management API via PAT token
+| Arquivo | Data | Conteúdo |
+|---------|------|----------|
+| `supabase/migrations/123_plan_configs.sql` | 2026-04-09 | Tabela plan_configs, seed inicial, RPCs |
+| `supabase/migrations/124_plan_role_limits.sql` | 2026-04-10 | Colunas max_sellers e max_admins, seed por plano, RPC atualizada |
 
 ---
 
