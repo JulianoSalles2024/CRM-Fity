@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Zap, ArrowRight, Lock, TrendingUp, Bot } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import UpgradePage from '@/src/pages/UpgradePage';
 
 // Agentes que o usuário está "perdendo" por ter plano limitado
 const LOCKED_AGENTS = [
@@ -20,7 +20,20 @@ interface Props {
 }
 
 export function AgentLimitModal({ open, onClose, currentCount, maxCount }: Props) {
-  const navigate = useNavigate();
+  const [showUpgrade, setShowUpgrade] = useState(false);
+
+  // Overlay da página de upgrade completa
+  if (showUpgrade) return (
+    <div className="fixed inset-0 z-[9999] overflow-auto bg-[#050c18]">
+      <button
+        onClick={() => setShowUpgrade(false)}
+        className="fixed top-4 right-4 z-[10000] p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all"
+      >
+        <X className="w-5 h-5" />
+      </button>
+      <UpgradePage />
+    </div>
+  );
 
   return (
     <AnimatePresence>
@@ -132,7 +145,7 @@ export function AgentLimitModal({ open, onClose, currentCount, maxCount }: Props
                   {/* CTAs */}
                   <div className="flex flex-col gap-2">
                     <button
-                      onClick={() => { onClose(); navigate('/upgrade'); }}
+                      onClick={() => setShowUpgrade(true)}
                       className="group relative w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl font-bold text-sm text-white overflow-hidden bg-gradient-to-r from-sky-600 to-violet-600 hover:from-sky-500 hover:to-violet-500 transition-all duration-200 shadow-lg shadow-sky-900/30 hover:shadow-sky-700/40 hover:scale-[1.02] active:scale-[0.98]"
                     >
                       <Zap className="w-4 h-4" />
