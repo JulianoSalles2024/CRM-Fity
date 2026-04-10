@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MessageCircle, X } from 'lucide-react';
 
 import { useAppContext } from './AppContext';
-import { VIEW_PATHS } from './viewPaths';
+import { VIEW_PATHS, PATH_VIEWS } from './viewPaths';
 import { AppRouter } from '@/src/app/AppRouter';
 import { useAuth } from '@/src/features/auth/AuthContext';
 import PipelineOnboarding from '@/src/features/onboarding/PipelineOnboarding';
@@ -36,6 +36,7 @@ export default function RootLayout() {
     const ctx = useAppContext();
     const { currentUserRole, isRoleReady, companyId, user } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -76,6 +77,14 @@ export default function RootLayout() {
             navigate(base, { replace: true });
         }
     }, [ctx.activeView, navigate]);
+
+    // Sync activeView from URL — allows navigate('/plano') etc. to work programmatically
+    useEffect(() => {
+        const view = PATH_VIEWS[location.pathname];
+        if (view && view !== ctx.activeView) {
+            ctx.setActiveView(view);
+        }
+    }, [location.pathname]);
 
     const routerProps = {
         activeView: ctx.activeView,
