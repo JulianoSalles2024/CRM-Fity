@@ -14,7 +14,6 @@ import {
   Bell,
   HelpCircle,
   MessageSquare,
-  Inbox as InboxIcon,
   ToyBrick,
   BookOpen,
   ScanLine,
@@ -138,7 +137,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     // { icon: Contact, label: 'Clientes' }, // Disabled
     { icon: ClipboardList, label: 'Tarefas' },
     { icon: BarChart, label: 'Relatórios' },
-    { icon: InboxIcon, label: 'Omnichannel' },
+    { icon: MessageSquare, label: 'Omnichannel' },
     { icon: Bot, label: 'Agentes' },
     { icon: Package, label: 'Portfólio', comingSoon: true },
     { icon: MessageSquare, label: 'Chat' },
@@ -164,6 +163,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       return { ...item, label: 'Chat', originalKey: 'Omnichannel' as const };
     if (item.label === 'Plano')
       return { ...item, label: 'Planos', originalKey: 'Plano' as const };
+    return { ...item, originalKey: item.label };
+  });
+
+  const renderSecondaryNavItems = secondaryNavItems.map((item) => {
+    if (item.label === 'Plano')
+      return { ...item, label: 'Planos', originalKey: 'Plano' };
     return { ...item, originalKey: item.label };
   });
 
@@ -215,12 +220,12 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="mt-auto pt-4 border-t border-slate-800/50">
         <ul className="space-y-1">
-          {secondaryNavItems.map((item) => (
-            <li key={item.label}>
+          {renderSecondaryNavItems.map((item) => (
+            <li key={item.originalKey}>
               <NavItem
                 item={item}
-                isActive={activeView === item.label}
-                onClick={() => { onNavigate(item.label); onMobileClose?.(); }}
+                isActive={activeView === item.originalKey}
+                onClick={() => { onNavigate(item.originalKey); onMobileClose?.(); }}
                 isCollapsed={isCollapsedMode}
                 badge={
                   item.label === 'Suporte' && currentUserRole === 'admin' ? supportTicketCount : undefined
